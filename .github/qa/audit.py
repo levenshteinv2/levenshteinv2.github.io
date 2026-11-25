@@ -4,6 +4,7 @@ from http.server import ThreadingHTTPServer,SimpleHTTPRequestHandler
 from urllib.parse import urlsplit,unquote
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
+from outbound_nofollow import external as is_external, run as check_outbound
 P=Path('.github/qa/pages.json')
 pages=json.loads(P.read_text())
 assert len(pages)==91 and len(set(pages))==91
@@ -32,7 +33,10 @@ for name in (pages if mode=='static' else []):
  p=Path(name)
  if not p.is_file():
   issue(name,'missing','file');results.append(dict(page=name,passed=False));checkpoint();continue
- s=BeautifulSoup(p.read_text(encoding='utf-8'),'html.parser')
+ source=p.read_text(encoding='utf-8')
+ _, outbound=check_outbound(source,False)
+ if outbound['missing_after']: issue(name,'outbound_nofollow',str(outbound['missing_after'])+' missing: '+str(outbound['missing_examples']))
+ s=BeautifulSoup(source,'html.parser')
  for selector in ['title','meta[name=description]','meta[name=viewport]','link[rel=canonical]','h1','main']:
   n=len(s.select(selector))
   if n!=1: issue(name,'markup',selector+': '+str(n))
@@ -67,6 +71,10 @@ async def run():
       failures=[]
       if not response or response.status!=200: failures.append('HTTP '+str(response.status if response else None))
       if data['width']>w+2: failures.append('horizontal overflow '+str(data))
+      # Check rendered anchors too; use the actual href attribute, not the local test origin.
+      anchors=await page.locator('a[href], area[href]').evaluate_all("els => els.map(e => ({href:e.getAttribute('href'),rel:e.getAttribute('rel') || ''}))")
+      missing=[a['href'] for a in anchors if is_external(a['href'] or '') and 'nofollow' not in a['rel'].lower().split()]
+      if missing: failures.append('outbound nofollow missing: '+str(missing[:10]))
       failures+=errors
       for f in failures: issue(name,engine+' '+str(w),f)
       if failures and len(list(out.glob('*.png')))<40: await page.screenshot(path=str(out/(name+'-'+engine+'-'+str(w)+'.png')),timeout=5000)
