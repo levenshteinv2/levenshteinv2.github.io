@@ -102,6 +102,19 @@ await test('keyboard focus and mobile tap targets',async()=>{
  await page.setViewportSize({width:390,height:844});await tab('writer');await loc('tw-editor').focus();assert.equal(await page.evaluate(()=>document.activeElement.id),'tw-editor');assert(await loc('tw-editor').evaluate(n=>parseFloat(getComputedStyle(n).fontSize)>=16));await page.setViewportSize({width:1280,height:900});
 });
 
+
+await test('PDF text-layer import',async()=>{
+ const stream='BT /F1 12 Tf 72 720 Td (Mexico PDF import test) Tj ET';
+ const objs=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>','<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream'];
+ let pdf='%PDF-1.4\n',offs=[0];for(let i=0;i<objs.length;i++){offs.push(Buffer.byteLength(pdf));pdf+=(i+1)+' 0 obj\n'+objs[i]+'\nendobj\n';}let xref=Buffer.byteLength(pdf);pdf+='xref\n0 6\n0000000000 65535 f \n'+offs.slice(1).map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n';
+ await tab('writer');await loc('tw-btn-more').click();await loc('tw-btn-upload').click();await loc('tw-file-input').setInputFiles({name:'sample.pdf',mimeType:'application/pdf',buffer:Buffer.from(pdf)});await page.waitForFunction(()=>document.querySelector('#tw-editor').value.includes('Mexico PDF import test'),{},{timeout:10000});
+});
+await test('local payload and interaction timing',async()=>{
+ const metrics=await page.evaluate(()=>{const nav=performance.getEntriesByType('navigation')[0];const rs=performance.getEntriesByType('resource').filter(x=>x.name.startsWith(location.origin));return {domContentLoadedMs:Math.round(nav.domContentLoadedEventEnd),loadMs:Math.round(nav.loadEventEnd),localEncodedBytes:nav.encodedBodySize+rs.reduce((a,x)=>a+x.encodedBodySize,0),localRequests:rs.length+1};});
+ console.log('MX_LAB_METRICS '+JSON.stringify(metrics));
+ assert(metrics.localEncodedBytes>0);assert(metrics.localRequests>=5);assert(!await page.evaluate(()=>performance.getEntriesByType('resource').some(x=>x.name.includes('jszip'))));
+});
+
 console.log('MX_QA_RESULT '+JSON.stringify({results,pageErrors:errors}));
 await browser.close();server.close();
 if(results.some(x=>x.status==='FAIL')||errors.length)process.exitCode=1;
