@@ -14,18 +14,34 @@ concurrency:
 jobs:
   audit:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: static, mode: static, engine: chromium, sizes: '[]'}
+          - {name: chromium-mobile, mode: browser, engine: chromium, sizes: '[[320,568],[375,667],[390,844],[430,932]]'}
+          - {name: chromium-desktop, mode: browser, engine: chromium, sizes: '[[768,1024],[1024,768],[1440,900]]'}
+          - {name: firefox, mode: browser, engine: firefox, sizes: '[[390,844],[1440,900]]'}
+          - {name: webkit, mode: browser, engine: webkit, sizes: '[[390,844],[1440,900]]'}
+    env:
+      QA_MODE: ${{ matrix.mode }}
+      QA_ENGINE: ${{ matrix.engine }}
+      QA_SIZES: ${{ matrix.sizes }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install playwright==1.51.0 beautifulsoup4==4.13.3
-      - run: python -m playwright install --with-deps chromium firefox webkit
-      - run: python .github/qa/audit.py
+      - if: matrix.mode == 'browser'
+        run: python -m playwright install --with-deps "${QA_ENGINE}"
+      - run: python -m py_compile .github/qa/audit.py
+      - run: python -u .github/qa/audit.py
+        timeout-minutes: 10
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: v2-qa-report
+          name: v2-qa-${{ matrix.name }}
           path: qa-report/
           retention-days: 7
