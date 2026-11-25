@@ -1,0 +1,31 @@
+name: Japanese preview exact font transfer
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ja-preview-transfer.yml'
+permissions:
+  contents: write
+jobs:
+  exact-fonts:
+    if: github.head_ref == 'preview/ja-2026-11-25' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reconstruct and check exact licensed font blobs
+        run: |
+          python -m pip install fonttools==4.68.0 brotli==1.2.1 zopfli==0.4.3
+          python .github/ja-preview-transfer.py assets/tools/ja/v1/fonts
+      - name: Persist font-only scoped files
+        run: |
+          set -euo pipefail
+          git add -- assets/tools/ja/v1/fonts
+          git diff --cached --quiet && exit 0
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Reconstruct exact tested JA WOFF2 and OFL files'
+          git push origin HEAD:refs/heads/preview/ja-2026-11-25
