@@ -11,8 +11,8 @@ def external(href):
 class Scan(HTMLParser):
     def __init__(self,s):
         super().__init__(convert_charrefs=False)
-        self.offset=[0]
-        for m in re.finditer("\n",s): self.offset.append(m.end())
+        self.line_starts=[0]
+        for m in re.finditer("\n",s): self.line_starts.append(m.end())
         self.anchors=[]
         self.feed(s); self.close()
     def handle_starttag(self,tag,attrs):
@@ -20,11 +20,10 @@ class Scan(HTMLParser):
         if not any(k=="href" for k,v in attrs): return
         d=dict(attrs); raw=self.get_starttag_text()
         line,col=self.getpos()
-        self.anchors.append((self.offset[line-1]+col,raw,attrs,d.get("href") or "",external(d.get("href") or "")))
+        self.anchors.append((self.line_starts[line-1]+col,raw,attrs,d.get("href") or "",external(d.get("href") or "")))
 def tokens(attrs):
     return set((dict(attrs).get("rel") or "").lower().split())
 def patch(raw,attrs):
-    rel=[m for m in ATTR.finditer(raw,raw.lower().find("a")+1) if m.group(1).lower()=="rel"]
     # Scan after tag name, not inside quoted attribute values.
     start=re.match(r"<(?:a|area)\b",raw,re.I).end()
     rel=[m for m in ATTR.finditer(raw,start) if m.group(1).lower()=="rel"]
