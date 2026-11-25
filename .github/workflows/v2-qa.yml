@@ -1,0 +1,31 @@
+name: V2 QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v2-qa.yml'
+      - '.github/qa/**'
+permissions:
+  contents: read
+concurrency:
+  group: v2-qa
+  cancel-in-progress: true
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.51.0 beautifulsoup4==4.13.3
+      - run: python -m playwright install --with-deps chromium firefox webkit
+      - run: python .github/qa/audit.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v2-qa-report
+          path: qa-report/
+          retention-days: 7
