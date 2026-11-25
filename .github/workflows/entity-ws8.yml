@@ -1,0 +1,32 @@
+name: WS8 Schema graph inventory
+on:
+  push:
+    branches: ['audit/entity-knowledge-map-20261125']
+    paths: ['.github/workflows/entity-ws8.yml']
+permissions:
+  contents: write
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: pip install beautifulsoup4==4.13.3
+      - run: python .github/knowledge-map/ws8.py
+      - name: Persist audit only
+        run: |
+          test "$GITHUB_REF_NAME" = 'audit/entity-knowledge-map-20261125'
+          git add .github/knowledge-map/intelligence/ws8/
+          git diff --cached --name-only | grep -v '^.github/knowledge-map/intelligence/ws8/' && exit 1 || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'WS8 schema inventory pinned to current Preview; audit only'
+          git push origin HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ws8-inventory
+          path: .github/knowledge-map/intelligence/ws8/
+          include-hidden-files: true
