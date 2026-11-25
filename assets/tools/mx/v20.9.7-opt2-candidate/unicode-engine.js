@@ -762,7 +762,7 @@ window.Fr = Fr; window.BioFonts = Fr;
       }
       const lineCount = v.split('\n').length;
       const linesEl = document.getElementById('bio-lines');
-      if(linesEl) linesEl.textContent = lineCount+' linhas • '+v.split('\n').filter(l=>l.trim()).length+' com texto';
+      if(linesEl) linesEl.textContent = lineCount+' líneas • '+v.split('\n').filter(l=>l.trim()).length+' con texto';
       if(bPrev) bPrev.textContent=v;
       // The visible Bio style grid also previews from the raw source so it never
       // collapses into repeated outputs after a font has already been selected.

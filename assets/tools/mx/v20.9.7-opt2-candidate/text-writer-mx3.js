@@ -337,7 +337,7 @@ let currentFont = TW_FONTS[0];
 let rawText = "";
 let isRecording = false;
 let recognition = null;
-let autoSaveKey = "tw-draft-v2-fixed";
+let autoSaveKey = "tw-draft-es-mx-v2";
 let twSavedSelection = {start:0,end:0};
 let twFontCategory = 'popular';
 const TW_RECENT_FONTS_KEY = 'tw-recent-fonts-us-v20';
@@ -504,7 +504,7 @@ function twPushHistory(){
   if(twHistory.length>30)twHistory.shift();
   twHistoryIndex=twHistory.length-1;twUpdateHistoryButtons();
 }
-function twScheduleHistory(){clearTimeout(twHistoryTimer);twHistoryTimer=setTimeout(twPushHistory,260);}
+function twScheduleHistory(){clearTimeout(twHistoryTimer);twUpdateHistoryButtons();twHistoryTimer=setTimeout(()=>{twHistoryTimer=null;twPushHistory();},260);}
 function twRestoreHistory(index){
   if(index<0||index>=twHistory.length)return;
   twRestoringHistory=true;twHistoryIndex=index;
@@ -514,12 +514,14 @@ function twRestoreHistory(index){
   rawText=twPlainFromAnyStyled(editor.value);lastRenderedText=editor.value;
   updateCounts();autoResize();saveDraft(false);twRestoringHistory=false;twUpdateHistoryButtons();twUpdateSelectionStatus();editor.focus();
 }
-function twUndo(){if(twHistoryIndex>0)twRestoreHistory(twHistoryIndex-1);else showToast('No hay más acciones para deshacer');}
-function twRedo(){if(twHistoryIndex<twHistory.length-1)twRestoreHistory(twHistoryIndex+1);else showToast('No hay más acciones para rehacer');}
+function twFlushHistory(){if(twHistoryTimer!==null){clearTimeout(twHistoryTimer);twHistoryTimer=null;twPushHistory();}}
+function twUndo(){twFlushHistory();if(twHistoryIndex>0)twRestoreHistory(twHistoryIndex-1);else showToast('No hay más acciones para deshacer');}
+function twRedo(){twFlushHistory();if(twHistoryIndex<twHistory.length-1)twRestoreHistory(twHistoryIndex+1);else showToast('No hay más acciones para rehacer');}
 function twUpdateHistoryButtons(){
   const u=document.getElementById('tw-btn-undo'),r=document.getElementById('tw-btn-redo');
-  if(u){u.disabled=twHistoryIndex<=0;u.setAttribute('aria-disabled',u.disabled?'true':'false');}
-  if(r){r.disabled=twHistoryIndex>=twHistory.length-1;r.setAttribute('aria-disabled',r.disabled?'true':'false');}
+  const current=twHistory[twHistoryIndex];const dirty=!!current&&current.text!==editor.value;
+  if(u){u.disabled=twHistoryIndex<=0&&!dirty;u.setAttribute('aria-disabled',u.disabled?'true':'false');}
+  if(r){r.disabled=dirty||twHistoryIndex>=twHistory.length-1;r.setAttribute('aria-disabled',r.disabled?'true':'false');}
 }
 function twReplaceRange(start,end,value){
   const before=editor.value.slice(0,start),after=editor.value.slice(end);
@@ -535,7 +537,7 @@ function twNormalizeSelection(){
   const piece=editor.value.slice(range.start,range.end);const plain=twPlainFromAnyStyled(piece);
   twReplaceRange(range.start,range.end,plain);currentFont=null;
   const badge=document.getElementById('tw-font-badge');if(badge)badge.textContent='Texto normal';
-  showToast(range.start===0&&range.end===editor.value.length?'Todo el texto volvió al estilo normal':'El fragmento seleccionado voltou ao estilo normal');
+  showToast(range.start===0&&range.end===editor.value.length?'Todo el texto volvió al estilo normal':'El fragmento seleccionado volvió al estilo normal');
 }
 
 function saveDraft(syncRaw=true){
@@ -593,7 +595,7 @@ document.getElementById('tw-btn-clean').onclick = ()=>{
   editor.value = v; rawText=twPlainFromAnyStyled(v); lastRenderedText=editor.value; updateCounts(); autoResize(); saveDraft(false); twPushHistory(); showToast('Texto actualizado');
 };
 document.getElementById('tw-btn-clear-draft').onclick = ()=>{
-  if(confirm('Apagar todo o texto?')){ editor.value=''; rawText=''; lastRenderedText=''; localStorage.removeItem(autoSaveKey); updateCounts(); autoResize(); twSavedSelection={start:0,end:0}; twPushHistory(); twUpdateSelectionStatus(); showToast('Texto actualizado'); }
+  if(confirm('¿Borrar todo el texto?')){ editor.value=''; rawText=''; lastRenderedText=''; localStorage.removeItem(autoSaveKey); updateCounts(); autoResize(); twSavedSelection={start:0,end:0}; twPushHistory(); twUpdateSelectionStatus(); showToast('Texto actualizado'); }
 };
 
 
@@ -683,9 +685,9 @@ function renderFontsModal(cat=twFontCategory){
   const list=twFontsForCategory(cat);
   fontsGrid.innerHTML='';fontsRendered=0;
   const normal=document.createElement('button');normal.className='tw-font-item tw-font-normal';
-  normal.innerHTML='<div class="tw-font-preview">Aa • Texto normal</div><div class="tw-font-name">Remover o estilo do trecho selecionado</div>';
+  normal.innerHTML='<div class="tw-font-preview">Aa • Texto normal</div><div class="tw-font-name">Quitar el estilo del fragmento seleccionado</div>';
   normal.onclick=()=>{twNormalizeSelection();fontsModal.classList.remove('open');};fontsGrid.appendChild(normal);
-  if(!list.length){const empty=document.createElement('div');empty.className='tw-font-empty';empty.textContent='Nenhum estilo recente ainda.';fontsGrid.appendChild(empty);return;}
+  if(!list.length){const empty=document.createElement('div');empty.className='tw-font-empty';empty.textContent='Todavía no hay estilos recientes.';fontsGrid.appendChild(empty);return;}
   const batch=40;
   function renderBatch(){
     const end=Math.min(fontsRendered+batch,list.length);
@@ -719,7 +721,7 @@ function renderSymbols(cat){
   const icons=(cat==='all'&&typeof av3450==='function')?av3450():(BIO_CATS[cat]||BIO_CATS.all||(typeof av3450==='function'?av3450():[]));
   symbolsGrid.innerHTML='';renderRecentSymbols();
   const modalTitle=document.querySelector('#tw-symbols-modal .tw-modal-title');
-  if(modalTitle)modalTitle.textContent='SÍMBOLOS • '+icons.length.toLocaleString('es-MX')+' • TOQUE PARA INSERIR';
+  if(modalTitle)modalTitle.textContent='SÍMBOLOS • '+icons.length.toLocaleString('es-MX')+' • TOCA PARA INSERTAR';
   let rendered=0;const batchSize=240;
   function renderBatch(){
     const end=Math.min(rendered+batchSize,icons.length);
@@ -727,7 +729,7 @@ function renderSymbols(cat){
       const icon=icons[i],btn=document.createElement('button');btn.className='tw-sym-btn';btn.textContent=icon;btn.onclick=()=>twInsertSymbol(icon);symbolsGrid.appendChild(btn);
     }
     rendered=end;const old=document.getElementById('tw-sym-load-more');if(old)old.remove();
-    if(rendered<icons.length){const more=document.createElement('button');more.id='tw-sym-load-more';more.className='tw-btn tw-btn-yellow tw-btn-small';more.style.cssText='grid-column:1/-1;margin:12px auto;display:block;';more.textContent='Carregar mais '+Math.min(batchSize,icons.length-rendered)+' • '+rendered+'/'+icons.length;more.onclick=renderBatch;symbolsGrid.appendChild(more);}
+    if(rendered<icons.length){const more=document.createElement('button');more.id='tw-sym-load-more';more.className='tw-btn tw-btn-yellow tw-btn-small';more.style.cssText='grid-column:1/-1;margin:12px auto;display:block;';more.textContent='Cargar más '+Math.min(batchSize,icons.length-rendered)+' • '+rendered+'/'+icons.length;more.onclick=renderBatch;symbolsGrid.appendChild(more);}
   }
   renderBatch();
 }
@@ -773,7 +775,7 @@ symbolsModal.onclick=(e)=>{if(e.target===symbolsModal)symbolsModal.classList.rem
         if(interim && voiceStatus) voiceStatus.textContent = '● ' + interim.slice(0,40);
       };
       recognition.onerror = function(ev){
-        showToast(ev && ev.error === 'not-allowed' ? 'Permite el uso del micrófono en el navegador' : 'No se pudo reconocer a voz');
+        showToast(ev && ev.error === 'not-allowed' ? 'Permite el uso del micrófono en el navegador' : 'No se pudo reconocer la voz');
       };
       recognition.onend = function(){
         isRecording = false;
@@ -1214,11 +1216,11 @@ function twRefreshResultPage(){
 }
 async function twExportPagesZip(canvases,prefix){await window.lvtLoadJSZip();var zip=new JSZip();for(var i=0;i<canvases.length;i++){var data=canvases[i].toDataURL('image/png').split(',')[1];zip.file(prefix+'-'+String(i+1).padStart(2,'0')+'.png',data,{base64:true});}return await zip.generateAsync({type:'blob',compression:'DEFLATE'});}
 function twIsLongContent(){try{return (twExportMode==='handwriting'?twBuildHandwritingPages():twBuildSocialPages()).length>1;}catch(_e){return false;}}
-function twUpdateLongExportHint(){var panel=document.getElementById('tw-long-export-panel'),hint=document.getElementById('tw-long-export-hint');if(!panel)return;var pages=[];try{pages=twExportMode==='handwriting'?twBuildHandwritingPages():twBuildSocialPages();}catch(_e){}var long=pages.length>1;panel.hidden=!long;var btn=document.getElementById('tw-btn-export-download'),pdfBtn=document.getElementById('tw-btn-export-pdf'),styledPdfBtn=document.getElementById('tw-btn-export-styled-pdf');if(pdfBtn)pdfBtn.textContent=twExportMode==='handwriting'?'HandwritingPDF':'📄 PDF por Modelo';if(styledPdfBtn)styledPdfBtn.textContent='🎨 Styled PDF';if(long){if(hint)hint.textContent=twExportMode==='handwriting'?('O conteúdo precisa de '+pages.length+' páginas. O PDF manuscrito usa a fonte manuscrita escolhida; o PDF Estilizado mantém os estilos Unicode do editor.') : ('O conteúdo precisa de '+pages.length+' imágenes. O carrossel é ideal para redes sociais; o PDF Estilizado mantém os estilos Unicode do editor.');if(btn)btn.textContent=twExportMode==='handwriting'?('📄 Crear PDF • '+pages.length+' páginas'):('🖼️ Criar carrossel • '+pages.length+' imágenes');}else if(btn){btn.textContent=twExportMode==='handwriting'?'⬇️ Crear imagen manuscrita':('⬇️ Crear PNG • '+((twSocialCurrentPreset()&&twSocialCurrentPreset().label)||'SNS'));}}
-async function twExportLongPdf(){var pages=twExportMode==='handwriting'?twBuildHandwritingPages():twBuildSocialPages();if(!pages.length){showToast('El campo de texto está vacío');return;}var blob=twCanvasPagesToPdf(pages),name=(twExportMode==='handwriting'?'chu-viet-tay':'van-ban')+'-'+Date.now()+'.pdf';twSetResultPages(pages,twExportMode==='handwriting'?'PDF manuscrito':'PDF de texto','PDF', 'pdf',blob,name);showToast('PDF creado • '+pages.length+' páginas');}
+function twUpdateLongExportHint(){var panel=document.getElementById('tw-long-export-panel'),hint=document.getElementById('tw-long-export-hint');if(!panel)return;var pages=[];try{pages=twExportMode==='handwriting'?twBuildHandwritingPages():twBuildSocialPages();}catch(_e){}var long=pages.length>1;panel.hidden=!long;var btn=document.getElementById('tw-btn-export-download'),pdfBtn=document.getElementById('tw-btn-export-pdf'),styledPdfBtn=document.getElementById('tw-btn-export-styled-pdf');if(pdfBtn)pdfBtn.textContent=twExportMode==='handwriting'?'PDF manuscrito':'📄 PDF por plantilla';if(styledPdfBtn)styledPdfBtn.textContent='🎨 PDF con estilo';if(long){if(hint)hint.textContent=twExportMode==='handwriting'?('O conteúdo precisa de '+pages.length+' páginas. O PDF manuscrito usa a fonte manuscrita escolhida; o PDF Estilizado mantém os estilos Unicode do editor.') : ('O conteúdo precisa de '+pages.length+' imágenes. O carrossel é ideal para redes sociais; o PDF Estilizado mantém os estilos Unicode do editor.');if(btn)btn.textContent=twExportMode==='handwriting'?('📄 Crear PDF • '+pages.length+' páginas'):('🖼️ Criar carrossel • '+pages.length+' imágenes');}else if(btn){btn.textContent=twExportMode==='handwriting'?'⬇️ Crear imagen manuscrita':('⬇️ Crear PNG • '+((twSocialCurrentPreset()&&twSocialCurrentPreset().label)||'SNS'));}}
+async function twExportLongPdf(){var pages=twExportMode==='handwriting'?twBuildHandwritingPages():twBuildSocialPages();if(!pages.length){showToast('El campo de texto está vacío');return;}var blob=twCanvasPagesToPdf(pages),name=(twExportMode==='handwriting'?'letra-manuscrita':'texto')+'-'+Date.now()+'.pdf';twSetResultPages(pages,twExportMode==='handwriting'?'PDF manuscrito':'PDF de texto','PDF', 'pdf',blob,name);showToast('PDF creado • '+pages.length+' páginas');}
 function exportHandwritingImage(){
   var pages=twBuildHandwritingPages();if(!pages.length){showToast('El campo de texto está vacío');return;}
-  if(pages.length>1){twSetExportButtonState('⏳ Criando PDF...',true);try{var pdf=twCanvasPagesToPdf(pages),name='tegaki-'+twHandwritingStyle+'-'+Date.now()+'.pdf';twSetResultPages(pages,'Handwriting • '+(TW_HANDWRITING_STYLES[twHandwritingStyle]||TW_HANDWRITING_STYLES.natural).label,'PDF','pdf',pdf,name);twSetExportButtonState('📄 Crear PDF • '+pages.length+' páginas',false);showToast('PDF creado • '+pages.length+' páginas — sin cortar el texto');}catch(e){console.error(e);showToast('Erro ao criar PDF: '+e.message);}return;}
+  if(pages.length>1){twSetExportButtonState('⏳ Creando PDF...',true);try{var pdf=twCanvasPagesToPdf(pages),name='tegaki-'+twHandwritingStyle+'-'+Date.now()+'.pdf';twSetResultPages(pages,'Handwriting • '+(TW_HANDWRITING_STYLES[twHandwritingStyle]||TW_HANDWRITING_STYLES.natural).label,'PDF','pdf',pdf,name);twSetExportButtonState('📄 Crear PDF • '+pages.length+' páginas',false);showToast('PDF creado • '+pages.length+' páginas — sin cortar el texto');}catch(e){console.error(e);showToast('Erro ao criar PDF: '+e.message);}return;}
   var canvas=pages[0];try{var dataUrl=canvas.toDataURL('image/png'),blob=twDataUrlToBlob(dataUrl),fileName='tegaki-'+twHandwritingStyle+'-'+Date.now()+'.png',file=twMakeFile(blob,fileName);window._lastGeneratedDocBlob=null;window._lastGeneratedDocName=null;window._lastGeneratedDocKind=null;window._twResultKind='image';window._twResultPages=[dataUrl];window._twResultIndex=0;window._lastGeneratedDataUrl=dataUrl;window._lastGeneratedBlob=blob;window._lastGeneratedFile=file;window._lastGeneratedFileName=fileName;window._lastGeneratedCanvas=canvas;var st=TW_HANDWRITING_STYLES[twHandwritingStyle]||TW_HANDWRITING_STYLES.natural;twShowResult(dataUrl,{background_color:twHandwritingPaper==='lined'?'LinedPAPER':'WhitePAPER',label:'Handwriting • '+st.label},fileName);twRefreshResultPage();twSetExportButtonState('⬇️ Crear imagen manuscrita',false);showToast('Imagen manuscrita creada');}catch(e){console.error(e);showToast('Error al crear imagen: '+e.message);}
 }
 function exportNativeImage(){
@@ -1272,7 +1274,7 @@ window.twShareImage=async function(){
       if(err&&err.name==='AbortError')return;
       console.warn('Multi-image share failed',err);
     }
-    showToast('Este dispositivo não pode compartilhar várias imágenes — use “Guardar por separado”');
+    showToast('Este dispositivo no puede compartir varias imágenes — use “Guardar por separado”');
     return;
   }
 
@@ -1376,7 +1378,7 @@ window.twSaveEachImage=function(){
     }
     if(all)all.onclick=async function(){
       var pages=window._twResultPages||[];if(pages.length<2)return;
-      if(twIsMobile()){showToast('En el celular, usa “Compartir todo” ou “Guardar por separado”');return;}
+      if(twIsMobile()){showToast('En el celular, usa “Compartir todo” o “Guardar por separado”');return;}
       try{await window.lvtLoadJSZip();}catch(e){showToast('El motor ZIP no está disponible');return;}
       var zip=new JSZip();pages.forEach(function(u,i){zip.file('slide-'+String(i+1).padStart(2,'0')+'.png',u.split(',')[1],{base64:true});});
       var blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});twDownloadBlob(blob,'carousel-'+Date.now()+'.zip');
@@ -1447,9 +1449,9 @@ function twUsApplyTextTransform(fn,label){
   const qu=document.getElementById('tw-us-quotes'),no=document.getElementById('tw-us-normalize');
   if(lo)lo.onclick=e=>{e.preventDefault();twUsApplyTextTransform(twUsLower,'minúsculas');};
   if(up)up.onclick=e=>{e.preventDefault();twUsApplyTextTransform(twUsUpper,'MAYÚSCULAS');};
-  if(ti)ti.onclick=e=>{e.preventDefault();twUsApplyTextTransform(twUsTitle,'Title Case');};
-  if(sp)sp.onclick=e=>{e.preventDefault();twUsApplyTextTransform(twUsSpacing,'Aesthetic Spacing');};
-  if(qu)qu.onclick=e=>{e.preventDefault();twUsApplyTextTransform(twUsSmartQuotes,'Smart Quotes');};
+  if(ti)ti.onclick=e=>{e.preventDefault();twUsApplyTextTransform(twUsTitle,'Mayúscula inicial');};
+  if(sp)sp.onclick=e=>{e.preventDefault();twUsApplyTextTransform(twUsSpacing,'Espaciado estético');};
+  if(qu)qu.onclick=e=>{e.preventDefault();twUsApplyTextTransform(twUsSmartQuotes,'Comillas tipográficas');};
   if(no)no.onclick=e=>{e.preventDefault();twUsApplyTextTransform(twUsNormalize,'Unicode NFC');};
 })();
 

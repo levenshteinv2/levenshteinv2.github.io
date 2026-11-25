@@ -752,12 +752,12 @@ function generate(){
 function renderResult(c,raw,ctx){
   const vibe=VIBES[c.vibeId];
   $('fsd-aesthetic-output').textContent=c.output;
-  const comp=c.style.id==='style-native'?100:Math.round((ctx.compat.get(c.style.id)||0)*100),styleLabel=c.style.id==='style-native'?'Texto original + decoração':c.style.name;
-  $('fsd-aesthetic-meta').innerHTML='<span>'+vibe.icon+' '+vibe.label+'</span>'+(c.decoration&&c.decoration.lookName?'<span>• '+c.decoration.lookName+'</span>':'')+'<span>• '+styleLabel+'</span><span>• '+INTENSITY[state.intensity].label+'</span><span>• '+(LAYOUT_LABELS[c.layoutId]||c.layoutId)+'</span>'+(c.style.id==='style-native'?'<span>• Otimizado para o texto original</span>':'<span>• Compatibilidade '+comp+'%</span>')+(ctx.longMode?'<span>• Decoração reduzida automaticamente em textos longos</span>':ctx.compactMode?'<span>• Layout ajustado automaticamente para frases longas</span>':'');
+  const comp=c.style.id==='style-native'?100:Math.round((ctx.compat.get(c.style.id)||0)*100),styleLabel=c.style.id==='style-native'?'Texto original + decoración':c.style.name;
+  $('fsd-aesthetic-meta').innerHTML='<span>'+vibe.icon+' '+vibe.label+'</span>'+(c.decoration&&c.decoration.lookName?'<span>• '+c.decoration.lookName+'</span>':'')+'<span>• '+styleLabel+'</span><span>• '+INTENSITY[state.intensity].label+'</span><span>• '+(LAYOUT_LABELS[c.layoutId]||c.layoutId)+'</span>'+(c.style.id==='style-native'?'<span>• Optimizado para el texto original</span>':'<span>• Compatibilidad '+comp+'%</span>')+(ctx.longMode?'<span>• Decoración reducida automáticamente en textos largos</span>':ctx.compactMode?'<span>• Diseño ajustado automáticamente para frases largas</span>':'');
   resultWrap.hidden=false;updateLocks();
 }
 function updateLocks(){
-  for(const [key,id,label] of [['style','fsd-lock-font','Fonte'],['decoration','fsd-lock-decor','Decoração'],['layout','fsd-lock-layout','Layout']]){
+  for(const [key,id,label] of [['style','fsd-lock-font','Fuente'],['decoration','fsd-lock-decor','Decoración'],['layout','fsd-lock-layout','Layout']]){
     const b=$(id);if(!b)continue;const on=!!state.locks[key];b.setAttribute('aria-pressed',String(on));b.textContent=(on?'🔒 ':'🔓 ')+label;
   }
 }
