@@ -49,7 +49,7 @@ async function copyText(t){
   if(btn){
     const old=btn.textContent;
     if(ok)btn.textContent='✓ Copiado';
-    else{const selected=selectResultText();btn.textContent=selected?'Pressione Ctrl+C para copiar':'Não foi possível copiar';}
+    else{const selected=selectResultText();btn.textContent=selected?'Presiona Ctrl+C para copiar':'No se pudo copiar';}
     setTimeout(()=>btn.textContent=old,ok?1100:1800);
   }
   if(ok)emit('copy',{vibe:state.current.vibeId,styleId:state.current.styleId,layout:state.current.layoutId,intensity:state.intensity});

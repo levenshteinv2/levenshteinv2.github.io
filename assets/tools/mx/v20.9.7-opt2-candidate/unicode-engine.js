@@ -613,7 +613,7 @@ window.Fr = Fr; window.BioFonts = Fr;
 
   function showToast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
   function fallbackCopyText(t){try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,ta.value.length);const ok=document.execCommand('copy');ta.remove();return ok!==false;}catch(_){return false;}}
-  async function copyText(t){try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(t);}else if(!fallbackCopyText(t)){throw new Error('área de transferência indisponível');}showToast('Copiado: '+t.slice(0,15));}catch(_){if(fallbackCopyText(t))showToast('Símbolos copiados!');else showToast('Não foi possível copiar. Copie manualmente.');}}
+  async function copyText(t){try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(t);}else if(!fallbackCopyText(t)){throw new Error('portapapeles no disponible');}showToast('Copiado: '+t.slice(0,15));}catch(_){if(fallbackCopyText(t))showToast('¡Símbolos copiados!');else showToast('No se pudo copiar. Copia manualmente.');}}
   function renderPure(input, gridEl){
     if(!gridEl)return;
     const base=input||"Alex";

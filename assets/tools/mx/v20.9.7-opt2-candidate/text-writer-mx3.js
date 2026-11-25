@@ -462,7 +462,7 @@ async function copyText(txt){
     if(navigator.clipboard&&window.isSecureContext){
       await navigator.clipboard.writeText(txt);
     }else if(!fallbackCopyText(txt)){
-      throw new Error('área de transferência indisponível');
+      throw new Error('portapapeles no disponible');
     }
     showToast('Copiado: '+txt.slice(0,30));
   }catch(_){
@@ -492,7 +492,7 @@ function twCaptureSelection(){
 function twUpdateSelectionStatus(){
   const el=document.getElementById('tw-selection-status');if(!el)return;
   const s=twSavedSelection||{start:0,end:0};const count=Math.max(0,s.end-s.start);
-  el.textContent=count>0 ? ('Selecionados '+count+' caracteres • escolha um estilo') : 'Selecione um trecho para estilizar somente essa parte';
+  el.textContent=count>0 ? (''+count+' caracteres seleccionados • elige un estilo') : 'Selecciona un fragmento para aplicar estilo solo a esa parte';
 }
 function twSnapshot(){return {text:editor.value,start:editor.selectionStart||0,end:editor.selectionEnd||0};}
 function twPushHistory(){
@@ -1205,11 +1205,11 @@ function twRefreshResultPage(){
   var dl=document.getElementById('tw-result-download'),all=document.getElementById('tw-result-download-all'),share=document.getElementById('tw-result-share'),saveEach=document.getElementById('tw-result-save-each'),more=document.getElementById('tw-result-more'),morePanel=document.getElementById('tw-result-more-panel');
   var isPdf=!!window._lastGeneratedDocBlob&&window._lastGeneratedDocKind==='pdf';
   var isCarousel=pages.length>1&&!window._lastGeneratedDocBlob&&(window._twResultKind==='carousel'||window._lastGeneratedDocKind==='carousel');
-  if(dl)dl.textContent=isPdf?'⬇️ Salvar PDF':(isCarousel?'⬇️ Salvar esta imagem':'⬇️ Salvar PNG');
+  if(dl)dl.textContent=isPdf?'⬇️ Guardar PDF':(isCarousel?'⬇️ Guardar esta imagen':'⬇️ Guardar PNG');
   if(share)share.textContent=isPdf?'↗ Compartilhar PDF':(isCarousel?'↗ Compartir todo • '+pages.length+' imágenes':'↗ Compartilhar');
   if(saveEach)saveEach.style.display=isCarousel?'inline-flex':'none';
   if(more)more.style.display=isCarousel&&!twIsMobile()?'inline-flex':'none';
-  if(all){all.textContent='⬇️ Salvar ZIP (computador)';all.style.display=isCarousel&&!twIsMobile()?'inline-flex':'none';}
+  if(all){all.textContent='⬇️ Guardar ZIP (computadora)';all.style.display=isCarousel&&!twIsMobile()?'inline-flex':'none';}
   if((!isCarousel||twIsMobile())&&morePanel){morePanel.hidden=true;if(more)more.setAttribute('aria-expanded','false');}
 }
 async function twExportPagesZip(canvases,prefix){await window.lvtLoadJSZip();var zip=new JSZip();for(var i=0;i<canvases.length;i++){var data=canvases[i].toDataURL('image/png').split(',')[1];zip.file(prefix+'-'+String(i+1).padStart(2,'0')+'.png',data,{base64:true});}return await zip.generateAsync({type:'blob',compression:'DEFLATE'});}
