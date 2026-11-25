@@ -461,6 +461,13 @@ window.usPrioritizeFonts = function(list){
 #lvt-footer{border-top:1px solid #e7e1da;background:#fff;padding:15px 12px;display:flex;justify-content:center;flex-wrap:wrap;gap:8px 18px;font-size:13px}
 #lvt-site-header a:focus-visible,#lvt-site-header summary:focus-visible,#lvt-article a:focus-visible,#lvt-footer a:focus-visible{outline:2px solid #801e25;outline-offset:3px}
 @media(max-width:768px){#lvt-site-header .lvt-bar{min-height:46px;padding:0 12px}#lvt-site-header .lvt-brand{font-size:21px}#lvt-site-header .lvt-desktop{display:none}#lvt-site-header .lvt-mobile{display:block}#lvt-intro{padding:10px 12px 10px}#lvt-intro h1{font-size:25px;margin:0 0 3px}#lvt-intro p{font-size:13px;line-height:1.4}#lvt-article{margin:18px auto 0;padding:0 14px 20px;font-size:15px;line-height:1.7}#lvt-article h2{margin-top:24px;font-size:21px}}
+</style><style id="vi-mobile-focus-fix-v1">
+@media(max-width:768px){
+#lf194-root .lf-tab[data-tab] .lf-tab-title::after{content:none!important;display:none!important}
+#lf194-root .lf-tab[data-tab] .lf-tab-title{white-space:normal!important;text-align:center!important;line-height:1.12!important;overflow:visible!important}
+#lf194-root #tw-editor{font-size:max(16px,var(--tw-editor-font-size,18px))!important;scroll-margin-top:8px}
+#lf194-root.lvt-keyboard-open #view-writer #tw-editor{min-height:0!important;height:var(--lvt-editor-fit,160px)!important;max-height:var(--lvt-editor-fit,160px)!important;overflow-y:auto!important}
+}
 </style></head><body style="margin:0;background:#faf9f6"><header id="lvt-site-header"><div class="lvt-bar"><a class="lvt-brand" href="/">levenshtein.net</a><nav class="lvt-desktop" aria-label="Điều hướng chính"><a href="/">Trang chủ</a><a href="/text-tools">Công cụ</a><a href="/levenshtein_search.htm">Tìm kiếm</a><a href="/levenshtein_implementation.htm">Thuật toán</a></nav><details class="lvt-mobile"><summary aria-label="Mở menu điều hướng">☰ Menu</summary><nav aria-label="Điều hướng chính"><a href="/">Trang chủ</a><a href="/text-tools">Công cụ</a><a href="/levenshtein_search.htm">Tìm kiếm</a><a href="/levenshtein_implementation.htm">Thuật toán</a></nav></details></div></header><main id="lvt-main"><div id="lvt-intro"><h1>Fonts Chữ Đẹp</h1><p>Tạo chữ kiểu, kí tự, bio và tên game.</p></div>
 <div id="lf194-root">
 <style>
@@ -3852,7 +3859,7 @@ function bioCaptureSelection(){
   if(!bioInput)return bioSavedSelection;
   try{bioSavedSelection={start:bioInput.selectionStart||0,end:bioInput.selectionEnd||0};}catch(_e){bioSavedSelection={start:0,end:0};}
   const hint=document.getElementById('bio-selection-hint');
-  if(hint){const n=Math.max(0,bioSavedSelection.end-bioSavedSelection.start);hint.textContent=n?('Selecionados '+n+' caracteres • somente este trecho será alterado'):'Selecione um trecho → escolha um estilo para alterar somente essa parte';}
+  if(hint){const n=Math.max(0,bioSavedSelection.end-bioSavedSelection.start);hint.textContent=n?('Đã chọn '+n+' kí tự'):'Chọn đoạn để đổi kiểu';}
   return bioSavedSelection;
 }
 function openBioFontsPicker(){
@@ -5181,7 +5188,7 @@ function twCaptureSelection(){
 function twUpdateSelectionStatus(){
   const el=document.getElementById('tw-selection-status');if(!el)return;
   const s=twSavedSelection||{start:0,end:0};const count=Math.max(0,s.end-s.start);
-  el.textContent=count>0 ? ('Selecionados '+count+' caracteres • escolha um estilo') : 'Selecione um trecho para estilizar somente essa parte';
+  el.textContent=count>0 ? ('Đã chọn '+count+' kí tự') : 'Chọn đoạn để đổi kiểu';
 }
 function twSnapshot(){return {text:editor.value,start:editor.selectionStart||0,end:editor.selectionEnd||0};}
 function twPushHistory(){
@@ -7327,4 +7334,42 @@ console.log('[FSD Aesthetic DNA]',api.getDiagnostics());
 <h3>Levenshtein Distance có tạo ra font chữ đẹp không?</h3>
 <p>Không. Levenshtein Distance là phương pháp đo khác biệt giữa hai chuỗi. Fonts Chữ Đẹp tạo các biến thể bằng Unicode; Levenshtein nằm ở lớp xử lý và so sánh sequence.</p>
 
-</article></main><footer id="lvt-footer"><a href="/">Levenshtein.net</a><a href="/about.htm">Giới thiệu</a><a href="/privacy.htm">Quyền riêng tư</a></footer></body></html>
+</article></main><footer id="lvt-footer"><a href="/">Levenshtein.net</a><a href="/about.htm">Giới thiệu</a><a href="/privacy.htm">Quyền riêng tư</a></footer><script id="vi-mobile-focus-controller-v1">
+(function(){
+  'use strict';
+  const root=document.getElementById('lf194-root'),editor=document.getElementById('tw-editor');
+  if(!root||!editor)return;
+  const mobile=window.matchMedia('(max-width:768px)');
+  const vv=window.visualViewport;
+  let timer=0,late=0,baseline=0,active=false;
+  function viewportHeight(){return vv?vv.height:window.innerHeight;}
+  function reset(){root.classList.remove('lvt-keyboard-open');root.style.removeProperty('--lvt-editor-fit');}
+  function fit(){
+    if(!active||!mobile.matches||document.activeElement!==editor)return;
+    if(vv&&Math.abs(vv.scale-1)>.03)return;
+    const height=viewportHeight();
+    const keyboard=Math.max(baseline-height,window.innerHeight-height)>90;
+    if(!keyboard)return;
+    const toolbar=root.querySelector('#view-writer .tw-composer-toolbar');
+    const controls=toolbar?toolbar.getBoundingClientRect().height+24:66;
+    root.style.setProperty('--lvt-editor-fit',Math.max(96,Math.min(260,Math.floor(height-controls-24)))+'px');
+    root.classList.add('lvt-keyboard-open');
+    requestAnimationFrame(function(){
+      if(!active||document.activeElement!==editor)return;
+      const top=vv?vv.offsetTop:0;
+      const delta=editor.getBoundingClientRect().top-top-8;
+      if(Math.abs(delta)>5)window.scrollBy({top:delta,left:0,behavior:'instant'});
+    });
+  }
+  function schedule(){clearTimeout(timer);timer=setTimeout(fit,140);}
+  editor.addEventListener('pointerdown',function(){if(!active)baseline=viewportHeight();},{passive:true});
+  editor.addEventListener('focus',function(){
+    if(!mobile.matches)return;
+    baseline=Math.max(baseline,viewportHeight());active=true;schedule();
+    clearTimeout(late);late=setTimeout(fit,420);
+  });
+  editor.addEventListener('blur',function(){active=false;clearTimeout(timer);clearTimeout(late);reset();baseline=0;});
+  if(vv)vv.addEventListener('resize',function(){if(active)schedule();},{passive:true});
+  window.addEventListener('resize',function(){if(active)schedule();},{passive:true});
+})();
+</script></body></html>
