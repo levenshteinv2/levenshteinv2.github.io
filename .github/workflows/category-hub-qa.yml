@@ -1,0 +1,29 @@
+name: 16 category hub acceptance
+on:
+  push:
+    branches: [staging/category-hubs-20261126]
+    paths:
+      - '.github/qa/category_hub_qa.py'
+      - '.github/workflows/category-hub-qa.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.51.0 beautifulsoup4==4.13.3
+      - run: QA_MODE=static python .github/qa/audit.py
+      - run: python -m playwright install --with-deps chromium firefox webkit
+      - run: python -u .github/qa/category_hub_qa.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: category-hubs-qa
+          path: qa-report/
