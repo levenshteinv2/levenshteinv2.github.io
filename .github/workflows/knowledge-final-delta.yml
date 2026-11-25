@@ -1,0 +1,27 @@
+name: Knowledge final delta QA
+on:
+  push:
+    branches: [qa/knowledge-final-delta-20261126]
+    paths:
+      - '.github/workflows/knowledge-final-delta.yml'
+      - '.github/qa/knowledge_final_delta.py'
+permissions:
+  contents: read
+jobs:
+  delta:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.51.0 beautifulsoup4==4.13.3
+      - run: QA_MODE=static python .github/qa/audit.py
+      - run: python -m playwright install --with-deps chromium firefox webkit
+      - run: python -u .github/qa/knowledge_final_delta.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: final-delta-qa
+          path: qa-report/
