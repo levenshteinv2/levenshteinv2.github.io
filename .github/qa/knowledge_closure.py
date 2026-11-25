@@ -34,7 +34,8 @@ for p,s in soups.items():
  if len(can)!=1 or u.scheme!='https' or u.hostname!='www.levenshtein.net' or normalized_path(u.path)!=r or u.query or u.fragment:flag(p,'canonical',url)
  if 'noindex' not in re.split(r'[\s,]+',robots):flag(p,'preview_noindex',robots)
  if len(s.select('h1'))!=1:flag(p,'h1','not exactly one')
- if not s.html or s.html.get('lang','').split('-')[0]!='en':flag(p,'language',s.html.get('lang') if s.html else None)
+ expected_lang='de' if p=='privacy.htm' else 'en'
+ if not s.html or s.html.get('lang','').split('-')[0]!=expected_lang:flag(p,'language',s.html.get('lang') if s.html else None)
  titles[title.casefold()].append(p);descs[desc.casefold()].append(p);canonicals[normalized_path(u.path)].append(p)
  if not 30<=len(title)<=65:flag(p,'title_length_advisory',len(title),False)
  if not 70<=len(desc)<=165:flag(p,'description_length_advisory',len(desc),False)
