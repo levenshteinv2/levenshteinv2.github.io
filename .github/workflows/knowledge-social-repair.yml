@@ -1,0 +1,57 @@
+name: Isolated knowledge metadata repair
+on:
+  push:
+    branches: ['qa/knowledge-social-repair-20261125']
+    paths: ['.github/workflows/knowledge-social-repair.yml']
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair only locked knowledge pages
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          pages=json.loads(Path('.github/qa/pages.json').read_text())
+          assert len(pages)==91 and len(set(pages))==91
+          assert all(re.fullmatch(r'[a-z0-9_-]+\.(html|htm)',p) for p in pages)
+          rx=re.compile(r'<meta\b[^>]*content="[^"]*/null\.gif"[^>]*>',re.I)
+          changes={}
+          removed=0
+          for name in pages:
+              p=Path(name)
+              old=p.read_bytes().decode('utf-8')
+              h,sep,body=old.partition('</head>')
+              assert sep and '</html>' in body,name
+              tags=rx.findall(h)
+              if not tags: continue
+              assert len(tags)==2 and any('property="og:image"' in t for t in tags) and any('name="twitter:image"' in t for t in tags),name
+              n=rx.sub('',h)
+              n=n.replace('<meta name="twitter:card" content="News">','<meta name="twitter:card" content="summary">')
+              typ='article' if re.search(r'"@type":"(?:TechArticle|Article|ScholarlyArticle)"',h) else 'website'
+              n=n.replace('<meta property="og:type" content="News">',f'<meta property="og:type" content="{typ}">')
+              assert not rx.search(n),name
+              changes[name]=(n+sep+body).encode('utf-8')
+              removed+=len(tags)
+          assert len(changes)==67 and removed==134,(len(changes),removed)
+          for name,data in changes.items(): Path(name).write_bytes(data)
+          print(f'PASS: {len(pages)} checked; {len(changes)} changed; {removed} placeholders removed')
+          PY
+          git diff --check
+          python - <<'PY'
+          import subprocess,json
+          from pathlib import Path
+          paths=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          assert len(paths)==67 and paths<=set(json.loads(Path('.github/qa/pages.json').read_text()))
+          print('PASS: 67 allowlisted pages; zero tools or other files changed')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- '*.html' '*.htm'
+          git commit -m 'Repair social metadata on 67 locked knowledge pages'
+          git push origin HEAD
