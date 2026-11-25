@@ -1,0 +1,30 @@
+name: Entity Intelligence WS6 Integration
+on:
+  push:
+    branches: ['audit/entity-knowledge-map-20261125']
+    paths: ['.github/workflows/entity-ws6.yml']
+permissions:
+  contents: write
+jobs:
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install beautifulsoup4==4.13.3
+      - run: python -u .github/knowledge-map/ws6.py
+      - name: Save audit-only results
+        run: |
+          test "$GITHUB_REF_NAME" = 'audit/entity-knowledge-map-20261125'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/knowledge-map/intelligence/ws6/
+          git diff --cached --name-only | grep -v '^.github/knowledge-map/intelligence/ws6/' && exit 1 || true
+          git commit -m 'Save WS6 integration graph and evidence for editorial QA'
+          git push origin HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ws6-integration
+          path: .github/knowledge-map/intelligence/ws6/
+          include-hidden-files: true
