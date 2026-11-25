@@ -1,0 +1,25 @@
+name: Knowledge closure 91-page broad audit
+on:
+  push:
+    branches: [qa/knowledge-closure-20261126]
+    paths:
+      - '.github/qa/knowledge_closure.py'
+      - '.github/workflows/knowledge-closure.yml'
+permissions:
+  contents: read
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install beautifulsoup4==4.13.3
+      - run: python -u .github/qa/knowledge_closure.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: knowledge-closure-report
+          path: qa-report/
