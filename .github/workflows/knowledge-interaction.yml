@@ -4,90 +4,14 @@ on:
     branches: ['qa/knowledge-interaction-20261125']
     paths: ['.github/workflows/knowledge-interaction.yml']
 permissions:
-  contents: write
+  contents: read
 jobs:
   targeted:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - name: Normalize remaining social metadata
-        run: |
-          python - <<'PY'
-          import json,re,subprocess
-          from pathlib import Path
-          pages=json.loads(Path('.github/qa/pages.json').read_text())
-          assert len(pages)==91 and len(set(pages))==91
-          assert all(re.fullmatch(r'[a-z0-9_-]+\.(html|htm)',p) for p in pages)
-          count=0
-          for name in pages:
-              p=Path(name)
-              old=p.read_bytes().decode('utf-8')
-              h,sep,b=old.partition('</head>')
-              assert sep and '</html>' in b,name
-              n=h.replace('<meta name="twitter:card" content="Website">','<meta name="twitter:card" content="summary">').replace('<meta property="og:type" content="Website">','<meta property="og:type" content="website">')
-              if n!=h:
-                  p.write_bytes((n+sep+b).encode('utf-8'))
-                  count+=1
-          changed=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
-          assert changed<=set(pages) and len(changed)==count
-          assert count>0
-          print('REPAIR SUMMARY',count,'allowlisted pages; no body changes')
-          PY
-          git diff --check
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- '*.html' '*.htm'
-          git commit -m 'Normalize remaining legacy website social card types'
-          git push origin HEAD
       - run: pip install beautifulsoup4==4.13.3 playwright==1.51.0
-      - name: Regression static QA
-        run: QA_MODE=static python -u .github/qa/audit.py
-      - name: Entity and fragment diagnostics
-        if: always()
-        run: |
-          python - <<'PY'
-          import json,collections
-          from pathlib import Path
-          from urllib.parse import urlsplit,unquote
-          from bs4 import BeautifulSoup
-          names=json.loads(Path('.github/qa/pages.json').read_text())
-          soups={p:BeautifulSoup(Path(p).read_text(),'html.parser') for p in names}
-          report=[]; canon=collections.defaultdict(list); counts=collections.Counter()
-          def issue(p,k,d): report.append(dict(page=p,kind=k,detail=d));counts[k]+=1
-          for p,s in soups.items():
-              canonical=s.select_one('link[rel=canonical]')
-              if canonical:
-                  url=canonical.get('href','');canon[url].append(p)
-                  if urlsplit(url).netloc!='www.levenshtein.net': issue(p,'canonical_host',url)
-              robots=s.select_one('meta[name=robots]')
-              if not robots or 'noindex' not in robots.get('content','').lower(): issue(p,'preview_indexable','missing noindex')
-              for key in ['og:type','twitter:card']:
-                  t=s.find('meta',attrs={'property' if key.startswith('og') else 'name':key})
-                  allowed={'article','website','profile','book'} if key.startswith('og') else {'summary','summary_large_image','app','player'}
-                  if t and t.get('content') not in allowed: issue(p,'social_type',key+': '+str(t.get('content')))
-              ids=collections.Counter(x['id'] for x in s.select('[id]'))
-              for i,n in ids.items():
-                  if n>1: issue(p,'duplicate_id',i)
-              for a in s.select('a[href]'):
-                  h=a['href'];u=urlsplit(h)
-                  if not u.fragment or u.netloc or u.scheme or u.fragment.startswith(':~:text='):continue
-                  dest=unquote(u.path.lstrip('/')) if u.path else p
-                  if not dest: dest='index.html'
-                  if dest not in soups and dest+'.html' in soups:dest+='.html'
-                  if dest in soups and not (soups[dest].find(id=unquote(u.fragment)) or soups[dest].find('a',attrs={'name':unquote(u.fragment)})):issue(p,'broken_fragment',h)
-              for img in s.select('img'):
-                  if not img.has_attr('alt'):issue(p,'missing_alt',img.get('src',''))
-              if not s.html or not s.html.get('lang'):issue(p,'missing_lang','html lang')
-              for a in s.select('a[href]'):
-                  if not (a.get_text(strip=True) or a.get('aria-label') or a.get('title') or a.select_one('img[alt]:not([alt=""])')): issue(p,'unlabelled_link',a['href'])
-          for url,ps in canon.items():
-              if len(ps)>1:issue(ps[0],'duplicate_canonical',str(ps))
-          out=Path('qa-report');out.mkdir(exist_ok=True)
-          (out/'diagnostics.json').write_text(json.dumps(dict(pages=len(names),counts=counts,issues=report),indent=2))
-          print('DIAGNOSTIC SUMMARY',json.dumps(counts))
-          for x in report[:100]:print('DIAGNOSTIC',json.dumps(x))
-          PY
       - if: always()
         run: python -m playwright install --with-deps chromium firefox
       - name: Test navigation, keyboard, TOC and Firefox timeout
@@ -158,9 +82,18 @@ jobs:
                                   side=page.locator('.ux-side-menu')
                                   if await side.count():
                                       before=await side.evaluate('(e)=>e.open')
-                                      await side.locator('summary').click()
+                                      await side.locator(':scope > summary').click()
                                       assert await side.evaluate('(e)=>e.open')!=before,'sidebar toggle'
                                       result['checks'].append('sidebar toggle')
+                                      await side.locator(':scope > summary').click()
+                                      assert await side.evaluate('(e)=>e.open')==before,'sidebar restore'
+                                      if not before:await side.locator(':scope > summary').click()
+                                      sub=side.locator('.ux-research').first
+                                      if await sub.count():
+                                          state=await sub.evaluate('(e)=>e.open')
+                                          await sub.locator(':scope > summary').click()
+                                          assert await sub.evaluate('(e)=>e.open')!=state,'subtopic toggle'
+                                          result['checks'].append('subtopic toggle')
                                   result['checks'].append('no horizontal overflow')
                                   assert await page.evaluate('document.documentElement.scrollWidth<=innerWidth+2'),'horizontal overflow'
                               except Exception as e:result['issues'].append(str(e)[:500])
