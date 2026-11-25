@@ -1,18 +1,30 @@
-name: Mexico browser regression
+name: Mexico deployed HTTP and browser check
 on:
   push:
     branches: ['qa/mx-2026-11-25']
 permissions:
   contents: read
 jobs:
-  browser:
+  live:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+      - name: Verify exact deployed route and bytes
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --max-time 30 -w 'HTTP %{http_code} EFFECTIVE %{url_effective}\n' https://levenshteinv2.github.io/letras-bonitas -o /tmp/mx-live.html
+          git hash-object /tmp/mx-live.html
+          cmp letras-bonitas.html /tmp/mx-live.html
+          for asset in unicode-engine.js tool-core-mx3.js text-writer-mx3.js aesthetic-engine.js localizacao-esmx2.js jszip-3.10.1.js; do
+            dir=assets/tools/mx/v20.9.7-opt2-candidate
+            curl --fail --silent --show-error --location --max-time 30 "https://levenshteinv2.github.io/$dir/$asset" -o "/tmp/$asset"
+            cmp "$dir/$asset" "/tmp/$asset"
+            echo "MATCH $asset"
+          done
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm install --no-save --no-package-lock playwright@1.51.1
       - run: npx playwright install --with-deps chromium
-      - run: node tests/mx-browser-regression.mjs
+      - run: node tests/mx-live-smoke.mjs
