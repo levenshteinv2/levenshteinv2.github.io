@@ -1,0 +1,26 @@
+name: WS8 non-DOI reference verification
+on:
+  push:
+    branches: [audit/entity-knowledge-map-20261125]
+    paths:
+      - '.github/knowledge-map/ws8_non_doi_audit.py'
+      - '.github/workflows/ws8-non-doi-audit.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: b463ce103874b760d5098ef55cc437b248556fc3
+          path: site
+      - run: python -u .github/knowledge-map/ws8_non_doi_audit.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: non-doi-reference-audit
+          path: qa-report/
+          retention-days: 14
