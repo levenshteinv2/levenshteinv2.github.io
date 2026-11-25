@@ -50,7 +50,7 @@ for name in (pages if mode=='static' else []):
  results.append(dict(page=name,passed=len(issues)==before));checkpoint()
 async def run():
  async with async_playwright() as pw:
-  for engine,sizes in [(engine,sizes)]:
+  for _ in range(1):
    browser=await getattr(pw,engine).launch()
    sem=asyncio.Semaphore(4)
    async def check(name,w,h):
@@ -77,7 +77,12 @@ async def run():
       checkpoint()
       await asyncio.wait_for(context.close(),timeout=5)
    for n in pages:
-    await asyncio.gather(*(asyncio.wait_for(check(n,w,h),timeout=25) for w,h in sizes),return_exceptions=True)
+    batch=await asyncio.gather(*(asyncio.wait_for(check(n,w,h),timeout=25) for w,h in sizes),return_exceptions=True)
+    for (w,h),value in zip(sizes,batch):
+     if isinstance(value,BaseException):
+      issue(n,engine+' '+str(w),repr(value))
+      if not any(r.get('page')==n and r.get('width')==w for r in results): results.append(dict(page=n,engine=engine,width=w,passed=False))
+    checkpoint()
    await browser.close()
 try:
  if mode=='browser': asyncio.run(run())
