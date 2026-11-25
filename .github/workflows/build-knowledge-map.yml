@@ -1,0 +1,29 @@
+name: Build knowledge architecture and internal link maps
+on:
+  push:
+    branches: ['audit/entity-knowledge-map-20261125']
+    paths: ['.github/workflows/build-knowledge-map.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install beautifulsoup4==4.13.3
+      - run: python -u .github/knowledge-map/build.py
+      - name: Save map records to isolated audit branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/knowledge-map/
+          git commit -m 'Save knowledge architecture, page missions and observed link graph'
+          git push origin HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: levenshtein-entity-knowledge-maps
+          path: .github/knowledge-map/
+          include-hidden-files: true
+          retention-days: 30
