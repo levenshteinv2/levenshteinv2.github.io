@@ -1,0 +1,67 @@
+name: Russian live Preview acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ru-preview-acceptance.yml'
+permissions:
+  contents: read
+jobs:
+  live-ru:
+    if: github.head_ref == 'preview/ru-2026-11-25' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify live HTTP byte equality and MIME
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib, time, urllib.request
+          root=pathlib.Path('.')
+          files=[root/'krasivyy-shrift.html']+sorted(p for p in (root/'assets/tools/ru/v1').rglob('*') if p.is_file())
+          assert len(files)==26
+          origin='https://levenshteinv2.github.io/'
+          def verify(p):
+              route='krasivyy-shrift' if p.name=='krasivyy-shrift.html' else p.as_posix()
+              req=urllib.request.Request(origin+route,headers={'User-Agent':'Levenshtein V2 acceptance QA','Accept-Encoding':'identity','Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=20) as r:
+                  data=r.read()
+                  assert r.status==200 and r.geturl().startswith(origin)
+                  mime=r.headers.get_content_type()
+                  if p.suffix=='.woff2': assert mime=='font/woff2',mime
+                  if p.suffix=='.js': assert mime in ('application/javascript','text/javascript'),mime
+                  assert hashlib.sha256(data).digest()==hashlib.sha256(p.read_bytes()).digest(),route
+              print('HTTP_BYTE_PASS',route,len(data),mime,flush=True)
+          for n in range(15):
+              try: verify(files[0]);break
+              except Exception as e:
+                  print('Waiting for Pages propagation:',repr(e),flush=True)
+                  if n==14:raise
+                  time.sleep(10)
+          for p in files[1:]:verify(p)
+          print('RU_LIVE_HTTP 26/26 PASS release f630405b639bf921160fbda5747ff940f48c2333')
+          PY
+      - name: Prepare browser
+        run: |
+          npm install --no-save playwright@1.51.1
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-dejavu fonts-noto-core
+          python -m pip install Pillow pypdf
+      - name: Live functional and export acceptance
+        env:
+          QA_ORIGIN: https://levenshteinv2.github.io
+        run: |
+          export CHROME_BIN="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          node .github/ru-preview-suite.mjs . "$RUNNER_TEMP/qa-ru-live"
+          python .github/ru-preview-exports.py "$RUNNER_TEMP/qa-ru-live"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ru-live-acceptance
+          path: ${{ runner.temp }}/qa-ru-live/
+          retention-days: 7
