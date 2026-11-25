@@ -1,0 +1,31 @@
+name: WS8 knowledge DOI reconciliation
+on:
+  push:
+    branches: [audit/entity-knowledge-map-20261125]
+    paths:
+      - '.github/knowledge-map/ws8_doi_audit.py'
+      - '.github/workflows/ws8-doi-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ws8-doi-audit
+  cancel-in-progress: true
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: 86f9ad841ffc268c3397ba97e2040dcf00314443
+          path: site
+      - run: python -m py_compile .github/knowledge-map/ws8_doi_audit.py
+      - run: python -u .github/knowledge-map/ws8_doi_audit.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ws8-doi-report
+          path: ws8-doi-report/
+          retention-days: 14
