@@ -1,0 +1,35 @@
+{
+  "checks": 27783,
+  "failures": [],
+  "operation_counts": [
+    {
+      "n": 128,
+      "k": 1,
+      "compact_state_writes": 385,
+      "old_full_row_resets": 16512
+    },
+    {
+      "n": 256,
+      "k": 1,
+      "compact_state_writes": 769,
+      "old_full_row_resets": 65792
+    },
+    {
+      "n": 512,
+      "k": 1,
+      "compact_state_writes": 1537,
+      "old_full_row_resets": 262656
+    },
+    {
+      "n": 1024,
+      "k": 1,
+      "compact_state_writes": 3073,
+      "old_full_row_resets": 1049600
+    }
+  ],
+  "snapshot": "528b3f6539411d1629164ddd7460d6a4ac0fafb3",
+  "source": "/ukkonen-algorithm#ux-section-57",
+  "method": "Compact Map-based prototype compared against ordinary row DP over all ordered binary string pairs of lengths 0–5 and k=0–6. State writes are instrumented, not elapsed time. Previous row clearing count is analytical from source listing. Prototype is not production code.",
+  "reproduce_js": "function d(a,b){let r=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let q=[i];for(let j=1;j<=b.length;j++)q[j]=Math.min(r[j]+1,q[j-1]+1,r[j-1]+Number(a[i-1]!==b[j-1]));r=q}return r[b.length]}\n\nfunction band(a,b,k,stats={writes:0}){if(Math.abs(a.length-b.length)>k)return k+1;let prev=new Map();for(let j=0;j<=Math.min(b.length,k);j++){prev.set(j,j);stats.writes++}for(let i=1;i<=a.length;i++){let cur=new Map();for(let j=Math.max(0,i-k);j<=Math.min(b.length,i+k);j++){cur.set(j,j===0?i:Math.min(k+1,(prev.get(j)??k+1)+1,(cur.get(j-1)??k+1)+1,(prev.get(j-1)??k+1)+Number(a[i-1]!==b[j-1])));stats.writes++}prev=cur}return prev.get(b.length)??k+1}\n\nfunction run(){let w=[\"\"];for(let n=1;n<=5;n++)for(let j=0;j<2**n;j++)w.push(j.toString(2).padStart(n,\"0\"));let checks=0,failures=[];for(let a of w)for(let b of w)for(let k=0;k<=6;k++){checks++;let actual=band(a,b,k),expected=Math.min(d(a,b),k+1);if(actual!==expected)failures.push({a,b,k,actual,expected})}let operation_counts=[128,256,512,1024].map(n=>{let stats={writes:0};band(\"a\".repeat(n),\"a\".repeat(n),1,stats);return {n,k:1,compact_state_writes:stats.writes,old_full_row_resets:n*(n+1)}});return {checks,failures,operation_counts}}\nconsole.log(JSON.stringify(run(),null,2));",
+  "deployment": "NONE"
+}
