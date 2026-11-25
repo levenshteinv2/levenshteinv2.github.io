@@ -1,16 +1,18 @@
-name: Japanese preview exact font transfer
+name: Japanese preview font reconstruction and fresh QA
 on:
   pull_request:
     branches: [main]
     paths:
       - '.github/workflows/ja-preview-transfer.yml'
+      - '.github/ja-preview-transfer.py'
+      - 'assets/tools/ja/**'
 permissions:
   contents: write
 jobs:
   exact-fonts:
     if: github.head_ref == 'preview/ja-2026-11-25' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
-    timeout-minutes: 7
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,14 +20,33 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Reconstruct and check exact licensed font blobs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reconstruct deterministic licensed font assets
         run: |
-          python -m pip install fonttools==4.68.0 brotli==1.2.1 zopfli==0.4.3
+          python -m pip install fonttools==4.68.0 brotli==1.2.1 zopfli==0.4.3 Pillow pypdf
           python .github/ja-preview-transfer.py assets/tools/ja/v1/fonts
-      - name: Persist font-only scoped files
+      - name: Prepare browser
+        run: |
+          npm install --no-save playwright@1.51.1
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Fresh QA on exact staged candidate
+        run: |
+          export CHROME_BIN="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          node .github/ja-preview-suite.mjs . "$RUNNER_TEMP/qa-ja"
+          python .github/ja-preview-exports.py "$RUNNER_TEMP/qa-ja"
+      - name: Persist font-only scoped files after PASS
         run: |
           set -euo pipefail
           git add -- assets/tools/ja/v1/fonts
           git diff --cached --quiet && exit 0
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Reconstruct exact tested JA WOFF2 and OFL files'
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Persist freshly QA-tested deterministic JA WOFF2 and OFL'
           git push origin HEAD:refs/heads/preview/ja-2026-11-25
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ja-preview-fresh-qa
+          path: ${{ runner.temp }}/qa-ja/
+          retention-days: 7
