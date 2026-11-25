@@ -1,0 +1,1865 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations</title><link rel="canonical" href="https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation"><meta name="author" content="www.levenshtein.net"><meta property="og:type" content="News"><meta property="og:site_name" content="www.levenshtein.net"><meta property="og:title" content="Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations"><meta property="og:url" content="https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation"><meta property="og:image" content="https://www.levenshtein.net/images/news/null.gif"><meta property="og:description" content="A rigorous guide to Translation Edit Rate for machine translation, covering TER mathematics, block shifts, TERCOM alignment, HTER, multiple references, preprocessing, post-editing effort, modern MT metrics, statistical testing, and limitations."><meta name="twitter:card" content="News"><meta name="twitter:site" content="@www.levenshtein.net"><meta name="twitter:creator" content="@www.levenshtein.net"><meta name="twitter:domain" content="www.levenshtein.net"><meta name="twitter:url" content="https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation"><meta name="twitter:title" content="Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations"><meta name="twitter:description" content="A rigorous guide to Translation Edit Rate for machine translation, covering TER mathematics, block shifts, TERCOM alignment, HTER, multiple references, preprocessing, post-editing effort, modern MT metrics, statistical testing, and limitations."><meta name="twitter:image" content="https://www.levenshtein.net/images/news/null.gif"><meta name="description" content="A rigorous guide to Translation Edit Rate for machine translation, covering TER mathematics, block shifts, TERCOM alignment, HTER, multiple references, preprocessing, post-editing effort, modern MT metrics, statistical testing, and limitations."><link rel="alternate" hreflang="en" href="https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://www.levenshtein.net/#website","url":"https://www.levenshtein.net/","name":"Levenshtein.net","about":[{"@id":"https://www.levenshtein.net/#levenshtein-distance"},{"@id":"https://www.levenshtein.net/#levenshtein-algorithm"}]},{"@type":"WebPage","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page","url":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation","name":"Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations","description":"A rigorous guide to Translation Edit Rate for machine translation, covering TER mathematics, block shifts, TERCOM alignment, HTER, multiple references, preprocessing, post-editing effort, modern MT metrics, statistical testing, and limitations.","inLanguage":"en","isPartOf":{"@id":"https://www.levenshtein.net/language-processing#collection"},"mainEntity":{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept"},"about":[{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept"},{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#machine-translation-evaluation"},{"@id":"https://www.levenshtein.net/#levenshtein-distance"}],"breadcrumb":{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#breadcrumb"}},{"@type":"TechArticle","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article","url":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation","headline":"Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations","description":"A rigorous guide to Translation Edit Rate for machine translation, covering TER mathematics, block shifts, TERCOM alignment, HTER, multiple references, preprocessing, post-editing effort, modern MT metrics, statistical testing, and limitations.","inLanguage":"en","mainEntityOfPage":{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page"},"isPartOf":{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page"},"about":[{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept"},{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#machine-translation-evaluation"},{"@id":"https://www.levenshtein.net/#levenshtein-distance"}],"mentions":[{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#shift-operation"},{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#hter"},{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#terp"},{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#reference-bias"},{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#post-editing-effort"}],"citation":[{"@id":"https://aclanthology.org/2006.amta-papers.25/"},{"@id":"https://doi.org/10.1007/s10590-009-9062-9"},{"@id":"https://doi.org/10.1007/s10590-009-9063-8"},{"@id":"https://aclanthology.org/E06-1031/"},{"@id":"https://aclanthology.org/W05-0903/"},{"@id":"https://doi.org/10.3115/1073083.1073135"},{"@id":"https://aclanthology.org/W05-0909/"},{"@id":"https://doi.org/10.18653/v1/W15-3049"},{"@id":"https://doi.org/10.18653/v1/W18-6319"},{"@id":"https://doi.org/10.18653/v1/2020.emnlp-main.213"},{"@id":"https://doi.org/10.18653/v1/2024.wmt-1.35"},{"@id":"https://aclanthology.org/2010.jec-1.5/"},{"@id":"https://aclanthology.org/2012.amta-wptp.2/"}]},{"@type":"DefinedTerm","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept","name":"Translation Edit Rate","alternateName":"TER","description":"A reference-based machine translation evaluation metric that measures word-level insertion, deletion, substitution, and block-shift edits required to transform a translation hypothesis toward a reference translation.","mainEntityOfPage":{"@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page"}},{"@type":"DefinedTerm","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#machine-translation-evaluation","name":"Machine Translation Evaluation","alternateName":"MT Evaluation"},{"@type":"DefinedTerm","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#shift-operation","name":"TER Shift Operation","description":"An edit operation in Translation Edit Rate that moves a contiguous sequence of hypothesis words to another position."},{"@type":"DefinedTerm","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#hter","name":"Human-Targeted Translation Edit Rate","alternateName":"HTER","description":"A Translation Edit Rate variant in which the target reference is produced by minimally post-editing the machine translation hypothesis."},{"@type":"DefinedTerm","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#terp","name":"TER-Plus","alternateName":"TERp","description":"An extension of Translation Edit Rate that incorporates additional matching mechanisms including stems, synonyms, paraphrases, and tunable edit costs."},{"@type":"DefinedTerm","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#reference-bias","name":"Reference Bias in Machine Translation Evaluation"},{"@type":"DefinedTerm","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#post-editing-effort","name":"Machine Translation Post-Editing Effort"},{"@type":"ScholarlyArticle","@id":"https://aclanthology.org/2006.amta-papers.25/","url":"https://aclanthology.org/2006.amta-papers.25/","name":"A Study of Translation Edit Rate with Targeted Human Annotation","datePublished":"2006","author":[{"@type":"Person","name":"Matthew Snover"},{"@type":"Person","name":"Bonnie Dorr"},{"@type":"Person","name":"Rich Schwartz"},{"@type":"Person","name":"Linnea Micciulla"},{"@type":"Person","name":"John Makhoul"}]},{"@type":"ScholarlyArticle","@id":"https://doi.org/10.1007/s10590-009-9062-9","name":"TER-Plus: paraphrase, semantic, and alignment enhancements to Translation Edit Rate","datePublished":"2009"},{"@type":"ScholarlyArticle","@id":"https://doi.org/10.1007/s10590-009-9063-8","name":"Edit distances with block movements and error rate confidence estimates","datePublished":"2009"},{"@type":"ScholarlyArticle","@id":"https://aclanthology.org/E06-1031/","url":"https://aclanthology.org/E06-1031/","name":"CDER: Efficient MT Evaluation Using Block Movements","datePublished":"2006"},{"@type":"ScholarlyArticle","@id":"https://aclanthology.org/W05-0903/","url":"https://aclanthology.org/W05-0903/","name":"Preprocessing and Normalization for Automatic Evaluation of Machine Translation","datePublished":"2005"},{"@type":"ScholarlyArticle","@id":"https://doi.org/10.3115/1073083.1073135","name":"BLEU: a Method for Automatic Evaluation of Machine Translation","datePublished":"2002"},{"@type":"ScholarlyArticle","@id":"https://aclanthology.org/W05-0909/","url":"https://aclanthology.org/W05-0909/","name":"METEOR: An Automatic Metric for MT Evaluation with Improved Correlation with Human Judgments","datePublished":"2005"},{"@type":"ScholarlyArticle","@id":"https://doi.org/10.18653/v1/W15-3049","name":"chrF: character n-gram F-score for automatic MT evaluation","datePublished":"2015"},{"@type":"ScholarlyArticle","@id":"https://doi.org/10.18653/v1/W18-6319","name":"A Call for Clarity in Reporting BLEU Scores","datePublished":"2018"},{"@type":"ScholarlyArticle","@id":"https://doi.org/10.18653/v1/2020.emnlp-main.213","name":"COMET: A Neural Framework for MT Evaluation","datePublished":"2020"},{"@type":"ScholarlyArticle","@id":"https://doi.org/10.18653/v1/2024.wmt-1.35","name":"MetricX-24: The Google Submission to the WMT 2024 Metrics Shared Task","datePublished":"2024"},{"@type":"ScholarlyArticle","@id":"https://aclanthology.org/2010.jec-1.5/","url":"https://aclanthology.org/2010.jec-1.5/","name":"Estimating Machine Translation Post-Editing Effort with HTER","datePublished":"2010"},{"@type":"ScholarlyArticle","@id":"https://aclanthology.org/2012.amta-wptp.2/","url":"https://aclanthology.org/2012.amta-wptp.2/","name":"Post-editing time as a measure of cognitive effort","datePublished":"2012"},{"@type":"BreadcrumbList","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.levenshtein.net/"},{"@type":"ListItem","position":2,"name":"Applications","item":"https://www.levenshtein.net/applications"},{"@type":"ListItem","position":3,"name":"Language Processing and Document Evaluation","item":"https://www.levenshtein.net/language-processing"},{"@type":"ListItem","position":4,"name":"Translation Edit Rate and MT Evaluation","item":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation"}]}]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"NewsArticle","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation"},"headline":"Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations","image":{"@type":"ImageObject","url":"https://www.levenshtein.net/images/news/lg_null.gif","height":600,"width":800},"datePublished":"8/29/2026 5:07:00 PM","dateModified":"8/29/2026 5:07:00 PM","author":{"@type":"Organization","name":" www.levenshtein.net"},"publisher":{"@type":"Organization","name":" www.levenshtein.net","logo":{"@type":"ImageObject","url":"https://www.levenshtein.net/images/icon/share.png","width":300,"height":300}},"description":"A rigorous guide to Translation Edit Rate for machine translation, covering TER mathematics, block shifts, TERCOM alignment, HTER, multiple references, preprocessing, post-editing effort, modern MT metrics, statistical testing, and limitations."}</script><style>*{box-sizing:border-box}body{margin:0;background:#fff;color:#18232e;font:17px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:#185a92;text-underline-offset:.15em;overflow-wrap:anywhere}header,footer{background:#f4f6f8;border-bottom:1px solid #e3e8ed;padding:1rem 1.25rem}header a{font-weight:700}header nav,footer nav{display:flex;flex-wrap:wrap;gap:.5rem 1.1rem}main{max-width:1100px;margin:0 auto;padding:1.5rem 1.2rem 3rem;overflow-wrap:anywhere}h1,h2,h3,h4{line-height:1.24;color:#172b3d;margin:1.6em 0 .55em}h1{font-size:clamp(1.8rem,4vw,2.65rem);margin-top:.5em}h2{font-size:1.55rem}h3{font-size:1.25rem}p,ul,ol{margin:.65em 0}pre{white-space:pre;overflow:auto;background:#f3f5f7;border:1px solid #dfe5eb;border-radius:5px;padding:1rem;line-height:1.5;font-size:.9rem}code{font-family:ui-monospace,Consolas,monospace}table{display:block;max-width:100%;overflow:auto;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid #cbd5df;padding:.5rem .7rem;text-align:left;vertical-align:top}th{background:#f1f5f8}img,svg{max-width:100%;height:auto}blockquote{margin:1rem 0;border-left:3px solid #849bb0;padding:.5rem 1rem;background:#f5f7f9}aside, .lv-panel{margin-top:2rem;border-top:1px solid #dfe5eb;padding-top:1rem}nav ul,nav ol{display:flex;flex-wrap:wrap;gap:.4rem 1rem;list-style:none;padding:0}footer{font-size:.9rem} @media(max-width:600px){body{font-size:16px}main{padding:1rem .9rem 2rem}h2{font-size:1.35rem}}</style></head><body><header><a href="/">Levenshtein.net</a><nav aria-label="Main navigation"><a href="/">Levenshtein-Algorithm</a><a href="/text-tools">Text Tools</a><a href="/fancy-text-generator">EN Fancy Text Generator Create fancy text with a free font generator. Generate fancy fonts, stylish text and copy-paste Unicode styles for bios, usernames and social media.</a><a href="/schriftgenerator">DE Schriftgenerator Kostenloser Schriftgenerator für schöne Schriftarten und Schriften online. Erstelle Unicode-Schriftstile zum Kopieren für Namen, Profile und Social Media.</a><a href="/generador-de-letras">ES Generador De Letras Generador de letras y creador de letras para copiar y pegar. Crea texto personalizado con estilos Unicode, letras bonitas, símbolos y diferentes diseños.</a><a href="/letras-diferentes">PT Letras Diferentes Crie letras diferentes, fontes de letras, letras bonitas e personalizadas para copiar e colar com estilos Unicode para nomes, perfis e redes sociais.</a><a href="/font-henkan">JA フォント変換 無料のフォント変換ツール。英数字をおしゃれ文字やUnicodeスタイルに変換してコピペできます。記号や特殊文字も追加して名前やSNSを装飾できます。</a><a href="/krasivyy-shrift">RU Красивый шрифт Красивый шрифт онлайн: создавайте красивые шрифты, красивые буквы и стильный текст для копирования. Unicode-стили, символы и оформление без установки.</a><a href="/ki-tu-dac-biet">VI Fonts Chữ Đẹp Tạo font chữ đẹp, chữ kiểu và đổi font chữ online với 300 kiểu Unicode, 3418 kí tự &amp; icon. Sao chép cho Facebook, bio, tên game và văn bản.</a><a href="/letras-bonitas">ES Letras Bonitas Crea letras bonitas, tipos de letras y fuentes de letras para copiar y pegar. Convierte tu texto con estilos Unicode, símbolos y diseños personalizados.</a><a href="/yazi-stilleri">TR Yazı Stilleri Yazı stilleri, şekilli yazı ve farklı yazı tipleri oluşturun. Metninizi Unicode stillerine dönüştürün; Instagram, profil ve biyografiler için kopyalayın.</a><a href="/font-style">EN Font Style Create font styles with 300 Unicode text styles and 3418 symbols. Copy and paste stylish fonts for Instagram, bios, gaming names and social profiles.</a><a href="/te-shu-zi-ti">ZH 特殊字體 免費產生特殊字體、英文字體與特殊文字，提供 300 種 Unicode 文字樣式及 3418 個符號，可複製貼上到 Instagram、遊戲名稱、個人簡介與社群平台。</a><a href="/caratteri-speciali">IT Caratteri Speciali Crea caratteri speciali, font e scritte particolari con 300 stili Unicode e 3418 simboli. Copia e incolla testo per Instagram, bio, nomi di gioco e social.</a><a href="/akson-phiset">TH อักษรพิเศษ สร้างอักษรพิเศษ ตัวอักษรพิเศษ และข้อความสวยๆ ด้วย 300 สไตล์ Unicode และ 3418 สัญลักษณ์ คัดลอกไปใช้กับ Instagram เกม Bio และโซเชียลได้ทันที</a><a href="/font-aesthetic">ID Font Aesthetic Buat font aesthetic, aesthetic font dan teks aesthetic dengan 300 gaya Unicode dan 3418 simbol. Salin untuk Instagram, bio, nama game dan media sosial.</a><a href="/lettertypes">NL Lettertypes Maak lettertypes, mooie letters en sierletters met 300 Unicode-tekststijlen en 3418 symbolen. Kopieer voor Instagram, bio&#x27;s, gamenamen en social media.</a><a href="/police-d-ecriture">FR Police d&#x27;Écriture Créez une police d&#x27;écriture, des écritures spéciales et du texte stylé avec 300 styles Unicode et 3418 symboles. Copiez pour Instagram, bios, jeux et réseaux sociaux.</a><a href="/generator-czcionek">PL Generator Czcionek Twórz ładne i ozdobne czcionki dzięki 300 stylom Unicode i 3418 symbolom. Kopiuj tekst do Instagrama, Facebooka, bio, nazw graczy i mediów społecznościowych.</a><a href="/unicode-text-tools">View all Unicode Text Tools</a><a href="/levenshtein_search.htm">Fault-tolerant search</a><a href="/levenshtein_implementation.htm">&lt;/&gt; Implementation</a></nav></header><main>
+<div class="lv-layout">
+<div class="lv-content">
+<div class="container clearfix">
+<nav aria-label="Breadcrumb" class="lv-crumbs">
+<ol><ul class="breadcrumb"><li><a href="/"><span>Home</span></a></li><li><a href="/applications"><span>Applications</span></a></li><li><a href="/language-processing"><span>Language Processing</span></a></li></ul></ol>
+</nav>
+<div class="article mb-5 highlight">
+<h1 class="h3 article-title">Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations</h1>
+<hr/>
+<div class="article-body">
+<h2>Translation Edit Rate and Machine Translation Evaluation</h2>
+<p>Translation Edit Rate (TER) is a reference-based metric for machine translation (MT) that estimates how much word-level editing is required to transform a system translation into a reference translation. It extends ordinary word-level <a href="/">Levenshtein distance</a> by adding a fourth operation: a shift of a contiguous sequence of words.</p>
+<p>The basic model is:</p>
+<pre>
+machine translation hypothesis
+        |
+        v
+insert words
+delete words
+substitute words
+shift word blocks
+        |
+        v
+reference translation
+</pre>
+<p>Lower TER generally means that fewer permitted edits separate the hypothesis from the reference. But TER must not be interpreted as a direct measurement of meaning, factual correctness, fluency, safety, or actual human editing time. It measures a structured relationship between particular textual realizations.</p>
+<p>The crucial boundary is:</p>
+<pre>
+surface edit similarity
+!=
+translation quality
+!=
+semantic equivalence.
+</pre>
+<h2>1. Formal definition of Translation Edit Rate</h2>
+<p>Let the MT hypothesis be:</p>
+<pre>
+H = (h1, h2, ..., hM)
+</pre>
+<p>and a reference translation be:</p>
+<pre>
+R = (r1, r2, ..., rN).
+</pre>
+<p>TER permits four principal operations:</p>
+<ul>
+<li>insertion of one word;</li>
+<li>deletion of one word;</li>
+<li>substitution of one word;</li>
+<li>shift of one contiguous block of hypothesis words.</li>
+</ul>
+<p>Under the standard formulation, each operation has unit cost.</p>
+<pre>
+        I + D + S + Sh
+TER = ----------------
+              N
+</pre>
+<p>where:</p>
+<ul>
+<li><code>I</code> = number of insertions;</li>
+<li><code>D</code> = number of deletions;</li>
+<li><code>S</code> = number of substitutions;</li>
+<li><code>Sh</code> = number of accepted block shifts;</li>
+<li><code>N</code> = reference length in words.</li>
+</ul>
+<p>Matthew Snover, Bonnie Dorr, Rich Schwartz, Linnea Micciulla, and John Makhoul introduced TER in the 2006 paper <a href="https://aclanthology.org/2006.amta-papers.25/">A Study of Translation Edit Rate with Targeted Human Annotation</a>.</p>
+<h2>2. Relationship to Levenshtein distance</h2>
+<p>If block shifts are disabled, the central TER alignment reduces to word-level Levenshtein distance:</p>
+<pre>
+insert
+delete
+substitute.
+</pre>
+<p>TER adds:</p>
+<pre>
+move contiguous word block.
+</pre>
+<p>Thus TER can be viewed conceptually as:</p>
+<pre>
+word-level edit distance
++
+translation-oriented reordering operation.
+</pre>
+<p>This is a major difference from <a href="/word-error-rate-and-asr-evaluation">word error rate</a>, where large reorderings are ordinarily represented through sequences of insertion, deletion, and substitution operations.</p>
+<h2>3. Why machine translation needs a reordering operation</h2>
+<p>Translation frequently changes phrase order without changing the intended proposition.</p>
+<pre>
+REFERENCE:
+I saw him yesterday at the station
+
+HYPOTHESIS:
+Yesterday I saw him at the station
+</pre>
+<p>Ordinary sequential edit distance can over-penalize this movement. TER can instead treat <code>yesterday</code> as one moved block.</p>
+<p>The modeling assumption is:</p>
+<pre>
+moving already-correct material
+should sometimes cost less
+than deleting and recreating it.
+</pre>
+<h2>4. TER shift is not Damerau transposition</h2>
+<p>A TER shift must not be confused with an adjacent transposition in <a href="/damerau-levenshtein-distance">Damerau-Levenshtein distance</a>.</p>
+<p>An adjacent transposition is:</p>
+<pre>
+A B
+-&gt;
+B A
+</pre>
+<p>A TER shift can move an entire contiguous block:</p>
+<pre>
+A B [C D E] F G
+-&gt;
+[C D E] A B F G.
+</pre>
+<p>Therefore:</p>
+<pre>
+TER block shift
+!=
+adjacent-character transposition.
+</pre>
+<h2>5. Basic worked example</h2>
+<pre>
+REF:
+the committee approved the proposal
+
+HYP:
+the committee accepted proposal
+</pre>
+<p>A plausible alignment contains:</p>
+<pre>
+approved -&gt; accepted    substitution
+missing "the"           deletion relative to reference alignment
+</pre>
+<p>Using the usual hypothesis-to-reference edit terminology:</p>
+<pre>
+S = 1
+D = 1
+I = 0
+Sh = 0
+N = 5
+</pre>
+<p>so:</p>
+<pre>
+TER = 2 / 5
+    = 0.40
+    = 40%.
+</pre>
+<p>The metric treats <code>approved</code> and <code>accepted</code> as different lexical tokens even if they may be semantically close in context.</p>
+<h2>6. Worked reordering example</h2>
+<pre>
+REF:
+we will discuss the proposal tomorrow
+
+HYP:
+tomorrow we will discuss the proposal
+</pre>
+<p>If TER recognizes <code>tomorrow</code> as a valid one-block shift:</p>
+<pre>
+Sh = 1
+I  = 0
+D  = 0
+S  = 0
+N  = 6
+</pre>
+<p>then:</p>
+<pre>
+TER = 1 / 6
+    ≈ 16.67%.
+</pre>
+<p>Ordinary word-level Levenshtein distance can assign a larger cost because it has no block-move primitive.</p>
+<h2>7. TER is not computationally just Levenshtein plus a fourth DP transition</h2>
+<p>Insertion, deletion, and substitution fit directly into the standard two-dimensional dynamic program. Arbitrary block movement does not.</p>
+<p>Practical TER therefore uses constrained shift candidates and a heuristic search rather than solving unrestricted block-movement distance globally.</p>
+<pre>
+conceptual objective:
+few edits including shifts
+
+practical TER:
+constrained / greedy shift search
++
+exact ordinary edit-distance alignment.
+</pre>
+<p>This distinction is discussed in Leusch and Ney, <a href="https://doi.org/10.1007/s10590-009-9063-8">Edit distances with block movements and error rate confidence estimates</a>.</p>
+<h2>8. Conceptual TER search procedure</h2>
+<pre>
+function ter_edits(hypothesis, reference):
+
+    h = hypothesis
+    shifts = 0
+
+    repeat:
+
+        generate valid shift candidates
+
+        select a shift
+        that reduces ordinary
+        word edit distance most
+
+        if no useful shift:
+            break
+
+        apply shift
+
+        shifts += 1
+
+    residual =
+        word_levenshtein(
+            h,
+            reference
+        )
+
+    return
+        shifts + residual
+</pre>
+<p>This represents the architecture, not a byte-for-byte implementation of TERCOM.</p>
+<h2>9. Dynamic programming inside TER</h2>
+<p>After the current word order is fixed, ordinary edit distance uses the familiar recurrence behind the <a href="/wagner-fischer-algorithm">Wagner-Fischer algorithm</a>.</p>
+<pre>
+d[0][0] = 0
+d[i][0] = i
+d[0][j] = j
+
+cost =
+    0 if hi = rj
+    1 otherwise
+
+d[i][j] =
+min(
+    d[i-1][j] + 1,
+    d[i][j-1] + 1,
+    d[i-1][j-1] + cost
+)
+</pre>
+<h2>10. Shift eligibility is part of the metric</h2>
+<p>TER does not move arbitrary semantically related phrases anywhere it wishes. Practical implementations restrict shift candidates according to lexical matches and alignment-related conditions.</p>
+<p>Therefore a TER score depends on:</p>
+<pre>
+edit costs
++
+shift eligibility
++
+shift search
++
+tokenization
++
+normalization.
+</pre>
+<h2>11. One shift may move many words</h2>
+<pre>
+HYP:
+[A B C D] E F
+
+REF:
+E F [A B C D]
+</pre>
+<p>If the four-word block qualifies as one shift:</p>
+<pre>
+Sh = 1.
+</pre>
+<p>Without that primitive, an ordinary sequential edit representation could require several deletions and insertions.</p>
+<p>But the unit shift model also makes a strong simplification:</p>
+<pre>
+shift 1 word
+</pre>
+<p>and:</p>
+<pre>
+shift 10 words
+</pre>
+<p>can both cost one operation.</p>
+<h2>12. Lower TER is better</h2>
+<p>TER is an error rate:</p>
+<pre>
+lower TER
+=
+fewer edit operations
+relative to reference length.
+</pre>
+<p><code>TER = 0</code> means exact agreement with the accepted reference representation under the chosen preprocessing and scoring procedure.</p>
+<p>It does not mean that arbitrary increases in TER correspond linearly to decreases in translation correctness.</p>
+<h2>13. TER can exceed 100 percent</h2>
+<p>Suppose:</p>
+<pre>
+reference length = 5
+required edits   = 8
+</pre>
+<p>then:</p>
+<pre>
+TER = 8 / 5
+    = 1.6
+    = 160%.
+</pre>
+<p>Therefore:</p>
+<pre>
+1 - TER
+</pre>
+<p>must not be interpreted as an ordinary accuracy probability.</p>
+<h2>14. Multiple references</h2>
+<p>Machine translation is inherently one-to-many. Several target sentences can be equally valid renderings of the same source.</p>
+<p>With references:</p>
+<pre>
+R1, R2, ..., RK,
+</pre>
+<p>TER evaluates the hypothesis against them and uses the smallest edit count.</p>
+<pre>
+E* =
+min(
+    edits(H,R1),
+    edits(H,R2),
+    ...,
+    edits(H,RK)
+)
+</pre>
+<p>In the original multi-reference formulation, normalization uses average reference length.</p>
+<pre>
+                    minimum edit count
+TER_multi = --------------------------------
+             average reference word count
+</pre>
+<h2>15. Multiple references reduce but do not remove reference bias</h2>
+<p>A hypothesis can be perfectly acceptable yet lexically distant from every reference available in the benchmark.</p>
+<p>Adding another reference can dramatically change TER without changing the MT output.</p>
+<p>Thus TER is a property of:</p>
+<pre>
+hypothesis
++
+reference set
++
+metric configuration,
+</pre>
+<p>not an intrinsic property of the hypothesis alone.</p>
+<h2>16. Translation is one-to-many</h2>
+<p>For source sentence <code>X</code>, imagine the set of all acceptable translations:</p>
+<pre>
+T(X).
+</pre>
+<p>A benchmark observes only a finite subset:</p>
+<pre>
+R(X) ⊂ T(X).
+</pre>
+<p>Reference metrics measure similarity to the observed subset, not to the entire latent set of acceptable translations.</p>
+<h2>17. Lexical synonymy</h2>
+<pre>
+REF:
+The plan was rejected.
+
+HYP:
+The proposal was declined.
+</pre>
+<p>Basic TER can count:</p>
+<pre>
+plan -&gt; proposal
+rejected -&gt; declined
+</pre>
+<p>as substitutions.</p>
+<p>This may penalize valid synonymy.</p>
+<h2>18. Morphology</h2>
+<p>Basic TER works with surface tokens. It does not inherently know that:</p>
+<pre>
+compete
+</pre>
+<p>and:</p>
+<pre>
+competing
+</pre>
+<p>share a lemma.</p>
+<p>Therefore:</p>
+<pre>
+surface edit difference
+!=
+morphological or linguistic difference.
+</pre>
+<h2>19. TER-Plus</h2>
+<p>TER-Plus (TERp) extends TER with richer matching mechanisms. See <a href="https://doi.org/10.1007/s10590-009-9062-9">TER-Plus: paraphrase, semantic, and alignment enhancements to Translation Edit Rate</a>.</p>
+<p>TERp can incorporate:</p>
+<ul>
+<li>stemming;</li>
+<li>synonyms;</li>
+<li>paraphrases;</li>
+<li>relaxed alignment;</li>
+<li>tunable edit costs.</li>
+</ul>
+<pre>
+TER
+ |
+ +-- exact token matching
+ +-- insert/delete/substitute
+ +-- shifts
+
+TERp
+ |
+ +-- TER operations
+ +-- stems
+ +-- synonyms
+ +-- paraphrases
+ +-- tuned costs
+</pre>
+<h2>20. TERp is still not semantic equivalence</h2>
+<p>A translation can preserve extensive vocabulary while:</p>
+<ul>
+<li>reversing negation;</li>
+<li>changing a number;</li>
+<li>assigning an event to the wrong entity;</li>
+<li>omitting an important proposition;</li>
+<li>adding unsupported information.</li>
+</ul>
+<p>Conversely, a valid paraphrase can use very different vocabulary.</p>
+<p>The broader rule remains:</p>
+<pre>
+string similarity
+!=
+semantic similarity.
+</pre>
+<p>See <a href="/string-similarity-vs-semantic-similarity">string similarity versus semantic similarity</a>.</p>
+<h2>21. Human-targeted TER (HTER)</h2>
+<p>HTER changes the reference-generation protocol.</p>
+<p>Instead of relying only on an independently written translation, a human editor starts from the MT hypothesis and makes the minimum changes needed to produce an acceptable translation.</p>
+<pre>
+SOURCE
+   |
+   v
+MT HYPOTHESIS
+   |
+   v
+minimal human post-edit
+   |
+   v
+TARGETED REFERENCE
+</pre>
+<p>HTER then compares the original hypothesis with that targeted post-edit.</p>
+<h2>22. TER versus HTER</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Reference</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TER</td>
+<td>Independent human translation(s)</td>
+<td>Distance from benchmark realization</td>
+</tr>
+<tr>
+<td>HTER</td>
+<td>Minimal human post-edit of the hypothesis</td>
+<td>Textual repair required for that specific output</td>
+</tr>
+</tbody>
+</table>
+<h2>23. Why HTER reduces reference-style divergence</h2>
+<p>If the MT output is already correct, the targeted editor can leave it unchanged even if an independently created reference uses very different wording.</p>
+<p>Then:</p>
+<pre>
+HTER = 0.
+</pre>
+<p>The question becomes:</p>
+<pre>
+What must actually be changed
+in this translation
+to make it acceptable?
+</pre>
+<h2>24. HTER is not actual human effort</h2>
+<p>Two substitutions can have identical HTER cost yet radically different cognitive difficulty.</p>
+<p>Correcting punctuation may require almost no reasoning. Correcting specialist medical or legal terminology can require extensive verification.</p>
+<p>Therefore:</p>
+<pre>
+HTER
+!=
+post-editing time
+
+HTER
+!=
+cognitive effort
+
+HTER
+!=
+economic cost.
+</pre>
+<h2>25. Dimensions of post-editing effort</h2>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Possible measure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Technical effort</td>
+<td>Keystrokes, insertions, deletions, mouse operations</td>
+</tr>
+<tr>
+<td>Temporal effort</td>
+<td>Post-editing time</td>
+</tr>
+<tr>
+<td>Cognitive effort</td>
+<td>Pauses, gaze, workload, decision difficulty</td>
+</tr>
+<tr>
+<td>Textual difference</td>
+<td>HTER or related edit metric</td>
+</tr>
+<tr>
+<td>Final quality</td>
+<td>Human quality/error annotation</td>
+</tr>
+</tbody>
+</table>
+<h2>26. Human-targeted references remain variable</h2>
+<p>Different editors can produce different acceptable post-edits from the same hypothesis. HTER therefore depends on instructions discouraging unnecessary stylistic rewriting when the experiment intends to measure minimal repair.</p>
+<h2>27. The post-editing target must be defined</h2>
+<p>An HTER protocol should specify whether the goal is:</p>
+<ul>
+<li>semantic adequacy;</li>
+<li>publishable fluency;</li>
+<li>minimal textual change;</li>
+<li>minimal keystrokes;</li>
+<li>terminology compliance;</li>
+<li>style-guide compliance;</li>
+<li>localization quality.</li>
+</ul>
+<h2>28. Preprocessing is part of TER</h2>
+<p>TER operates on concrete token sequences, not abstract meanings.</p>
+<p>Scores can therefore change with:</p>
+<ul>
+<li>case normalization;</li>
+<li>punctuation policy;</li>
+<li>Unicode normalization;</li>
+<li>tokenization;</li>
+<li>CJK segmentation;</li>
+<li>whitespace handling.</li>
+</ul>
+<p>Preprocessing effects were studied explicitly by Leusch, Ueffing, Vilar, and Ney in <a href="https://aclanthology.org/W05-0903/">Preprocessing and Normalization for Automatic Evaluation of Machine Translation</a>.</p>
+<h2>29. Tokenization example</h2>
+<pre>
+REF:
+don't stop
+
+HYP:
+do n't stop
+</pre>
+<p>One tokenizer may produce:</p>
+<pre>
+REF = ["don't","stop"]
+HYP = ["do","n't","stop"]
+</pre>
+<p>another may normalize both to:</p>
+<pre>
+["do","n't","stop"].
+</pre>
+<p>Thus the same visible sentence pair can have different TER.</p>
+<h2>30. SacreBLEU and reproducibility</h2>
+<p>SacreBLEU provides an implementation of TER intended to improve reproducibility by exposing configuration details including case, normalization, punctuation, Asian-language tokenization, reference count, and software version.</p>
+<p>The project is available at <a href="https://github.com/mjpost/sacrebleu">SacreBLEU</a>.</p>
+<p>Reporting only:</p>
+<pre>
+TER = 23.7
+</pre>
+<p>is weaker than reporting:</p>
+<pre>
+metric
++
+implementation
++
+version
++
+tokenization
++
+normalization
++
+references
++
+score.
+</pre>
+<h2>31. Metric names are not sufficient for reproducibility</h2>
+<p>This is the same methodological problem highlighted by Matt Post for BLEU in <a href="https://doi.org/10.18653/v1/W18-6319">A Call for Clarity in Reporting BLEU Scores</a>.</p>
+<p>The lesson applies equally to TER.</p>
+<h2>32. Language segmentation matters</h2>
+<p>TER is word oriented, but “word” is not universally determined by spaces.</p>
+<p>For Chinese, Japanese, and other writing systems, segmentation configuration can materially change the token sequence and therefore the score.</p>
+<p>Unicode normalization and segmentation are separate operations; see <a href="/text-normalization-and-transliteration">text normalization and transliteration</a>.</p>
+<h2>33. TER versus BLEU</h2>
+<p>BLEU measures modified n-gram precision plus a brevity penalty. TER measures edit operations needed to transform hypothesis toward reference.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>TER</th>
+<th>BLEU</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Direction</td>
+<td>Lower is better</td>
+<td>Higher is better</td>
+</tr>
+<tr>
+<td>Primitive</td>
+<td>Edit operations</td>
+<td>n-gram overlap</td>
+</tr>
+<tr>
+<td>Explicit phrase shift</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Reference length</td>
+<td>Error-rate denominator</td>
+<td>Brevity-penalty component</td>
+</tr>
+</tbody>
+</table>
+<p>BLEU was introduced by Papineni, Roukos, Ward, and Zhu in <a href="https://doi.org/10.3115/1073083.1073135">BLEU: a Method for Automatic Evaluation of Machine Translation</a>.</p>
+<h2>34. Reordering illustrates the TER/BLEU difference</h2>
+<pre>
+REF:
+the minister will visit London next week
+
+HYP:
+next week the minister will visit London
+</pre>
+<p>TER can potentially represent <code>next week</code> as one shift. BLEU instead loses n-gram matches around the movement boundary.</p>
+<p>Neither abstraction is universally superior; they measure different structures.</p>
+<h2>35. TER versus METEOR</h2>
+<p>METEOR uses alignment, unigram precision/recall, fragmentation penalties, and richer token matching.</p>
+<p>See <a href="https://aclanthology.org/W05-0909/">METEOR: An Automatic Metric for MT Evaluation with Improved Correlation with Human Judgments</a>.</p>
+<pre>
+TER:
+explicit edit operations
++
+block shifts
+
+METEOR:
+word matching
++
+precision/recall
++
+fragmentation
++
+richer lexical correspondence.
+</pre>
+<h2>36. TER versus chrF</h2>
+<p>chrF evaluates character n-gram precision and recall. Because related inflected forms often share substrings, chrF can be less brittle than word-level TER for morphology.</p>
+<p>See <a href="https://doi.org/10.18653/v1/W15-3049">chrF: character n-gram F-score for automatic MT evaluation</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>TER</th>
+<th>chrF</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit</td>
+<td>Words</td>
+<td>Character n-grams</td>
+</tr>
+<tr>
+<td>Reordering</td>
+<td>Explicit shift</td>
+<td>Local n-gram disruption</td>
+</tr>
+<tr>
+<td>Morphology</td>
+<td>Surface-word sensitive</td>
+<td>Partial overlap retained</td>
+</tr>
+<tr>
+<td>Interpretation</td>
+<td>Edit operations</td>
+<td>n-gram F-score</td>
+</tr>
+</tbody>
+</table>
+<h2>37. TER versus learned MT metrics</h2>
+<p>Learned metrics such as COMET use contextual multilingual representations and can incorporate source, hypothesis, and reference to predict human quality judgments.</p>
+<p>See <a href="https://doi.org/10.18653/v1/2020.emnlp-main.213">COMET: A Neural Framework for MT Evaluation</a>.</p>
+<pre>
+TER:
+explicit symbolic edit model
+
+COMET-like metric:
+learned representation
++
+human-supervised quality prediction.
+</pre>
+<h2>38. Learned metrics solve different problems and introduce new risks</h2>
+<p>Learned metrics may recognize paraphrases that lexical metrics miss, but they introduce dependencies on:</p>
+<ul>
+<li>training data;</li>
+<li>model version;</li>
+<li>language coverage;</li>
+<li>domain shift;</li>
+<li>black-box behavior;</li>
+<li>adversarial/challenge examples;</li>
+<li>greater computation.</li>
+</ul>
+<p>Therefore semantic metrics do not make explicit edit metrics obsolete.</p>
+<h2>39. Modern MT evaluation is hybrid</h2>
+<p>A strong evaluation can combine:</p>
+<pre>
+edit metric
++
+surface-overlap metric
++
+learned semantic metric
++
+human evaluation.
+</pre>
+<p>Recent WMT metric research follows this multidimensional direction. MetricX-24 is one example: <a href="https://doi.org/10.18653/v1/2024.wmt-1.35">MetricX-24: The Google Submission to the WMT 2024 Metrics Shared Task</a>.</p>
+<h2>40. Why TER remains useful</h2>
+<p>TER remains valuable because it is:</p>
+<ul>
+<li>explicit;</li>
+<li>interpretable;</li>
+<li>deterministic under fixed configuration;</li>
+<li>easy to inspect at sentence level;</li>
+<li>useful for alignment diagnostics;</li>
+<li>independent of neural model representations.</li>
+</ul>
+<h2>41. Error decomposition matters</h2>
+<p>Two systems can have identical total TER while producing very different error profiles.</p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>S</th>
+<th>D</th>
+<th>I</th>
+<th>Sh</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>20</td>
+<td>5</td>
+<td>5</td>
+<td>2</td>
+<td>32</td>
+</tr>
+<tr>
+<td>B</td>
+<td>5</td>
+<td>15</td>
+<td>10</td>
+<td>2</td>
+<td>32</td>
+</tr>
+</tbody>
+</table>
+<p>System A is substitution-heavy; system B contains much more missing or extra material.</p>
+<h2>42. Undertranslation</h2>
+<pre>
+REF:
+The committee approved the proposal after a three-hour debate.
+
+HYP:
+The committee approved the proposal.
+</pre>
+<p>The missing material generates edit operations, but interpretation requires the source: the problem may be genuine undertranslation.</p>
+<h2>43. Unsupported additions</h2>
+<p>An insertion-heavy hypothesis may contain either legitimate elaboration or hallucinated information.</p>
+<p>TER identifies textual additions but cannot determine their semantic legitimacy without source-aware analysis.</p>
+<h2>44. Reference similarity is not source faithfulness</h2>
+<p>TER directly compares:</p>
+<pre>
+hypothesis
+vs.
+reference.
+</pre>
+<p>It does not directly measure:</p>
+<pre>
+source
+vs.
+hypothesis.
+</pre>
+<p>Therefore:</p>
+<pre>
+reference similarity
+!=
+source faithfulness.
+</pre>
+<h2>45. Severe semantic errors can have tiny TER</h2>
+<pre>
+REF:
+The drug does not increase mortality.
+
+HYP:
+The drug does increase mortality.
+</pre>
+<p>Only one token differs, yet the proposition has reversed.</p>
+<p>This is a fundamental limitation of uniform lexical edit costs.</p>
+<h2>46. Correct paraphrases can have large TER</h2>
+<pre>
+REF:
+The negotiations failed to produce an agreement.
+
+HYP:
+The parties were unable to reach a deal.
+</pre>
+<p>Meaning can remain similar despite substantial surface-edit distance.</p>
+<p>Thus:</p>
+<pre>
+small TER
+does not guarantee
+small semantic error
+
+and
+
+large TER
+does not guarantee
+large semantic error.
+</pre>
+<h2>47. Uniform edit costs are a strong assumption</h2>
+<p>Standard TER can treat all the following as unit substitutions/deletions:</p>
+<pre>
+remove "not"
+remove "very"
+million -&gt; billion
+car -&gt; vehicle.
+</pre>
+<p>The semantic severities are clearly different.</p>
+<p>A weighted model can capture task-specific costs, as discussed in <a href="/weighted-levenshtein-distance">weighted Levenshtein distance</a>.</p>
+<h2>48. Edit count is not editing time</h2>
+<p>One trivial lexical substitution and one specialist terminology correction may both cost one TER operation while requiring radically different human effort.</p>
+<p>Therefore:</p>
+<pre>
+technical edit count
+!=
+temporal effort
+!=
+cognitive effort.
+</pre>
+<h2>49. Human effort depends on the editor</h2>
+<p>Post-editing time is influenced by:</p>
+<ul>
+<li>translator expertise;</li>
+<li>domain familiarity;</li>
+<li>typing speed;</li>
+<li>interface;</li>
+<li>translation-memory tooling;</li>
+<li>target quality;</li>
+<li>terminology resources;</li>
+<li>individual strategy.</li>
+</ul>
+<h2>50. TER should not be converted directly into labor cost</h2>
+<p>TER measures textual edits under its scoring rules. HTER is closer to actual post-editing because the reference is produced from the hypothesis, but neither provides a universal conversion to time, money, or cognitive burden.</p>
+<h2>51. Sentence TER is noisy</h2>
+<p>Short references produce unstable normalized scores.</p>
+<pre>
+reference length = 2
+errors = 1
+TER = 50%
+
+reference length = 20
+errors = 1
+TER = 5%.
+</pre>
+<p>The underlying event count is identical.</p>
+<h2>52. Corpus TER</h2>
+<p>A natural corpus aggregate pools edits and reference words:</p>
+<pre>
+              Σ E_k
+TER_corpus = -------
+              Σ L_k
+</pre>
+<p>This differs from averaging individual sentence TER values, which gives short and long sentences equal weight.</p>
+<h2>53. Micro and macro aggregation</h2>
+<table>
+<thead>
+<tr>
+<th>Aggregation</th>
+<th>Weighting</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Corpus/micro</td>
+<td>Reference words</td>
+<td>Overall edit burden</td>
+</tr>
+<tr>
+<td>Sentence macro</td>
+<td>Sentences</td>
+<td>Average sentence-relative error</td>
+</tr>
+<tr>
+<td>Document macro</td>
+<td>Documents</td>
+<td>Average document performance</td>
+</tr>
+<tr>
+<td>Language macro</td>
+<td>Language pairs</td>
+<td>Prevents large datasets dominating multilingual averages</td>
+</tr>
+</tbody>
+</table>
+<h2>54. Absolute and relative TER improvement</h2>
+<pre>
+baseline = 30
+new      = 27
+</pre>
+<p>Absolute change:</p>
+<pre>
+3 TER points.
+</pre>
+<p>Relative reduction:</p>
+<pre>
+(30 - 27) / 30
+=
+10%.
+</pre>
+<p>Reports should give the original scores rather than only a percentage improvement.</p>
+<h2>55. Small differences need uncertainty estimates</h2>
+<pre>
+System A = 18.4
+System B = 18.1
+</pre>
+<p>The numerical ordering alone does not prove a reliable difference.</p>
+<p>Useful procedures include:</p>
+<ul>
+<li>paired bootstrap resampling;</li>
+<li>approximate randomization;</li>
+<li>document-level resampling;</li>
+<li>confidence intervals.</li>
+</ul>
+<h2>56. The resampling unit matters</h2>
+<p>Sentences within the same document are not necessarily independent. Appropriate resampling may operate over:</p>
+<ul>
+<li>sentences;</li>
+<li>documents;</li>
+<li>conversations;</li>
+<li>domains;</li>
+<li>source files.</li>
+</ul>
+<h2>57. Segment-level and system-level metric reliability differ</h2>
+<p>A metric can rank complete MT systems reasonably well yet be unreliable for choosing between two individual segment translations.</p>
+<p>System-level aggregation reduces some sentence-specific reference and denominator noise.</p>
+<h2>58. Do not optimize only TER</h2>
+<pre>
+optimize proxy
+    |
+    v
+system adapts to proxy
+    |
+    v
+metric improvement
+may exceed
+real quality improvement.
+</pre>
+<p>TER should be treated as one evaluation signal rather than the complete objective.</p>
+<h2>59. Metric portfolio</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Primary signal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TER</td>
+<td>Explicit word-level editing and reordering</td>
+</tr>
+<tr>
+<td>BLEU</td>
+<td>Word n-gram overlap</td>
+</tr>
+<tr>
+<td>chrF</td>
+<td>Character n-gram similarity</td>
+</tr>
+<tr>
+<td>COMET / learned metric</td>
+<td>Human-aligned contextual quality prediction</td>
+</tr>
+<tr>
+<td>Human evaluation</td>
+<td>Adequacy, fluency, severity, preference, task quality</td>
+</tr>
+</tbody>
+</table>
+<h2>60. Human evaluation remains necessary</h2>
+<p>For high-stakes translation, an automatic metric cannot independently establish:</p>
+<ul>
+<li>factual faithfulness;</li>
+<li>terminological correctness;</li>
+<li>contextual appropriateness;</li>
+<li>style;</li>
+<li>safety;</li>
+<li>pragmatic correctness.</li>
+</ul>
+<h2>61. Human evaluation is not one thing</h2>
+<p>Human protocols can measure:</p>
+<ul>
+<li>adequacy;</li>
+<li>fluency;</li>
+<li>preference;</li>
+<li>direct quality ratings;</li>
+<li>error severity;</li>
+<li>post-edit effort;</li>
+<li>task success.</li>
+</ul>
+<p>Metric correlation should therefore always specify which human target it is correlating with.</p>
+<h2>62. TER does not measure discourse consistency</h2>
+<p>Sentence-level scoring can miss:</p>
+<ul>
+<li>pronoun inconsistency;</li>
+<li>terminology drift;</li>
+<li>formality inconsistency;</li>
+<li>entity naming inconsistency;</li>
+<li>cross-sentence tense problems;</li>
+<li>contextual ambiguity errors.</li>
+</ul>
+<h2>63. Reference omissions can hide source omissions</h2>
+<pre>
+SOURCE:
+The company lost $5 million in 2025.
+
+REF:
+The company lost money.
+
+HYP:
+The company lost money.
+</pre>
+<p>TER can be zero against that reference while important source information is missing.</p>
+<h2>64. Insertions have multiple semantic interpretations</h2>
+<p>An apparent insertion can represent:</p>
+<ul>
+<li>hallucination;</li>
+<li>legitimate explicit rendering;</li>
+<li>a required function word;</li>
+<li>stylistic wording;</li>
+<li>tokenization artifacts.</li>
+</ul>
+<p>The edit operation identifies difference, not its semantic cause.</p>
+<h2>65. Morphologically rich languages</h2>
+<p>Word-level TER may penalize entire inflected words even when much of their morphological structure matches. chrF or morphology-aware analysis can provide complementary evidence.</p>
+<h2>66. Translation direction matters</h2>
+<p>TER values from different language directions should not automatically be compared directly because tokenization, morphology, word-order flexibility, and reference variation differ.</p>
+<h2>67. Domain matters</h2>
+<p>A system can obtain very different TER on news and medical translation because the underlying task has changed.</p>
+<p>Domain variables include:</p>
+<ul>
+<li>terminology;</li>
+<li>sentence complexity;</li>
+<li>named entities;</li>
+<li>style;</li>
+<li>training coverage;</li>
+<li>reference conventions.</li>
+</ul>
+<h2>68. Reference quality limits reference-based metrics</h2>
+<p>A flawed reference containing omissions or translation errors can penalize a better system output.</p>
+<p>Reference provenance and quality therefore matter directly to TER validity.</p>
+<h2>69. Benchmark contamination</h2>
+<p>If test references or closely related translations occur in model training data, high reference-based scores can partly reflect memorization or exposure rather than clean generalization.</p>
+<h2>70. Sentence segmentation changes TER</h2>
+<p>If one system joins two reference sentences into one segment, fixed one-to-one scoring can generate substantial apparent edit error even when the underlying lexical content is present.</p>
+<p>Segmentation policy is therefore part of the evaluation protocol.</p>
+<h2>71. Punctuation policy</h2>
+<pre>
+REF:
+Let's eat, grandmother.
+
+HYP:
+Let's eat grandmother.
+</pre>
+<p>Removing punctuation can make these sequences identical despite the potential change in meaning.</p>
+<p>Punctuation normalization changes what the metric measures.</p>
+<h2>72. Case normalization</h2>
+<p>Case-insensitive evaluation can collapse distinctions such as:</p>
+<pre>
+Turkey
+vs.
+turkey.
+</pre>
+<p>Whether this is desirable depends on the task.</p>
+<h2>73. Numerical errors</h2>
+<pre>
+15 million
+-&gt;
+50 million
+</pre>
+<p>can be one substitution under TER while being a major factual error.</p>
+<p>High-stakes applications should therefore include number-specific evaluation.</p>
+<h2>74. Named entities</h2>
+<pre>
+Vienna
+-&gt;
+Venice
+</pre>
+<p>is also one lexical substitution, although the downstream consequence can be substantial.</p>
+<p>A production evaluation can combine:</p>
+<pre>
+TER
++
+number accuracy
++
+named-entity accuracy
++
+terminology accuracy.
+</pre>
+<h2>75. TER alignment as an error trace</h2>
+<pre>
+HYP:
+The minister has approved proposal yesterday
+
+REF:
+The minister approved the proposal yesterday
+
+TRACE:
+The         MATCH
+minister    MATCH
+has         DELETE
+approved    MATCH
+the         INSERT
+proposal    MATCH
+yesterday   MATCH
+</pre>
+<p>The alignment provides diagnostic information that a scalar leaderboard score hides.</p>
+<h2>76. Severity-aware analysis can be layered on TER</h2>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>TER cost</th>
+<th>Possible domain severity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Punctuation</td>
+<td>1</td>
+<td>Often low</td>
+</tr>
+<tr>
+<td>Terminology substitution</td>
+<td>1</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Negation deletion</td>
+<td>1</td>
+<td>Critical</td>
+</tr>
+<tr>
+<td>Entity substitution</td>
+<td>1</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Article deletion</td>
+<td>1</td>
+<td>Often low</td>
+</tr>
+</tbody>
+</table>
+<h2>77. TER is not semantic distance</h2>
+<p>A semantic metric should ideally respond to propositions, entities, relations, polarity, temporal meaning, and pragmatic interpretation.</p>
+<p>TER instead models word-sequence transformation cost.</p>
+<pre>
+TER
+=
+surface/edit-based evaluation
+
+TER
+!=
+semantic equivalence measure.
+</pre>
+<h2>78. Correlation does not change what a metric computes</h2>
+<p>Even if TER correlates strongly with human scores on one dataset:</p>
+<pre>
+correlation(TER, human quality)
+</pre>
+<p>does not imply:</p>
+<pre>
+TER = human quality.
+</pre>
+<h2>79. MT error distributions evolve</h2>
+<p>Modern neural and large-language-model translation systems often produce fluent output containing subtler errors such as omissions, hallucinations, contextual mistakes, or paraphrastic divergence.</p>
+<p>A metric created in an earlier MT regime can therefore encounter new failure modes.</p>
+<h2>80. TER remains useful because its meaning is narrow</h2>
+<p>TER can answer:</p>
+<pre>
+How much word-level editing,
+including allowed phrase movement,
+separates this hypothesis
+from this reference?
+</pre>
+<p>It cannot independently answer whether the translation is completely faithful, fluent, safe, or appropriate.</p>
+<h2>81. Conceptual reference implementation</h2>
+<pre>
+function ter(hypothesis, references):
+
+    hypothesis =
+        preprocess(hypothesis)
+
+    references =
+        preprocess_each(references)
+
+    best_edit_count = infinity
+
+    for reference in references:
+
+        h = hypothesis
+        shift_count = 0
+
+        repeat:
+
+            current =
+                levenshtein_words(
+                    h,
+                    reference
+                )
+
+            candidates =
+                valid_ter_shifts(
+                    h,
+                    reference
+                )
+
+            best_shift = NONE
+            best_gain = 0
+
+            for shift in candidates:
+
+                candidate =
+                    apply_shift(
+                        h,
+                        shift
+                    )
+
+                new_distance =
+                    levenshtein_words(
+                        candidate,
+                        reference
+                    )
+
+                gain =
+                    current
+                    -
+                    new_distance
+
+                if gain &gt; best_gain:
+
+                    best_gain = gain
+                    best_shift = shift
+
+            if best_shift is NONE:
+                break
+
+            h =
+                apply_shift(
+                    h,
+                    best_shift
+                )
+
+            shift_count += 1
+
+        residual =
+            levenshtein_words(
+                h,
+                reference
+            )
+
+        edits =
+            shift_count
+            +
+            residual
+
+        best_edit_count =
+            min(
+                best_edit_count,
+                edits
+            )
+
+    average_reference_length =
+        mean(
+            length(r)
+            for r in references
+        )
+
+    return
+        best_edit_count
+        /
+        average_reference_length
+</pre>
+<p>This describes the architecture only. For reproducible published results, use a known implementation and record its exact version and options.</p>
+<h2>82. Computational complexity</h2>
+<p>Ordinary word-level <a href="/edit-distance">edit distance</a> requires:</p>
+<pre>
+O(NM)
+</pre>
+<p>time using standard dynamic programming for sequences of lengths <code>N</code> and <code>M</code>.</p>
+<p>TER additionally evaluates phrase-shift candidates, so practical cost depends on sentence length, phrase matches, shift constraints, search behavior, and implementation optimizations.</p>
+<h2>83. TER is not globally exact arbitrary block-movement distance</h2>
+<p>A precise description is:</p>
+<pre>
+TER
+=
+constrained heuristic block-shift search
++
+ordinary word edit alignment.
+</pre>
+<p>It should not be described as globally solving unrestricted edit distance with arbitrary block moves.</p>
+<h2>84. Shift matching remains lexical</h2>
+<p>A semantically related phrase cannot simply be shifted because it “means the same thing.” Candidate eligibility depends on the implementation's matching rules.</p>
+<h2>85. TERp relaxes lexical rigidity</h2>
+<p>TERp can match or align relationships supported by stemming, synonym, or paraphrase resources.</p>
+<p>This reduces some reference-surface bias but introduces additional resources, versions, and configuration dependencies.</p>
+<h2>86. Adequacy and fluency should sometimes be evaluated separately</h2>
+<p>A translation may be:</p>
+<pre>
+fluent but wrong
+</pre>
+<p>or:</p>
+<pre>
+faithful but awkward.
+</pre>
+<p>TER does not explicitly distinguish these dimensions.</p>
+<h2>87. Human severity annotation</h2>
+<table>
+<thead>
+<tr>
+<th>Difference</th>
+<th>TER view</th>
+<th>Possible human interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a → the</code></td>
+<td>1 substitution</td>
+<td>Minor</td>
+</tr>
+<tr>
+<td><code>can → cannot</code></td>
+<td>1 substitution</td>
+<td>Major meaning reversal</td>
+</tr>
+<tr>
+<td><code>15 → 50</code></td>
+<td>1 substitution</td>
+<td>Potentially critical</td>
+</tr>
+<tr>
+<td><code>automobile → car</code></td>
+<td>1 substitution</td>
+<td>Possibly no quality loss</td>
+</tr>
+</tbody>
+</table>
+<h2>88. Recommended MT evaluation architecture</h2>
+<pre>
+SOURCE TEST SET
+      |
+      v
+MT SYSTEMS
+      |
+      v
+system outputs
+      |
+      +-----------------------+
+      |                       |
+      v                       v
+automatic metrics        human evaluation
+      |                       |
+TER / BLEU / chrF        adequacy /
+learned metric           error severity /
+      |                  post-editing
+      +-----------+-----------+
+                  |
+                  v
+           paired analysis
+                  |
+                  v
+         statistical testing
+                  |
+                  v
+        qualitative error audit
+</pre>
+<h2>89. TER reporting checklist</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Report</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dataset</td>
+<td>Name and exact split</td>
+</tr>
+<tr>
+<td>Language direction</td>
+<td>Source → target</td>
+</tr>
+<tr>
+<td>References</td>
+<td>Number and provenance</td>
+</tr>
+<tr>
+<td>Implementation</td>
+<td>TERCOM, SacreBLEU, or other</td>
+</tr>
+<tr>
+<td>Version</td>
+<td>Exact software version</td>
+</tr>
+<tr>
+<td>Case</td>
+<td>Sensitive/insensitive</td>
+</tr>
+<tr>
+<td>Normalization</td>
+<td>Exact policy</td>
+</tr>
+<tr>
+<td>Punctuation</td>
+<td>Included/removed</td>
+</tr>
+<tr>
+<td>Tokenization</td>
+<td>Exact tokenizer</td>
+</tr>
+<tr>
+<td>Aggregation</td>
+<td>Corpus/macro</td>
+</tr>
+<tr>
+<td>Scale</td>
+<td>Fraction/percentage</td>
+</tr>
+<tr>
+<td>Uncertainty</td>
+<td>CI/significance test</td>
+</tr>
+</tbody>
+</table>
+<h2>90. What TER can and cannot answer</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>TER sufficient?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>How much surface editing separates hypothesis and reference?</td>
+<td>Often useful</td>
+</tr>
+<tr>
+<td>Does phrase reordering differ from ordinary word edits?</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Is the translation semantically faithful to the source?</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Is the translation fluent?</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Are critical numbers/entities correct?</td>
+<td>Not reliably alone</td>
+</tr>
+<tr>
+<td>How long will human post-editing take?</td>
+<td>No</td>
+</tr>
+<tr>
+<td>How many textual changes did a targeted editor make?</td>
+<td>HTER is relevant</td>
+</tr>
+</tbody>
+</table>
+<h2>91. Choosing among related metrics</h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Useful approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sequential word differences</td>
+<td>Word edit distance</td>
+</tr>
+<tr>
+<td>MT with phrase reordering</td>
+<td>TER</td>
+</tr>
+<tr>
+<td>Targeted human repair</td>
+<td>HTER</td>
+</tr>
+<tr>
+<td>Synonym/paraphrase-aware TER</td>
+<td>TERp</td>
+</tr>
+<tr>
+<td>Morphological surface variation</td>
+<td>chrF can complement TER</td>
+</tr>
+<tr>
+<td>Semantic quality prediction</td>
+<td>Learned metric + human validation</td>
+</tr>
+<tr>
+<td>Production editing effort</td>
+<td>Direct process/time measurement</td>
+</tr>
+</tbody>
+</table>
+<h2>92. Common TER mistakes</h2>
+<h3>92.1 Calling TER ordinary Levenshtein distance</h3>
+<p>TER additionally permits phrase shifts.</p>
+<h3>92.2 Calling shifts character transpositions</h3>
+<p>TER moves contiguous word blocks.</p>
+<h3>92.3 Assuming global optimal block-movement search</h3>
+<p>Practical TER uses constrained heuristic shift search.</p>
+<h3>92.4 Calling TER semantic evaluation</h3>
+<p>TER is fundamentally surface/edit based.</p>
+<h3>92.5 Treating <code>1 - TER</code> as accuracy</h3>
+<p>TER is not a probability and can exceed one.</p>
+<h3>92.6 Treating HTER as human time</h3>
+<p>Textual edits, cognitive effort, and temporal effort differ.</p>
+<h3>92.7 Comparing incompatible tokenization</h3>
+<p>Changing tokenization changes the sequences being scored.</p>
+<h3>92.8 Comparing unrelated language pairs casually</h3>
+<p>Morphology, segmentation, and reference variation differ.</p>
+<h3>92.9 Ignoring reference composition</h3>
+<p>Reference choice can materially alter TER.</p>
+<h3>92.10 Assuming tiny differences are significant</h3>
+<p>Use paired uncertainty analysis.</p>
+<h3>92.11 Reporting only aggregate TER</h3>
+<p>Domain-specific and error-type failures can be hidden.</p>
+<h3>92.12 Optimizing only TER</h3>
+<p>The proxy must not replace the actual translation objective.</p>
+<h2>93. High-quality MT evaluation report</h2>
+<pre>
+1. test corpus and language direction
+2. reference provenance
+3. exact preprocessing
+4. TER implementation/version
+5. TER score
+6. edit decomposition
+7. complementary lexical metric
+8. learned/semantic metric
+9. paired uncertainty analysis
+10. human evaluation
+11. critical-error analysis
+</pre>
+<p>Production systems should additionally consider post-editing time, terminology, numbers, entities, document context, and domain-specific safety.</p>
+<h2>94. TER's role in modern MT</h2>
+<p>TER originated when statistical MT systems often produced highly visible lexical and word-order errors. Modern systems have different error distributions, but TER still provides a transparent alignment-oriented diagnostic.</p>
+<p>Its strongest role today is usually:</p>
+<pre>
+one interpretable metric
+inside
+a multi-dimensional evaluation suite.
+</pre>
+<h2>95. Final interpretation</h2>
+<p>Translation Edit Rate is best understood as a translation-specific extension of word-level edit distance. Its defining addition is a block-shift operation intended to represent phrase reordering more economically than a series of sequential deletions and insertions.</p>
+<p>The observed score is jointly determined by:</p>
+<pre>
+hypothesis
++
+reference set
++
+preprocessing
++
+shift search
++
+ordinary alignment
++
+edit-cost model.
+</pre>
+<p>It is not an intrinsic semantic quality measure.</p>
+<p>The most important distinctions are:</p>
+<pre>
+TER
+!=
+semantic error rate
+
+TER
+!=
+human quality score
+
+TER
+!=
+post-editing time
+
+HTER
+!=
+cognitive effort
+
+reference similarity
+!=
+source faithfulness
+
+low edit distance
+!=
+correct translation.
+</pre>
+<p>TER remains scientifically valuable when the question is narrow and explicit: how many permitted word-level edits, including block shifts, separate a machine translation from a selected reference representation?</p>
+<p>For broader MT evaluation, it should be combined with complementary character or lexical metrics, source-aware learned metrics, statistical uncertainty analysis, human evaluation, and task-specific critical-error measurements.</p>
+<h2>Selected technical references</h2>
+<ul>
+<li>Snover, M., Dorr, B., Schwartz, R., Micciulla, L., and Makhoul, J. <em>A Study of Translation Edit Rate with Targeted Human Annotation.</em> AMTA, 2006. <a href="https://aclanthology.org/2006.amta-papers.25/">ACL Anthology</a>.</li>
+<li>Snover, M. G., Madnani, N., Dorr, B., and Schwartz, R. <em>TER-Plus: paraphrase, semantic, and alignment enhancements to Translation Edit Rate.</em> Machine Translation, 2009. <a href="https://doi.org/10.1007/s10590-009-9062-9">https://doi.org/10.1007/s10590-009-9062-9</a>.</li>
+<li>Leusch, G., and Ney, H. <em>Edit distances with block movements and error rate confidence estimates.</em> Machine Translation, 2009. <a href="https://doi.org/10.1007/s10590-009-9063-8">https://doi.org/10.1007/s10590-009-9063-8</a>.</li>
+<li>Leusch, G., Ueffing, N., and Ney, H. <em>CDER: Efficient MT Evaluation Using Block Movements.</em> EACL, 2006. <a href="https://aclanthology.org/E06-1031/">ACL Anthology</a>.</li>
+<li>Leusch, G., Ueffing, N., Vilar, D., and Ney, H. <em>Preprocessing and Normalization for Automatic Evaluation of Machine Translation.</em> 2005. <a href="https://aclanthology.org/W05-0903/">ACL Anthology</a>.</li>
+<li>Papineni, K., Roukos, S., Ward, T., and Zhu, W.-J. <em>BLEU: a Method for Automatic Evaluation of Machine Translation.</em> ACL, 2002. <a href="https://doi.org/10.3115/1073083.1073135">https://doi.org/10.3115/1073083.1073135</a>.</li>
+<li>Banerjee, S., and Lavie, A. <em>METEOR: An Automatic Metric for MT Evaluation with Improved Correlation with Human Judgments.</em> 2005. <a href="https://aclanthology.org/W05-0909/">ACL Anthology</a>.</li>
+<li>Popović, M. <em>chrF: character n-gram F-score for automatic MT evaluation.</em> WMT, 2015. <a href="https://doi.org/10.18653/v1/W15-3049">https://doi.org/10.18653/v1/W15-3049</a>.</li>
+<li>Post, M. <em>A Call for Clarity in Reporting BLEU Scores.</em> WMT, 2018. <a href="https://doi.org/10.18653/v1/W18-6319">https://doi.org/10.18653/v1/W18-6319</a>.</li>
+<li>Rei, R., Stewart, C., Farinha, A. C., and Lavie, A. <em>COMET: A Neural Framework for MT Evaluation.</em> EMNLP, 2020. <a href="https://doi.org/10.18653/v1/2020.emnlp-main.213">https://doi.org/10.18653/v1/2020.emnlp-main.213</a>.</li>
+<li>Juraska, J., Deutsch, D., Finkelstein, M., and Freitag, M. <em>MetricX-24: The Google Submission to the WMT 2024 Metrics Shared Task.</em> WMT, 2024. <a href="https://doi.org/10.18653/v1/2024.wmt-1.35">https://doi.org/10.18653/v1/2024.wmt-1.35</a>.</li>
+<li>Specia, L., Raj, D., and Turchi, M. <em>Estimating Machine Translation Post-Editing Effort with HTER.</em> 2010. <a href="https://aclanthology.org/2010.jec-1.5/">ACL Anthology</a>.</li>
+<li>Koponen, M., Aziz, W., Ramos, L., and Specia, L. <em>Post-editing time as a measure of cognitive effort.</em> 2012. <a href="https://aclanthology.org/2012.amta-wptp.2/">ACL Anthology</a>.</li>
+</ul>
+</div>
+</div>
+
+<h2 class="lv-related-title">Related Posts</h2>
+<ol class="lv-posts">
+<li class="lv-post">
+<span aria-hidden="true" class="lv-post__no">01</span>
+<div class="lv-post__body">
+<h3 class="lv-post__title">
+<a href="/text-normalization-and-transliteration">Text Normalization and Transliteration: Unicode, Edit Distance, and Reliable Matching</a>
+</h3>
+<p class="lv-post__desc">A technical guide to Unicode normalization, case folding, grapheme segmentation, transliteration, styled Unicode transformations, and their effects on Levenshtein distance and multilingual matching.
+</p>
+<p class="lv-post__meta">
+<span class="lv-post__kind">
+<svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14">
+<rect height="12.8" rx="1.3" width="11.8" x="2.1" y="1.6"></rect>
+<line x1="4.8" x2="11.2" y1="5" y2="5"></line>
+<line x1="4.8" x2="11.2" y1="8" y2="8"></line>
+<line x1="4.8" x2="8.9" y1="11" y2="11"></line>
+</svg>Article</span><span class="lv-post__sep">·</span><span class="lv-post__read"><svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14"><circle cx="8" cy="8" r="6.3"></circle><polyline points="8,4.4 8,8 10.6,9.6"></polyline></svg>16 min read</span>
+</p>
+</div>
+</li>
+<li class="lv-post">
+<span aria-hidden="true" class="lv-post__no">02</span>
+<div class="lv-post__body">
+<h3 class="lv-post__title">
+<a href="/styled-unicode-text">Styled Unicode Text: Characters, Symbols &amp; String Transformation | Levenshtein.net</a>
+</h3>
+<p class="lv-post__desc">Learn how styled Unicode text uses mathematical alphabets, symbols and character substitutions, how it differs from fonts, and how transformed strings relate to Levenshtein distance.</p>
+<p class="lv-post__meta">
+<span class="lv-post__kind">
+<svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14">
+<rect height="12.8" rx="1.3" width="11.8" x="2.1" y="1.6"></rect>
+<line x1="4.8" x2="11.2" y1="5" y2="5"></line>
+<line x1="4.8" x2="11.2" y1="8" y2="8"></line>
+<line x1="4.8" x2="8.9" y1="11" y2="11"></line>
+</svg>Article</span><span class="lv-post__sep">·</span><span class="lv-post__read"><svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14"><circle cx="8" cy="8" r="6.3"></circle><polyline points="8,4.4 8,8 10.6,9.6"></polyline></svg>10 min read</span>
+</p>
+</div>
+</li>
+<li class="lv-post">
+<span aria-hidden="true" class="lv-post__no">03</span>
+<div class="lv-post__body">
+<h3 class="lv-post__title">
+<a href="/unicode-text-transformations">Unicode Text Transformations &amp; Edit Distance | Levenshtein.net</a>
+</h3>
+<p class="lv-post__desc">Learn how Unicode normalization, transliteration, grapheme segmentation and styled text transformations change string representation, and how Levenshtein distance compares the results.</p>
+<p class="lv-post__meta">
+<span class="lv-post__kind">
+<svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14">
+<rect height="12.8" rx="1.3" width="11.8" x="2.1" y="1.6"></rect>
+<line x1="4.8" x2="11.2" y1="5" y2="5"></line>
+<line x1="4.8" x2="11.2" y1="8" y2="8"></line>
+<line x1="4.8" x2="8.9" y1="11" y2="11"></line>
+</svg>Article</span><span class="lv-post__sep">·</span><span class="lv-post__read"><svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14"><circle cx="8" cy="8" r="6.3"></circle><polyline points="8,4.4 8,8 10.6,9.6"></polyline></svg>10 min read</span>
+</p>
+</div>
+</li>
+<li class="lv-post">
+<span aria-hidden="true" class="lv-post__no">04</span>
+<div class="lv-post__body">
+<h3 class="lv-post__title">
+<a href="/translation-edit-rate-and-mt-evaluation">Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations</a>
+</h3>
+<p class="lv-post__desc">A rigorous guide to Translation Edit Rate for machine translation, covering TER mathematics, block shifts, TERCOM alignment, HTER, multiple references, preprocessing, post-editing effort, modern MT metrics, statistical testing, and limitations.
+</p>
+<p class="lv-post__meta">
+<span class="lv-post__kind">
+<svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14">
+<rect height="12.8" rx="1.3" width="11.8" x="2.1" y="1.6"></rect>
+<line x1="4.8" x2="11.2" y1="5" y2="5"></line>
+<line x1="4.8" x2="11.2" y1="8" y2="8"></line>
+<line x1="4.8" x2="8.9" y1="11" y2="11"></line>
+</svg>Article</span><span class="lv-post__sep">·</span><span class="lv-post__read"><svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14"><circle cx="8" cy="8" r="6.3"></circle><polyline points="8,4.4 8,8 10.6,9.6"></polyline></svg>25 min read</span>
+</p>
+</div>
+</li>
+<li class="lv-post">
+<span aria-hidden="true" class="lv-post__no">05</span>
+<div class="lv-post__body">
+<h3 class="lv-post__title">
+<a href="/phonetic-dialect-and-language-distance">Phonetic, Dialect, and Language Distance: Levenshtein Methods, Dialectometry, and Linguistic Similarity</a>
+</h3>
+<p class="lv-post__desc">A rigorous guide to phonetic, dialect, and language distance, covering phonetic alignment, weighted Levenshtein distance, dialectometry, LDN and LDND, sound correspondences, cognates, perceptual validation, and limits of linguistic distance measures.
+</p>
+<p class="lv-post__meta">
+<span class="lv-post__kind">
+<svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14">
+<rect height="12.8" rx="1.3" width="11.8" x="2.1" y="1.6"></rect>
+<line x1="4.8" x2="11.2" y1="5" y2="5"></line>
+<line x1="4.8" x2="11.2" y1="8" y2="8"></line>
+<line x1="4.8" x2="8.9" y1="11" y2="11"></line>
+</svg>Article</span><span class="lv-post__sep">·</span><span class="lv-post__read"><svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14"><circle cx="8" cy="8" r="6.3"></circle><polyline points="8,4.4 8,8 10.6,9.6"></polyline></svg>39 min read</span>
+</p>
+</div>
+</li>
+<li class="lv-post">
+<span aria-hidden="true" class="lv-post__no">06</span>
+<div class="lv-post__body">
+<h3 class="lv-post__title">
+<a href="/ocr-evaluation-and-post-correction">OCR Evaluation and Post-Correction: Character Error Rate, Ground Truth, Error Models, and Reliable Correction</a>
+</h3>
+<p class="lv-post__desc">A rigorous guide to OCR evaluation and post-correction, covering CER, WER, edit-distance alignment, ground truth, Unicode, layout errors, noisy-channel models, neural correction, LLMs, over-correction, and reproducible evaluation.
+</p>
+<p class="lv-post__meta">
+<span class="lv-post__kind">
+<svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14">
+<rect height="12.8" rx="1.3" width="11.8" x="2.1" y="1.6"></rect>
+<line x1="4.8" x2="11.2" y1="5" y2="5"></line>
+<line x1="4.8" x2="11.2" y1="8" y2="8"></line>
+<line x1="4.8" x2="8.9" y1="11" y2="11"></line>
+</svg>Article</span><span class="lv-post__sep">·</span><span class="lv-post__read"><svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14"><circle cx="8" cy="8" r="6.3"></circle><polyline points="8,4.4 8,8 10.6,9.6"></polyline></svg>39 min read</span>
+</p>
+</div>
+</li>
+<li class="lv-post">
+<span aria-hidden="true" class="lv-post__no">07</span>
+<div class="lv-post__body">
+<h3 class="lv-post__title">
+<a href="/word-error-rate-and-asr-evaluation">Word Error Rate (WER) and ASR Evaluation: Mathematics, Alignment, Protocols, and Limitations</a>
+</h3>
+<p class="lv-post__desc">A rigorous guide to word error rate in automatic speech recognition, including edit-distance alignment, scoring protocols, aggregation, multilingual issues, statistical testing, and WER limitations.
+</p>
+<p class="lv-post__meta">
+<span class="lv-post__kind">
+<svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14">
+<rect height="12.8" rx="1.3" width="11.8" x="2.1" y="1.6"></rect>
+<line x1="4.8" x2="11.2" y1="5" y2="5"></line>
+<line x1="4.8" x2="11.2" y1="8" y2="8"></line>
+<line x1="4.8" x2="8.9" y1="11" y2="11"></line>
+</svg>Article</span><span class="lv-post__sep">·</span><span class="lv-post__read"><svg aria-hidden="true" fill="none" height="14" stroke-width="1.2" viewBox="0 0 16 16" width="14"><circle cx="8" cy="8" r="6.3"></circle><polyline points="8,4.4 8,8 10.6,9.6"></polyline></svg>28 min read</span>
+</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<aside class="lv-aside">
+<section class="lv-panel">
+<h2 class="lv-panel__title">MORE INFORMATION</h2>
+<div class="lv-links">
+<a href="/">
+<svg aria-hidden="true" fill="none" height="18" stroke-width="1.2" viewBox="0 0 18 18" width="18">
+<rect height="14.4" rx="1.4" width="13.2" x="2.4" y="1.8"></rect>
+<line x1="5.4" x2="12.6" y1="5.6" y2="5.6"></line>
+<line x1="5.4" x2="12.6" y1="9" y2="9"></line>
+<line x1="5.4" x2="10" y1="12.4" y2="12.4"></line>
+</svg>
+<span>Levenshtein-Algorithm</span>
+</a>
+<a href="/levenshtein_search.htm">
+<svg aria-hidden="true" fill="none" height="18" stroke-width="1.3" viewBox="0 0 18 18" width="18">
+<circle cx="7.6" cy="7.6" r="5.2"></circle>
+<line x1="11.4" x2="15.8" y1="11.4" y2="15.8"></line>
+</svg>
+<span>Fault-tolerant search</span>
+</a>
+<a href="/levenshtein_implementation.htm">
+<span aria-hidden="true" class="lv-icon-mono">&lt;/&gt;</span>
+<span>Implementation</span>
+</a>
+<a href="/levenshtein_links.htm">
+<svg aria-hidden="true" fill="none" height="18" stroke-width="1.3" viewBox="0 0 18 18" width="18">
+<rect height="5.2" rx="2.6" width="9" x="1.8" y="6.4"></rect>
+<rect height="5.2" rx="2.6" width="9" x="7.2" y="6.4"></rect>
+</svg>
+<span>Levenshtein-Links</span>
+</a>
+<a href="/levenshtein_faq.htm">
+<svg aria-hidden="true" fill="none" height="18" stroke-width="1.2" viewBox="0 0 18 18" width="18">
+<circle cx="9" cy="9" r="7.2"></circle>
+<text font-family="Tinos, serif" font-size="9.5" text-anchor="middle" x="9" y="12.6">?</text>
+</svg>
+<span>Levenshtein-FAQs</span>
+</a>
+</div>
+</section>
+<section class="lv-panel lv-research"><h2 class="lv-panel__title">RESEARCH</h2><div class="lv-research__row"><a class="lv-research__hub" href="/foundations"><svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16"><path d="M2 3.2h4.2c1 0 1.8.7 1.8 1.6v8c0-.9-.8-1.6-1.8-1.6H2z"></path><path d="M14 3.2H9.8c-1 0-1.8.7-1.8 1.6v8c0-.9.8-1.6 1.8-1.6H14z"></path></svg><span>Foundations</span></a></div><div class="lv-research__row"><a class="lv-research__hub" href="/algorithms"><svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16"><circle cx="8" cy="8" r="2.4"></circle><circle cx="8" cy="8" r="6.2"></circle><line x1="8" x2="8" y1="1.8" y2="3.4"></line><line x1="8" x2="8" y1="12.6" y2="14.2"></line><line x1="1.8" x2="3.4" y1="8" y2="8"></line><line x1="12.6" x2="14.2" y1="8" y2="8"></line></svg><span>Algorithms</span></a></div><div class="lv-research__row"><a class="lv-research__hub" href="/theory"><svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16"><path d="M8 1.9 14.4 13.4H1.6z"></path><line x1="8" x2="8" y1="6" y2="9.4"></line></svg><span>Theory</span></a></div><div class="lv-research__row"><a class="lv-research__hub" href="/implementations"><span aria-hidden="true" class="lv-icon-mono">&lt;/&gt;</span><span>Implementations</span></a></div><div class="lv-research__row"><a class="lv-research__hub" href="/comparisons"><svg aria-hidden="true" fill="none" height="16" stroke-width="1.3" viewBox="0 0 16 16" width="16"><line x1="3" x2="3" y1="13.2" y2="8.6"></line><line x1="8" x2="8" y1="13.2" y2="4.4"></line><line x1="13" x2="13" y1="13.2" y2="6.8"></line></svg><span>Comparisons</span></a></div><div class="lv-research__row"><a class="lv-research__hub" href="/history"><svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16"><circle cx="8" cy="8" r="6.3"></circle><polyline points="8,4.4 8,8 10.6,9.6"></polyline></svg><span>History</span></a></div><div class="lv-research__row"><a class="lv-research__hub" href="/papers"><svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16"><rect height="12.8" rx="1.3" width="11.8" x="2.1" y="1.6"></rect><line x1="4.8" x2="11.2" y1="5" y2="5"></line><line x1="4.8" x2="11.2" y1="8" y2="8"></line><line x1="4.8" x2="8.9" y1="11" y2="11"></line></svg><span>Papers</span></a></div><div class="lv-research__row"><a class="lv-research__hub" href="/applications"><svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16"><rect height="5.4" rx="1" width="5.4" x="1.8" y="1.8"></rect><rect height="5.4" rx="1" width="5.4" x="8.8" y="1.8"></rect><rect height="5.4" rx="1" width="5.4" x="1.8" y="8.8"></rect><rect height="5.4" rx="1" width="5.4" x="8.8" y="8.8"></rect></svg><span>Applications</span></a><span aria-controls="rs-02" aria-expanded="false" class="lv-research__toggle" type="button"><span class="lv-sr">Show sub-topics of Applications</span><svg aria-hidden="true" fill="none" height="14" stroke-width="1.6" viewBox="0 0 16 16" width="14"><polyline points="4,6 8,10.5 12,6"></polyline></svg></span></div><ul class="lv-research__kids" id="rs-02"><li><a class="" href="/search">Search</a></li><li><a class="" href="/data-matching">Data Matching</a></li><li><a class="" href="/language-processing">Language Processing</a></li><li><a class="" href="/bioinformatics">Bioinformatics</a></li><li><a class="" href="/coding-theory">Coding Theory</a></li><li><a class="" href="/software-systems">Software Systems</a></li></ul></section>
+<section class="lv-panel lv-panel--list">
+<h2 class="lv-panel__title">APPLICATIONS</h2>
+<ul class="lv-apps">
+<li>
+<svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16">
+<circle cx="8" cy="8" r="6.5"></circle>
+<polyline points="5,8.2 7.2,10.4 11,5.8"></polyline>
+</svg>
+<span>Spell checking &amp; correction</span>
+</li>
+<li>
+<svg aria-hidden="true" fill="none" height="16" stroke-width="1.3" viewBox="0 0 16 16" width="16">
+<circle cx="6.8" cy="6.8" r="4.6"></circle>
+<line x1="10.2" x2="14" y1="10.2" y2="14"></line>
+</svg>
+<span>Fuzzy search &amp; matching</span>
+</li>
+<li>
+<svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16">
+<rect height="3.4" rx="1" width="11.2" x="2.4" y="2.2"></rect>
+<rect height="3.4" rx="1" width="11.2" x="2.4" y="6.3"></rect>
+<rect height="3.4" rx="1" width="11.2" x="2.4" y="10.4"></rect>
+</svg>
+<span>Data deduplication</span>
+</li>
+<li>
+<svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16">
+<line x1="4.4" x2="4.4" y1="1.8" y2="14.2"></line>
+<line x1="11.6" x2="11.6" y1="1.8" y2="14.2"></line>
+<line x1="4.4" x2="11.6" y1="4.6" y2="4.6"></line>
+<line x1="4.4" x2="11.6" y1="8" y2="8"></line>
+<line x1="4.4" x2="11.6" y1="11.4" y2="11.4"></line>
+</svg>
+<span>DNA / RNA analysis</span>
+</li>
+<li>
+<svg aria-hidden="true" fill="none" height="16" stroke-width="1.2" viewBox="0 0 16 16" width="16">
+<rect height="8.4" rx="2" width="12.4" x="1.8" y="2.6"></rect>
+<polyline points="5,11 5,14 8.4,11"></polyline>
+</svg>
+<span>Natural language processing</span>
+</li>
+</ul>
+</section>
+</aside>
+</div>
+</main><footer><nav aria-label="Footer"><a href="/about.htm">About us</a><a href="/privacy.htm">Privacy Statment (german)</a><a href="/levenshtein_feedback.htm">Feedback</a><a href="/">Levenshtein Distance</a></nav></footer></body></html>
