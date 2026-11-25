@@ -1,0 +1,39 @@
+name: Content P0 isolated staging
+on:
+  push:
+    branches: ['staging/content-p0-20261126']
+    paths: ['.github/workflows/content-p0-staging.yml']
+permissions:
+  contents: write
+jobs:
+  stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: pip install beautifulsoup4==4.13.3 playwright==1.51.0
+      - run: python .github/content-p0/apply.py
+      - run: node .github/content-p0/test-compact.mjs > .github/content-p0/compact-results.json
+      - run: QA_MODE=static python .github/qa/audit.py
+      - run: cp qa-report/report.json .github/content-p0/site-static-results.json
+      - run: python -m playwright install --with-deps chromium
+      - run: python .github/content-p0/browser.py
+      - name: Commit staging only after all gates pass
+        run: |
+          test "$GITHUB_REF_NAME" = 'staging/content-p0-20261126'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u
+          git add .github/content-p0/
+          git commit -m 'Stage P0 content and remove related self cards after QA'
+          git push origin HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: content-p0-qa
+          path: |
+            .github/content-p0/
+            qa-report/
+          include-hidden-files: true
