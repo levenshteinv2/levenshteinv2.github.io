@@ -1,0 +1,44 @@
+name: Knowledge outbound nofollow staging
+on:
+  push:
+    branches: [staging/outbound-nofollow-20261126]
+    paths:
+      - '.github/qa/outbound_nofollow.py'
+      - '.github/workflows/outbound-nofollow-staging.yml'
+permissions:
+  contents: write
+concurrency:
+  group: outbound-nofollow-staging
+  cancel-in-progress: false
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: staging/outbound-nofollow-20261126
+      - run: python .github/qa/outbound_nofollow.py --fix
+      - run: cp qa-report/outbound-nofollow.json /tmp/outbound-fix-report.json
+      - run: python .github/qa/outbound_nofollow.py
+      - name: Commit verified scope to staging only
+        run: |
+          python - <<'PY'
+          import json,subprocess
+          pages=set(json.load(open('.github/qa/pages.json')))
+          changed=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          assert changed <= pages, changed-pages
+          for p in sorted(changed): subprocess.run(['git','add','--',p],check=True)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! git diff --cached --quiet; then
+            git commit -m 'Enforce nofollow on all external knowledge hyperlinks'
+            git push origin HEAD:refs/heads/staging/outbound-nofollow-20261126
+          fi
+          cp /tmp/outbound-fix-report.json qa-report/outbound-fix-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: outbound-nofollow-qa
+          path: qa-report/
