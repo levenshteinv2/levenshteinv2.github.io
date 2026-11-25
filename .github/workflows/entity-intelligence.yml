@@ -1,0 +1,32 @@
+name: Entity Intelligence WS1-WS6
+on:
+  push:
+    branches: ['audit/entity-knowledge-map-20261125']
+    paths: ['.github/workflows/entity-intelligence.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  intelligence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install beautifulsoup4==4.13.3
+      - run: python -u .github/knowledge-map/intelligence.py
+      - name: Persist verified evidence on audit branch only
+        run: |
+          test "$GITHUB_REF_NAME" = 'audit/entity-knowledge-map-20261125'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/knowledge-map/intelligence/
+          git diff --cached --name-only | grep -v '^.github/knowledge-map/intelligence/' && exit 1 || true
+          git commit -m 'Persist WS1-WS6 evidence, review packets and machine QA gate' || git diff --cached --quiet
+          git push origin HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: entity-intelligence-evidence
+          path: .github/knowledge-map/intelligence/
+          include-hidden-files: true
+          retention-days: 30
