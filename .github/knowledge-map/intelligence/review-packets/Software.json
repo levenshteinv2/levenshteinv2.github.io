@@ -1,0 +1,1378 @@
+[
+  {
+    "url": "/log-and-event-sequence-similarity",
+    "mission": "Trace alignment và log",
+    "h1": [
+      "Log and Event-Sequence Similarity: Edit Distance, Trace Alignment, Anomaly Detection, and Observability"
+    ],
+    "entity_candidate": "Log and Event-Sequence Similarity: Edit Distance, Trace Alignment, Anomaly Detection, and Observability",
+    "hash": "1fb9448b16e98112dc84c0e12a57db3639917c19e766844f100eba4cf9562c5c",
+    "section_index": [
+      "Log and Event-Sequence Similarity",
+      "From Raw Logs to Event Sequences",
+      "Parsing Defines the Event Alphabet",
+      "Event Types and Event Instances Are Different",
+      "Log Parsing Is Part of the Similarity Model",
+      "Stable Templates Matter",
+      "Parsing Granularity Changes the Comparison Space",
+      "Parser Drift Can Look Like System Drift",
+      "Instrumentation Changes Can Also Create Artificial Distance",
+      "Missing Telemetry Is Not Necessarily Missing Behavior",
+      "Constructing the Execution Case",
+      "Sessionization",
+      "Trace IDs Are Stronger Than Arbitrary Windows",
+      "Interleaving Can Destroy Sequence Meaning",
+      "Formal Event Sequences",
+      "Unit-Cost Levenshtein Distance for Events",
+      "Worked Event-Alignment Example",
+      "Equal Edit Costs Are a Strong Assumption",
+      "Weighted Event Edit Distance",
+      "Event Importance Can Influence Cost",
+      "Event Hierarchies Can Define Substitution Cost",
+      "Arbitrary Weights May Stop Being a Mathematical Metric",
+      "Event Attributes Can Participate in Matching",
+      "Longest Common Subsequence",
+      "Indel Distance and LCS",
+      "Bag-of-Events Representation",
+      "Event n-Grams",
+      "Global Alignment and Local Transition Models Answer Different Questions",
+      "AI-Agent and Tool-Call Trajectories",
+      "Tool-Set Scores and Sequence Scores Measure Different Things",
+      "Sequence Alignment Provides Partial Credit for Agent Trajectories",
+      "Example Agent Alignment",
+      "Tool Name Matching May Be Too Coarse",
+      "Argument-Aware Tool Matching",
+      "Exact Arguments Are Not Always the Right Criterion",
+      "Agent Trajectory Similarity Is Not Agent Quality",
+      "Multiple Valid Agent Trajectories",
+      "Reference Trajectories Can Be Represented as Prototypes",
+      "Nested Agent Execution May Not Be a Flat Sequence",
+      "Agent Evaluation Illustrates a General Sequence Principle",
+      "Sequence Alignment View",
+      "Alignment Gaps Have Multiple Possible Meanings",
+      "Consecutive Missing Events",
+      "Gap Models",
+      "Local vs Global Alignment",
+      "Timing Is a Separate Dimension",
+      "Relative Time Is Often More Useful Than Wall-Clock Time",
+      "Timestamp-Aware Event Costs",
+      "Time Warp Edit Distance",
+      "Dynamic Time Warping Is Not Symbolic Edit Distance",
+      "Repeated Events",
+      "Run-Length Encoding",
+      "Optional Events",
+      "Alternative Branches",
+      "Distributed Systems May Have Only Partial Order",
+      "Distributed Traces May Be Trees or DAGs",
+      "Process Mining and Trace Alignment",
+      "Trace-to-Trace Distance vs Process Conformance",
+      "Anomaly Detection with Event Distance",
+      "Small Distance Can Still Represent a Critical Incident",
+      "Large Distance Can Still Represent Harmless Change",
+      "Security Event Correlation",
+      "Learned Sequence Models Answer Different Questions",
+      "Preserve the Edit Script, Not Only the Scalar",
+      "Large-Scale Trace Retrieval",
+      "Cheap Candidate Filters",
+      "Length Lower Bound",
+      "Banded Dynamic Programming",
+      "Bit-Parallel Matching",
+      "Event q-Gram Filtering",
+      "Set Signatures Change the Similarity Model",
+      "Prototype Indexing",
+      "Metric Indexes Require Metric Distance",
+      "Complexity",
+      "Normalizing Event-Sequence Distance",
+      "Normalization Does Not Create Probability",
+      "Evaluation Protocol Matters",
+      "For Agent Trajectory Evaluation, Also Report",
+      "Comparing Raw Log Text Directly",
+      "Assuming Every Different Message Is a Different Event Type",
+      "Ignoring Parser Version",
+      "Ignoring Software Version",
+      "Treating Missing Telemetry as Missing Behavior",
+      "Building One Global Sequence from Concurrent Requests",
+      "Treating Fixed Windows as True Sessions",
+      "Assuming Timestamp Order Equals Causal Order",
+      "Assuming One Total Order Represents a Distributed Trace",
+      "Assuming Unit Cost Represents Operational Importance",
+      "Assuming Arbitrary Weights Still Define a Metric",
+      "Confusing LCS Distance with Classical Levenshtein",
+      "Assuming Bag-of-Events Preserves Order",
+      "Assuming Event n-Grams Represent the Complete Workflow",
+      "Assuming Same Event Order Means Same Performance",
+      "Assuming Same Timing Means Same Workflow",
+      "Compressing Repeated Events Without Preserving Counts",
+      "Using One Normal Trace as the Only Valid Behavior",
+      "Using Tool-Set F1 as an Ordered-Trajectory Metric",
+      "Using Exact Trajectory Match as the Only Agent Metric",
+      "Assuming Trajectory Similarity Means Correct Reasoning",
+      "Assuming Similar Tool Calls Mean the Same Outcome",
+      "Important Boundaries",
+      "A Practical Architecture",
+      "When Levenshtein Distance Is Useful",
+      "When Levenshtein Distance Is Not Enough",
+      "Summary",
+      "Related Levenshtein.net Resources",
+      "Technical References"
+    ],
+    "sample_evidence": [
+      {
+        "section": "Log and Event-Sequence Similarity",
+        "id": "ux-section-1",
+        "excerpt": "Logs, traces, event streams, workflow histories, and tool-call trajectories record what a system does over time. Once raw observations are converted into stable event types and grouped into meaningful executions, each execution can be represented as an ordered sequence."
+      },
+      {
+        "section": "From Raw Logs to Event Sequences",
+        "id": "ux-section-2",
+        "excerpt": "A raw log stream may look like:"
+      },
+      {
+        "section": "Parsing Defines the Event Alphabet",
+        "id": "ux-section-3",
+        "excerpt": "Let:"
+      },
+      {
+        "section": "Event Types and Event Instances Are Different",
+        "id": "ux-section-4",
+        "excerpt": "These records:"
+      },
+      {
+        "section": "Log Parsing Is Part of the Similarity Model",
+        "id": "ux-section-5",
+        "excerpt": "raw logs ↓ parser ↓ event templates ↓ event instances ↓ execution sequence ↓ distance or similarity"
+      },
+      {
+        "section": "Tool-Set Scores and Sequence Scores Measure Different Things",
+        "id": "ux-section-30",
+        "excerpt": "A set-based or matching-based evaluator can measure whether expected tool calls appeared. For example, if expected and actual executions contain the same four tool names, an unordered precision/recall/F1 measure can be perfect."
+      },
+      {
+        "section": "Distributed Systems May Have Only Partial Order",
+        "id": "ux-section-55",
+        "excerpt": "In distributed execution, two independent operations can occur concurrently. There may be no meaningful answer to which happened first."
+      },
+      {
+        "section": "Assuming Every Different Message Is a Different Event Type",
+        "id": "ux-section-81",
+        "excerpt": "Parameterized instances of one logging statement should usually share a stable template."
+      },
+      {
+        "section": "Related Levenshtein.net Resources",
+        "id": "ux-section-107",
+        "excerpt": "Edit Distance"
+      },
+      {
+        "section": "Technical References",
+        "id": "ux-section-108",
+        "excerpt": "Min Du and Feifei Li — Spell: Streaming Parsing of System Event Logs ."
+      }
+    ],
+    "mentions": [
+      {
+        "target": "/bounded-and-parameterized-edit-distance",
+        "evidence": [
+          {
+            "section": "Banded Dynamic Programming",
+            "anchor_id": "ux-section-68",
+            "alias": "bounded and parameterized edit distance",
+            "excerpt": "See Ukkonen Algorithm and Bounded and Parameterized Edit Distance ."
+          }
+        ]
+      },
+      {
+        "target": "/edit-distance-variants",
+        "evidence": [
+          {
+            "section": "Normalizing Event-Sequence Distance",
+            "anchor_id": "ux-section-75",
+            "alias": "edit distance variants",
+            "excerpt": "See Edit Distance Variants for normalized edit-distance definitions."
+          }
+        ]
+      },
+      {
+        "target": "/edit-distance",
+        "evidence": [
+          {
+            "section": "Log and Event-Sequence Similarity",
+            "anchor_id": "ux-section-1",
+            "alias": "edit distance",
+            "excerpt": "Comparing such sequences creates a natural application for edit distance and Levenshtein distance . An insertion can represent an extra event, a deletion a missing event, and a substitution one event type replacing another."
+          }
+        ]
+      },
+      {
+        "target": "/edit-operations",
+        "evidence": [
+          {
+            "section": "Summary",
+            "anchor_id": "ux-section-106",
+            "alias": "edit operations",
+            "excerpt": "AI-agent and tool-call trajectories fit the same framework. A tool call can be treated as an event, a sequence of calls can be aligned with an expected or historical trajectory, and edit operations can provide interpretable partial credit. But tool-set matching, sequence alignment, argument correctness, semantic equivalence, and final task outcome remain different evaluation dimensions."
+          }
+        ]
+      },
+      {
+        "target": "/indexing-and-filtering-for-edit-distance",
+        "evidence": [
+          {
+            "section": "Related Levenshtein.net Resources",
+            "anchor_id": "ux-section-107",
+            "alias": "indexing and filtering for edit distance",
+            "excerpt": "Indexing and Filtering for Edit Distance"
+          }
+        ]
+      },
+      {
+        "target": "/levenshtein-distance-limitations",
+        "evidence": [
+          {
+            "section": "Related Levenshtein.net Resources",
+            "anchor_id": "ux-section-107",
+            "alias": "levenshtein distance limitations",
+            "excerpt": "Levenshtein Distance Limitations"
+          }
+        ]
+      },
+      {
+        "target": "/myers-bit-vector-algorithm",
+        "evidence": [
+          {
+            "section": "Bit-Parallel Matching",
+            "anchor_id": "ux-section-69",
+            "alias": "myers bit vector algorithm",
+            "excerpt": "The Myers Bit-Vector Algorithm can accelerate edit-distance computations using machine-word bit operations."
+          }
+        ]
+      },
+      {
+        "target": "/sequence-alignment-and-gap-models",
+        "evidence": [
+          {
+            "section": "Gap Models",
+            "anchor_id": "ux-section-44",
+            "alias": "sequence alignment and gap models",
+            "excerpt": "Such models are common in Sequence Alignment and Gap Models and can also be useful for structured event sequences."
+          }
+        ]
+      },
+      {
+        "target": "/string-metrics",
+        "evidence": [
+          {
+            "section": "Indel Distance and LCS",
+            "anchor_id": "ux-section-25",
+            "alias": "string metrics",
+            "excerpt": "See String Metrics for the distinction between Levenshtein, Indel distance, LCS, and normalized ratio scores."
+          }
+        ]
+      },
+      {
+        "target": "/tree-and-graph-edit-distance",
+        "evidence": [
+          {
+            "section": "Nested Agent Execution May Not Be a Flat Sequence",
+            "anchor_id": "ux-section-39",
+            "alias": "tree and graph edit distance",
+            "excerpt": "See Tree and Graph Edit Distance ."
+          }
+        ]
+      },
+      {
+        "target": "/ukkonen-algorithm",
+        "evidence": [
+          {
+            "section": "Banded Dynamic Programming",
+            "anchor_id": "ux-section-68",
+            "alias": "ukkonen algorithm",
+            "excerpt": "See Ukkonen Algorithm and Bounded and Parameterized Edit Distance ."
+          }
+        ]
+      },
+      {
+        "target": "/weighted-levenshtein-distance",
+        "evidence": [
+          {
+            "section": "Weighted Event Edit Distance",
+            "anchor_id": "ux-section-19",
+            "alias": "weighted levenshtein distance",
+            "excerpt": "This is an event-oriented application of Weighted Levenshtein Distance ."
+          }
+        ]
+      }
+    ],
+    "top_overlap": [
+      {
+        "a": "/log-and-event-sequence-similarity",
+        "b": "/source-code-and-ast-similarity",
+        "group_a": "Software",
+        "group_b": "Software",
+        "cosine": 0.1533,
+        "heading_jaccard": 0.0,
+        "common_headings": "",
+        "shared_terms": "parser behavioral retries execution parsing functional templates fragments",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/levenshtein-vs-damerau-and-hamming",
+        "b": "/log-and-event-sequence-similarity",
+        "group_a": "Comparisons",
+        "group_b": "Software",
+        "cosine": 0.1495,
+        "heading_jaccard": 0.0,
+        "common_headings": "",
+        "shared_terms": "auth status event dropped causal start behavioral harmless",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/edit-distance-variants",
+        "b": "/log-and-event-sequence-similarity",
+        "group_a": "Theory",
+        "group_b": "Software",
+        "cosine": 0.1494,
+        "heading_jaccard": 0.0,
+        "common_headings": "",
+        "shared_terms": "del warping sub ins arguments event learned template",
+        "status": "lexical_candidate_not_cannibalization"
+      }
+    ],
+    "link_candidates": [
+      {
+        "source": "/log-and-event-sequence-similarity",
+        "target": "/software-systems",
+        "relation": "child_to_hub",
+        "state": "navigation_only_review",
+        "priority": "P3",
+        "scopes": "breadcrumb | sidebar",
+        "section": "",
+        "anchor_id": "",
+        "excerpt": "",
+        "reason": "Đặt thực thể vào phạm vi kiến thức rộng hơn",
+        "status": "requires_ai_review"
+      }
+    ]
+  },
+  {
+    "url": "/software-systems",
+    "mission": "Hub hệ thống phần mềm",
+    "h1": [
+      "Edit Distance in Software Systems and Security"
+    ],
+    "entity_candidate": "Edit Distance in Software Systems and Security",
+    "hash": "e9ea0d2a28d1686d6bd533c5b46d74eacb4674ead722e9c03689cdf9cd9e40ad",
+    "section_index": [
+      "Edit Distance in Software Systems and Security",
+      "Edit Distance in Software Systems and Security"
+    ],
+    "sample_evidence": [
+      {
+        "section": "Edit Distance in Software Systems and Security",
+        "id": "",
+        "excerpt": "Applications"
+      },
+      {
+        "section": "Edit Distance in Software Systems and Security",
+        "id": "",
+        "excerpt": "Edit distance appears throughout software systems wherever identifiers, source code, package names, domains, logs, or event sequences must be compared under small structural changes. In security, a one-character insertion, deletion, substitution, or Unicode lookalike can distinguish a legitimate identifier from a typosquatting or supply-chain attack; in software analysis, textual edit distance can provide a useful baseline for comparing source code but must be separated from syntax-aware AST sim"
+      }
+    ],
+    "mentions": [
+      {
+        "target": "/edit-distance",
+        "evidence": [
+          {
+            "section": "Edit Distance in Software Systems and Security",
+            "anchor_id": "",
+            "alias": "edit distance",
+            "excerpt": "Edit distance appears throughout software systems wherever identifiers, source code, package names, domains, logs, or event sequences must be compared under small structural changes. In security, a one-character insertion, deletion, substitution, or Unicode lookalike can distinguish a legitimate identifier from a typosquatting or supply-chain attack; in software analysis, textual edit distance can provide a useful baseline for comparing source code but must be separated from syntax-aware AST similarity and semantic program equivalence; and in operational systems, edit distance can compare ordered logs or event traces when missing, added, or changed events matter. This section examines these "
+          }
+        ]
+      },
+      {
+        "target": "/log-and-event-sequence-similarity",
+        "evidence": [
+          {
+            "section": "Edit Distance in Software Systems and Security",
+            "anchor_id": "",
+            "alias": "log and event sequence similarity",
+            "excerpt": "01 Log and Event-Sequence Similarity: Edit Distance, Trace Alignment, Anomaly Detection, and Observability A rigorous guide to log and event-sequence similarity, covering event parsing, sessionization, Levenshtein alignment, weighted costs, LCS, temporal distance, process traces, anomaly detection, security events, scalable retrieval, and failure modes. Article · 24 min read"
+          }
+        ]
+      },
+      {
+        "target": "/source-code-and-ast-similarity",
+        "evidence": [
+          {
+            "section": "Edit Distance in Software Systems and Security",
+            "anchor_id": "",
+            "alias": "source code and ast similarity",
+            "excerpt": "04 Source Code and AST Similarity: Edit Distance, Clone Detection, Tree Differencing, and Semantic Limits A rigorous guide to source-code similarity, covering text and token edit distance, code-clone types, AST similarity, tree edit distance, GumTree, Deckard, NiCad, SourcererCC, semantic clones, benchmarks, and limitations. Article · 46 min read"
+          }
+        ]
+      },
+      {
+        "target": "/typosquatting-and-supply-chain-security",
+        "evidence": [
+          {
+            "section": "Edit Distance in Software Systems and Security",
+            "anchor_id": "",
+            "alias": "typosquatting and software supply chain security",
+            "excerpt": "02 Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense A rigorous guide to typosquatting and software supply-chain security, covering edit-distance detection, package impersonation, Unicode confusables, dependency confusion, slopsquatting, false positives, behavioral analysis, and layered defenses. Article · 11 min read"
+          }
+        ]
+      },
+      {
+        "target": "/unicode-homoglyph-and-confusable-attacks",
+        "evidence": [
+          {
+            "section": "Edit Distance in Software Systems and Security",
+            "anchor_id": "",
+            "alias": "unicode homoglyph and confusable attacks",
+            "excerpt": "03 Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense A technical guide to Unicode homoglyph and confusable attacks, UTS #39, confusable skeletons, mixed-script spoofing, IDN security, and the role of Levenshtein distance in detecting deceptive identifiers. Article · 11 min read"
+          }
+        ]
+      }
+    ],
+    "top_overlap": [
+      {
+        "a": "/applications",
+        "b": "/software-systems",
+        "group_a": "Applications",
+        "group_b": "Software",
+        "cosine": 0.6201,
+        "heading_jaccard": 0.25,
+        "common_headings": "log and event sequence similarity edit distance trace alignment anomaly detection and observability | source code and ast similarity edit distance clone detection tree differencing and semantic limits | typosquatting and software supply chain security edit distance package impersonation detection and defense | unicode homoglyph and confusable attacks edit distance uts 39 idn spoofing and defense",
+        "shared_terms": "idn uts clone covering anomaly impersonation defense typosquatting",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/software-systems",
+        "b": "/unicode-homoglyph-and-confusable-attacks",
+        "group_a": "Software",
+        "group_b": "Software",
+        "cosine": 0.2807,
+        "heading_jaccard": 0.0333,
+        "common_headings": "unicode homoglyph and confusable attacks edit distance uts 39 idn spoofing and defense",
+        "shared_terms": "uts typosquatting idn confusable security malicious confusables impersonation",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/software-systems",
+        "b": "/typosquatting-and-supply-chain-security",
+        "group_a": "Software",
+        "group_b": "Software",
+        "cosine": 0.2262,
+        "heading_jaccard": 0.0278,
+        "common_headings": "typosquatting and software supply chain security edit distance package impersonation detection and defense",
+        "shared_terms": "typosquatting impersonation package supply malicious ast security confusable",
+        "status": "lexical_candidate_not_cannibalization"
+      }
+    ],
+    "link_candidates": [
+      {
+        "source": "/software-systems",
+        "target": "/applications",
+        "relation": "narrower_to_broader",
+        "state": "navigation_only_review",
+        "priority": "P3",
+        "scopes": "breadcrumb | header | sidebar",
+        "section": "",
+        "anchor_id": "",
+        "excerpt": "",
+        "reason": "Phân cấp đề xuất",
+        "status": "requires_ai_review"
+      }
+    ]
+  },
+  {
+    "url": "/source-code-and-ast-similarity",
+    "mission": "So sánh AST và mã nguồn",
+    "h1": [
+      "Source Code and AST Similarity: Edit Distance, Clone Detection, Tree Differencing, and Semantic Limits"
+    ],
+    "entity_candidate": "Source Code and AST Similarity: Edit Distance, Clone Detection, Tree Differencing, and Semantic Limits",
+    "hash": "6aa71fc86ec6d03af3a6f7f3ed4788e27fc7265cb3cf6d9b37aea4cc111cd1a2",
+    "section_index": [
+      "Source Code and AST Similarity",
+      "1. What does “similar code” mean?",
+      "2. Similarity has multiple representation layers",
+      "3. No single representation dominates every task",
+      "4. Character-level Levenshtein distance",
+      "5. Character distance is formatting-sensitive",
+      "6. Comments distort raw similarity",
+      "7. String literals create another ambiguity",
+      "8. Identifier length can dominate character distance",
+      "9. Character normalization",
+      "10. Normalization creates invariance",
+      "11. Over-normalization can hide important differences",
+      "12. Line-level comparison",
+      "13. One formatting operation can create many line changes",
+      "14. Line diff is optimized for review, not semantic modeling",
+      "15. Lexical tokenization",
+      "16. Token edit distance",
+      "17. Token distance better respects language syntax",
+      "18. Identifier normalization",
+      "19. Consistent renaming versus blind renaming",
+      "20. Why alias relationships matter",
+      "21. Literal normalization",
+      "22. Literal identity may still matter",
+      "23. Token multiset similarity",
+      "24. Multisets trade order for scalability",
+      "25. Example of order destroying semantics",
+      "26. Token n-grams",
+      "27. Fingerprinting",
+      "28. Winnowing",
+      "29. MOSS",
+      "30. Similarity is evidence, not intent",
+      "31. The same principle applies to software provenance",
+      "32. Code clones",
+      "33. Common four-type clone taxonomy",
+      "34. Type-1 clones",
+      "35. Type-2 clones",
+      "36. Type-3 clones",
+      "37. Type-4 clones",
+      "38. Clone types are not mathematical natural constants",
+      "39. Clone granularity",
+      "40. Minimum clone size",
+      "41. Small fragments are naturally non-unique",
+      "42. Clone detection has a base-rate problem",
+      "43. Parsing source code",
+      "44. AST preserves syntax hierarchy",
+      "45. AST is abstract",
+      "46. There is no universal AST",
+      "47. Concrete syntax tree versus AST",
+      "48. AST normalization",
+      "49. AST fingerprints",
+      "50. Deckard",
+      "51. Deckard is not exact tree edit distance",
+      "52. Why vectorization helps scale",
+      "53. Vectorization loses structure",
+      "54. Tree edit distance",
+      "55. Ordered labeled trees",
+      "56. Tree edit distance is syntax-sensitive, not algebra-aware",
+      "57. Zhang-Shasha tree edit distance",
+      "58. Zhang-Shasha complexity",
+      "59. Why tree distance is harder than string distance",
+      "60. Node relabeling costs",
+      "61. Typed edit costs",
+      "62. Arbitrary weights need not produce a metric",
+      "63. AST edit distance versus source-code differencing",
+      "64. Move operations",
+      "65. GumTree",
+      "66. GumTree is not simply “Levenshtein on AST nodes”",
+      "67. Shortest edit script and most intuitive edit script can differ",
+      "68. AST mapping is fundamental",
+      "69. Mapping ambiguity",
+      "70. Mapping quality changes the edit script",
+      "71. APTED and robust tree edit distance",
+      "72. AST size matters",
+      "73. Candidate generation before exact tree comparison",
+      "74. NiCad",
+      "75. NiCad illustrates a powerful principle",
+      "76. Representation engineering can outperform metric complexity",
+      "77. SourcererCC",
+      "78. SourcererCC demonstrates retrieval architecture",
+      "79. Why all-pairs comparison is impossible at Big Code scale",
+      "80. Filtering is not merely an optimization",
+      "81. Recall-preserving filters",
+      "82. Heuristic filters",
+      "83. Candidate generation and classification should be separated",
+      "84. Code similarity as information retrieval",
+      "85. Search similarity and clone definition are different",
+      "86. BigCloneBench",
+      "87. BigCloneBench evaluation",
+      "88. Precision and recall",
+      "89. High recall with unusable precision",
+      "90. High precision with tiny recall",
+      "91. Clone benchmarks are difficult to construct",
+      "92. Ground truth is representation-dependent",
+      "93. Bellon benchmark",
+      "94. Benchmark bias",
+      "95. Mutation-based benchmarks",
+      "96. Synthetic clones are not fully realistic",
+      "97. AST similarity can detect refactorings",
+      "98. Move detection",
+      "99. Move similarity is not universal tree edit distance",
+      "100. Function extraction",
+      "101. AST-only local comparison can still miss extraction relationships",
+      "102. Program differencing may require graph relationships",
+      "103. Control-flow graph",
+      "104. AST and CFG answer different questions",
+      "105. Data-flow graph",
+      "106. Data flow can expose semantic similarity",
+      "107. Program dependence graph",
+      "108. Graph comparison is more expensive",
+      "109. Type-4 clones challenge syntax-based methods",
+      "110. AST distance can be large while behavior is similar",
+      "111. Near-identical ASTs can behave differently",
+      "112. Semantic importance is nonuniform",
+      "113. One literal can dominate semantics",
+      "114. One API call can dominate semantics",
+      "115. AST similarity should not be used as proof of software safety",
+      "116. Delta analysis is often more useful than aggregate similarity",
+      "117. Similarity score hides localization",
+      "118. Always preserve the edit script",
+      "119. Semantic clones",
+      "120. The “twilight zone”",
+      "121. Semantic similarity is itself underspecified",
+      "122. Behavioral equivalence",
+      "123. Tests provide evidence, not universal equivalence",
+      "124. Dynamic behavioral fingerprints",
+      "125. Behavioral fingerprints depend on the test distribution",
+      "126. Side effects complicate behavioral similarity",
+      "127. Symbolic execution",
+      "128. Program equivalence is much harder than edit distance",
+      "129. Neural code representations",
+      "130. CodeBERT",
+      "131. Learned embeddings are not edit distances",
+      "132. Learned similarity depends on training data",
+      "133. Embedding similarity can reflect superficial correlations",
+      "134. Data-flow-aware learned models",
+      "135. Cross-language similarity",
+      "136. Language-independent intermediate representations",
+      "137. Generic AST schemas lose language-specific information",
+      "138. Compiler IR",
+      "139. Compiler optimization can increase or reduce similarity",
+      "140. Binary similarity is another distinct problem",
+      "141. Generated code",
+      "142. Framework boilerplate",
+      "143. Standard algorithms",
+      "144. API constraints create convergent code",
+      "145. License analysis needs more than clone detection",
+      "146. Similarity is not legal conclusion",
+      "147. Vulnerability clone detection",
+      "148. Vulnerability patch search",
+      "149. Structural similarity does not guarantee same vulnerability",
+      "150. One clone can be safe and another unsafe",
+      "151. Patch similarity and behavior similarity differ",
+      "152. Refactoring versus semantic change",
+      "153. Rename refactoring",
+      "154. Textual distance overcounts correlated edits",
+      "155. Edit granularity controls distance meaning",
+      "156. There is no universally correct operation vocabulary",
+      "157. Fine-grained distance is objective only relative to its model",
+      "158. Multiple optimal edit scripts",
+      "159. Tie-breaking matters",
+      "160. Stable diffs matter operationally",
+      "161. Normalized similarity score",
+      "162. Normalization denominator matters",
+      "163. Thresholds are domain-dependent",
+      "164. Small fragments require stricter thresholds",
+      "165. Statistical significance of similarity",
+      "166. Common language syntax creates a nonuniform background",
+      "167. Weighted information retrieval",
+      "168. Rare does not mean semantically important",
+      "169. Clone genealogies",
+      "170. Temporal evidence helps provenance inference",
+      "171. Version history changes clone analysis",
+      "172. Repository forks",
+      "173. Deduplicate known forks before cross-project analysis",
+      "174. Third-party vendoring",
+      "175. Path information can be useful metadata",
+      "176. Comments can be weak or strong evidence",
+      "177. Security-sensitive Unicode",
+      "178. Normalize Unicode carefully",
+      "179. AST parser must see the actual compiler semantics",
+      "180. Preprocessor languages complicate parsing",
+      "181. Compare preprocessor configuration explicitly",
+      "182. Generated macro code",
+      "183. Template and generic instantiation",
+      "184. Code formatting tools can collapse Type-1 differences",
+      "185. Formatter version must be recorded",
+      "186. Parser configuration must also be recorded",
+      "187. Benchmark multiple representations",
+      "188. Ablation testing",
+      "189. Do not hide preprocessing inside the detector",
+      "190. Runtime benchmark",
+      "191. Throughput benchmark",
+      "192. Scaling curve",
+      "193. Candidate explosion",
+      "194. Boilerplate-aware filters",
+      "195. Precision should be stratified by clone type",
+      "196. Recall should also be stratified by similarity strength",
+      "197. Inter-project versus intra-project clones",
+      "198. Clone management",
+      "199. Duplicate code is not always bad",
+      "200. Refactoring clones can increase coupling",
+      "201. Clone divergence",
+      "202. Inconsistent clone updates",
+      "203. AST differencing helps compare clone evolution",
+      "204. Patch-equivalence detection",
+      "205. But equivalent edit scripts do not guarantee equivalent effects",
+      "206. Code review application",
+      "207. Reviewers should still see textual context",
+      "208. Comments can matter operationally",
+      "209. API migration",
+      "210. Code transformation systems",
+      "211. Exact AST matching is often preferable for automated rewrite",
+      "212. Retrieval versus rewriting",
+      "213. Detection architecture",
+      "214. Reference pseudocode: token normalization",
+      "215. This normalization is task-specific",
+      "216. Reference pseudocode: token edit similarity",
+      "217. Reference pseudocode: AST feature vector",
+      "218. Vector similarity",
+      "219. Reference pseudocode: structural verification",
+      "220. Exact tree distance need not be the final verifier",
+      "221. Hybrid similarity model",
+      "222. Do not average incompatible scales blindly",
+      "223. Calibrate against the downstream task",
+      "224. Common failure mode: raw Levenshtein is source-code semantics",
+      "225. Common failure mode: whitespace difference means code difference",
+      "226. Common failure mode: comments are always irrelevant",
+      "227. Common failure mode: variable renaming means different logic",
+      "228. Common failure mode: identifier normalization is always safe",
+      "229. Common failure mode: literal normalization preserves meaning",
+      "230. Common failure mode: token multiset similarity preserves execution order",
+      "231. Common failure mode: AST equality means semantic equality",
+      "232. Common failure mode: similar AST means same behavior",
+      "233. Common failure mode: very different ASTs mean different behavior",
+      "234. Common failure mode: tree edit distance understands algebra",
+      "235. Common failure mode: GumTree computes exact classical tree edit distance",
+      "236. Common failure mode: Deckard is exact AST edit distance",
+      "237. Common failure mode: MOSS proves plagiarism",
+      "238. Common failure mode: code clone means illegal copying",
+      "239. Common failure mode: Type-4 clone has one universal formal definition",
+      "240. Common failure mode: high aggregate similarity proves safety",
+      "241. Common failure mode: low aggregate similarity proves unrelated functionality",
+      "242. Common failure mode: test agreement proves universal equivalence",
+      "243. Common failure mode: embedding similarity is semantic proof",
+      "244. Common failure mode: same embedding neighborhood means copied code",
+      "245. Common failure mode: exact text match proves direct copying",
+      "246. Common failure mode: earliest observed repository proves authorship",
+      "247. Common failure mode: all duplicate code should be refactored",
+      "248. Common failure mode: all ASTs are comparable across parsers",
+      "249. Common failure mode: parsing source once represents every build",
+      "250. Common failure mode: generated code clones indicate developer copying",
+      "251. Common failure mode: scalar similarity is sufficient for review",
+      "252. Common failure mode: one threshold works for every fragment size",
+      "253. Common failure mode: one threshold works across languages",
+      "254. Common failure mode: one detector should dominate every clone type",
+      "255. Decision table: representation",
+      "256. Decision table: classical tools",
+      "257. Decision table: what similarity cannot establish",
+      "258. Rigorous evaluation checklist",
+      "259. Recommended layered architecture",
+      "260. The correct role of Levenshtein distance",
+      "261. Applying Levenshtein after representation design",
+      "262. Strings, tokens, and trees form a progression",
+      "263. Moving upward gains invariance but costs certainty and computation",
+      "264. Every abstraction discards information",
+      "265. Every representation preserves some nuisance variation",
+      "266. There is no universal source-code distance",
+      "267. Source similarity and semantic similarity",
+      "268. Final interpretation",
+      "Selected technical references"
+    ],
+    "sample_evidence": [
+      {
+        "section": "Source Code and AST Similarity",
+        "id": "ux-section-1",
+        "excerpt": "Source-code similarity is not one mathematical problem. Two programs can be identical as text, similar after formatting is removed, structurally similar as abstract syntax trees, behaviorally similar under a set of tests, or semantically equivalent despite sharing almost no surface syntax."
+      },
+      {
+        "section": "1. What does “similar code” mean?",
+        "id": "ux-section-2",
+        "excerpt": "Suppose two source fragments are:"
+      },
+      {
+        "section": "2. Similarity has multiple representation layers",
+        "id": "ux-section-3",
+        "excerpt": "Representation Typical question Characters How much literal text changed? Lines Which source lines were added or removed? Tokens How similar is the lexical program structure? Normalized tokens Are fragments similar after renaming or literal normalization? AST How similar is their syntactic structure? Control/data-flow Do they organize computation similarly? Behavior Do they produce similar outputs/effects? Semantics Do they compute the same function under all relevant inputs?"
+      },
+      {
+        "section": "3. No single representation dominates every task",
+        "id": "ux-section-4",
+        "excerpt": "Raw text is useful for:"
+      },
+      {
+        "section": "4. Character-level Levenshtein distance",
+        "id": "ux-section-5",
+        "excerpt": "Let source files be character sequences:"
+      },
+      {
+        "section": "70. Mapping quality changes the edit script",
+        "id": "ux-section-71",
+        "excerpt": "A poor mapping can turn:"
+      },
+      {
+        "section": "136. Language-independent intermediate representations",
+        "id": "ux-section-137",
+        "excerpt": "Cross-language analysis can map programs toward:"
+      },
+      {
+        "section": "202. Inconsistent clone updates",
+        "id": "ux-section-203",
+        "excerpt": "A bug fix may be applied to one copy but not another."
+      },
+      {
+        "section": "268. Final interpretation",
+        "id": "ux-section-269",
+        "excerpt": "Source-code similarity begins as a sequence-comparison problem but quickly becomes a representation problem."
+      },
+      {
+        "section": "Selected technical references",
+        "id": "ux-section-270",
+        "excerpt": "Roy, C. K., Cordy, J. R., and Koschke, R. Comparison and evaluation of code clone detection techniques and tools: A qualitative approach. Science of Computer Programming 74(7), 470-495, 2009. https://doi.org/10.1016/j.scico.2009.02.007 ."
+      }
+    ],
+    "mentions": [
+      {
+        "target": "/edit-distance",
+        "evidence": [
+          {
+            "section": "Source Code and AST Similarity",
+            "anchor_id": "ux-section-1",
+            "alias": "edit distance",
+            "excerpt": "This article develops source-code similarity from raw text through tokens and abstract syntax trees, explains tree edit distance and source-code differencing, examines classical clone-detection systems including MOSS, NiCad, Deckard, SourcererCC, and GumTree, and establishes a critical boundary:"
+          }
+        ]
+      },
+      {
+        "target": "/edit-operations",
+        "evidence": [
+          {
+            "section": "261. Applying Levenshtein after representation design",
+            "anchor_id": "ux-section-262",
+            "alias": "edit operations",
+            "excerpt": "What representation should be compared, and which edit operations should matter on that representation?"
+          }
+        ]
+      },
+      {
+        "target": "/learned-edit-distance-and-embeddings",
+        "evidence": [
+          {
+            "section": "131. Learned embeddings are not edit distances",
+            "anchor_id": "ux-section-132",
+            "alias": "learned edit distance and embeddings",
+            "excerpt": "The distinction is developed more generally in learned edit distance and embeddings ."
+          }
+        ]
+      },
+      {
+        "target": "/tree-and-graph-edit-distance",
+        "evidence": [
+          {
+            "section": "108. Graph comparison is more expensive",
+            "anchor_id": "ux-section-109",
+            "alias": "tree and graph edit distance",
+            "excerpt": "This is discussed more generally in tree and graph edit distance ."
+          }
+        ]
+      },
+      {
+        "target": "/unicode-homoglyph-and-confusable-attacks",
+        "evidence": [
+          {
+            "section": "177. Security-sensitive Unicode",
+            "anchor_id": "ux-section-178",
+            "alias": "unicode homoglyph and confusable attacks",
+            "excerpt": "This is covered in Unicode homoglyph and confusable attacks ."
+          }
+        ]
+      }
+    ],
+    "top_overlap": [
+      {
+        "a": "/edit-distance-vs-set-vector-and-ngram-similarity",
+        "b": "/source-code-and-ast-similarity",
+        "group_a": "Comparisons",
+        "group_b": "Software",
+        "cosine": 0.199,
+        "heading_jaccard": 0.002,
+        "common_headings": "selected technical references",
+        "shared_terms": "fragments plagiarism cosine multiset inverted asts idf syntactic",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/software-systems",
+        "b": "/source-code-and-ast-similarity",
+        "group_a": "Software",
+        "group_b": "Software",
+        "cosine": 0.1861,
+        "heading_jaccard": 0.0,
+        "common_headings": "",
+        "shared_terms": "clone ast clones differencing gumtree deckard sourcerercc nicad",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/source-code-and-ast-similarity",
+        "b": "/tree-and-graph-edit-distance",
+        "group_a": "Software",
+        "group_b": "Theory",
+        "cosine": 0.1843,
+        "heading_jaccard": 0.0,
+        "common_headings": "",
+        "shared_terms": "shasha node sibling subtree ast zhang syntax nodes",
+        "status": "lexical_candidate_not_cannibalization"
+      }
+    ],
+    "link_candidates": [
+      {
+        "source": "/source-code-and-ast-similarity",
+        "target": "/software-systems",
+        "relation": "child_to_hub",
+        "state": "navigation_only_review",
+        "priority": "P3",
+        "scopes": "breadcrumb | sidebar",
+        "section": "",
+        "anchor_id": "",
+        "excerpt": "",
+        "reason": "Đặt thực thể vào phạm vi kiến thức rộng hơn",
+        "status": "requires_ai_review"
+      }
+    ]
+  },
+  {
+    "url": "/typosquatting-and-supply-chain-security",
+    "mission": "Phát hiện giả mạo tên package",
+    "h1": [
+      "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense"
+    ],
+    "entity_candidate": "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+    "hash": "5c65c309cd43123db5d81bade120d43665b65b782d20db188d52919daba21a03",
+    "section_index": [
+      "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+      "Why Package Names Are Security-Sensitive Strings",
+      "Levenshtein Distance as a First Detection Layer",
+      "Transpositions Need a Different Operation Model",
+      "Distance Is Better for Candidate Generation Than Verdicts",
+      "Why a Fixed Distance Threshold Produces False Positives",
+      "Name Length Changes the Meaning of an Edit Count",
+      "Registry Canonicalization Must Be Modeled Explicitly",
+      "Token Structure Matters",
+      "Combosquatting Is Broader Than Simple Typing Errors",
+      "Package Confusion Extends Beyond Typosquatting",
+      "Weighted Edit Distance Can Model Typing Behavior",
+      "Unicode Confusables Are a Different Attack Surface",
+      "Confusable Processing and Edit Distance Can Be Combined",
+      "Popularity Makes Name Similarity Directional",
+      "Package Age and Registration Chronology Add Context",
+      "Ownership and Provenance Are Stronger Than Name Similarity",
+      "Repository and Source Similarity Add Another Layer",
+      "Typosquatting Is Only One Supply-Chain Attack Strategy",
+      "Dependency Confusion Can Have Distance Zero",
+      "Compromised Legitimate Packages Also Have Distance Zero",
+      "Historical Web Typosquatting Provides the Same Lesson",
+      "Empirical Software Supply-Chain Research",
+      "Popularity-Aware Detection",
+      "Package Confusion Is Broader Than Lexical Distance",
+      "Pre-Installation Warnings Are Valuable",
+      "Alert Fatigue Is Part of the Security Model",
+      "Do Not Automatically Correct Security-Sensitive Identifiers",
+      "A Layered Detection Architecture",
+      "String Similarity Is Evidence, Not Identity",
+      "Relationship to Unicode Security",
+      "Summary",
+      "Related Levenshtein.net Resources",
+      "Selected Technical References"
+    ],
+    "sample_evidence": [
+      {
+        "section": "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+        "id": "",
+        "excerpt": "Typosquatting is a name-based attack pattern in which a package, domain, repository, module, library, or other software identifier is made similar enough to a trusted identifier that a user or automated system may select the wrong artifact."
+      },
+      {
+        "section": "Why Package Names Are Security-Sensitive Strings",
+        "id": "ux-section-2",
+        "excerpt": "In ordinary prose, a typo usually changes text. In a software ecosystem, a typo can change which executable artifact is downloaded."
+      },
+      {
+        "section": "Levenshtein Distance as a First Detection Layer",
+        "id": "ux-section-3",
+        "excerpt": "Let T be the trusted identifier and C a candidate. A simple detector can search for:"
+      },
+      {
+        "section": "Transpositions Need a Different Operation Model",
+        "id": "ux-section-4",
+        "excerpt": "A common typing mistake swaps adjacent characters:"
+      },
+      {
+        "section": "Distance Is Better for Candidate Generation Than Verdicts",
+        "id": "ux-section-5",
+        "excerpt": "A useful security architecture separates two tasks."
+      },
+      {
+        "section": "Weighted Edit Distance Can Model Typing Behavior",
+        "id": "ux-section-12",
+        "excerpt": "Human substitution errors are not uniformly distributed."
+      },
+      {
+        "section": "Typosquatting Is Only One Supply-Chain Attack Strategy",
+        "id": "ux-section-19",
+        "excerpt": "Software supply-chain security includes attack classes where package-name similarity provides little or no signal."
+      },
+      {
+        "section": "Pre-Installation Warnings Are Valuable",
+        "id": "ux-section-26",
+        "excerpt": "Package ecosystems can execute code during installation or build stages. A mistaken package selection can therefore become dangerous before an application explicitly imports the package."
+      },
+      {
+        "section": "Related Levenshtein.net Resources",
+        "id": "ux-section-33",
+        "excerpt": "Unicode Homoglyph and Confusable Attacks"
+      },
+      {
+        "section": "Selected Technical References",
+        "id": "ux-section-34",
+        "excerpt": "Shedding Light on the Adoption of Let's Encrypt"
+      }
+    ],
+    "mentions": [
+      {
+        "target": "/damerau-levenshtein-distance",
+        "evidence": [
+          {
+            "section": "Transpositions Need a Different Operation Model",
+            "anchor_id": "ux-section-4",
+            "alias": "damerau levenshtein distance",
+            "excerpt": "For applications where transpositions matter, see Damerau-Levenshtein Distance ."
+          }
+        ]
+      },
+      {
+        "target": "/edit-distance",
+        "evidence": [
+          {
+            "section": "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+            "anchor_id": "",
+            "alias": "edit distance",
+            "excerpt": "small edit distance ≠ malicious package"
+          }
+        ]
+      },
+      {
+        "target": "/levenshtein-distance-limitations",
+        "evidence": [
+          {
+            "section": "String Similarity Is Evidence, Not Identity",
+            "anchor_id": "ux-section-30",
+            "alias": "levenshtein distance limitations",
+            "excerpt": "This limitation is discussed more broadly in Levenshtein Distance Limitations ."
+          }
+        ]
+      },
+      {
+        "target": "/source-code-and-ast-similarity",
+        "evidence": [
+          {
+            "section": "Repository and Source Similarity Add Another Layer",
+            "anchor_id": "ux-section-18",
+            "alias": "source code and ast similarity",
+            "excerpt": "See Source Code and AST Similarity ."
+          }
+        ]
+      },
+      {
+        "target": "/string-metrics",
+        "evidence": [
+          {
+            "section": "Related Levenshtein.net Resources",
+            "anchor_id": "ux-section-33",
+            "alias": "string metrics",
+            "excerpt": "String Metrics"
+          }
+        ]
+      },
+      {
+        "target": "/unicode-homoglyph-and-confusable-attacks",
+        "evidence": [
+          {
+            "section": "Unicode Confusables Are a Different Attack Surface",
+            "anchor_id": "ux-section-13",
+            "alias": "unicode homoglyph and confusable attacks",
+            "excerpt": "See Unicode Homoglyph and Confusable Attacks ."
+          }
+        ]
+      },
+      {
+        "target": "/weighted-levenshtein-distance",
+        "evidence": [
+          {
+            "section": "Weighted Edit Distance Can Model Typing Behavior",
+            "anchor_id": "ux-section-12",
+            "alias": "weighted levenshtein distance",
+            "excerpt": "See Weighted Levenshtein Distance ."
+          }
+        ]
+      }
+    ],
+    "top_overlap": [
+      {
+        "a": "/typosquatting-and-supply-chain-security",
+        "b": "/unicode-homoglyph-and-confusable-attacks",
+        "group_a": "Software",
+        "group_b": "Software",
+        "cosine": 0.2699,
+        "heading_jaccard": 0.0357,
+        "common_headings": "related levenshtein net resources | selected technical references",
+        "shared_terms": "typosquatting malicious repository detector confusable namespace uts package",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/software-systems",
+        "b": "/typosquatting-and-supply-chain-security",
+        "group_a": "Software",
+        "group_b": "Software",
+        "cosine": 0.2262,
+        "heading_jaccard": 0.0278,
+        "common_headings": "typosquatting and software supply chain security edit distance package impersonation detection and defense",
+        "shared_terms": "typosquatting impersonation package supply malicious ast security confusable",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/levenshtein-distance-limitations",
+        "b": "/typosquatting-and-supply-chain-security",
+        "group_a": "Comparisons",
+        "group_b": "Software",
+        "cosine": 0.2032,
+        "heading_jaccard": 0.0172,
+        "common_headings": "related levenshtein net resources",
+        "shared_terms": "typosquatting ownership package malicious confusable security visual popularity",
+        "status": "lexical_candidate_not_cannibalization"
+      }
+    ],
+    "link_candidates": [
+      {
+        "source": "/typosquatting-and-supply-chain-security",
+        "target": "/software-systems",
+        "relation": "child_to_hub",
+        "state": "navigation_only_review",
+        "priority": "P3",
+        "scopes": "breadcrumb | sidebar",
+        "section": "",
+        "anchor_id": "",
+        "excerpt": "",
+        "reason": "Đặt thực thể vào phạm vi kiến thức rộng hơn",
+        "status": "requires_ai_review"
+      }
+    ]
+  },
+  {
+    "url": "/unicode-homoglyph-and-confusable-attacks",
+    "mission": "Unicode confusables và IDN",
+    "h1": [
+      "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense"
+    ],
+    "entity_candidate": "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense",
+    "hash": "f678300e410d118bf345c33ee968438c7c7cede9f9927bb348791932e02655a7",
+    "section_index": [
+      "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense",
+      "Character Identity and Visual Appearance Are Different",
+      "Homoglyph, Homograph, and Confusable",
+      "What UTS #39 Provides",
+      "Confusable Skeletons",
+      "A Skeleton Is Not User Text",
+      "Single-Script, Mixed-Script, and Whole-Script Confusables",
+      "Single-Script Confusables",
+      "Mixed-Script Confusables",
+      "Whole-Script Confusables",
+      "Multiple Scripts Do Not Automatically Mean an Attack",
+      "Restriction Levels Are Classification Signals",
+      "Mixed-Number Systems",
+      "Unicode Normalization Solves a Different Problem",
+      "Grapheme Clusters Do Not Solve Visual Confusability",
+      "Where Levenshtein Distance Fits",
+      "Weighted Edit Distance",
+      "Multi-View Security Comparison",
+      "Levenshtein Distance Between Security Representations",
+      "Unicode Transformations Can Have Opposite Goals",
+      "Internationalized Domain Names",
+      "HTTPS Does Not Solve Visual Impersonation",
+      "Typosquatting and Unicode Confusables",
+      "Package and Repository Names",
+      "Do Not Use Similarity as Authentication Equality",
+      "False Positives Matter",
+      "Version Unicode Security Data Explicitly",
+      "A Layered Detection Model",
+      "Relationship to Unicode Text Transformations",
+      "Summary",
+      "Related Levenshtein.net Resources",
+      "Selected Technical References"
+    ],
+    "sample_evidence": [
+      {
+        "section": "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense",
+        "id": "",
+        "excerpt": "Unicode allows software to represent writing systems from around the world, but different Unicode strings can sometimes appear sufficiently similar that a human reader mistakes one identifier for another."
+      },
+      {
+        "section": "Character Identity and Visual Appearance Are Different",
+        "id": "ux-section-2",
+        "excerpt": "Unicode characters are identified by code points and properties, not by a guarantee that every character has a unique visual shape."
+      },
+      {
+        "section": "Homoglyph, Homograph, and Confusable",
+        "id": "ux-section-3",
+        "excerpt": "These terms are related but should not be treated as perfect synonyms."
+      },
+      {
+        "section": "What UTS #39 Provides",
+        "id": "ux-section-4",
+        "excerpt": "Unicode Technical Standard #39, Unicode Security Mechanisms, defines mechanisms for detecting and managing security risks associated with Unicode identifiers."
+      },
+      {
+        "section": "Confusable Skeletons",
+        "id": "ux-section-5",
+        "excerpt": "UTS #39 defines security-oriented transformations that allow strings to be compared through confusable representations derived from the official Unicode confusables data."
+      },
+      {
+        "section": "Multiple Scripts Do Not Automatically Mean an Attack",
+        "id": "ux-section-11",
+        "excerpt": "Legitimate multilingual text can use more than one script."
+      },
+      {
+        "section": "Weighted Edit Distance",
+        "id": "ux-section-17",
+        "excerpt": "An application can assign different edit costs to different substitutions. A substitution known to be relevant in a particular domain can receive a lower cost than an unrelated substitution."
+      },
+      {
+        "section": "Typosquatting and Unicode Confusables",
+        "id": "ux-section-23",
+        "excerpt": "Typosquatting and homoglyph attacks overlap but are not the same technique."
+      },
+      {
+        "section": "Related Levenshtein.net Resources",
+        "id": "ux-section-31",
+        "excerpt": "Unicode & Grapheme-Safe Levenshtein"
+      },
+      {
+        "section": "Selected Technical References",
+        "id": "ux-section-32",
+        "excerpt": "Unicode Technical Standard #39: Unicode Security Mechanisms"
+      }
+    ],
+    "mentions": [
+      {
+        "target": "/edit-distance",
+        "evidence": [
+          {
+            "section": "Multi-View Security Comparison",
+            "anchor_id": "ux-section-18",
+            "alias": "edit distance",
+            "excerpt": "raw edit distance,"
+          }
+        ]
+      },
+      {
+        "target": "/levenshtein-distance-limitations",
+        "evidence": [
+          {
+            "section": "Related Levenshtein.net Resources",
+            "anchor_id": "ux-section-31",
+            "alias": "levenshtein distance limitations",
+            "excerpt": "Levenshtein Distance Limitations"
+          }
+        ]
+      },
+      {
+        "target": "/text-normalization-and-transliteration",
+        "evidence": [
+          {
+            "section": "Unicode Normalization Solves a Different Problem",
+            "anchor_id": "ux-section-14",
+            "alias": "text normalization and transliteration",
+            "excerpt": "See Text Normalization and Transliteration ."
+          }
+        ]
+      },
+      {
+        "target": "/typosquatting-and-supply-chain-security",
+        "evidence": [
+          {
+            "section": "Typosquatting and Unicode Confusables",
+            "anchor_id": "ux-section-23",
+            "alias": "typosquatting and software supply chain security",
+            "excerpt": "Continue with Typosquatting and Software Supply-Chain Security ."
+          }
+        ]
+      },
+      {
+        "target": "/unicode-and-grapheme-safe-levenshtein",
+        "evidence": [
+          {
+            "section": "Grapheme Clusters Do Not Solve Visual Confusability",
+            "anchor_id": "ux-section-15",
+            "alias": "unicode grapheme safe levenshtein",
+            "excerpt": "See Unicode & Grapheme-Safe Levenshtein ."
+          }
+        ]
+      },
+      {
+        "target": "/unicode-text-transformations",
+        "evidence": [
+          {
+            "section": "Unicode Transformations Can Have Opposite Goals",
+            "anchor_id": "ux-section-20",
+            "alias": "unicode text transformations",
+            "excerpt": "The general transformation model is described in Unicode Text Transformations ."
+          }
+        ]
+      },
+      {
+        "target": "/weighted-levenshtein-distance",
+        "evidence": [
+          {
+            "section": "Weighted Edit Distance",
+            "anchor_id": "ux-section-17",
+            "alias": "weighted levenshtein distance",
+            "excerpt": "This idea is related to Weighted Levenshtein Distance ."
+          }
+        ]
+      }
+    ],
+    "top_overlap": [
+      {
+        "a": "/unicode-homoglyph-and-confusable-attacks",
+        "b": "/unicode-text-transformations",
+        "group_a": "Software",
+        "group_b": "Unicode",
+        "cosine": 0.2834,
+        "heading_jaccard": 0.0,
+        "common_headings": "",
+        "shared_terms": "presentation visual font security confusable reader nfkd detector",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/software-systems",
+        "b": "/unicode-homoglyph-and-confusable-attacks",
+        "group_a": "Software",
+        "group_b": "Software",
+        "cosine": 0.2807,
+        "heading_jaccard": 0.0333,
+        "common_headings": "unicode homoglyph and confusable attacks edit distance uts 39 idn spoofing and defense",
+        "shared_terms": "uts typosquatting idn confusable security malicious confusables impersonation",
+        "status": "lexical_candidate_not_cannibalization"
+      },
+      {
+        "a": "/typosquatting-and-supply-chain-security",
+        "b": "/unicode-homoglyph-and-confusable-attacks",
+        "group_a": "Software",
+        "group_b": "Software",
+        "cosine": 0.2699,
+        "heading_jaccard": 0.0357,
+        "common_headings": "related levenshtein net resources | selected technical references",
+        "shared_terms": "typosquatting malicious repository detector confusable namespace uts package",
+        "status": "lexical_candidate_not_cannibalization"
+      }
+    ],
+    "link_candidates": [
+      {
+        "source": "/unicode-homoglyph-and-confusable-attacks",
+        "target": "/software-systems",
+        "relation": "child_to_hub",
+        "state": "navigation_only_review",
+        "priority": "P3",
+        "scopes": "breadcrumb | sidebar",
+        "section": "",
+        "anchor_id": "",
+        "excerpt": "",
+        "reason": "Đặt thực thể vào phạm vi kiến thức rộng hơn",
+        "status": "requires_ai_review"
+      }
+    ]
+  }
+]

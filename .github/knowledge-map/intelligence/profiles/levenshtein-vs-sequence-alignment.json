@@ -1,0 +1,4718 @@
+{
+  "url": "/levenshtein-vs-sequence-alignment",
+  "title": "Levenshtein Distance vs Sequence Alignment: Global, Local, Gap Penalties, and Biological Scoring",
+  "h1": [
+    "Levenshtein Distance vs Sequence Alignment: Global, Local, Gap Penalties, and Biological Scoring"
+  ],
+  "group": "Comparisons",
+  "provisional_mission": "So sánh alignment và gap",
+  "content_sha256": "64a9e627bf0a46bd1c51e93a172e61b243f966b9d449675e3f9bf4534527eb89",
+  "canonical": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment",
+  "primary_entity_candidate": "Levenshtein Distance vs Sequence Alignment: Global, Local, Gap Penalties, and Biological Scoring",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Levenshtein Distance vs Sequence Alignment",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 11,
+      "word_count": 282,
+      "evidence": "Levenshtein distance and biological sequence alignment are often presented as separate ideas: one belongs to string algorithms, the other to bioinformatics. Mathematically, however, they are closely related.",
+      "paragraphs": [
+        "Levenshtein distance and biological sequence alignment are often presented as separate ideas: one belongs to string algorithms, the other to bioinformatics. Mathematically, however, they are closely related.",
+        "A global alignment can represent exactly the same three primitive relationships used by classic Levenshtein distance :",
+        "symbol aligned with symbol -> match or substitution symbol aligned with gap -> deletion gap aligned with symbol -> insertion.",
+        "If every mismatch costs one, every gap symbol costs one, every exact match costs zero, both sequences must be aligned from end to end, and all terminal gaps are charged normally, minimum-cost global alignment is precisely the Levenshtein problem.",
+        "But biological sequence alignment is much broader than that special case.",
+        "It can assign different scores to different substitutions, distinguish opening a gap from extending an existing one, reward conserved amino-acid replacements, find only the best local region rather than align complete sequences, leave selected terminal gaps unpenalized, and evaluate biological resemblance under an explicit scoring model.",
+        "The central relationship is therefore:",
+        "Levenshtein distance is closely related to global sequence alignment but sequence alignment is not synonymous with Levenshtein distance.",
+        "The distinction becomes especially important in bioinformatics because:",
+        "minimum edit count != biological similarity alignment score != edit distance gap != known historical insertion/deletion high similarity != proof of homology optimal alignment != unique alignment optimal alignment != true evolutionary history.",
+        "This article develops those boundaries rigorously. It derives Levenshtein as a special global-alignment cost model, explains the historical relationship among Needleman-Wunsch, Sellers, Smith-Waterman, and Gotoh, compares global, local, and semi-global alignment, develops linear and affine gap penalties, explains nucleotide and protein substitution matrices, and examines when ordinary edit distance is the appropriate biological model—and when it is not."
+      ]
+    },
+    {
+      "heading": "1. What is a sequence alignment?",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "X = x1 x2 ... xm Y = y1 y2 ... yn.",
+        "An alignment inserts gap symbols into the two sequences so that both expanded sequences have the same length."
+      ]
+    },
+    {
+      "heading": "2. Example",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "X: A C G T Y: A - G T.",
+      "paragraphs": [
+        "X: A C G T Y: A - G T.",
+        "The columns are:",
+        "A / A C / - G / G T / T."
+      ]
+    },
+    {
+      "heading": "3. Alignment columns",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 2,
+      "word_count": 32,
+      "evidence": "For ordinary pairwise alignment, useful column types are:",
+      "paragraphs": [
+        "For ordinary pairwise alignment, useful column types are:",
+        "Column Interpretation x / x Match x / y Mismatch/substitution x / - Gap in second sequence - / y Gap in first sequence"
+      ]
+    },
+    {
+      "heading": "4. Gap-gap columns carry no useful information",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "- / -",
+      "paragraphs": [
+        "- / -",
+        "can simply be removed without changing the correspondence between sequence symbols.",
+        "Ordinary optimal pairwise alignment therefore excludes such columns."
+      ]
+    },
+    {
+      "heading": "5. Alignment is a hypothesis about correspondence",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "When an alignment contains:",
+      "paragraphs": [
+        "When an alignment contains:",
+        "A C G T A - G T,",
+        "it proposes that:",
+        "A corresponds to A C corresponds to a gap G corresponds to G T corresponds to T."
+      ]
+    },
+    {
+      "heading": "6. An alignment is not merely a score",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "The alignment itself provides a structured explanation.",
+      "paragraphs": [
+        "The alignment itself provides a structured explanation.",
+        "The score summarizes that explanation under a chosen scoring system."
+      ]
+    },
+    {
+      "heading": "7. Levenshtein distance can also be written as alignment optimization",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "Assign alignment-column costs:",
+      "paragraphs": [
+        "Assign alignment-column costs:",
+        "cost(x,x) = 0 cost(x,y) = 1 for x != y cost(x,-) = 1 cost(-,y) = 1."
+      ]
+    },
+    {
+      "heading": "8. Alignment cost",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "For alignment A :",
+      "paragraphs": [
+        "For alignment A :",
+        "Cost(A) = sum of its column costs."
+      ]
+    },
+    {
+      "heading": "9. Levenshtein as minimum-cost global alignment",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "dL(X,Y) = min_A Cost(A)",
+      "paragraphs": [
+        "dL(X,Y) = min_A Cost(A)",
+        "where the minimum ranges over complete end-to-end alignments of X and Y ."
+      ]
+    },
+    {
+      "heading": "10. This equivalence is exact under this cost model",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 7,
+      "word_count": 24,
+      "evidence": "Each mismatch corresponds to a substitution.",
+      "paragraphs": [
+        "Each mismatch corresponds to a substitution.",
+        "Each:",
+        "x / -",
+        "column corresponds to a deletion.",
+        "Each:",
+        "- / y",
+        "column corresponds to an insertion."
+      ]
+    },
+    {
+      "heading": "11. Every Levenshtein edit script creates an alignment",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "ACGT -> AGT",
+        "using deletion of C corresponds to:",
+        "A C G T A - G T."
+      ]
+    },
+    {
+      "heading": "12. Every valid alignment creates an edit script",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Read alignment columns from left to right and interpret mismatches and gaps as edit operations.",
+      "paragraphs": [
+        "Read alignment columns from left to right and interpret mismatches and gaps as edit operations.",
+        "This establishes the structural equivalence."
+      ]
+    },
+    {
+      "heading": "13. Dynamic-programming recurrence",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "Minimum-cost global alignment with these costs obeys:",
+      "paragraphs": [
+        "Minimum-cost global alignment with these costs obeys:",
+        "D(i,j) = min( D(i-1,j) + 1, D(i,j-1) + 1, D(i-1,j-1) + [xi != yj] )."
+      ]
+    },
+    {
+      "heading": "14. These are the familiar Levenshtein branches",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "D(i-1,j) + 1 = delete xi D(i,j-1) + 1 = insert yj D(i-1,j-1) + mismatch = match/substitute.",
+      "paragraphs": [
+        "D(i-1,j) + 1 = delete xi D(i,j-1) + 1 = insert yj D(i-1,j-1) + mismatch = match/substitute."
+      ]
+    },
+    {
+      "heading": "15. Therefore Levenshtein is already an alignment algorithm",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "More precisely:",
+      "paragraphs": [
+        "More precisely:",
+        "classic Levenshtein = minimum-cost global alignment under one specific linear unit-cost scoring model."
+      ]
+    },
+    {
+      "heading": "16. Why then distinguish edit distance and sequence alignment?",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "Because sequence alignment permits much richer definitions of:",
+      "paragraphs": [
+        "Because sequence alignment permits much richer definitions of:",
+        "what a residue match is worth;",
+        "what a mismatch costs or rewards;",
+        "how gaps are penalized;",
+        "which parts of the sequences must align;",
+        "which boundaries are free;",
+        "how the resulting score is interpreted."
+      ]
+    },
+    {
+      "heading": "17. Alignment is a framework, not one metric",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "“Sequence alignment” can mean many optimization problems.",
+      "paragraphs": [
+        "“Sequence alignment” can mean many optimization problems."
+      ]
+    },
+    {
+      "heading": "18. Common alignment objectives",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "global alignment local alignment semi-global alignment overlap alignment query-global / target-local alignment affine-gap alignment profile alignment graph alignment.",
+      "paragraphs": [
+        "global alignment local alignment semi-global alignment overlap alignment query-global / target-local alignment affine-gap alignment profile alignment graph alignment."
+      ]
+    },
+    {
+      "heading": "19. Levenshtein fixes many of these choices implicitly",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Classic Levenshtein normally means:",
+      "paragraphs": [
+        "Classic Levenshtein normally means:",
+        "global unit substitution cost unit insertion cost unit deletion cost linear gap cost all terminal edits charged."
+      ]
+    },
+    {
+      "heading": "20. Sequence alignment makes those choices explicit",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "That is one reason biological alignment should not be reduced to the phrase:",
+      "paragraphs": [
+        "That is one reason biological alignment should not be reduced to the phrase:",
+        "\"Levenshtein for DNA.\""
+      ]
+    },
+    {
+      "heading": "21. Historical perspective: Levenshtein",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Vladimir Levenshtein's 1965 work studied binary codes capable of correcting deletions, insertions, and binary-symbol substitutions.",
+      "paragraphs": [
+        "Vladimir Levenshtein's 1965 work studied binary codes capable of correcting deletions, insertions, and binary-symbol substitutions.",
+        "See the MathNet bibliographic record ."
+      ]
+    },
+    {
+      "heading": "22. Historical terminology warning",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 3,
+      "word_count": 37,
+      "evidence": "The English title is commonly translated as:",
+      "paragraphs": [
+        "The English title is commonly translated as:",
+        "Binary Codes Capable of Correcting Deletions, Insertions and Reversals.",
+        "In this historical binary-code context, “reversal” refers to reversal/change of the binary symbol value—not the adjacent-character transposition primitive of Damerau-Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "23. Coding and biological alignment arose from related sequence problems",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 5,
+      "word_count": 14,
+      "evidence": "Both fields needed methods for reasoning about:",
+      "paragraphs": [
+        "Both fields needed methods for reasoning about:",
+        "substitutions;",
+        "insertions;",
+        "deletions;",
+        "correspondence after synchronization changes."
+      ]
+    },
+    {
+      "heading": "24. Needleman-Wunsch",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "Saul Needleman and Christian Wunsch published their foundational method for comparing amino-acid sequences in 1970.",
+      "paragraphs": [
+        "Saul Needleman and Christian Wunsch published their foundational method for comparing amino-acid sequences in 1970.",
+        "See A general method applicable to the search for similarities in the amino acid sequence of two proteins ."
+      ]
+    },
+    {
+      "heading": "25. Needleman-Wunsch is fundamentally a global alignment method",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "The aim is to compare the sequences across their full extents under a defined similarity-scoring system.",
+      "paragraphs": [
+        "The aim is to compare the sequences across their full extents under a defined similarity-scoring system."
+      ]
+    },
+    {
+      "heading": "26. Global alignment",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "A global alignment consumes:",
+      "paragraphs": [
+        "A global alignment consumes:",
+        "all symbols of X and all symbols of Y.",
+        "Nothing is discarded merely because it aligns poorly."
+      ]
+    },
+    {
+      "heading": "27. Sellers' distance formulation",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Peter Sellers developed a minimum-distance formulation for finite sequences.",
+      "paragraphs": [
+        "Peter Sellers developed a minimum-distance formulation for finite sequences.",
+        "See An algorithm for the distance between two finite sequences ."
+      ]
+    },
+    {
+      "heading": "28. Similarity maximization and distance minimization can describe the same optimization",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "This is a crucial conceptual bridge.",
+      "paragraphs": [
+        "This is a crucial conceptual bridge.",
+        "One formulation can ask:",
+        "maximize alignment similarity.",
+        "Another can ask:",
+        "minimize alignment dissimilarity."
+      ]
+    },
+    {
+      "heading": "29. Smith, Waterman, and Fitch compared these frameworks directly",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Their 1981 paper showed conditions under which the Needleman-Wunsch similarity formulation and Sellers-style distance formulation produce equivalent optimal alignments.",
+      "paragraphs": [
+        "Their 1981 paper showed conditions under which the Needleman-Wunsch similarity formulation and Sellers-style distance formulation produce equivalent optimal alignments.",
+        "See Comparative biosequence metrics ."
+      ]
+    },
+    {
+      "heading": "30. Therefore “score” versus “distance” is not always a fundamental algorithmic divide",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Sometimes the two objectives are related by a transformation of the scoring system.",
+      "paragraphs": [
+        "Sometimes the two objectives are related by a transformation of the scoring system."
+      ]
+    },
+    {
+      "heading": "31. But arbitrary biological scores cannot automatically be treated as edit metrics",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 5,
+      "word_count": 33,
+      "evidence": "A biological substitution matrix can assign:",
+      "paragraphs": [
+        "A biological substitution matrix can assign:",
+        "different scores to different matches;",
+        "different scores to different mismatches;",
+        "positive scores to some nonidentical residue pairs.",
+        "That generally does not correspond to ordinary unit edit distance."
+      ]
+    },
+    {
+      "heading": "32. Modern textbook global alignment recurrence",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "With substitution score:",
+      "paragraphs": [
+        "With substitution score:",
+        "s(xi,yj)",
+        "and linear gap penalty:",
+        "g > 0,",
+        "a common score-maximizing recurrence is:",
+        "F(i,j) = max( F(i-1,j-1) + s(xi,yj), F(i-1,j) - g, F(i,j-1) - g )."
+      ]
+    },
+    {
+      "heading": "33. Initialization for full global alignment",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "F(0,0) = 0 F(i,0) = -i g F(0,j) = -j g.",
+      "paragraphs": [
+        "F(0,0) = 0 F(i,0) = -i g F(0,j) = -j g."
+      ]
+    },
+    {
+      "heading": "34. Terminal gaps therefore cost normally",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "The algorithm is forced to account for the entire lengths of both sequences.",
+      "paragraphs": [
+        "The algorithm is forced to account for the entire lengths of both sequences."
+      ]
+    },
+    {
+      "heading": "35. Converting that recurrence into Levenshtein",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "Choose:",
+      "paragraphs": [
+        "Choose:",
+        "s(x,x) = 0 s(x,y) = -1 for x != y g = 1.",
+        "Then maximizing the score is equivalent to minimizing the number of unit edits."
+      ]
+    },
+    {
+      "heading": "36. Relationship",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "max_score(X,Y) = -dL(X,Y)",
+      "paragraphs": [
+        "max_score(X,Y) = -dL(X,Y)",
+        "under this specific global scoring system."
+      ]
+    },
+    {
+      "heading": "37. This is a special case, not the definition of biological alignment",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Changing the scoring system changes the meaning of the optimum.",
+      "paragraphs": [
+        "Changing the scoring system changes the meaning of the optimum."
+      ]
+    },
+    {
+      "heading": "38. Worked unit-cost example",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 7,
+      "word_count": 25,
+      "evidence": "X: A C G T Y: A G T.",
+      "paragraphs": [
+        "X: A C G T Y: A G T.",
+        "Optimal alignment:",
+        "A C G T A - G T.",
+        "Unit edit cost:",
+        "1.",
+        "Therefore:",
+        "dL(X,Y)=1."
+      ]
+    },
+    {
+      "heading": "39. Biological scoring can assign another value to exactly the same alignment",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 6,
+      "word_count": 25,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "match = +2 mismatch = -1 gap symbol = -2.",
+        "The alignment has:",
+        "3 matches 1 gap.",
+        "Therefore score:",
+        "3(2) - 2 = 4."
+      ]
+    },
+    {
+      "heading": "40. The alignment stayed the same",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "Its numerical interpretation changed.",
+      "paragraphs": [
+        "Its numerical interpretation changed."
+      ]
+    },
+    {
+      "heading": "41. Alignment and score must therefore be separated conceptually",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "alignment = correspondence structure score = evaluation of that structure under one scoring model.",
+      "paragraphs": [
+        "alignment = correspondence structure score = evaluation of that structure under one scoring model."
+      ]
+    },
+    {
+      "heading": "42. Different scores can select different optimal alignments",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "The scoring system does more than label an alignment after it has been found.",
+      "paragraphs": [
+        "The scoring system does more than label an alignment after it has been found.",
+        "It determines which alignment is optimal."
+      ]
+    },
+    {
+      "heading": "43. Example principle",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "A scoring system with cheap gaps may prefer:",
+      "paragraphs": [
+        "A scoring system with cheap gaps may prefer:",
+        "more gaps + fewer mismatches.",
+        "A scoring system with expensive gaps may prefer:",
+        "fewer gaps + more mismatches."
+      ]
+    },
+    {
+      "heading": "44. This tradeoff does not exist in the same form under fixed unit Levenshtein costs",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "There:",
+      "paragraphs": [
+        "There:",
+        "one mismatch = 1 one gap symbol = 1."
+      ]
+    },
+    {
+      "heading": "45. Biological sequence alignment usually does not treat every substitution equally",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "This is particularly important for proteins.",
+      "paragraphs": [
+        "This is particularly important for proteins."
+      ]
+    },
+    {
+      "heading": "46. Twenty amino acids are not twenty mutually equidistant symbols biologically",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "Different residues vary in:",
+      "paragraphs": [
+        "Different residues vary in:",
+        "physicochemical properties;",
+        "evolutionary substitution frequencies;",
+        "structural constraints;",
+        "background abundance."
+      ]
+    },
+    {
+      "heading": "47. Classic Levenshtein ignores all such distinctions",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "For any two unequal symbols:",
+      "paragraphs": [
+        "For any two unequal symbols:",
+        "cost = 1."
+      ]
+    },
+    {
+      "heading": "48. Protein sequence alignment can use substitution matrices",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "A matrix:",
+      "paragraphs": [
+        "A matrix:",
+        "S(a,b)",
+        "assigns a score to aligning amino acid a with amino acid b ."
+      ]
+    },
+    {
+      "heading": "49. BLOSUM",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Steven and Jorja Henikoff introduced BLOSUM matrices derived from conserved protein blocks.",
+      "paragraphs": [
+        "Steven and Jorja Henikoff introduced BLOSUM matrices derived from conserved protein blocks.",
+        "See Amino acid substitution matrices from protein blocks ."
+      ]
+    },
+    {
+      "heading": "50. BLOSUM scores are nonuniform",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 2,
+      "word_count": 29,
+      "evidence": "Under BLOSUM62, different residue correspondences receive very different values.",
+      "paragraphs": [
+        "Under BLOSUM62, different residue correspondences receive very different values.",
+        "For example, the matrix assigns a high score to certain strongly conserved matches and substantial negative scores to unlikely substitutions."
+      ]
+    },
+    {
+      "heading": "51. BLOSUM62 example",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "A reviewed description of BLOSUM62 reports:",
+      "paragraphs": [
+        "A reviewed description of BLOSUM62 reports:",
+        "W : W = 11 D : L = -4.",
+        "That alone demonstrates a structure fundamentally different from:",
+        "match = 0 every mismatch = 1."
+      ]
+    },
+    {
+      "heading": "52. Some nonidentical amino-acid pairs can receive positive substitution scores",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "In biological scoring, a nonidentical replacement can be considered more compatible than expected by chance.",
+      "paragraphs": [
+        "In biological scoring, a nonidentical replacement can be considered more compatible than expected by chance."
+      ]
+    },
+    {
+      "heading": "53. Therefore substitution is not synonymous with biological mismatch penalty",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "Under Levenshtein:",
+      "paragraphs": [
+        "Under Levenshtein:",
+        "A != B -> cost 1.",
+        "Under a protein scoring matrix:",
+        "score(A,B)",
+        "depends on the residue pair."
+      ]
+    },
+    {
+      "heading": "54. BLOSUM scoring has a log-odds interpretation",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 1,
+      "word_count": 26,
+      "evidence": "Broadly, positive values indicate residue correspondences occurring more often in related sequence blocks than expected under the background model, while negative values indicate less favorable correspondence.",
+      "paragraphs": [
+        "Broadly, positive values indicate residue correspondences occurring more often in related sequence blocks than expected under the background model, while negative values indicate less favorable correspondence."
+      ]
+    },
+    {
+      "heading": "55. The score therefore incorporates population evidence",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "Classic Levenshtein is corpus-independent.",
+      "paragraphs": [
+        "Classic Levenshtein is corpus-independent.",
+        "BLOSUM is derived from empirical biological sequence relationships."
+      ]
+    },
+    {
+      "heading": "56. PAM",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "The PAM family provides another classical protein substitution framework based on estimated amino-acid replacement processes.",
+      "paragraphs": [
+        "The PAM family provides another classical protein substitution framework based on estimated amino-acid replacement processes."
+      ]
+    },
+    {
+      "heading": "57. PAM and BLOSUM are not interchangeable tables",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "They were derived using different methodologies and numerical scales.",
+      "paragraphs": [
+        "They were derived using different methodologies and numerical scales."
+      ]
+    },
+    {
+      "heading": "58. Matrix choice changes alignment behavior",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "It can alter:",
+      "paragraphs": [
+        "It can alter:",
+        "which substitutions are favored;",
+        "which alignment becomes optimal;",
+        "database-search sensitivity;",
+        "the meaning of a raw score."
+      ]
+    },
+    {
+      "heading": "59. Gap penalties must be considered jointly with substitution scoring",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "A matrix cannot be evaluated independently from the price assigned to creating and extending gaps.",
+      "paragraphs": [
+        "A matrix cannot be evaluated independently from the price assigned to creating and extending gaps."
+      ]
+    },
+    {
+      "heading": "60. Nucleotide alignment can use simpler scoring",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "For DNA, an elementary model may use:",
+      "paragraphs": [
+        "For DNA, an elementary model may use:",
+        "match reward mismatch penalty gap penalty."
+      ]
+    },
+    {
+      "heading": "61. But nucleotide substitutions can also be nonuniform",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 5,
+      "word_count": 10,
+      "evidence": "Applications can distinguish:",
+      "paragraphs": [
+        "Applications can distinguish:",
+        "transitions;",
+        "transversions;",
+        "base-quality evidence;",
+        "context-dependent error models."
+      ]
+    },
+    {
+      "heading": "62. Ordinary Levenshtein remains valuable as a deliberately simple nucleotide model",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "For some read-mapping or approximate-search problems, the desired criterion is literally:",
+      "paragraphs": [
+        "For some read-mapping or approximate-search problems, the desired criterion is literally:",
+        "number of substitutions + insertions + deletions.",
+        "In that case edit distance is not an inferior approximation—it is the intended objective."
+      ]
+    },
+    {
+      "heading": "63. Biological sophistication should not be added unnecessarily",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "If the application asks:",
+      "paragraphs": [
+        "If the application asks:",
+        "Is the read within k edits of this reference substring?",
+        "unit edit distance can be exactly right."
+      ]
+    },
+    {
+      "heading": "64. The right question is model fit",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Do the scores represent the transformations that matter in this task?",
+      "paragraphs": [
+        "Do the scores represent the transformations that matter in this task?"
+      ]
+    },
+    {
+      "heading": "65. Global alignment",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Global alignment is best suited when the goal is to compare both sequences across their complete extents.",
+      "paragraphs": [
+        "Global alignment is best suited when the goal is to compare both sequences across their complete extents."
+      ]
+    },
+    {
+      "heading": "66. Typical interpretation",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "sequence X from beginning to end aligned against sequence Y from beginning to end.",
+      "paragraphs": [
+        "sequence X from beginning to end aligned against sequence Y from beginning to end."
+      ]
+    },
+    {
+      "heading": "67. Global does not mean “no gaps”",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Internal and terminal gaps can occur.",
+      "paragraphs": [
+        "Internal and terminal gaps can occur.",
+        "It means all sequence symbols participate in the alignment."
+      ]
+    },
+    {
+      "heading": "68. Full-string Levenshtein is inherently global",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 3,
+      "word_count": 10,
+      "evidence": "Classic:",
+      "paragraphs": [
+        "Classic:",
+        "dL(X,Y)",
+        "must account for every symbol in both strings."
+      ]
+    },
+    {
+      "heading": "69. This creates a natural correspondence",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Levenshtein <-> one form of global alignment.",
+      "paragraphs": [
+        "Levenshtein <-> one form of global alignment."
+      ]
+    },
+    {
+      "heading": "70. But global biological alignment can have arbitrary substitution and gap scores",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "Therefore:",
+      "paragraphs": [
+        "Therefore:",
+        "global alignment does not imply Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "71. Local alignment asks a different question",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "Instead of:",
+      "paragraphs": [
+        "Instead of:",
+        "How well do the full sequences correspond?",
+        "it asks:",
+        "Which pair of subsequences has the strongest alignment?"
+      ]
+    },
+    {
+      "heading": "72. Smith-Waterman",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "Temple Smith and Michael Waterman introduced the classic local-alignment algorithm in 1981.",
+      "paragraphs": [
+        "Temple Smith and Michael Waterman introduced the classic local-alignment algorithm in 1981.",
+        "See Identification of common molecular subsequences ."
+      ]
+    },
+    {
+      "heading": "73. Basic local recurrence",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "For linear gap penalty:",
+      "paragraphs": [
+        "For linear gap penalty:",
+        "H(i,j) = max( 0, H(i-1,j-1)+s(xi,yj), H(i-1,j)-g, H(i,j-1)-g )."
+      ]
+    },
+    {
+      "heading": "74. The zero term is fundamental",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "If an alignment prefix becomes unfavorable:",
+      "paragraphs": [
+        "If an alignment prefix becomes unfavorable:",
+        "restart from zero."
+      ]
+    },
+    {
+      "heading": "75. Therefore local alignment can ignore poor flanking regions",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "The traceback begins at the highest-scoring cell and ends when a zero-score boundary is reached.",
+      "paragraphs": [
+        "The traceback begins at the highest-scoring cell and ends when a zero-score boundary is reached."
+      ]
+    },
+    {
+      "heading": "76. Worked local example",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 3,
+      "word_count": 13,
+      "evidence": "X: TTACGTAA Y: GGACGTCC.",
+      "paragraphs": [
+        "X: TTACGTAA Y: GGACGTCC.",
+        "The sequences have an exact internal region:",
+        "ACGT ACGT."
+      ]
+    },
+    {
+      "heading": "77. Full-string Levenshtein still sees the different flanks",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "One straightforward transformation substitutes:",
+      "paragraphs": [
+        "One straightforward transformation substitutes:",
+        "TT -> GG AA -> CC,",
+        "for total unit cost:",
+        "4."
+      ]
+    },
+    {
+      "heading": "78. Local alignment can focus entirely on ACGT",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "If matches are positively rewarded, the central:",
+      "paragraphs": [
+        "If matches are positively rewarded, the central:",
+        "ACGT",
+        "region can become the optimal local alignment."
+      ]
+    },
+    {
+      "heading": "79. This is not an edit distance between complete strings",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "The poor flanks can contribute nothing.",
+      "paragraphs": [
+        "The poor flanks can contribute nothing."
+      ]
+    },
+    {
+      "heading": "80. Therefore local alignment violates the intuition of metric identity",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Two very different full sequences can have a strong or even perfect local segment.",
+      "paragraphs": [
+        "Two very different full sequences can have a strong or even perfect local segment."
+      ]
+    },
+    {
+      "heading": "81. A local-alignment score should not automatically be converted into a metric distance",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "distance = C - local_score",
+        "has no guaranteed metric meaning merely because it decreases as similarity increases."
+      ]
+    },
+    {
+      "heading": "82. Local alignment is designed for motif/domain-like relationships",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 5,
+      "word_count": 14,
+      "evidence": "Examples include:",
+      "paragraphs": [
+        "Examples include:",
+        "shared protein domains;",
+        "conserved sequence regions;",
+        "short homologous segments;",
+        "query-to-database local similarity."
+      ]
+    },
+    {
+      "heading": "83. Local alignment and approximate substring matching are conceptually related",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Both allow the important correspondence to occur inside a larger target.",
+      "paragraphs": [
+        "Both allow the important correspondence to occur inside a larger target."
+      ]
+    },
+    {
+      "heading": "84. But they need not use the same objective",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "Approximate string matching often asks:",
+      "paragraphs": [
+        "Approximate string matching often asks:",
+        "find target substrings within <= k edits.",
+        "Smith-Waterman asks:",
+        "maximize a local alignment score."
+      ]
+    },
+    {
+      "heading": "85. Similar search region, different mathematical criterion",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "This distinction is important for terminology.",
+      "paragraphs": [
+        "This distinction is important for terminology."
+      ]
+    },
+    {
+      "heading": "86. Semi-global alignment lies between global and local",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Semi-global alignment typically aligns one or both sequences substantially end-to-end while making selected terminal gaps free.",
+      "paragraphs": [
+        "Semi-global alignment typically aligns one or both sequences substantially end-to-end while making selected terminal gaps free."
+      ]
+    },
+    {
+      "heading": "87. Example",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 4,
+      "word_count": 4,
+      "evidence": "Query:",
+      "paragraphs": [
+        "Query:",
+        "ACGT",
+        "Target:",
+        "TTACGTAA."
+      ]
+    },
+    {
+      "heading": "88. Full-string Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 6,
+      "word_count": 14,
+      "evidence": "Four additional target characters must be inserted:",
+      "paragraphs": [
+        "Four additional target characters must be inserted:",
+        "TT",
+        "and:",
+        "AA.",
+        "Thus:",
+        "dL(\"ACGT\",\"TTACGTAA\") = 4."
+      ]
+    },
+    {
+      "heading": "89. Query-to-substring semi-global alignment",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 4,
+      "word_count": 17,
+      "evidence": "If unmatched target prefix and suffix are free:",
+      "paragraphs": [
+        "If unmatched target prefix and suffix are free:",
+        "--ACGT-- TTACGTAA",
+        "the internal query correspondence has cost:",
+        "0."
+      ]
+    },
+    {
+      "heading": "90. This can model exact substring search",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Allowing internal edits then creates approximate query-to-substring alignment.",
+      "paragraphs": [
+        "Allowing internal edits then creates approximate query-to-substring alignment."
+      ]
+    },
+    {
+      "heading": "91. Semi-global alignment has several variants",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "One may make free:",
+      "paragraphs": [
+        "One may make free:",
+        "both ends of sequence X;",
+        "both ends of sequence Y;",
+        "only leading gaps;",
+        "only trailing gaps;",
+        "selected combinations."
+      ]
+    },
+    {
+      "heading": "92. Therefore “semi-global” is not one unique boundary condition",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Always specify which terminal gaps are unpenalized.",
+      "paragraphs": [
+        "Always specify which terminal gaps are unpenalized."
+      ]
+    },
+    {
+      "heading": "93. Overlap alignment",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Another common objective emphasizes an overlap between a suffix of one sequence and a prefix of another.",
+      "paragraphs": [
+        "Another common objective emphasizes an overlap between a suffix of one sequence and a prefix of another."
+      ]
+    },
+    {
+      "heading": "94. This is useful for sequence assembly and overlap-style problems",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "Again the internal recurrence can resemble global dynamic programming while boundary initialization changes the objective.",
+      "paragraphs": [
+        "Again the internal recurrence can resemble global dynamic programming while boundary initialization changes the objective."
+      ]
+    },
+    {
+      "heading": "95. Boundary conditions can define the alignment problem",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 1,
+      "word_count": 25,
+      "evidence": "Alignment mode Typical boundaries Endpoint Global Terminal gaps penalized Bottom-right cell Local Zero reset Maximum anywhere Semi-global Selected terminal gaps free Boundary determined by variant",
+      "paragraphs": [
+        "Alignment mode Typical boundaries Endpoint Global Terminal gaps penalized Bottom-right cell Local Zero reset Maximum anywhere Semi-global Selected terminal gaps free Boundary determined by variant"
+      ]
+    },
+    {
+      "heading": "96. This is a profound distinction from ordinary Levenshtein",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "Classic Levenshtein fixes the boundary behavior:",
+      "paragraphs": [
+        "Classic Levenshtein fixes the boundary behavior:",
+        "all sequence material counts."
+      ]
+    },
+    {
+      "heading": "97. Sequence alignment exposes boundary conditions as modeling decisions",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Different applications require different endpoints.",
+      "paragraphs": [
+        "Different applications require different endpoints."
+      ]
+    },
+    {
+      "heading": "98. Gap models create another major difference",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Classic Levenshtein assigns one cost for every inserted or deleted symbol.",
+      "paragraphs": [
+        "Classic Levenshtein assigns one cost for every inserted or deleted symbol."
+      ]
+    },
+    {
+      "heading": "99. A gap of length k therefore costs k",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "gap_Levenshtein(k) = k.",
+      "paragraphs": [
+        "gap_Levenshtein(k) = k."
+      ]
+    },
+    {
+      "heading": "100. This is a linear gap cost",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Every additional gap symbol contributes the same increment.",
+      "paragraphs": [
+        "Every additional gap symbol contributes the same increment."
+      ]
+    },
+    {
+      "heading": "101. Biological sequence alignment often distinguishes gap opening and extension",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "The motivation is that a contiguous stretch of missing residues can represent one longer indel episode more naturally than many independent gap events.",
+      "paragraphs": [
+        "The motivation is that a contiguous stretch of missing residues can represent one longer indel episode more naturally than many independent gap events."
+      ]
+    },
+    {
+      "heading": "102. Affine gap penalty",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 4,
+      "word_count": 14,
+      "evidence": "A common convention is:",
+      "paragraphs": [
+        "A common convention is:",
+        "gap(k) = g_open + (k-1) g_extend",
+        "for:",
+        "k >= 1."
+      ]
+    },
+    {
+      "heading": "103. Under this convention",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "gap(1) = g_open.",
+      "paragraphs": [
+        "gap(1) = g_open."
+      ]
+    },
+    {
+      "heading": "104. Another widely encountered convention is",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "gap(k) = g_open + k g_extend.",
+      "paragraphs": [
+        "gap(k) = g_open + k g_extend."
+      ]
+    },
+    {
+      "heading": "105. These conventions are not numerically identical",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "For a one-residue gap:",
+      "paragraphs": [
+        "For a one-residue gap:",
+        "convention A: g_open convention B: g_open + g_extend."
+      ]
+    },
+    {
+      "heading": "106. Always state the affine-gap convention",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "Reporting only:",
+      "paragraphs": [
+        "Reporting only:",
+        "gap open = 10 gap extension = 1",
+        "is incomplete if the implementation's formula is unknown."
+      ]
+    },
+    {
+      "heading": "107. Why affine gaps differ from Levenshtein",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 3,
+      "word_count": 11,
+      "evidence": "Suppose four consecutive residues are absent.",
+      "paragraphs": [
+        "Suppose four consecutive residues are absent.",
+        "Levenshtein assigns:",
+        "4 deletion operations."
+      ]
+    },
+    {
+      "heading": "108. Affine model views one gap run differently",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 6,
+      "word_count": 23,
+      "evidence": "With:",
+      "paragraphs": [
+        "With:",
+        "g_open = 5 g_extend = 1",
+        "and convention:",
+        "g(k) = g_open + (k-1)g_extend,",
+        "a four-residue gap costs:",
+        "5 + 3 = 8."
+      ]
+    },
+    {
+      "heading": "109. Four independent one-residue gaps would cost",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "4 * 5 = 20.",
+      "paragraphs": [
+        "4 * 5 = 20.",
+        "under the same simplified opening interpretation."
+      ]
+    },
+    {
+      "heading": "110. Therefore gap clustering matters",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "The scoring system prefers:",
+      "paragraphs": [
+        "The scoring system prefers:",
+        "one long gap",
+        "over:",
+        "several separate gap openings",
+        "when extension is cheaper than opening."
+      ]
+    },
+    {
+      "heading": "111. Linear Levenshtein does not distinguish these cases",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Four deleted symbols cost four regardless of whether they form one contiguous run or several isolated deletions.",
+      "paragraphs": [
+        "Four deleted symbols cost four regardless of whether they form one contiguous run or several isolated deletions."
+      ]
+    },
+    {
+      "heading": "112. Affine gap scoring requires additional dynamic-programming state",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 4,
+      "word_count": 21,
+      "evidence": "To know the next gap cost, the algorithm must know whether it is:",
+      "paragraphs": [
+        "To know the next gap cost, the algorithm must know whether it is:",
+        "opening a gap",
+        "or:",
+        "extending an existing gap."
+      ]
+    },
+    {
+      "heading": "113. Gotoh's algorithm",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Osamu Gotoh showed how affine-gap sequence alignment can be computed efficiently using coupled dynamic-programming states.",
+      "paragraphs": [
+        "Osamu Gotoh showed how affine-gap sequence alignment can be computed efficiently using coupled dynamic-programming states.",
+        "See An improved algorithm for matching biological sequences ."
+      ]
+    },
+    {
+      "heading": "114. Three-state formulation",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 2,
+      "word_count": 36,
+      "evidence": "A common formulation maintains:",
+      "paragraphs": [
+        "A common formulation maintains:",
+        "M(i,j) = best score ending with xi aligned to yj Ix(i,j) = best score ending with xi aligned to a gap Iy(i,j) = best score ending with a gap aligned to yj."
+      ]
+    },
+    {
+      "heading": "115. Match/mismatch state",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "M(i,j) = max( M(i-1,j-1), Ix(i-1,j-1), Iy(i-1,j-1) ) + s(xi,yj).",
+      "paragraphs": [
+        "M(i,j) = max( M(i-1,j-1), Ix(i-1,j-1), Iy(i-1,j-1) ) + s(xi,yj)."
+      ]
+    },
+    {
+      "heading": "116. Gap in Y",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "Under:",
+      "paragraphs": [
+        "Under:",
+        "gap(k) = g_open + (k-1)g_extend,",
+        "one common formulation is:",
+        "Ix(i,j) = max( M(i-1,j) - g_open, Ix(i-1,j) - g_extend )."
+      ]
+    },
+    {
+      "heading": "117. Gap in X",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Iy(i,j) = max( M(i,j-1) - g_open, Iy(i,j-1) - g_extend ).",
+      "paragraphs": [
+        "Iy(i,j) = max( M(i,j-1) - g_open, Iy(i,j-1) - g_extend )."
+      ]
+    },
+    {
+      "heading": "118. The state remembers whether the current alignment is already inside a gap",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "This is precisely what one-matrix linear-gap Levenshtein does not need to remember.",
+      "paragraphs": [
+        "This is precisely what one-matrix linear-gap Levenshtein does not need to remember."
+      ]
+    },
+    {
+      "heading": "119. Affine-gap global alignment remains quadratic-time in the standard pairwise formulation",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "O(mn)",
+      "paragraphs": [
+        "O(mn)",
+        "time, with a constant factor reflecting the multiple states."
+      ]
+    },
+    {
+      "heading": "120. It is not “Levenshtein plus a different number”",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "The dynamic-programming state space changes.",
+      "paragraphs": [
+        "The dynamic-programming state space changes."
+      ]
+    },
+    {
+      "heading": "121. Local alignment can also use affine gaps",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Smith-Waterman-style zero resetting can be combined with Gotoh-style match and gap states.",
+      "paragraphs": [
+        "Smith-Waterman-style zero resetting can be combined with Gotoh-style match and gap states."
+      ]
+    },
+    {
+      "heading": "122. Semi-global alignment can also use affine gaps",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Gap model and boundary model are independent design dimensions.",
+      "paragraphs": [
+        "Gap model and boundary model are independent design dimensions."
+      ]
+    },
+    {
+      "heading": "123. Alignment design therefore has several axes",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 1,
+      "word_count": 33,
+      "evidence": "OBJECTIVE: global / local / semi-global SUBSTITUTION MODEL: unit / weighted / matrix GAP MODEL: linear / affine / other BOUNDARY MODEL: penalized / partially free REPRESENTATION: nucleotide / amino acid / other.",
+      "paragraphs": [
+        "OBJECTIVE: global / local / semi-global SUBSTITUTION MODEL: unit / weighted / matrix GAP MODEL: linear / affine / other BOUNDARY MODEL: penalized / partially free REPRESENTATION: nucleotide / amino acid / other."
+      ]
+    },
+    {
+      "heading": "124. Sequence alignment is a family of optimization problems",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "There is no single “sequence alignment distance.”",
+      "paragraphs": [
+        "There is no single “sequence alignment distance.”"
+      ]
+    },
+    {
+      "heading": "125. Gap penalties are models, not biological observations",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "An alignment algorithm inserts a gap because doing so improves the objective under its scoring model.",
+      "paragraphs": [
+        "An alignment algorithm inserts a gap because doing so improves the objective under its scoring model."
+      ]
+    },
+    {
+      "heading": "126. The gap does not prove a historical deletion occurred",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Without ancestral information, the same observed difference may be interpreted as:",
+      "paragraphs": [
+        "Without ancestral information, the same observed difference may be interpreted as:",
+        "deletion on one lineage or insertion on the other lineage."
+      ]
+    },
+    {
+      "heading": "127. Gap direction is usually not recoverable from two descendants alone",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "This requires evolutionary context beyond pairwise alignment.",
+      "paragraphs": [
+        "This requires evolutionary context beyond pairwise alignment."
+      ]
+    },
+    {
+      "heading": "128. Alignment gap is not identical to physical mutation event",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Several historical events can generate the same present-day alignment pattern.",
+      "paragraphs": [
+        "Several historical events can generate the same present-day alignment pattern."
+      ]
+    },
+    {
+      "heading": "129. Conversely, one historical event can produce several alignment columns",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "A multi-residue insertion creates a run of gap columns.",
+      "paragraphs": [
+        "A multi-residue insertion creates a run of gap columns."
+      ]
+    },
+    {
+      "heading": "130. Therefore",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "alignment gap != known evolutionary indel event.",
+      "paragraphs": [
+        "alignment gap != known evolutionary indel event."
+      ]
+    },
+    {
+      "heading": "131. The same principle applies to mismatches",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "An aligned residue pair:",
+      "paragraphs": [
+        "An aligned residue pair:",
+        "A / G",
+        "does not by itself tell which ancestral residue changed."
+      ]
+    },
+    {
+      "heading": "132. Alignment is endpoint optimization, not direct historical reconstruction",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "This mirrors the broader edit-distance distinction:",
+      "paragraphs": [
+        "This mirrors the broader edit-distance distinction:",
+        "minimum edit script != actual physical edit history."
+      ]
+    },
+    {
+      "heading": "133. Multiple optimal alignments can exist",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 2,
+      "word_count": 5,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "X: AAAA Y: AAA."
+      ]
+    },
+    {
+      "heading": "134. Any one of several A positions can be aligned to a gap",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "All such alignments have the same unit edit cost:",
+      "paragraphs": [
+        "All such alignments have the same unit edit cost:",
+        "1."
+      ]
+    },
+    {
+      "heading": "135. The distance is unique",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "The alignment need not be.",
+      "paragraphs": [
+        "The alignment need not be."
+      ]
+    },
+    {
+      "heading": "136. Therefore",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "optimal score != unique alignment.",
+      "paragraphs": [
+        "optimal score != unique alignment."
+      ]
+    },
+    {
+      "heading": "137. Tie-breaking is an implementation choice",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "Two libraries can return:",
+      "paragraphs": [
+        "Two libraries can return:",
+        "same optimal score",
+        "but:",
+        "different optimal alignments."
+      ]
+    },
+    {
+      "heading": "138. This matters when interpreting positions",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "A downstream system should not treat one arbitrary traceback as definitive biological evidence.",
+      "paragraphs": [
+        "A downstream system should not treat one arbitrary traceback as definitive biological evidence."
+      ]
+    },
+    {
+      "heading": "139. Near-optimal alignments can also be biologically plausible",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "A tiny score difference can separate several competing correspondence hypotheses.",
+      "paragraphs": [
+        "A tiny score difference can separate several competing correspondence hypotheses."
+      ]
+    },
+    {
+      "heading": "140. Scalar optimum hides uncertainty",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "Reporting only:",
+      "paragraphs": [
+        "Reporting only:",
+        "score = 87",
+        "does not communicate whether:",
+        "the best alignment is unique;",
+        "many alternatives score 86;",
+        "gap placement is unstable."
+      ]
+    },
+    {
+      "heading": "141. Alignment uncertainty is separate from algorithmic exactness",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Dynamic programming may compute the optimum exactly.",
+      "paragraphs": [
+        "Dynamic programming may compute the optimum exactly.",
+        "The biological interpretation can still be uncertain."
+      ]
+    },
+    {
+      "heading": "142. Exact optimization does not mean biological truth",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "exact DP = exact optimum under chosen scoring model not exact reconstruction of evolution.",
+      "paragraphs": [
+        "exact DP = exact optimum under chosen scoring model not exact reconstruction of evolution."
+      ]
+    },
+    {
+      "heading": "143. Scoring models encode assumptions",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 6,
+      "word_count": 18,
+      "evidence": "The optimum changes if one changes:",
+      "paragraphs": [
+        "The optimum changes if one changes:",
+        "substitution matrix;",
+        "gap opening cost;",
+        "gap extension cost;",
+        "terminal-gap policy;",
+        "alignment mode."
+      ]
+    },
+    {
+      "heading": "144. Therefore there is no score independent of model choice",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "An “optimal alignment” should always be understood as:",
+      "paragraphs": [
+        "An “optimal alignment” should always be understood as:",
+        "optimal under specified scoring parameters."
+      ]
+    },
+    {
+      "heading": "145. Percent identity is another different quantity",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "After producing an alignment, one may count:",
+      "paragraphs": [
+        "After producing an alignment, one may count:",
+        "number of aligned identical residue pairs."
+      ]
+    },
+    {
+      "heading": "146. Percent identity requires a denominator",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "Possible conventions include:",
+      "paragraphs": [
+        "Possible conventions include:",
+        "alignment length including gaps;",
+        "number of aligned residue-residue columns;",
+        "shorter sequence length;",
+        "another explicitly defined denominator."
+      ]
+    },
+    {
+      "heading": "147. Therefore “80% identity” should be defined operationally",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Different software can use different denominator conventions.",
+      "paragraphs": [
+        "Different software can use different denominator conventions."
+      ]
+    },
+    {
+      "heading": "148. Identity is not alignment score",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "Two alignments can have equal percent identity but different:",
+      "paragraphs": [
+        "Two alignments can have equal percent identity but different:",
+        "substitution-matrix scores;",
+        "gap structures;",
+        "gap penalties."
+      ]
+    },
+    {
+      "heading": "149. Similarity is also not identity",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "Protein alignments sometimes call nonidentical but favorably scoring residue substitutions:",
+      "paragraphs": [
+        "Protein alignments sometimes call nonidentical but favorably scoring residue substitutions:",
+        "similar."
+      ]
+    },
+    {
+      "heading": "150. Therefore",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "identity != similarity.",
+      "paragraphs": [
+        "identity != similarity."
+      ]
+    },
+    {
+      "heading": "151. Biological homology is stronger still",
+      "level": 2,
+      "id": "ux-section-152",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "Homology refers to evolutionary common ancestry.",
+      "paragraphs": [
+        "Homology refers to evolutionary common ancestry.",
+        "It is not simply a numerical synonym for sequence similarity."
+      ]
+    },
+    {
+      "heading": "152. High sequence similarity can support a homology hypothesis",
+      "level": 2,
+      "id": "ux-section-153",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "But the alignment score itself does not logically define common ancestry.",
+      "paragraphs": [
+        "But the alignment score itself does not logically define common ancestry."
+      ]
+    },
+    {
+      "heading": "153. Low edit distance is therefore not equivalent to homology",
+      "level": 2,
+      "id": "ux-section-154",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "low dL != proven homology.",
+      "paragraphs": [
+        "low dL != proven homology."
+      ]
+    },
+    {
+      "heading": "154. High edit distance does not automatically disprove evolutionary relationship",
+      "level": 2,
+      "id": "ux-section-155",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Sequences can diverge extensively over long evolutionary periods.",
+      "paragraphs": [
+        "Sequences can diverge extensively over long evolutionary periods."
+      ]
+    },
+    {
+      "heading": "155. Smith, Waterman, and Fitch explicitly distinguished similarity-style sequence comparison from evolutionary interpretation",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "Their comparative work is useful precisely because mathematically related scoring systems need not imply the same biological conclusion.",
+      "paragraphs": [
+        "Their comparative work is useful precisely because mathematically related scoring systems need not imply the same biological conclusion."
+      ]
+    },
+    {
+      "heading": "156. “Percent homology” should generally be avoided",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Homology is a relationship.",
+      "paragraphs": [
+        "Homology is a relationship.",
+        "Percent identity or percent similarity are quantitative sequence properties."
+      ]
+    },
+    {
+      "heading": "157. Edit distance is even farther removed from biological ancestry",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "It describes sequence endpoints under an operation model.",
+      "paragraphs": [
+        "It describes sequence endpoints under an operation model."
+      ]
+    },
+    {
+      "heading": "158. Biological scoring can incorporate empirical substitution likelihood",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "This is one reason protein alignment can detect relationships obscured by raw mismatch counting.",
+      "paragraphs": [
+        "This is one reason protein alignment can detect relationships obscured by raw mismatch counting."
+      ]
+    },
+    {
+      "heading": "159. Same edit count can conceal different biological evidence",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "Any nonidentical one-residue pair has:",
+      "paragraphs": [
+        "Any nonidentical one-residue pair has:",
+        "Levenshtein distance = 1."
+      ]
+    },
+    {
+      "heading": "160. Biological substitution matrices distinguish those pairs",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "A conservative amino-acid replacement can score much better than an improbable replacement.",
+      "paragraphs": [
+        "A conservative amino-acid replacement can score much better than an improbable replacement."
+      ]
+    },
+    {
+      "heading": "161. Thus Levenshtein collapses a rich substitution matrix into",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "same vs different.",
+      "paragraphs": [
+        "same vs different."
+      ]
+    },
+    {
+      "heading": "162. This can be desirable for computational simplicity",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "But it discards biological information.",
+      "paragraphs": [
+        "But it discards biological information."
+      ]
+    },
+    {
+      "heading": "163. Conversely, substitution matrices can be inappropriate outside their domain",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "BLOSUM62 should not be used to compare:",
+      "paragraphs": [
+        "BLOSUM62 should not be used to compare:",
+        "ordinary English words;",
+        "package names;",
+        "user identifiers;",
+        "log-event labels",
+        "merely because it is “more sophisticated.”"
+      ]
+    },
+    {
+      "heading": "164. Domain specificity matters",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "A richer scoring model is only better when its assumptions match the data-generating process.",
+      "paragraphs": [
+        "A richer scoring model is only better when its assumptions match the data-generating process."
+      ]
+    },
+    {
+      "heading": "165. Sequence alignment scores can be positive or negative",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Edit distance is ordinarily nonnegative.",
+      "paragraphs": [
+        "Edit distance is ordinarily nonnegative."
+      ]
+    },
+    {
+      "heading": "166. Therefore raw biological alignment score is not a metric distance",
+      "level": 2,
+      "id": "ux-section-167",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "A score of:",
+      "paragraphs": [
+        "A score of:",
+        "120",
+        "does not have the same mathematical interpretation as:",
+        "dL = 4."
+      ]
+    },
+    {
+      "heading": "167. Score magnitudes depend on scoring scale",
+      "level": 2,
+      "id": "ux-section-168",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "If all substitution and gap values are multiplied by two:",
+      "paragraphs": [
+        "If all substitution and gap values are multiplied by two:",
+        "optimal alignment may stay unchanged",
+        "while:",
+        "raw score doubles."
+      ]
+    },
+    {
+      "heading": "168. Raw alignment scores are therefore model-dependent units",
+      "level": 2,
+      "id": "ux-section-169",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Comparing raw scores generated under different substitution matrices or gap parameters can be misleading.",
+      "paragraphs": [
+        "Comparing raw scores generated under different substitution matrices or gap parameters can be misleading."
+      ]
+    },
+    {
+      "heading": "169. Statistical significance is another layer",
+      "level": 2,
+      "id": "ux-section-170",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Sequence-search systems can ask whether an observed high score is unusually large under a background sequence model.",
+      "paragraphs": [
+        "Sequence-search systems can ask whether an observed high score is unusually large under a background sequence model."
+      ]
+    },
+    {
+      "heading": "170. Karlin-Altschul statistics",
+      "level": 2,
+      "id": "ux-section-171",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "Karlin and Altschul developed foundational statistical theory for high-scoring molecular-sequence segments.",
+      "paragraphs": [
+        "Karlin and Altschul developed foundational statistical theory for high-scoring molecular-sequence segments.",
+        "See Methods for assessing the statistical significance of molecular sequence features by using general scoring schemes ."
+      ]
+    },
+    {
+      "heading": "171. Statistical significance is not edit distance",
+      "level": 2,
+      "id": "ux-section-172",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "An E-value or significance measure incorporates:",
+      "paragraphs": [
+        "An E-value or significance measure incorporates:",
+        "score;",
+        "search-space size;",
+        "scoring system;",
+        "background assumptions."
+      ]
+    },
+    {
+      "heading": "172. A raw Levenshtein distance has none of those statistics automatically",
+      "level": 2,
+      "id": "ux-section-173",
+      "paragraph_count": 7,
+      "word_count": 20,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "dL = 3,",
+        "the probability of seeing such a neighbor by chance depends on:",
+        "alphabet;",
+        "length;",
+        "corpus;",
+        "sequence distribution."
+      ]
+    },
+    {
+      "heading": "173. Distance and significance are different questions",
+      "level": 2,
+      "id": "ux-section-174",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "distance: How many modeled edits apart? significance: How surprising is the observed similarity?",
+      "paragraphs": [
+        "distance: How many modeled edits apart? significance: How surprising is the observed similarity?"
+      ]
+    },
+    {
+      "heading": "174. BLAST introduces another distinction",
+      "level": 2,
+      "id": "ux-section-175",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "BLAST is a heuristic database-search method designed to find high-scoring local sequence similarities efficiently.",
+      "paragraphs": [
+        "BLAST is a heuristic database-search method designed to find high-scoring local sequence similarities efficiently.",
+        "See Basic Local Alignment Search Tool ."
+      ]
+    },
+    {
+      "heading": "175. BLAST is not synonymous with Smith-Waterman",
+      "level": 2,
+      "id": "ux-section-176",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "Smith-Waterman dynamic programming computes an exact optimum for its local-alignment scoring formulation.",
+      "paragraphs": [
+        "Smith-Waterman dynamic programming computes an exact optimum for its local-alignment scoring formulation.",
+        "BLAST accelerates database search using seed/word-based heuristics and extension procedures."
+      ]
+    },
+    {
+      "heading": "176. Exact local alignment and heuristic search are separate concepts",
+      "level": 2,
+      "id": "ux-section-177",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Smith-Waterman: exact optimization for one pair under specified score BLAST: scalable heuristic retrieval and local similarity search.",
+      "paragraphs": [
+        "Smith-Waterman: exact optimization for one pair under specified score BLAST: scalable heuristic retrieval and local similarity search."
+      ]
+    },
+    {
+      "heading": "177. This parallels large-scale fuzzy string search",
+      "level": 2,
+      "id": "ux-section-178",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Pairwise edit distance and corpus retrieval are different algorithmic layers.",
+      "paragraphs": [
+        "Pairwise edit distance and corpus retrieval are different algorithmic layers."
+      ]
+    },
+    {
+      "heading": "178. Sequence database search requires candidate discovery",
+      "level": 2,
+      "id": "ux-section-179",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Running full quadratic dynamic programming against every database sequence can be prohibitively expensive.",
+      "paragraphs": [
+        "Running full quadratic dynamic programming against every database sequence can be prohibitively expensive."
+      ]
+    },
+    {
+      "heading": "179. Search systems therefore use filters, indexes, seeds, or heuristics",
+      "level": 2,
+      "id": "ux-section-180",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "The same architectural principle appears in indexing and filtering for edit distance .",
+      "paragraphs": [
+        "The same architectural principle appears in indexing and filtering for edit distance ."
+      ]
+    },
+    {
+      "heading": "180. Exact verifier does not guarantee exact retrieval",
+      "level": 2,
+      "id": "ux-section-181",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "If a heuristic candidate generator misses the best target:",
+      "paragraphs": [
+        "If a heuristic candidate generator misses the best target:",
+        "later exact alignment cannot recover it."
+      ]
+    },
+    {
+      "heading": "181. Candidate recall must therefore be separated from alignment optimality",
+      "level": 2,
+      "id": "ux-section-182",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "This distinction is essential in both text retrieval and genomics.",
+      "paragraphs": [
+        "This distinction is essential in both text retrieval and genomics."
+      ]
+    },
+    {
+      "heading": "182. Read mapping illustrates the hybrid model",
+      "level": 2,
+      "id": "ux-section-183",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "Modern genomic mapping often follows:",
+      "paragraphs": [
+        "Modern genomic mapping often follows:",
+        "seed -> candidate location -> chaining/filtering -> alignment.",
+        "See edit distance in genomic search and read mapping ."
+      ]
+    },
+    {
+      "heading": "183. Candidate alignment can be exact even when the mapper is heuristic globally",
+      "level": 2,
+      "id": "ux-section-184",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "An exact dynamic-programming alignment at one candidate location does not prove that every possible genomic location was examined.",
+      "paragraphs": [
+        "An exact dynamic-programming alignment at one candidate location does not prove that every possible genomic location was examined."
+      ]
+    },
+    {
+      "heading": "184. Pairwise optimization and database optimality are different guarantees",
+      "level": 2,
+      "id": "ux-section-185",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "This is often overlooked.",
+      "paragraphs": [
+        "This is often overlooked."
+      ]
+    },
+    {
+      "heading": "185. Computational complexity: classic linear-gap pairwise alignment",
+      "level": 2,
+      "id": "ux-section-186",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "For sequence lengths:",
+      "paragraphs": [
+        "For sequence lengths:",
+        "m and n,",
+        "the standard dynamic-programming table contains:",
+        "(m+1)(n+1)",
+        "cells."
+      ]
+    },
+    {
+      "heading": "186. Standard time complexity",
+      "level": 2,
+      "id": "ux-section-187",
+      "paragraph_count": 1,
+      "word_count": 1,
+      "evidence": "O(mn).",
+      "paragraphs": [
+        "O(mn)."
+      ]
+    },
+    {
+      "heading": "187. Full traceback storage",
+      "level": 2,
+      "id": "ux-section-188",
+      "paragraph_count": 3,
+      "word_count": 6,
+      "evidence": "A straightforward implementation uses:",
+      "paragraphs": [
+        "A straightforward implementation uses:",
+        "O(mn)",
+        "memory."
+      ]
+    },
+    {
+      "heading": "188. Score-only computation",
+      "level": 2,
+      "id": "ux-section-189",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "If only the optimum score or distance is required, only the previous row or column may be necessary.",
+      "paragraphs": [
+        "If only the optimum score or distance is required, only the previous row or column may be necessary.",
+        "Memory can be reduced to:",
+        "O(min(m,n))."
+      ]
+    },
+    {
+      "heading": "189. Alignment reconstruction requires additional strategy",
+      "level": 2,
+      "id": "ux-section-190",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "Possible approaches include:",
+      "paragraphs": [
+        "Possible approaches include:",
+        "store the entire traceback matrix;",
+        "recompute portions;",
+        "divide-and-conquer reconstruction;",
+        "checkpointing."
+      ]
+    },
+    {
+      "heading": "190. This distinction also exists for Levenshtein",
+      "level": 2,
+      "id": "ux-section-191",
+      "paragraph_count": 3,
+      "word_count": 10,
+      "evidence": "distance only",
+      "paragraphs": [
+        "distance only",
+        "is cheaper in memory than:",
+        "full edit script."
+      ]
+    },
+    {
+      "heading": "191. Affine gaps preserve O(mn) time",
+      "level": 2,
+      "id": "ux-section-192",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "Gotoh-style dynamic programming uses several states per matrix cell but still has quadratic asymptotic time for pairwise sequences.",
+      "paragraphs": [
+        "Gotoh-style dynamic programming uses several states per matrix cell but still has quadratic asymptotic time for pairwise sequences."
+      ]
+    },
+    {
+      "heading": "192. Constant factors increase",
+      "level": 2,
+      "id": "ux-section-193",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Each cell requires multiple state transitions rather than one three-way recurrence.",
+      "paragraphs": [
+        "Each cell requires multiple state transitions rather than one three-way recurrence."
+      ]
+    },
+    {
+      "heading": "193. Long sequences can still make quadratic DP expensive",
+      "level": 2,
+      "id": "ux-section-194",
+      "paragraph_count": 7,
+      "word_count": 12,
+      "evidence": "This motivates:",
+      "paragraphs": [
+        "This motivates:",
+        "banding;",
+        "seeding;",
+        "wavefront-style methods;",
+        "bit parallelism;",
+        "GPU/SIMD acceleration;",
+        "candidate filtering."
+      ]
+    },
+    {
+      "heading": "194. Banded alignment",
+      "level": 2,
+      "id": "ux-section-195",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "If the expected alignment stays near the main diagonal, restrict computation to:",
+      "paragraphs": [
+        "If the expected alignment stays near the main diagonal, restrict computation to:",
+        "|i-j| <= k",
+        "or another band."
+      ]
+    },
+    {
+      "heading": "195. For bounded Levenshtein this can remain exact",
+      "level": 2,
+      "id": "ux-section-196",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "If the target question is:",
+      "paragraphs": [
+        "If the target question is:",
+        "dL <= k?",
+        "cells outside the relevant edit band may be unnecessary.",
+        "See bounded and parameterized edit distance ."
+      ]
+    },
+    {
+      "heading": "196. Biological affine alignment banding requires a different guarantee",
+      "level": 2,
+      "id": "ux-section-197",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "Alignment score does not map directly to:",
+      "paragraphs": [
+        "Alignment score does not map directly to:",
+        "|i-j| <= k",
+        "unless constraints on gaps and score are known."
+      ]
+    },
+    {
+      "heading": "197. Do not transfer pruning proofs blindly between scoring models",
+      "level": 2,
+      "id": "ux-section-198",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "An optimization valid for unit edit distance may be invalid for arbitrary substitution matrices and gap penalties.",
+      "paragraphs": [
+        "An optimization valid for unit edit distance may be invalid for arbitrary substitution matrices and gap penalties."
+      ]
+    },
+    {
+      "heading": "198. Scoring systems affect algorithmic guarantees",
+      "level": 2,
+      "id": "ux-section-199",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Metric properties and lower bounds depend on the exact cost structure.",
+      "paragraphs": [
+        "Metric properties and lower bounds depend on the exact cost structure."
+      ]
+    },
+    {
+      "heading": "199. Standard Levenshtein is a metric",
+      "level": 2,
+      "id": "ux-section-200",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "It satisfies:",
+      "paragraphs": [
+        "It satisfies:",
+        "non-negativity identity of indiscernibles symmetry triangle inequality."
+      ]
+    },
+    {
+      "heading": "200. Arbitrary biological alignment score is generally not a metric",
+      "level": 2,
+      "id": "ux-section-201",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "It is normally formulated as a similarity score to maximize.",
+      "paragraphs": [
+        "It is normally formulated as a similarity score to maximize."
+      ]
+    },
+    {
+      "heading": "201. Even transforming score to negative score does not automatically create a metric",
+      "level": 2,
+      "id": "ux-section-202",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Metric properties require specific mathematical conditions.",
+      "paragraphs": [
+        "Metric properties require specific mathematical conditions."
+      ]
+    },
+    {
+      "heading": "202. Why this matters computationally",
+      "level": 2,
+      "id": "ux-section-203",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "Metric indexes depend on:",
+      "paragraphs": [
+        "Metric indexes depend on:",
+        "triangle inequality.",
+        "A search architecture valid for Levenshtein cannot automatically index BLOSUM-based local scores in the same way."
+      ]
+    },
+    {
+      "heading": "203. Symmetry can also depend on the scoring system",
+      "level": 2,
+      "id": "ux-section-204",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Most standard substitution matrices are symmetric.",
+      "paragraphs": [
+        "Most standard substitution matrices are symmetric.",
+        "But a custom directional scoring model need not be."
+      ]
+    },
+    {
+      "heading": "204. Sequence alignment can therefore become a general optimization loss",
+      "level": 2,
+      "id": "ux-section-205",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Not every useful score needs to be a metric.",
+      "paragraphs": [
+        "Not every useful score needs to be a metric."
+      ]
+    },
+    {
+      "heading": "205. Linear gap penalties and edit distance",
+      "level": 2,
+      "id": "ux-section-206",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "Classic Levenshtein can be generalized to weighted linear costs:",
+      "paragraphs": [
+        "Classic Levenshtein can be generalized to weighted linear costs:",
+        "c_ins c_del c_sub(x,y)."
+      ]
+    },
+    {
+      "heading": "206. This begins to resemble generic sequence-alignment cost functions",
+      "level": 2,
+      "id": "ux-section-207",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "The conceptual boundary is continuous rather than absolute.",
+      "paragraphs": [
+        "The conceptual boundary is continuous rather than absolute."
+      ]
+    },
+    {
+      "heading": "207. Weighted edit distance can still be called alignment",
+      "level": 2,
+      "id": "ux-section-208",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "A minimum-cost weighted edit path naturally corresponds to a minimum-cost alignment.",
+      "paragraphs": [
+        "A minimum-cost weighted edit path naturally corresponds to a minimum-cost alignment."
+      ]
+    },
+    {
+      "heading": "208. Affine gaps break the independent-column cost assumption",
+      "level": 2,
+      "id": "ux-section-209",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "The cost of a gap column now depends on whether the previous column was also a gap.",
+      "paragraphs": [
+        "The cost of a gap column now depends on whether the previous column was also a gap."
+      ]
+    },
+    {
+      "heading": "209. That dependency requires state",
+      "level": 2,
+      "id": "ux-section-210",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "This is why Gotoh-style matrices distinguish match and gap states.",
+      "paragraphs": [
+        "This is why Gotoh-style matrices distinguish match and gap states."
+      ]
+    },
+    {
+      "heading": "210. More complex gap functions exist",
+      "level": 2,
+      "id": "ux-section-211",
+      "paragraph_count": 6,
+      "word_count": 17,
+      "evidence": "Biological alignment can use:",
+      "paragraphs": [
+        "Biological alignment can use:",
+        "linear gaps;",
+        "affine gaps;",
+        "convex or concave-like gap costs;",
+        "position-specific penalties;",
+        "terminal-gap-specific penalties."
+      ]
+    },
+    {
+      "heading": "211. No one gap model represents all biological indels",
+      "level": 2,
+      "id": "ux-section-212",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Gap penalties are approximations to biological and statistical assumptions.",
+      "paragraphs": [
+        "Gap penalties are approximations to biological and statistical assumptions."
+      ]
+    },
+    {
+      "heading": "212. Different gap penalties can change alignment topology",
+      "level": 2,
+      "id": "ux-section-213",
+      "paragraph_count": 6,
+      "word_count": 18,
+      "evidence": "With expensive opening:",
+      "paragraphs": [
+        "With expensive opening:",
+        "one long gap",
+        "may be preferred.",
+        "With cheap opening:",
+        "several short gaps",
+        "may become competitive."
+      ]
+    },
+    {
+      "heading": "213. Gap placement can change residue correspondence far from the gap",
+      "level": 2,
+      "id": "ux-section-214",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Thus a seemingly small parameter change can alter many downstream alignment columns.",
+      "paragraphs": [
+        "Thus a seemingly small parameter change can alter many downstream alignment columns."
+      ]
+    },
+    {
+      "heading": "214. This is another reason alignment is a model-generated hypothesis",
+      "level": 2,
+      "id": "ux-section-215",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Correspondence is not directly observed.",
+      "paragraphs": [
+        "Correspondence is not directly observed."
+      ]
+    },
+    {
+      "heading": "215. Terminal gap policy can be biologically meaningful",
+      "level": 2,
+      "id": "ux-section-216",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Suppose one sequence is a fragment of another.",
+      "paragraphs": [
+        "Suppose one sequence is a fragment of another."
+      ]
+    },
+    {
+      "heading": "216. Global alignment penalizes missing flanks",
+      "level": 2,
+      "id": "ux-section-217",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "If those flanks are absent only because sequencing produced a partial fragment, the penalty may be undesirable.",
+      "paragraphs": [
+        "If those flanks are absent only because sequencing produced a partial fragment, the penalty may be undesirable."
+      ]
+    },
+    {
+      "heading": "217. Semi-global alignment can avoid that artifact",
+      "level": 2,
+      "id": "ux-section-218",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Make unobserved terminal portions free while still penalizing internal gaps.",
+      "paragraphs": [
+        "Make unobserved terminal portions free while still penalizing internal gaps."
+      ]
+    },
+    {
+      "heading": "218. This is common in query-versus-reference problems",
+      "level": 2,
+      "id": "ux-section-219",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "The correct boundary condition follows from how sequences were obtained.",
+      "paragraphs": [
+        "The correct boundary condition follows from how sequences were obtained."
+      ]
+    },
+    {
+      "heading": "219. Local alignment makes an even stronger assumption",
+      "level": 2,
+      "id": "ux-section-220",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Only a subset of both sequences may contain the relationship of interest.",
+      "paragraphs": [
+        "Only a subset of both sequences may contain the relationship of interest."
+      ]
+    },
+    {
+      "heading": "220. Global edit distance can therefore be a poor protein-domain comparator",
+      "level": 2,
+      "id": "ux-section-221",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "If two long proteins share one conserved domain but have unrelated flanking regions:",
+      "paragraphs": [
+        "If two long proteins share one conserved domain but have unrelated flanking regions:",
+        "full-string dL",
+        "can be large."
+      ]
+    },
+    {
+      "heading": "221. Smith-Waterman can recover the conserved local region",
+      "level": 2,
+      "id": "ux-section-222",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "That does not make the complete proteins globally similar.",
+      "paragraphs": [
+        "That does not make the complete proteins globally similar."
+      ]
+    },
+    {
+      "heading": "222. Local similarity and global similarity must remain separate",
+      "level": 2,
+      "id": "ux-section-223",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "strong local alignment != strong full-sequence similarity.",
+      "paragraphs": [
+        "strong local alignment != strong full-sequence similarity."
+      ]
+    },
+    {
+      "heading": "223. The same issue appears outside biology",
+      "level": 2,
+      "id": "ux-section-224",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "A long document can contain one copied paragraph.",
+      "paragraphs": [
+        "A long document can contain one copied paragraph.",
+        "Local matching finds it.",
+        "Full-string edit distance measures something different."
+      ]
+    },
+    {
+      "heading": "224. Sequence alignment concepts therefore generalize beyond biology",
+      "level": 2,
+      "id": "ux-section-225",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "The mathematical framework applies to ordered sequences of arbitrary symbols.",
+      "paragraphs": [
+        "The mathematical framework applies to ordered sequences of arbitrary symbols."
+      ]
+    },
+    {
+      "heading": "225. But biological interpretation is domain-specific",
+      "level": 2,
+      "id": "ux-section-226",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "A protein substitution matrix should not be interpreted as a universal sequence metric.",
+      "paragraphs": [
+        "A protein substitution matrix should not be interpreted as a universal sequence metric."
+      ]
+    },
+    {
+      "heading": "226. Pairwise alignment is not multiple sequence alignment",
+      "level": 2,
+      "id": "ux-section-227",
+      "paragraph_count": 2,
+      "word_count": 6,
+      "evidence": "This article concerns primarily:",
+      "paragraphs": [
+        "This article concerns primarily:",
+        "two sequences."
+      ]
+    },
+    {
+      "heading": "227. Multiple sequence alignment optimizes relationships among three or more sequences",
+      "level": 2,
+      "id": "ux-section-228",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "It introduces substantially different computational and statistical problems.",
+      "paragraphs": [
+        "It introduces substantially different computational and statistical problems."
+      ]
+    },
+    {
+      "heading": "228. Repeated pairwise alignment is not generally equivalent to optimal multiple alignment",
+      "level": 2,
+      "id": "ux-section-229",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Pairwise optima can be mutually inconsistent.",
+      "paragraphs": [
+        "Pairwise optima can be mutually inconsistent."
+      ]
+    },
+    {
+      "heading": "229. Do not infer multiple-sequence column homology merely from independent pairwise distances",
+      "level": 2,
+      "id": "ux-section-230",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Multiple alignment requires a coherent multi-sequence correspondence model.",
+      "paragraphs": [
+        "Multiple alignment requires a coherent multi-sequence correspondence model."
+      ]
+    },
+    {
+      "heading": "230. Pairwise alignment is also not phylogenetic reconstruction",
+      "level": 2,
+      "id": "ux-section-231",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Alignment supplies correspondence hypotheses.",
+      "paragraphs": [
+        "Alignment supplies correspondence hypotheses.",
+        "Phylogenetic inference uses additional evolutionary models across multiple sequences or taxa."
+      ]
+    },
+    {
+      "heading": "231. Edit distance is even farther upstream",
+      "level": 2,
+      "id": "ux-section-232",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "It may provide a pairwise dissimilarity feature but does not reconstruct a tree by itself.",
+      "paragraphs": [
+        "It may provide a pairwise dissimilarity feature but does not reconstruct a tree by itself."
+      ]
+    },
+    {
+      "heading": "232. Sequence alignment versus longest common subsequence",
+      "level": 2,
+      "id": "ux-section-233",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "Pure insertion/deletion distance has a direct relationship to the LCS.",
+      "paragraphs": [
+        "Pure insertion/deletion distance has a direct relationship to the LCS.",
+        "For equal-length or arbitrary sequences:",
+        "d_ID(X,Y) = |X| + |Y| - 2 LCS(X,Y)",
+        "when substitutions are not primitive and each insertion/deletion costs one."
+      ]
+    },
+    {
+      "heading": "233. This is not classic Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-234",
+      "paragraph_count": 5,
+      "word_count": 20,
+      "evidence": "Classic Levenshtein gives substitution cost:",
+      "paragraphs": [
+        "Classic Levenshtein gives substitution cost:",
+        "1.",
+        "Pure indel distance effectively needs:",
+        "delete + insert = 2",
+        "to replace one symbol."
+      ]
+    },
+    {
+      "heading": "234. LCS is itself an alignment objective",
+      "level": 2,
+      "id": "ux-section-235",
+      "paragraph_count": 3,
+      "word_count": 10,
+      "evidence": "It maximizes:",
+      "paragraphs": [
+        "It maximizes:",
+        "number of identically aligned symbols",
+        "with gaps allowed."
+      ]
+    },
+    {
+      "heading": "235. This further illustrates the breadth of alignment formulations",
+      "level": 2,
+      "id": "ux-section-236",
+      "paragraph_count": 5,
+      "word_count": 17,
+      "evidence": "The same alignment structure can optimize:",
+      "paragraphs": [
+        "The same alignment structure can optimize:",
+        "minimum edit cost;",
+        "maximum matches;",
+        "maximum biological score;",
+        "maximum local score."
+      ]
+    },
+    {
+      "heading": "236. Alignment objective determines what “best” means",
+      "level": 2,
+      "id": "ux-section-237",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "There is no scoring-independent optimal alignment.",
+      "paragraphs": [
+        "There is no scoring-independent optimal alignment."
+      ]
+    },
+    {
+      "heading": "237. Sequence similarity versus evolutionary distance",
+      "level": 2,
+      "id": "ux-section-238",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Sellers also investigated evolutionary-distance formulations, illustrating how sequence differences can be mapped into formal distance concepts.",
+      "paragraphs": [
+        "Sellers also investigated evolutionary-distance formulations, illustrating how sequence differences can be mapped into formal distance concepts."
+      ]
+    },
+    {
+      "heading": "238. But observed edit distance is not automatically corrected evolutionary distance",
+      "level": 2,
+      "id": "ux-section-239",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Multiple substitutions can occur at the same site over evolutionary time.",
+      "paragraphs": [
+        "Multiple substitutions can occur at the same site over evolutionary time."
+      ]
+    },
+    {
+      "heading": "239. Endpoint differences can underestimate historical event counts",
+      "level": 2,
+      "id": "ux-section-240",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "If a site changes:",
+      "paragraphs": [
+        "If a site changes:",
+        "A -> G -> A,",
+        "the endpoints match despite historical substitutions."
+      ]
+    },
+    {
+      "heading": "240. Therefore",
+      "level": 2,
+      "id": "ux-section-241",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "observed sequence difference != number of evolutionary mutations.",
+      "paragraphs": [
+        "observed sequence difference != number of evolutionary mutations."
+      ]
+    },
+    {
+      "heading": "241. This is analogous to edit history",
+      "level": 2,
+      "id": "ux-section-242",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Levenshtein finds the shortest possible transformation, not the actual history.",
+      "paragraphs": [
+        "Levenshtein finds the shortest possible transformation, not the actual history."
+      ]
+    },
+    {
+      "heading": "242. Alignment scoring matrices can partly model evolutionary substitution tendencies",
+      "level": 2,
+      "id": "ux-section-243",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "But the optimal alignment still does not uniquely reconstruct every mutation.",
+      "paragraphs": [
+        "But the optimal alignment still does not uniquely reconstruct every mutation."
+      ]
+    },
+    {
+      "heading": "243. Evolutionary models and alignment scoring are related but distinct",
+      "level": 2,
+      "id": "ux-section-244",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "One should not read every matrix score as a literal count of evolutionary events.",
+      "paragraphs": [
+        "One should not read every matrix score as a literal count of evolutionary events."
+      ]
+    },
+    {
+      "heading": "244. Sequence alignment versus semantic sequence meaning",
+      "level": 2,
+      "id": "ux-section-245",
+      "paragraph_count": 4,
+      "word_count": 12,
+      "evidence": "Even in biology:",
+      "paragraphs": [
+        "Even in biology:",
+        "similar sequence",
+        "does not automatically mean:",
+        "same molecular function."
+      ]
+    },
+    {
+      "heading": "245. Function can diverge despite sequence similarity",
+      "level": 2,
+      "id": "ux-section-246",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Conversely, convergent biology can produce functional resemblance without close ancestry.",
+      "paragraphs": [
+        "Conversely, convergent biology can produce functional resemblance without close ancestry."
+      ]
+    },
+    {
+      "heading": "246. Therefore biological similarity remains contextual",
+      "level": 2,
+      "id": "ux-section-247",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Sequence alignment is powerful evidence—not a complete biological ontology.",
+      "paragraphs": [
+        "Sequence alignment is powerful evidence—not a complete biological ontology."
+      ]
+    },
+    {
+      "heading": "247. Sequence alignment versus structural similarity",
+      "level": 2,
+      "id": "ux-section-248",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Proteins can preserve three-dimensional structure despite substantial sequence divergence.",
+      "paragraphs": [
+        "Proteins can preserve three-dimensional structure despite substantial sequence divergence."
+      ]
+    },
+    {
+      "heading": "248. A string alignment does not directly compare 3D structures",
+      "level": 2,
+      "id": "ux-section-249",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Structural alignment is a different representation problem.",
+      "paragraphs": [
+        "Structural alignment is a different representation problem."
+      ]
+    },
+    {
+      "heading": "249. Representation still comes before metric",
+      "level": 2,
+      "id": "ux-section-250",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "This mirrors the principle developed in edit distance vs set, vector, and n-gram similarity .",
+      "paragraphs": [
+        "This mirrors the principle developed in edit distance vs set, vector, and n-gram similarity ."
+      ]
+    },
+    {
+      "heading": "250. One-dimensional residue sequence is one representation of a biological molecule",
+      "level": 2,
+      "id": "ux-section-251",
+      "paragraph_count": 5,
+      "word_count": 10,
+      "evidence": "It omits:",
+      "paragraphs": [
+        "It omits:",
+        "three-dimensional conformation;",
+        "chemical environment;",
+        "binding interactions;",
+        "cellular context."
+      ]
+    },
+    {
+      "heading": "251. Therefore sequence similarity is never the complete biological object",
+      "level": 2,
+      "id": "ux-section-252",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "This is not a weakness of alignment algorithms.",
+      "paragraphs": [
+        "This is not a weakness of alignment algorithms.",
+        "It is a limitation of the representation supplied to them."
+      ]
+    },
+    {
+      "heading": "252. Practical decision: ordinary text strings",
+      "level": 2,
+      "id": "ux-section-253",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "If comparing:",
+      "paragraphs": [
+        "If comparing:",
+        "names;",
+        "identifiers;",
+        "spelling variants;",
+        "short textual strings",
+        "and the meaningful transformations are insertions, deletions, and substitutions, use Levenshtein."
+      ]
+    },
+    {
+      "heading": "253. Practical decision: typing transpositions",
+      "level": 2,
+      "id": "ux-section-254",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "If adjacent transposition should be primitive, consider Damerau-Levenshtein rather than biological sequence alignment.",
+      "paragraphs": [
+        "If adjacent transposition should be primitive, consider Damerau-Levenshtein rather than biological sequence alignment.",
+        "See Levenshtein vs Damerau-Levenshtein and Hamming distance ."
+      ]
+    },
+    {
+      "heading": "254. Practical decision: complete homologous biological sequences",
+      "level": 2,
+      "id": "ux-section-255",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "If complete sequences are expected to correspond across most of their length:",
+      "paragraphs": [
+        "If complete sequences are expected to correspond across most of their length:",
+        "global alignment",
+        "is a natural starting point."
+      ]
+    },
+    {
+      "heading": "255. Practical decision: shared domain or motif",
+      "level": 2,
+      "id": "ux-section-256",
+      "paragraph_count": 3,
+      "word_count": 13,
+      "evidence": "If only one region is expected to correspond:",
+      "paragraphs": [
+        "If only one region is expected to correspond:",
+        "local alignment",
+        "is more appropriate."
+      ]
+    },
+    {
+      "heading": "256. Practical decision: short query inside a long target",
+      "level": 2,
+      "id": "ux-section-257",
+      "paragraph_count": 5,
+      "word_count": 15,
+      "evidence": "Depending on the scoring requirement:",
+      "paragraphs": [
+        "Depending on the scoring requirement:",
+        "semi-global alignment;",
+        "approximate substring matching;",
+        "local alignment",
+        "may be appropriate."
+      ]
+    },
+    {
+      "heading": "257. Practical decision: sequencing reads",
+      "level": 2,
+      "id": "ux-section-258",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "If the target criterion is:",
+      "paragraphs": [
+        "If the target criterion is:",
+        "at most k substitutions/indels,",
+        "bounded edit distance may be sufficient."
+      ]
+    },
+    {
+      "heading": "258. Practical decision: protein similarity",
+      "level": 2,
+      "id": "ux-section-259",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "If conservative amino-acid substitutions should receive differentiated evidence:",
+      "paragraphs": [
+        "If conservative amino-acid substitutions should receive differentiated evidence:",
+        "substitution-matrix alignment",
+        "is generally much richer than unit Levenshtein."
+      ]
+    },
+    {
+      "heading": "259. Practical decision: long indel-like regions",
+      "level": 2,
+      "id": "ux-section-260",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "If one contiguous gap should cost differently from many independent gap openings:",
+      "paragraphs": [
+        "If one contiguous gap should cost differently from many independent gap openings:",
+        "affine or another structured gap model",
+        "is appropriate."
+      ]
+    },
+    {
+      "heading": "260. Decision table",
+      "level": 2,
+      "id": "ux-section-261",
+      "paragraph_count": 1,
+      "word_count": 79,
+      "evidence": "Question Good starting model Minimum insert/delete/substitute count between complete sequences? Levenshtein Complete biological sequence comparison with custom scoring? Global sequence alignment Best matching internal subsequences? Smith-Waterman/local alignment Query aligned fully to region of longer target? Semi-global/glocal alignment Long contiguous gaps should be favored over repeated gap openings? Affine-gap alignment Protein substitutions have unequal biological compatibility? Substitution matrix such as BLOSUM/PAM Read mapping within edit threshold? Bounded edit alignment plus genomic retrieval Need actual evolutionary history? Alignment alone is insufficient",
+      "paragraphs": [
+        "Question Good starting model Minimum insert/delete/substitute count between complete sequences? Levenshtein Complete biological sequence comparison with custom scoring? Global sequence alignment Best matching internal subsequences? Smith-Waterman/local alignment Query aligned fully to region of longer target? Semi-global/glocal alignment Long contiguous gaps should be favored over repeated gap openings? Affine-gap alignment Protein substitutions have unequal biological compatibility? Substitution matrix such as BLOSUM/PAM Read mapping within edit threshold? Bounded edit alignment plus genomic retrieval Need actual evolutionary history? Alignment alone is insufficient"
+      ]
+    },
+    {
+      "heading": "261. Mathematical comparison table",
+      "level": 2,
+      "id": "ux-section-262",
+      "paragraph_count": 1,
+      "word_count": 63,
+      "evidence": "Property Classic Levenshtein General sequence alignment Primary objective Minimize edit cost Maximize score or minimize model-specific cost Substitution model Usually 0/1 Arbitrary scoring matrix Gap model Linear per symbol Linear, affine, or richer Global? Yes in standard pairwise definition Global/local/semi-global/etc. Metric? Yes under classic costs Not necessarily Biological knowledge None intrinsically Can be encoded in scores Result Nonnegative distance Alignment + model-dependent score",
+      "paragraphs": [
+        "Property Classic Levenshtein General sequence alignment Primary objective Minimize edit cost Maximize score or minimize model-specific cost Substitution model Usually 0/1 Arbitrary scoring matrix Gap model Linear per symbol Linear, affine, or richer Global? Yes in standard pairwise definition Global/local/semi-global/etc. Metric? Yes under classic costs Not necessarily Biological knowledge None intrinsically Can be encoded in scores Result Nonnegative distance Alignment + model-dependent score"
+      ]
+    },
+    {
+      "heading": "262. Global/local/semi-global comparison",
+      "level": 2,
+      "id": "ux-section-263",
+      "paragraph_count": 1,
+      "word_count": 30,
+      "evidence": "Mode Uses all of X? Uses all of Y? Can ignore flanks? Global Yes Yes No Local No No Yes Semi-global Depends on variant Depends on variant Selected terminal flanks",
+      "paragraphs": [
+        "Mode Uses all of X? Uses all of Y? Can ignore flanks? Global Yes Yes No Local No No Yes Semi-global Depends on variant Depends on variant Selected terminal flanks"
+      ]
+    },
+    {
+      "heading": "263. Gap-model comparison",
+      "level": 2,
+      "id": "ux-section-264",
+      "paragraph_count": 1,
+      "word_count": 41,
+      "evidence": "Model Gap of length k Interpretation Levenshtein/linear k under unit costs Every missing symbol costs equally Weighted linear k × g Constant per-symbol gap cost Affine g_open + (k-1)g_extend under one convention Opening and extending differ Custom g(k) Application-specific gap behavior",
+      "paragraphs": [
+        "Model Gap of length k Interpretation Levenshtein/linear k under unit costs Every missing symbol costs equally Weighted linear k × g Constant per-symbol gap cost Affine g_open + (k-1)g_extend under one convention Opening and extending differ Custom g(k) Application-specific gap behavior"
+      ]
+    },
+    {
+      "heading": "264. Interpretation matrix",
+      "level": 2,
+      "id": "ux-section-265",
+      "paragraph_count": 1,
+      "word_count": 89,
+      "evidence": "Observation What it means What it does not prove dL = 1 One minimum unit edit One historical mutation High global score Strong full-sequence score under model Same biological function High local score Strong local region Globally similar sequences Gap in alignment Gap improves optimal correspondence Known deletion event Mismatch column Nonidentical aligned residues Known mutation direction Optimal alignment Best score under parameters Unique true evolutionary history High identity Many identical aligned residues Identity of biological function High similarity Strong score under substitution model Proof of homology by itself",
+      "paragraphs": [
+        "Observation What it means What it does not prove dL = 1 One minimum unit edit One historical mutation High global score Strong full-sequence score under model Same biological function High local score Strong local region Globally similar sequences Gap in alignment Gap improves optimal correspondence Known deletion event Mismatch column Nonidentical aligned residues Known mutation direction Optimal alignment Best score under parameters Unique true evolutionary history High identity Many identical aligned residues Identity of biological function High similarity Strong score under substitution model Proof of homology by itself"
+      ]
+    },
+    {
+      "heading": "265. Common failure mode: sequence alignment is Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-266",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "Too broad.",
+      "paragraphs": [
+        "Too broad.",
+        "Levenshtein is one particular global alignment cost model."
+      ]
+    },
+    {
+      "heading": "266. Common failure mode: Levenshtein has nothing to do with alignment",
+      "level": 2,
+      "id": "ux-section-267",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "Its dynamic program can be interpreted exactly as minimum-cost global alignment."
+      ]
+    },
+    {
+      "heading": "267. Common failure mode: Needleman-Wunsch and Levenshtein use unrelated mathematics",
+      "level": 2,
+      "id": "ux-section-268",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "Both exploit optimal substructure over sequence prefixes."
+      ]
+    },
+    {
+      "heading": "268. Common failure mode: all global alignments are edit distances",
+      "level": 2,
+      "id": "ux-section-269",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "Biological scoring can use arbitrary substitution scores and gap models."
+      ]
+    },
+    {
+      "heading": "269. Common failure mode: every sequence alignment score is a metric",
+      "level": 2,
+      "id": "ux-section-270",
+      "paragraph_count": 1,
+      "word_count": 1,
+      "evidence": "False.",
+      "paragraphs": [
+        "False."
+      ]
+    },
+    {
+      "heading": "270. Common failure mode: negative alignment score means negative distance",
+      "level": 2,
+      "id": "ux-section-271",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Scores and distances have different definitions.",
+      "paragraphs": [
+        "Scores and distances have different definitions."
+      ]
+    },
+    {
+      "heading": "271. Common failure mode: higher score and lower edit distance always rank pairs identically",
+      "level": 2,
+      "id": "ux-section-272",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Only under specially related scoring schemes.",
+      "paragraphs": [
+        "Only under specially related scoring schemes."
+      ]
+    },
+    {
+      "heading": "272. Common failure mode: a biological substitution is always one Levenshtein mismatch",
+      "level": 2,
+      "id": "ux-section-273",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "It is one symbolic mismatch, but biological scoring can distinguish substitution types.",
+      "paragraphs": [
+        "It is one symbolic mismatch, but biological scoring can distinguish substitution types."
+      ]
+    },
+    {
+      "heading": "273. Common failure mode: all amino-acid mismatches should have the same penalty",
+      "level": 2,
+      "id": "ux-section-274",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Protein substitution matrices explicitly reject this assumption.",
+      "paragraphs": [
+        "Protein substitution matrices explicitly reject this assumption."
+      ]
+    },
+    {
+      "heading": "274. Common failure mode: BLOSUM score is evolutionary distance",
+      "level": 2,
+      "id": "ux-section-275",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "It is a substitution similarity score derived from empirical sequence relationships, not a direct mutation count.",
+      "paragraphs": [
+        "It is a substitution similarity score derived from empirical sequence relationships, not a direct mutation count."
+      ]
+    },
+    {
+      "heading": "275. Common failure mode: BLOSUM62 is always the best protein matrix",
+      "level": 2,
+      "id": "ux-section-276",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Matrix choice depends on the task, sequence properties, and scoring configuration.",
+      "paragraphs": [
+        "Matrix choice depends on the task, sequence properties, and scoring configuration."
+      ]
+    },
+    {
+      "heading": "276. Common failure mode: gap penalty is a property of the sequence",
+      "level": 2,
+      "id": "ux-section-277",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "It is a model parameter.",
+      "paragraphs": [
+        "It is a model parameter."
+      ]
+    },
+    {
+      "heading": "277. Common failure mode: every gap symbol represents one independent biological indel",
+      "level": 2,
+      "id": "ux-section-278",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "A gap run can correspond to one modeled gap episode.",
+      "paragraphs": [
+        "A gap run can correspond to one modeled gap episode."
+      ]
+    },
+    {
+      "heading": "278. Common failure mode: affine gap penalty has one universal formula",
+      "level": 2,
+      "id": "ux-section-279",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Different software uses different open/extend conventions.",
+      "paragraphs": [
+        "Different software uses different open/extend conventions."
+      ]
+    },
+    {
+      "heading": "279. Common failure mode: gap open 10 and extension 1 uniquely define scoring",
+      "level": 2,
+      "id": "ux-section-280",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "Not without specifying whether the first residue costs:",
+      "paragraphs": [
+        "Not without specifying whether the first residue costs:",
+        "10",
+        "or:",
+        "11."
+      ]
+    },
+    {
+      "heading": "280. Common failure mode: affine gaps require cubic time",
+      "level": 2,
+      "id": "ux-section-281",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Gotoh's state decomposition computes standard affine-gap pairwise alignment in quadratic time.",
+      "paragraphs": [
+        "Gotoh's state decomposition computes standard affine-gap pairwise alignment in quadratic time."
+      ]
+    },
+    {
+      "heading": "281. Common failure mode: local alignment is simply Levenshtein with free ends",
+      "level": 2,
+      "id": "ux-section-282",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Not generally.",
+      "paragraphs": [
+        "Not generally.",
+        "Smith-Waterman uses positive/negative scoring and zero reset to optimize an internal region."
+      ]
+    },
+    {
+      "heading": "282. Common failure mode: semi-global and local alignment are identical",
+      "level": 2,
+      "id": "ux-section-283",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Semi-global usually constrains one or more sequence extents while freeing selected terminal gaps.",
+      "paragraphs": [
+        "Semi-global usually constrains one or more sequence extents while freeing selected terminal gaps."
+      ]
+    },
+    {
+      "heading": "283. Common failure mode: local alignment compares entire sequences",
+      "level": 2,
+      "id": "ux-section-284",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "It intentionally need not.",
+      "paragraphs": [
+        "It intentionally need not."
+      ]
+    },
+    {
+      "heading": "284. Common failure mode: strong local alignment means strong global similarity",
+      "level": 2,
+      "id": "ux-section-285",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "A short conserved region can exist inside otherwise unrelated sequence context.",
+      "paragraphs": [
+        "A short conserved region can exist inside otherwise unrelated sequence context."
+      ]
+    },
+    {
+      "heading": "285. Common failure mode: global alignment is always biologically superior",
+      "level": 2,
+      "id": "ux-section-286",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "It can be inappropriate for partial sequences or shared domains.",
+      "paragraphs": [
+        "It can be inappropriate for partial sequences or shared domains."
+      ]
+    },
+    {
+      "heading": "286. Common failure mode: local alignment is always biologically superior",
+      "level": 2,
+      "id": "ux-section-287",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "It can ignore important full-length differences.",
+      "paragraphs": [
+        "It can ignore important full-length differences."
+      ]
+    },
+    {
+      "heading": "287. Common failure mode: the optimal alignment is unique",
+      "level": 2,
+      "id": "ux-section-288",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Repeated residues frequently create ties.",
+      "paragraphs": [
+        "Repeated residues frequently create ties."
+      ]
+    },
+    {
+      "heading": "288. Common failure mode: one traceback is the historical truth",
+      "level": 2,
+      "id": "ux-section-289",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "It is one optimal path under the scoring scheme.",
+      "paragraphs": [
+        "It is one optimal path under the scoring scheme."
+      ]
+    },
+    {
+      "heading": "289. Common failure mode: exact dynamic programming gives exact evolutionary history",
+      "level": 2,
+      "id": "ux-section-290",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "It gives an exact mathematical optimum under the model.",
+      "paragraphs": [
+        "It gives an exact mathematical optimum under the model."
+      ]
+    },
+    {
+      "heading": "290. Common failure mode: one gap identifies whether an insertion or deletion occurred",
+      "level": 2,
+      "id": "ux-section-291",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Pairwise descendant sequences generally do not determine indel polarity.",
+      "paragraphs": [
+        "Pairwise descendant sequences generally do not determine indel polarity."
+      ]
+    },
+    {
+      "heading": "291. Common failure mode: sequence similarity equals homology",
+      "level": 2,
+      "id": "ux-section-292",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "Similarity is observed/computed evidence.",
+      "paragraphs": [
+        "Similarity is observed/computed evidence.",
+        "Homology is an evolutionary relationship."
+      ]
+    },
+    {
+      "heading": "292. Common failure mode: 70% identity means 70% homology",
+      "level": 2,
+      "id": "ux-section-293",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "That terminology conflates different concepts.",
+      "paragraphs": [
+        "That terminology conflates different concepts."
+      ]
+    },
+    {
+      "heading": "293. Common failure mode: percent identity equals alignment score",
+      "level": 2,
+      "id": "ux-section-294",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Substitution matrices and gaps make the score richer than an identity fraction.",
+      "paragraphs": [
+        "Substitution matrices and gaps make the score richer than an identity fraction."
+      ]
+    },
+    {
+      "heading": "294. Common failure mode: percent identity has one universal denominator",
+      "level": 2,
+      "id": "ux-section-295",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "Different conventions exist.",
+      "paragraphs": [
+        "Different conventions exist."
+      ]
+    },
+    {
+      "heading": "295. Common failure mode: raw alignment scores can be compared across arbitrary scoring schemes",
+      "level": 2,
+      "id": "ux-section-296",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Score scale depends on matrix and gap parameters.",
+      "paragraphs": [
+        "Score scale depends on matrix and gap parameters."
+      ]
+    },
+    {
+      "heading": "296. Common failure mode: alignment score equals probability",
+      "level": 2,
+      "id": "ux-section-297",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Statistical significance requires an explicit background/statistical model.",
+      "paragraphs": [
+        "Statistical significance requires an explicit background/statistical model."
+      ]
+    },
+    {
+      "heading": "297. Common failure mode: E-value is edit distance",
+      "level": 2,
+      "id": "ux-section-298",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "They measure entirely different quantities.",
+      "paragraphs": [
+        "They measure entirely different quantities."
+      ]
+    },
+    {
+      "heading": "298. Common failure mode: BLAST is Smith-Waterman",
+      "level": 2,
+      "id": "ux-section-299",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "BLAST is a heuristic local database-search framework.",
+      "paragraphs": [
+        "BLAST is a heuristic local database-search framework."
+      ]
+    },
+    {
+      "heading": "299. Common failure mode: exact alignment at one candidate makes a mapper globally exact",
+      "level": 2,
+      "id": "ux-section-300",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Candidate discovery may still be heuristic.",
+      "paragraphs": [
+        "Candidate discovery may still be heuristic."
+      ]
+    },
+    {
+      "heading": "300. Common failure mode: pairwise alignment equals database search",
+      "level": 2,
+      "id": "ux-section-301",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Search includes retrieval, candidate generation, and statistical ranking.",
+      "paragraphs": [
+        "Search includes retrieval, candidate generation, and statistical ranking."
+      ]
+    },
+    {
+      "heading": "301. Common failure mode: pairwise alignment equals multiple sequence alignment",
+      "level": 2,
+      "id": "ux-section-302",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "The multi-sequence optimization problem is substantially different.",
+      "paragraphs": [
+        "The multi-sequence optimization problem is substantially different."
+      ]
+    },
+    {
+      "heading": "302. Common failure mode: pairwise alignment equals phylogeny",
+      "level": 2,
+      "id": "ux-section-303",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Evolutionary-tree inference requires additional models and data.",
+      "paragraphs": [
+        "Evolutionary-tree inference requires additional models and data."
+      ]
+    },
+    {
+      "heading": "303. Common failure mode: alignment equals protein-structure comparison",
+      "level": 2,
+      "id": "ux-section-304",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Sequence and 3D structure are different representations.",
+      "paragraphs": [
+        "Sequence and 3D structure are different representations."
+      ]
+    },
+    {
+      "heading": "304. Common failure mode: low Levenshtein distance proves biological function",
+      "level": 2,
+      "id": "ux-section-305",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "It does not.",
+      "paragraphs": [
+        "It does not."
+      ]
+    },
+    {
+      "heading": "305. Common failure mode: high Levenshtein distance rules out biological relationship",
+      "level": 2,
+      "id": "ux-section-306",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Long evolutionary divergence can create extensive sequence differences.",
+      "paragraphs": [
+        "Long evolutionary divergence can create extensive sequence differences."
+      ]
+    },
+    {
+      "heading": "306. Common failure mode: a minimum edit script is an observed mutation history",
+      "level": 2,
+      "id": "ux-section-307",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "It is the cheapest hypothetical transformation under the selected costs.",
+      "paragraphs": [
+        "It is the cheapest hypothetical transformation under the selected costs."
+      ]
+    },
+    {
+      "heading": "307. Reference pseudocode: Levenshtein as global alignment",
+      "level": 2,
+      "id": "ux-section-308",
+      "paragraph_count": 1,
+      "word_count": 41,
+      "evidence": "function levenshtein(X, Y): D[i][0] = i D[0][j] = j for i in 1..len(X): for j in 1..len(Y): mismatch = 0 if X[i] == Y[j] else 1 D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + mismatch ) return D[m][n]",
+      "paragraphs": [
+        "function levenshtein(X, Y): D[i][0] = i D[0][j] = j for i in 1..len(X): for j in 1..len(Y): mismatch = 0 if X[i] == Y[j] else 1 D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + mismatch ) return D[m][n]"
+      ]
+    },
+    {
+      "heading": "308. Reference pseudocode: global score maximization",
+      "level": 2,
+      "id": "ux-section-309",
+      "paragraph_count": 1,
+      "word_count": 49,
+      "evidence": "function global_alignment(X, Y, score, gap): F[0][0] = 0 for i in 1..m: F[i][0] = F[i-1][0] - gap for j in 1..n: F[0][j] = F[0][j-1] - gap for i in 1..m: for j in 1..n: F[i][j] = max( F[i-1][j-1] + score(X[i],Y[j]), F[i-1][j] - gap, F[i][j-1] - gap ) return F[m][n]",
+      "paragraphs": [
+        "function global_alignment(X, Y, score, gap): F[0][0] = 0 for i in 1..m: F[i][0] = F[i-1][0] - gap for j in 1..n: F[0][j] = F[0][j-1] - gap for i in 1..m: for j in 1..n: F[i][j] = max( F[i-1][j-1] + score(X[i],Y[j]), F[i-1][j] - gap, F[i][j-1] - gap ) return F[m][n]"
+      ]
+    },
+    {
+      "heading": "309. Recover Levenshtein from that pseudocode",
+      "level": 2,
+      "id": "ux-section-310",
+      "paragraph_count": 4,
+      "word_count": 8,
+      "evidence": "Use:",
+      "paragraphs": [
+        "Use:",
+        "score(x,x)=0 score(x,y)=-1 gap=1.",
+        "Then:",
+        "distance = -global_alignment_score."
+      ]
+    },
+    {
+      "heading": "310. Reference pseudocode: Smith-Waterman",
+      "level": 2,
+      "id": "ux-section-311",
+      "paragraph_count": 1,
+      "word_count": 60,
+      "evidence": "function local_alignment(X, Y, score, gap): initialize all H[i][0] = 0 H[0][j] = 0 best = 0 best_cell = (0,0) for i in 1..m: for j in 1..n: H[i][j] = max( 0, H[i-1][j-1] + score(X[i],Y[j]), H[i-1][j] - gap, H[i][j-1] - gap ) if H[i][j] > best: best = H[i][j] best_cell = (i,j) traceback from best_cell until score zero return best, local_alignment",
+      "paragraphs": [
+        "function local_alignment(X, Y, score, gap): initialize all H[i][0] = 0 H[0][j] = 0 best = 0 best_cell = (0,0) for i in 1..m: for j in 1..n: H[i][j] = max( 0, H[i-1][j-1] + score(X[i],Y[j]), H[i-1][j] - gap, H[i][j-1] - gap ) if H[i][j] > best: best = H[i][j] best_cell = (i,j) traceback from best_cell until score zero return best, local_alignment"
+      ]
+    },
+    {
+      "heading": "311. Why zero changes everything",
+      "level": 2,
+      "id": "ux-section-312",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "Without zero:",
+      "paragraphs": [
+        "Without zero:",
+        "bad prefixes remain part of the optimization.",
+        "With zero:",
+        "the alignment can restart."
+      ]
+    },
+    {
+      "heading": "312. Reference pseudocode: affine global alignment",
+      "level": 2,
+      "id": "ux-section-313",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "Under:",
+      "paragraphs": [
+        "Under:",
+        "gap(k) = open + (k-1)extend,",
+        "one simplified three-state formulation is:",
+        "M[i][j] = max( M[i-1][j-1], Ix[i-1][j-1], Iy[i-1][j-1] ) + score(X[i],Y[j]) Ix[i][j] = max( M[i-1][j] - open, Ix[i-1][j] - extend ) Iy[i][j] = max( M[i][j-1] - open, Iy[i][j-1] - extend )"
+      ]
+    },
+    {
+      "heading": "313. Initialization must match the gap convention",
+      "level": 2,
+      "id": "ux-section-314",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Incorrect first-row/first-column values create incorrect terminal-gap scores even if the recurrence is otherwise correct.",
+      "paragraphs": [
+        "Incorrect first-row/first-column values create incorrect terminal-gap scores even if the recurrence is otherwise correct."
+      ]
+    },
+    {
+      "heading": "314. Reference pseudocode: query-to-target semi-global edit distance",
+      "level": 2,
+      "id": "ux-section-315",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "For a query that must align completely but may begin/end anywhere in the target:",
+      "paragraphs": [
+        "For a query that must align completely but may begin/end anywhere in the target:",
+        "D[i][0] = i D[0][j] = 0",
+        "then use the ordinary edit recurrence."
+      ]
+    },
+    {
+      "heading": "315. Final answer",
+      "level": 2,
+      "id": "ux-section-316",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "min_j D[m][j]",
+      "paragraphs": [
+        "min_j D[m][j]",
+        "under this orientation gives the cheapest full-query alignment ending anywhere in the target."
+      ]
+    },
+    {
+      "heading": "316. This is not ordinary full-string Levenshtein",
+      "level": 2,
+      "id": "ux-section-317",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Target prefixes and suffixes can be free.",
+      "paragraphs": [
+        "Target prefixes and suffixes can be free."
+      ]
+    },
+    {
+      "heading": "317. Representation still matters",
+      "level": 2,
+      "id": "ux-section-318",
+      "paragraph_count": 8,
+      "word_count": 19,
+      "evidence": "All of these algorithms operate on abstract symbols.",
+      "paragraphs": [
+        "All of these algorithms operate on abstract symbols.",
+        "The symbols can represent:",
+        "nucleotides;",
+        "amino acids;",
+        "codons;",
+        "events;",
+        "characters;",
+        "tokens."
+      ]
+    },
+    {
+      "heading": "318. Changing representation changes biological meaning",
+      "level": 2,
+      "id": "ux-section-319",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Nucleotide-level alignment and translated protein alignment can tell different stories.",
+      "paragraphs": [
+        "Nucleotide-level alignment and translated protein alignment can tell different stories."
+      ]
+    },
+    {
+      "heading": "319. Codon-aware models are another example",
+      "level": 2,
+      "id": "ux-section-320",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "Three nucleotide edits need not be interpreted independently if the biological unit of interest is a codon or amino acid.",
+      "paragraphs": [
+        "Three nucleotide edits need not be interpreted independently if the biological unit of interest is a codon or amino acid."
+      ]
+    },
+    {
+      "heading": "320. Ordinary Levenshtein contains no codon awareness",
+      "level": 2,
+      "id": "ux-section-321",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Again the issue is representation/model choice rather than dynamic programming correctness.",
+      "paragraphs": [
+        "Again the issue is representation/model choice rather than dynamic programming correctness."
+      ]
+    },
+    {
+      "heading": "321. Unicode text analogy",
+      "level": 2,
+      "id": "ux-section-322",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "This is structurally similar to choosing code points versus grapheme clusters in text:",
+      "paragraphs": [
+        "This is structurally similar to choosing code points versus grapheme clusters in text:",
+        "algorithm can be identical while edit unit changes."
+      ]
+    },
+    {
+      "heading": "322. Biological sequence alignment and text edit distance therefore share a general principle",
+      "level": 2,
+      "id": "ux-section-323",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "define the unit define the operations define the scores define the boundaries then optimize.",
+      "paragraphs": [
+        "define the unit define the operations define the scores define the boundaries then optimize."
+      ]
+    },
+    {
+      "heading": "323. Evaluation methodology",
+      "level": 2,
+      "id": "ux-section-324",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "When comparing Levenshtein with biological alignment, do not evaluate only:",
+      "paragraphs": [
+        "When comparing Levenshtein with biological alignment, do not evaluate only:",
+        "which produces the larger or smaller numeric score."
+      ]
+    },
+    {
+      "heading": "324. The numbers are on different scales",
+      "level": 2,
+      "id": "ux-section-325",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Instead measure downstream performance for the actual task.",
+      "paragraphs": [
+        "Instead measure downstream performance for the actual task."
+      ]
+    },
+    {
+      "heading": "325. For read mapping",
+      "level": 2,
+      "id": "ux-section-326",
+      "paragraph_count": 6,
+      "word_count": 11,
+      "evidence": "Possible metrics include:",
+      "paragraphs": [
+        "Possible metrics include:",
+        "mapping accuracy;",
+        "candidate recall;",
+        "alignment correctness;",
+        "runtime;",
+        "memory."
+      ]
+    },
+    {
+      "heading": "326. For protein alignment",
+      "level": 2,
+      "id": "ux-section-327",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Use curated reference alignments where appropriate and evaluate whether homologous residues are aligned correctly.",
+      "paragraphs": [
+        "Use curated reference alignments where appropriate and evaluate whether homologous residues are aligned correctly."
+      ]
+    },
+    {
+      "heading": "327. For homology search",
+      "level": 2,
+      "id": "ux-section-328",
+      "paragraph_count": 5,
+      "word_count": 9,
+      "evidence": "Measure:",
+      "paragraphs": [
+        "Measure:",
+        "sensitivity;",
+        "false-positive rate;",
+        "ROC-like retrieval measures;",
+        "statistical calibration."
+      ]
+    },
+    {
+      "heading": "328. For simple edit applications",
+      "level": 2,
+      "id": "ux-section-329",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "If ground truth is literally an edit count, evaluate exact distance correctness.",
+      "paragraphs": [
+        "If ground truth is literally an edit count, evaluate exact distance correctness."
+      ]
+    },
+    {
+      "heading": "329. Do not judge Levenshtein by a biological objective it was not designed to encode",
+      "level": 2,
+      "id": "ux-section-330",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Likewise, do not judge biological scoring by whether it reproduces unit edit counts.",
+      "paragraphs": [
+        "Likewise, do not judge biological scoring by whether it reproduces unit edit counts."
+      ]
+    },
+    {
+      "heading": "330. Benchmark parameter sensitivity",
+      "level": 2,
+      "id": "ux-section-331",
+      "paragraph_count": 5,
+      "word_count": 12,
+      "evidence": "For sequence alignment vary:",
+      "paragraphs": [
+        "For sequence alignment vary:",
+        "substitution matrix;",
+        "gap open;",
+        "gap extend;",
+        "terminal-gap policy."
+      ]
+    },
+    {
+      "heading": "331. Stable results across parameter ranges provide stronger confidence",
+      "level": 2,
+      "id": "ux-section-332",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "If tiny changes create completely different alignments, interpretation should be cautious.",
+      "paragraphs": [
+        "If tiny changes create completely different alignments, interpretation should be cautious."
+      ]
+    },
+    {
+      "heading": "332. Report scoring parameters completely",
+      "level": 2,
+      "id": "ux-section-333",
+      "paragraph_count": 1,
+      "word_count": 35,
+      "evidence": "Parameter Report Alignment mode Global/local/semi-global Alphabet DNA/RNA/protein/etc. Substitution scores Matrix or explicit rule Gap model Linear/affine/etc. Gap-open convention Exact formula Terminal gaps Penalized/free policy Score normalization If any Traceback policy If multiple optimal alignments exist",
+      "paragraphs": [
+        "Parameter Report Alignment mode Global/local/semi-global Alphabet DNA/RNA/protein/etc. Substitution scores Matrix or explicit rule Gap model Linear/affine/etc. Gap-open convention Exact formula Terminal gaps Penalized/free policy Score normalization If any Traceback policy If multiple optimal alignments exist"
+      ]
+    },
+    {
+      "heading": "333. Report software and version",
+      "level": 2,
+      "id": "ux-section-334",
+      "paragraph_count": 6,
+      "word_count": 14,
+      "evidence": "Different implementations may differ in:",
+      "paragraphs": [
+        "Different implementations may differ in:",
+        "gap conventions;",
+        "tie-breaking;",
+        "default matrices;",
+        "terminal-gap behavior;",
+        "ambiguous-symbol handling."
+      ]
+    },
+    {
+      "heading": "334. Reproduce the scoring model, not just the algorithm name",
+      "level": 2,
+      "id": "ux-section-335",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "“Needleman-Wunsch” alone is often insufficient to reproduce an alignment.",
+      "paragraphs": [
+        "“Needleman-Wunsch” alone is often insufficient to reproduce an alignment."
+      ]
+    },
+    {
+      "heading": "335. Same for “Smith-Waterman”",
+      "level": 2,
+      "id": "ux-section-336",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "The substitution matrix and gap penalties remain essential.",
+      "paragraphs": [
+        "The substitution matrix and gap penalties remain essential."
+      ]
+    },
+    {
+      "heading": "336. Same for “Levenshtein similarity”",
+      "level": 2,
+      "id": "ux-section-337",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "If normalized, report the normalization formula.",
+      "paragraphs": [
+        "If normalized, report the normalization formula."
+      ]
+    },
+    {
+      "heading": "337. Final decision hierarchy",
+      "level": 2,
+      "id": "ux-section-338",
+      "paragraph_count": 1,
+      "word_count": 91,
+      "evidence": "WHAT IS THE TARGET? | +-----------------------------+ | | v v minimum number biological of simple edits? correspondence? | | YES YES | | v v LEVENSHTEIN Which region matters? | +------------+------------+ | | | v v v FULL INTERNAL QUERY/TARGET | | | v v v GLOBAL LOCAL SEMI-GLOBAL | v Are substitution costs uniform? | +----+----+ | | YES NO | | v v simple substitution scoring matrix | v Are long gaps one structured event? | +--+--+ | | NO YES | | v v linear affine/ richer gaps.",
+      "paragraphs": [
+        "WHAT IS THE TARGET? | +-----------------------------+ | | v v minimum number biological of simple edits? correspondence? | | YES YES | | v v LEVENSHTEIN Which region matters? | +------------+------------+ | | | v v v FULL INTERNAL QUERY/TARGET | | | v v v GLOBAL LOCAL SEMI-GLOBAL | v Are substitution costs uniform? | +----+----+ | | YES NO | | v v simple substitution scoring matrix | v Are long gaps one structured event? | +--+--+ | | NO YES | | v v linear affine/ richer gaps."
+      ]
+    },
+    {
+      "heading": "338. Final conceptual map",
+      "level": 2,
+      "id": "ux-section-339",
+      "paragraph_count": 1,
+      "word_count": 122,
+      "evidence": "PAIR OF SEQUENCES | v ALIGNMENT SPACE | +-------------+-------------+ | | v v COST MINIMIZATION SCORE MAXIMIZATION | | v v Levenshtein/Sellers Needleman-Wunsch style | | +-------------+-------------+ | v BOUNDARY CONDITIONS | +-------------+-------------+ | | | v v v GLOBAL LOCAL SEMI-GLOBAL | v Smith-Waterman | v SCORING MODEL | +--------------+--------------+ | | v v SIMPLE UNIT BIOLOGICAL EDIT COST SCORES | | v v Levenshtein-like PAM / BLOSUM / custom | | +--------------+--------------+ | v GAP MODEL | +----------+----------+ | | v v LINEAR AFFINE | | v v one cost/symbol open + extend | v GOTOH | v OPTIMAL ALIGNMENT | +---------------------+--------------------+ | | | v v v SCORE ALIGNMENT STATISTICS/ CONTEXT | | | +---------------------+--------------------+ | v BIOLOGICAL INTERPRETATI",
+      "paragraphs": [
+        "PAIR OF SEQUENCES | v ALIGNMENT SPACE | +-------------+-------------+ | | v v COST MINIMIZATION SCORE MAXIMIZATION | | v v Levenshtein/Sellers Needleman-Wunsch style | | +-------------+-------------+ | v BOUNDARY CONDITIONS | +-------------+-------------+ | | | v v v GLOBAL LOCAL SEMI-GLOBAL | v Smith-Waterman | v SCORING MODEL | +--------------+--------------+ | | v v SIMPLE UNIT BIOLOGICAL EDIT COST SCORES | | v v Levenshtein-like PAM / BLOSUM / custom | | +--------------+--------------+ | v GAP MODEL | +----------+----------+ | | v v LINEAR AFFINE | | v v one cost/symbol open + extend | v GOTOH | v OPTIMAL ALIGNMENT | +---------------------+--------------------+ | | | v v v SCORE ALIGNMENT STATISTICS/ CONTEXT | | | +---------------------+--------------------+ | v BIOLOGICAL INTERPRETATION."
+      ]
+    },
+    {
+      "heading": "339. Final interpretation",
+      "level": 2,
+      "id": "ux-section-340",
+      "paragraph_count": 24,
+      "word_count": 677,
+      "evidence": "The relationship between Levenshtein distance and sequence alignment is much closer than their usual disciplinary separation suggests.",
+      "paragraphs": [
+        "The relationship between Levenshtein distance and sequence alignment is much closer than their usual disciplinary separation suggests.",
+        "At the mathematical core, both align ordered sequences by deciding whether symbols should correspond directly or be separated by gaps. If a complete end-to-end alignment assigns cost zero to matches and cost one to substitutions, insertions, and deletions, minimum alignment cost is exactly Levenshtein distance .",
+        "In that sense:",
+        "Levenshtein = a particular global alignment model.",
+        "But biological sequence alignment expands almost every assumption of that model.",
+        "The first expansion is the substitution model. Classic Levenshtein treats every unequal pair identically. Protein alignment can use matrices such as BLOSUM or PAM, where residue pairs receive different scores according to empirically or evolutionarily motivated substitution patterns. A conservative replacement and an unlikely replacement therefore need not carry the same evidence.",
+        "The second expansion is the gap model. Levenshtein assigns independent linear cost to every inserted or deleted symbol. Affine-gap alignment distinguishes the cost of opening a gap from extending it, allowing one long gap to represent a different hypothesis from several independent gaps. Gotoh's dynamic-programming formulation achieves this by maintaining separate match and gap states.",
+        "The third expansion is the alignment objective. Classic Levenshtein is global: every symbol of both strings contributes to the final distance. Needleman-Wunsch-style global alignment shares that end-to-end structure but can use richer scoring. Smith-Waterman local alignment instead searches for the strongest pair of internal subsequences. Semi-global alignment changes terminal-gap conditions so that one sequence can align to a region of another without paying for irrelevant flanks.",
+        "These relationships reveal why the familiar distinction:",
+        "edit distance versus sequence alignment",
+        "is too crude.",
+        "A more accurate hierarchy is:",
+        "sequence alignment = general correspondence framework Levenshtein = global minimum-cost alignment with unit insert/delete/substitute costs Needleman-Wunsch-style alignment = global score optimization Smith-Waterman = local score optimization Gotoh = efficient affine-gap state model.",
+        "The historical literature also shows that distance minimization and similarity maximization need not represent fundamentally different mathematics. Sellers developed finite-sequence distance formulations, while Smith, Waterman, and Fitch later demonstrated explicit conditions under which Sellers-style distance and Needleman-Wunsch-style similarity optimization are equivalent.",
+        "The differences that matter are therefore the scoring model, gap model, representation, and boundary conditions.",
+        "Those choices also determine what the output can legitimately mean.",
+        "minimum edit distance != mutation count alignment mismatch != known historical substitution alignment gap != known insertion or deletion one gap run != known single evolutionary event optimal score != unique alignment unique algorithmic optimum != biological certainty high sequence similarity != same molecular function sequence similarity != homology percent identity != percent homology raw alignment score != probability raw alignment score != edit distance local alignment != global similarity semi-global alignment != Smith-Waterman pairwise alignment != multiple sequence alignment pairwise alignment != phylogenetic reconstruction sequence alignment != protein structural alignment exact candidate alignment != exact database search exact optimization under a model != biological truth.",
+        "For ordinary strings, unit-cost Levenshtein remains one of the cleanest possible models when insertions, deletions, and substitutions genuinely represent the relevant differences.",
+        "For biological sequence analysis, however, richer alignment models often become necessary because residue substitutions are nonuniform, contiguous gaps should not always behave like independent edits, and the biologically interesting relationship may be local rather than global.",
+        "The practical rule is therefore:",
+        "Use Levenshtein when the target quantity is simple edit geometry. Use global sequence alignment when complete sequence correspondence matters but scoring is domain-specific. Use local alignment when only an internal region is expected to correspond. Use semi-global alignment when one sequence should align to part of another without penalizing selected terminal material. Use affine gaps when opening a gap and extending it represent different modeled costs. Use biological substitution matrices when different residue substitutions carry different evidence.",
+        "The broader sequence alignment and gap models framework develops those models in detail, while edit distance in bioinformatics explains where ordinary edit distance remains useful.",
+        "The deepest principle is simple:",
+        "alignment tells us how two sequences can correspond scoring tells us which correspondence the model prefers biology tells us how cautiously that correspondence should be interpreted."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-341",
+      "paragraph_count": 10,
+      "word_count": 257,
+      "evidence": "Levenshtein, V. I. Binary codes capable of correcting deletions, insertions, and reversals. Doklady Akademii Nauk SSSR 163(4), 845-848, 1965; English translation published in Soviet Physics Doklady 10, 707-710, 1966. MathNet bibliographic record .",
+      "paragraphs": [
+        "Levenshtein, V. I. Binary codes capable of correcting deletions, insertions, and reversals. Doklady Akademii Nauk SSSR 163(4), 845-848, 1965; English translation published in Soviet Physics Doklady 10, 707-710, 1966. MathNet bibliographic record .",
+        "Needleman, S. B., and Wunsch, C. D. A general method applicable to the search for similarities in the amino acid sequence of two proteins. Journal of Molecular Biology 48(3), 443-453, 1970. https://doi.org/10.1016/0022-2836(70)90057-4 .",
+        "Sellers, P. H. An algorithm for the distance between two finite sequences. Journal of Combinatorial Theory, Series A 16(2), 253-258, 1974. https://doi.org/10.1016/0097-3165(74)90050-8 .",
+        "Sellers, P. H. On the Theory and Computation of Evolutionary Distances. SIAM Journal on Applied Mathematics 26(4), 787-793, 1974. https://doi.org/10.1137/0126070 .",
+        "Smith, T. F., Waterman, M. S., and Fitch, W. M. Comparative biosequence metrics. Journal of Molecular Evolution 18(1), 38-46, 1981. https://doi.org/10.1007/BF01733210 .",
+        "Smith, T. F., and Waterman, M. S. Identification of common molecular subsequences. Journal of Molecular Biology 147(1), 195-197, 1981. https://doi.org/10.1016/0022-2836(81)90087-5 .",
+        "Gotoh, O. An improved algorithm for matching biological sequences. Journal of Molecular Biology 162(3), 705-708, 1982. https://doi.org/10.1016/0022-2836(82)90398-9 .",
+        "Henikoff, S., and Henikoff, J. G. Amino acid substitution matrices from protein blocks. Proceedings of the National Academy of Sciences 89(22), 10915-10919, 1992. https://doi.org/10.1073/pnas.89.22.10915 .",
+        "Karlin, S., and Altschul, S. F. Methods for assessing the statistical significance of molecular sequence features by using general scoring schemes. Proceedings of the National Academy of Sciences 87(6), 2264-2268, 1990. https://doi.org/10.1073/pnas.87.6.2264 .",
+        "Altschul, S. F., Gish, W., Miller, W., Myers, E. W., and Lipman, D. J. Basic local alignment search tool. Journal of Molecular Biology 215(3), 403-410, 1990. https://doi.org/10.1016/S0022-2836(05)80360-2 ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "84. But they need not use the same objective",
+          "anchor_id": "ux-section-85",
+          "alias": "approximate string matching",
+          "excerpt": "Approximate string matching often asks:"
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "195. For bounded Levenshtein this can remain exact",
+          "anchor_id": "ux-section-196",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See bounded and parameterized edit distance ."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "22. Historical terminology warning",
+          "anchor_id": "ux-section-23",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "In this historical binary-code context, “reversal” refers to reversal/change of the binary symbol value—not the adjacent-character transposition primitive of Damerau-Levenshtein distance."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-in-bioinformatics",
+      "evidence": [
+        {
+          "section": "339. Final interpretation",
+          "anchor_id": "ux-section-340",
+          "alias": "edit distance in bioinformatics",
+          "excerpt": "The broader sequence alignment and gap models framework develops those models in detail, while edit distance in bioinformatics explains where ordinary edit distance remains useful."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-in-genomic-search-and-read-mapping",
+      "evidence": [
+        {
+          "section": "182. Read mapping illustrates the hybrid model",
+          "anchor_id": "ux-section-183",
+          "alias": "edit distance in genomic search and read mapping",
+          "excerpt": "See edit distance in genomic search and read mapping ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-vs-set-vector-and-ngram-similarity",
+      "evidence": [
+        {
+          "section": "249. Representation still comes before metric",
+          "anchor_id": "ux-section-250",
+          "alias": "edit distance vs set vector and n gram similarity",
+          "excerpt": "This mirrors the principle developed in edit distance vs set, vector, and n-gram similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Levenshtein Distance vs Sequence Alignment",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "minimum edit count != biological similarity alignment score != edit distance gap != known historical insertion/deletion high similarity != proof of homology optimal alignment != unique alignment optimal alignment != true evolutionary history."
+        },
+        {
+          "section": "31. But arbitrary biological scores cannot automatically be treated as edit metrics",
+          "anchor_id": "ux-section-32",
+          "alias": "edit distance",
+          "excerpt": "That generally does not correspond to ordinary unit edit distance."
+        },
+        {
+          "section": "62. Ordinary Levenshtein remains valuable as a deliberately simple nucleotide model",
+          "anchor_id": "ux-section-63",
+          "alias": "edit distance",
+          "excerpt": "In that case edit distance is not an inferior approximation—it is the intended objective."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "12. Every valid alignment creates an edit script",
+          "anchor_id": "ux-section-13",
+          "alias": "edit operations",
+          "excerpt": "Read alignment columns from left to right and interpret mismatches and gaps as edit operations."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "179. Search systems therefore use filters, indexes, seeds, or heuristics",
+          "anchor_id": "ux-section-180",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "The same architectural principle appears in indexing and filtering for edit distance ."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-damerau-and-hamming",
+      "evidence": [
+        {
+          "section": "253. Practical decision: typing transpositions",
+          "anchor_id": "ux-section-254",
+          "alias": "levenshtein vs damerau levenshtein and hamming distance",
+          "excerpt": "See Levenshtein vs Damerau-Levenshtein and Hamming distance ."
+        }
+      ]
+    },
+    {
+      "target": "/sequence-alignment-and-gap-models",
+      "evidence": [
+        {
+          "section": "339. Final interpretation",
+          "anchor_id": "ux-section-340",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "The broader sequence alignment and gap models framework develops those models in detail, while edit distance in bioinformatics explains where ordinary edit distance remains useful."
+        }
+      ]
+    },
+    {
+      "target": "/vladimir-levenshtein",
+      "evidence": [
+        {
+          "section": "21. Historical perspective: Levenshtein",
+          "anchor_id": "ux-section-22",
+          "alias": "vladimir levenshtein",
+          "excerpt": "Vladimir Levenshtein's 1965 work studied binary codes capable of correcting deletions, insertions, and binary-symbol substitutions."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#page",
+      "type": "WebPage",
+      "name": "Levenshtein Distance vs Sequence Alignment: Global, Local, Gap Penalties, and Biological Scoring",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#global-alignment"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#local-alignment"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#affine-gap"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "type": "TechArticle",
+      "name": "Levenshtein Distance vs Sequence Alignment: Global, Local, Gap Penalties, and Biological Scoring",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#alignment-distance-equivalence"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#global-alignment"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#local-alignment"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#semiglobal-alignment"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#alignment-scoring"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#substitution-matrix"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#affine-gap"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#concept",
+      "type": "DefinedTerm",
+      "name": "Levenshtein Distance versus Sequence Alignment",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#alignment-distance-equivalence",
+      "type": "DefinedTerm",
+      "name": "Edit Distance and Global Alignment Equivalence",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#global-alignment",
+      "type": "DefinedTerm",
+      "name": "Global Sequence Alignment",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#local-alignment",
+      "type": "DefinedTerm",
+      "name": "Local Sequence Alignment",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#semiglobal-alignment",
+      "type": "DefinedTerm",
+      "name": "Semi-Global Sequence Alignment",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#alignment-scoring",
+      "type": "DefinedTerm",
+      "name": "Sequence Alignment Scoring",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#substitution-matrix",
+      "type": "DefinedTerm",
+      "name": "Substitution Matrix",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#affine-gap",
+      "type": "DefinedTerm",
+      "name": "Affine Gap Penalty",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#needleman-wunsch",
+      "type": "DefinedTerm",
+      "name": "Needleman-Wunsch Algorithm",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#sellers-distance",
+      "type": "DefinedTerm",
+      "name": "Sellers Sequence Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#smith-waterman",
+      "type": "DefinedTerm",
+      "name": "Smith-Waterman Algorithm",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#gotoh",
+      "type": "DefinedTerm",
+      "name": "Gotoh Algorithm",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#blosum",
+      "type": "DefinedTerm",
+      "name": "BLOSUM",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#biological-interpretation",
+      "type": "DefinedTerm",
+      "name": "Biological Interpretation of Sequence Alignment",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#global-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#local-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#affine-gap"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#page",
+      "mainEntity",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#page",
+      "isPartOf",
+      "https://www.levenshtein.net/comparisons#collection"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#alignment-distance-equivalence"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#global-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#local-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#semiglobal-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#alignment-scoring"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#substitution-matrix"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#affine-gap"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#needleman-wunsch"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#sellers-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#smith-waterman"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#gotoh"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#blosum"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#biological-interpretation"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "isPartOf",
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#page"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://www.mathnet.ru/eng/dan31411"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://doi.org/10.1016/0022-2836(70)90057-4"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://doi.org/10.1016/0097-3165(74)90050-8"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://doi.org/10.1137/0126070"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://doi.org/10.1007/BF01733210"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://doi.org/10.1016/0022-2836(81)90087-5"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://doi.org/10.1016/0022-2836(82)90398-9"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://doi.org/10.1073/pnas.89.22.10915"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://doi.org/10.1073/pnas.87.6.2264"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-sequence-alignment#article",
+      "citation",
+      "https://doi.org/10.1016/S0022-2836(05)80360-2"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://www.mathnet.ru/eng/dan31411",
+      "anchor": "MathNet bibliographic record"
+    },
+    {
+      "url": "https://doi.org/10.1016/0022-2836(70)90057-4",
+      "anchor": "https://doi.org/10.1016/0022-2836(70)90057-4"
+    },
+    {
+      "url": "https://doi.org/10.1016/0097-3165(74)90050-8",
+      "anchor": "https://doi.org/10.1016/0097-3165(74)90050-8"
+    },
+    {
+      "url": "https://doi.org/10.1007/BF01733210",
+      "anchor": "https://doi.org/10.1007/BF01733210"
+    },
+    {
+      "url": "https://doi.org/10.1073/pnas.89.22.10915",
+      "anchor": "https://doi.org/10.1073/pnas.89.22.10915"
+    },
+    {
+      "url": "https://doi.org/10.1016/0022-2836(81)90087-5",
+      "anchor": "https://doi.org/10.1016/0022-2836(81)90087-5"
+    },
+    {
+      "url": "https://doi.org/10.1016/0022-2836(82)90398-9",
+      "anchor": "https://doi.org/10.1016/0022-2836(82)90398-9"
+    },
+    {
+      "url": "https://doi.org/10.1073/pnas.87.6.2264",
+      "anchor": "https://doi.org/10.1073/pnas.87.6.2264"
+    },
+    {
+      "url": "https://doi.org/10.1016/S0022-2836(05)80360-2",
+      "anchor": "https://doi.org/10.1016/S0022-2836(05)80360-2"
+    },
+    {
+      "url": "https://doi.org/10.1137/0126070",
+      "anchor": "https://doi.org/10.1137/0126070"
+    }
+  ]
+}

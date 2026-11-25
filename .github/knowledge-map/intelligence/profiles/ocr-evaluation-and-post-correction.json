@@ -1,0 +1,2254 @@
+{
+  "url": "/ocr-evaluation-and-post-correction",
+  "title": "OCR Evaluation and Post-Correction: Character Error Rate, Ground Truth, Error Models, and Reliable Correction",
+  "h1": [
+    "OCR Evaluation and Post-Correction: Character Error Rate, Ground Truth, Error Models, and Reliable Correction"
+  ],
+  "group": "Language",
+  "provisional_mission": "Đánh giá OCR và hậu hiệu chỉnh",
+  "content_sha256": "efe8841d2dc09d8b2258c32756f45a70f66c99f62c99a0014674b78d5c25a4f9",
+  "canonical": "https://www.levenshtein.net/ocr-evaluation-and-post-correction",
+  "primary_entity_candidate": "OCR Evaluation and Post-Correction: Character Error Rate, Ground Truth, Error Models, and Reliable Correction",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "OCR Evaluation and Post-Correction",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 8,
+      "word_count": 240,
+      "evidence": "Optical character recognition (OCR) converts document images into machine-readable text, but evaluating an OCR system is not simply a matter of asking how many characters it recognized correctly. The observed error rate depends on what is treated as ground truth, how text is normalized, what counts as a character or word, how reading order and segmentation are represented, which alignment algorithm is used, and whether the system is evaluated before or after post-correction.",
+      "paragraphs": [
+        "Optical character recognition (OCR) converts document images into machine-readable text, but evaluating an OCR system is not simply a matter of asking how many characters it recognized correctly. The observed error rate depends on what is treated as ground truth, how text is normalized, what counts as a character or word, how reading order and segmentation are represented, which alignment algorithm is used, and whether the system is evaluated before or after post-correction.",
+        "Post-correction adds another layer of difficulty. A correction system can remove genuine OCR errors, leave errors untouched, or damage text that was already correct. A method that aggressively rewrites noisy text may reduce one aggregate edit-distance metric while destroying historically meaningful spellings, proper names, numerical values, punctuation, or document-specific terminology.",
+        "OCR quality should therefore be modeled as a pipeline:",
+        "document image | v layout / region analysis | v line and word segmentation | v character / sequence recognition | v raw OCR text | v post-correction | v final machine-readable text | v downstream use",
+        "Different evaluation questions belong at different points in this pipeline.",
+        "Character error rate may be appropriate for measuring transcription fidelity. Word error rate may better expose the effect of character errors on lexical usability. Layout metrics are required when reading order matters. Post-correction additionally requires measures of how many real errors were repaired and how many new errors were introduced.",
+        "The central principle is:",
+        "OCR evaluation != one universal accuracy number."
+      ]
+    },
+    {
+      "heading": "1. What exactly is being evaluated?",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 9,
+      "word_count": 214,
+      "evidence": "Before selecting a metric, define the target object.",
+      "paragraphs": [
+        "Before selecting a metric, define the target object.",
+        "Evaluation target Question Typical evidence Layout detection Were regions, columns, tables, marginalia, and other structures identified correctly? Regions, polygons, classes, reading order Text-line segmentation Were text lines separated correctly? Line boundaries and baselines Character recognition Was the visual text transcribed faithfully? Character or grapheme sequence Word recognition How many lexical units were recovered correctly? Token sequences Reading order Is text serialized in the intended document order? Ordered regions and lines Post-correction Did correction reduce OCR noise without damaging valid text? Raw OCR, corrected OCR, ground truth Downstream utility Can the text support search, NLP, extraction, or scholarly use? Task-specific performance",
+        "A system can perform well at one level and badly at another.",
+        "For example, a two-column page may contain nearly perfect character recognition but an incorrect reading order:",
+        "GROUND TRUTH: Column A line 1 Column A line 2 Column A line 3 Column B line 1 Column B line 2 Column B line 3",
+        "A layout system might instead serialize:",
+        "Column A line 1 Column B line 1 Column A line 2 Column B line 2 Column A line 3 Column B line 3",
+        "Almost every character can be recognized correctly while the serialized document becomes severely corrupted.",
+        "This distinction is central to serious OCR benchmarking."
+      ]
+    },
+    {
+      "heading": "2. Ground truth is part of the measurement system",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 22,
+      "word_count": 186,
+      "evidence": "OCR evaluation requires a reference transcription, commonly called ground truth (GT).",
+      "paragraphs": [
+        "OCR evaluation requires a reference transcription, commonly called ground truth (GT).",
+        "Conceptually:",
+        "image | +----> human / curated reference transcription = GT | +----> OCR system output = hypothesis",
+        "The two textual representations are then compared.",
+        "But ground truth is not an abstract property of the page. It is an annotation created according to a transcription policy.",
+        "The reference must answer questions such as:",
+        "Should historical spelling be preserved?",
+        "Should long s ( ſ ) remain distinct from modern s ?",
+        "Should ligatures be retained or decomposed?",
+        "Should line-end hyphenation be preserved?",
+        "Should damaged or unreadable characters receive special symbols?",
+        "Should capitalization be diplomatic or normalized?",
+        "Should punctuation be copied exactly?",
+        "Should whitespace differences count?",
+        "Should page headers and footers be included?",
+        "How should marginalia be serialized?",
+        "Which Unicode normalization form should be used?",
+        "The OCR-D project explicitly treats OCR evaluation as comparison against representative ground truth and provides detailed ground-truth conventions for historical document processing. See the OCR-D Ground Truth Guidelines .",
+        "Therefore:",
+        "ground truth != uninterpreted visual reality.",
+        "It is:",
+        "visual source + transcription policy + encoding policy + segmentation policy + reading-order policy."
+      ]
+    },
+    {
+      "heading": "3. Diplomatic transcription versus normalized transcription",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "A fundamental decision is whether the evaluation target preserves the source text exactly or represents a normalized modern form.",
+      "paragraphs": [
+        "A fundamental decision is whether the evaluation target preserves the source text exactly or represents a normalized modern form."
+      ]
+    },
+    {
+      "heading": "Diplomatic target",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "A diplomatic transcription attempts to preserve relevant historical or visual distinctions.",
+      "paragraphs": [
+        "A diplomatic transcription attempts to preserve relevant historical or visual distinctions.",
+        "For example:",
+        "SOURCE: ſame DIPLOMATIC GT: ſame NORMALIZED TEXT: same",
+        "If an OCR system outputs:",
+        "same",
+        "then it may be semantically understandable while still being incorrect under a diplomatic benchmark."
+      ]
+    },
+    {
+      "heading": "Normalized target",
+      "level": 3,
+      "id": "ux-section-6",
+      "paragraph_count": 7,
+      "word_count": 55,
+      "evidence": "A retrieval-oriented corpus may intentionally map historical forms into normalized forms.",
+      "paragraphs": [
+        "A retrieval-oriented corpus may intentionally map historical forms into normalized forms.",
+        "Then:",
+        "ſame -> same",
+        "may be considered desirable.",
+        "Neither policy is universally correct.",
+        "The scientific requirement is to state which object is being evaluated.",
+        "This becomes particularly important in post-correction because a language model can produce linguistically plausible modern text while destroying historical evidence."
+      ]
+    },
+    {
+      "heading": "4. The mathematical core: edit distance",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 15,
+      "word_count": 135,
+      "evidence": "Most text-level OCR evaluation begins with an alignment between a reference sequence and an OCR sequence.",
+      "paragraphs": [
+        "Most text-level OCR evaluation begins with an alignment between a reference sequence and an OCR sequence.",
+        "Let the reference be:",
+        "R = (r1, r2, ..., rN)",
+        "and the OCR hypothesis:",
+        "H = (h1, h2, ..., hM).",
+        "The standard sequence comparison uses insertion, deletion, and substitution operations:",
+        "substitution: one reference symbol is recognized as another;",
+        "deletion: a reference symbol is missing;",
+        "insertion: OCR introduces an additional symbol.",
+        "With unit costs, the minimum number of such operations is the Levenshtein distance .",
+        "The dynamic-programming recurrence is:",
+        "d[0][0] = 0 d[i][0] = i d[0][j] = j",
+        "and:",
+        "cost = 0 if ri = hj 1 otherwise d[i][j] = min( d[i-1][j] + 1, # deletion d[i][j-1] + 1, # insertion d[i-1][j-1] + cost # match / substitution )",
+        "The full algorithmic structure is discussed in the Wagner-Fischer algorithm ."
+      ]
+    },
+    {
+      "heading": "5. Character Error Rate",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 8,
+      "word_count": 60,
+      "evidence": "Character error rate (CER) applies edit-distance alignment at character level.",
+      "paragraphs": [
+        "Character error rate (CER) applies edit-distance alignment at character level.",
+        "Let:",
+        "S = substitutions D = deletions I = insertions N = number of reference characters",
+        "Then the conventional reference-normalized CER is:",
+        "S + D + I CER = ------------------------- N",
+        "or:",
+        "CER = Levenshtein(reference, OCR) / length(reference)",
+        "when the relevant symbols and cost model match the standard unit-cost formulation."
+      ]
+    },
+    {
+      "heading": "Worked example",
+      "level": 3,
+      "id": "ux-section-9",
+      "paragraph_count": 11,
+      "word_count": 87,
+      "evidence": "Suppose the reference is:",
+      "paragraphs": [
+        "Suppose the reference is:",
+        "GROUND TRUTH: modern",
+        "and OCR returns:",
+        "modem",
+        "One possible alignment is:",
+        "GT : m o d e r n OCR: m o d e * m C C C C D S",
+        "Thus:",
+        "S = 1 D = 1 I = 0 N = 6",
+        "and:",
+        "CER = 2 / 6 = 0.3333 = 33.33%",
+        "The apparently large percentage reflects the extremely short example. On a full page containing thousands of characters, the same two errors would contribute far less to aggregate CER."
+      ]
+    },
+    {
+      "heading": "6. CER can exceed 100%",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 10,
+      "word_count": 84,
+      "evidence": "Reference-normalized CER has the same asymmetry seen in word error rate .",
+      "paragraphs": [
+        "Reference-normalized CER has the same asymmetry seen in word error rate .",
+        "Insertions are included in the numerator but not in the reference-length denominator.",
+        "If:",
+        "reference length = 10 insertions = 15 substitutions = 0 deletions = 0",
+        "then:",
+        "CER = 15 / 10 = 150%",
+        "OCR-D explicitly notes that reference-normalized CER can exceed 100% when large numbers of insertions occur.",
+        "Therefore:",
+        "character accuracy = 1 - CER",
+        "should not automatically be interpreted as a bounded probability when this definition of CER is used."
+      ]
+    },
+    {
+      "heading": "7. There is more than one normalized CER convention",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 13,
+      "word_count": 107,
+      "evidence": "A frequent reproducibility problem is that publications use the label “CER” for subtly different formulas.",
+      "paragraphs": [
+        "A frequent reproducibility problem is that publications use the label “CER” for subtly different formulas.",
+        "The classical reference-normalized definition is:",
+        "CERref = S + D + I --------- Nref",
+        "OCR-D also discusses a normalized form based on all alignment operations, including correct matches:",
+        "CERnormalized = S + D + I ----------------- S + D + I + C",
+        "where C is the number of identity operations.",
+        "This version naturally remains in the interval:",
+        "0 <= CERnormalized <= 1.",
+        "Other systems may normalize edit distance using:",
+        "max(length(reference), length(hypothesis))",
+        "or another denominator.",
+        "These formulas are not interchangeable.",
+        "A benchmark must report the exact definition rather than only saying “CER.”"
+      ]
+    },
+    {
+      "heading": "8. What counts as a character?",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 17,
+      "word_count": 138,
+      "evidence": "This question becomes surprisingly important in Unicode text.",
+      "paragraphs": [
+        "This question becomes surprisingly important in Unicode text.",
+        "A visual character may correspond to:",
+        "one code point;",
+        "multiple Unicode code points;",
+        "an extended grapheme cluster;",
+        "a compatibility sequence;",
+        "a historical or Private Use Area encoding.",
+        "For example, an accented character may be represented as:",
+        "U+00E9 é",
+        "or conceptually as:",
+        "U+0065 U+0301 e + combining acute accent",
+        "These may appear identical to a reader but contain different numbers of Unicode code points.",
+        "The Unicode Standard explicitly distinguishes code points from grapheme clusters. See Unicode Standard Annex #29: Unicode Text Segmentation .",
+        "OCR-D defines a character for its text-evaluation framework as a grapheme cluster and uses NFC-normalized representations.",
+        "This is a defensible choice, but it demonstrates that:",
+        "CER cannot be reproduced without defining the evaluation unit.",
+        "The implementation consequences are examined more generally in Unicode- and grapheme-safe Levenshtein computation ."
+      ]
+    },
+    {
+      "heading": "9. Unicode normalization and OCR evaluation",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 9,
+      "word_count": 79,
+      "evidence": "Before edit-distance evaluation, reference and hypothesis should normally follow a documented Unicode policy.",
+      "paragraphs": [
+        "Before edit-distance evaluation, reference and hypothesis should normally follow a documented Unicode policy.",
+        "Possible forms include:",
+        "NFC NFD NFKC NFKD",
+        "But normalization is not a cosmetic implementation detail.",
+        "Canonical normalization may legitimately remove representational differences between canonically equivalent sequences.",
+        "Compatibility normalization can additionally collapse distinctions that may be meaningful for archival or linguistic evaluation.",
+        "Therefore:",
+        "canonical equivalence != historical equivalence != semantic equivalence.",
+        "The broader distinction between normalization and language-level transformation is treated in text normalization and transliteration ."
+      ]
+    },
+    {
+      "heading": "10. Whitespace can be a character-level error",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 14,
+      "word_count": 76,
+      "evidence": "OCR-D's text-evaluation model treats whitespace as part of the character sequence.",
+      "paragraphs": [
+        "OCR-D's text-evaluation model treats whitespace as part of the character sequence.",
+        "This matters because OCR frequently creates:",
+        "missing spaces;",
+        "extra spaces;",
+        "incorrect line breaks;",
+        "word merges;",
+        "word splits.",
+        "Consider:",
+        "GT: the house OCR: thehouse",
+        "The lexical content is visually close, but deleting one space changes the token structure completely.",
+        "Conversely:",
+        "GT: database OCR: data base",
+        "contains an inserted space that may create two words.",
+        "Whitespace evaluation therefore sits at the boundary between character recognition and segmentation."
+      ]
+    },
+    {
+      "heading": "11. Word Error Rate for OCR",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 16,
+      "word_count": 87,
+      "evidence": "Word error rate (WER) applies the same general alignment idea at token level:",
+      "paragraphs": [
+        "Word error rate (WER) applies the same general alignment idea at token level:",
+        "Sw + Dw + Iw WER = ----------------------------- reference words",
+        "where:",
+        "Sw = word substitutions;",
+        "Dw = word deletions;",
+        "Iw = word insertions.",
+        "WER can expose the practical impact of apparently small character errors.",
+        "Consider:",
+        "GT: the modern system works",
+        "and:",
+        "OCR: the modem system works",
+        "At character level, the error may be small.",
+        "At word level:",
+        "modern -> modem",
+        "is an entire word substitution.",
+        "Thus low CER can coexist with materially higher WER."
+      ]
+    },
+    {
+      "heading": "12. Character errors and word errors are nonlinear",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 8,
+      "word_count": 82,
+      "evidence": "Suppose a document contains 1,000 five-character words.",
+      "paragraphs": [
+        "Suppose a document contains 1,000 five-character words.",
+        "If one character error occurs in each of 50 different words, then approximately:",
+        "character errors = 50 total characters ≈ 5000 CER ≈ 1%",
+        "but:",
+        "incorrect words = 50 total words = 1000 WER-like lexical impact ≈ 5%",
+        "If the same 50 character errors are concentrated in five badly damaged words instead, the character-level error count is unchanged while the number of corrupted words is far smaller.",
+        "Therefore:",
+        "CER alone does not determine word usability."
+      ]
+    },
+    {
+      "heading": "13. Tokenization determines WER",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 10,
+      "word_count": 62,
+      "evidence": "WER is only meaningful after defining a tokenization protocol.",
+      "paragraphs": [
+        "WER is only meaningful after defining a tokenization protocol.",
+        "Questions include:",
+        "Is punctuation part of a word?",
+        "Are hyphenated compounds one token or multiple tokens?",
+        "How are apostrophes handled?",
+        "Are line-end hyphens joined?",
+        "How are languages without whitespace word boundaries segmented?",
+        "Are numbers tokenized as one symbol or normalized into words?",
+        "Thus:",
+        "WER = OCR performance + tokenization policy + normalization policy."
+      ]
+    },
+    {
+      "heading": "14. Line-end hyphenation is a classic OCR evaluation trap",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 9,
+      "word_count": 57,
+      "evidence": "Historical books frequently break words across lines:",
+      "paragraphs": [
+        "Historical books frequently break words across lines:",
+        "informa- tion",
+        "The ground truth may preserve this literally:",
+        "informa- tion",
+        "or reconstruct the lexical word:",
+        "information",
+        "An OCR engine may also choose either representation.",
+        "If reference and hypothesis follow different hyphenation conventions, edit distance measures policy mismatch as recognition error.",
+        "Therefore line-end hyphenation must be standardized before system comparison."
+      ]
+    },
+    {
+      "heading": "15. Page-level versus corpus-level evaluation",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 10,
+      "word_count": 71,
+      "evidence": "A large corpus can be aggregated in several ways.",
+      "paragraphs": [
+        "A large corpus can be aggregated in several ways.",
+        "For page k , let:",
+        "Ek = Sk + Dk + Ik Nk = number of reference characters",
+        "A pooled corpus CER is:",
+        "sum_k Ek CERcorpus = ---------- sum_k Nk",
+        "This weights pages according to their reference length.",
+        "An alternative macro-average is:",
+        "1 CERpage-macro = -------- * sum_k CERk K",
+        "where every page has equal influence.",
+        "The two statistics answer different questions."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-20",
+      "paragraph_count": 8,
+      "word_count": 70,
+      "evidence": "Page Reference characters Errors CER A 10,000 100 1% B 100 30 30%",
+      "paragraphs": [
+        "Page Reference characters Errors CER A 10,000 100 1% B 100 30 30%",
+        "Page-macro CER:",
+        "(1% + 30%) / 2 = 15.5%",
+        "Pooled CER:",
+        "(100 + 30) / (10000 + 100) ≈ 1.29%",
+        "The pooled value describes character-weighted corpus quality.",
+        "The macro value reveals that one of two pages performs extremely badly.",
+        "OCR-D specifically emphasizes page-level reporting for heterogeneous historical material because aggregate error rates can conceal difficult page classes."
+      ]
+    },
+    {
+      "heading": "16. Report the distribution, not only the mean",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 14,
+      "word_count": 68,
+      "evidence": "A production or research corpus should often report:",
+      "paragraphs": [
+        "A production or research corpus should often report:",
+        "overall pooled CER;",
+        "median page CER;",
+        "page CER percentiles;",
+        "maximum or high-tail CER;",
+        "WER;",
+        "error rates by document type;",
+        "error rates by printing period;",
+        "error rates by script/typeface;",
+        "error rates by scan-quality class.",
+        "For example:",
+        "overall CER = 1.8% median page CER = 0.9% 95th percentile page CER = 7.6%",
+        "communicates something very different from merely reporting:",
+        "CER = 1.8%."
+      ]
+    },
+    {
+      "heading": "17. Reading order can invalidate ordinary edit-distance evaluation",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 11,
+      "word_count": 101,
+      "evidence": "Traditional CER requires serializing document content into one sequence.",
+      "paragraphs": [
+        "Traditional CER requires serializing document content into one sequence.",
+        "For complex layouts, the chosen serialization can dominate edit distance.",
+        "Consider:",
+        "GROUND TRUTH ORDER: A B C D",
+        "OCR recognition may correctly identify every region but produce:",
+        "A C B D",
+        "A simple global sequence alignment sees a large block transposition.",
+        "Yet the character recognizer itself may be nearly perfect.",
+        "Clausner, Pletschacher, and Antonacopoulos developed a flexible character-accuracy measure specifically to reduce the influence of reading-order variation when the goal is to isolate OCR recognition quality. See 10.1016/j.patrec.2020.02.003 .",
+        "The key methodological distinction is:",
+        "recognition error != layout error != reading-order error."
+      ]
+    },
+    {
+      "heading": "18. Layout still matters even when recognition is evaluated separately",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 6,
+      "word_count": 96,
+      "evidence": "Separating text recognition from layout evaluation does not mean layout is unimportant.",
+      "paragraphs": [
+        "Separating text recognition from layout evaluation does not mean layout is unimportant.",
+        "Layout errors can create severe downstream corruption:",
+        "two columns merged | v incorrect line ordering | v broken sentences | v bad tokenization | v poor search / NLP",
+        "For end-to-end OCR pipelines, both layers should be measured.",
+        "One useful reporting structure is:",
+        "Layer Example metric family Region segmentation Geometric overlap / detection metrics Reading order Order-specific structural metrics Text recognition CER / flexible character accuracy Lexical quality WER Post-correction Before/after CER plus correction precision and recall Downstream usability Search, extraction, or NLP performance"
+      ]
+    },
+    {
+      "heading": "19. Bag-of-Words evaluation",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 11,
+      "word_count": 90,
+      "evidence": "When reading order is irrelevant for a particular task, a bag-of-words comparison can provide another perspective.",
+      "paragraphs": [
+        "When reading order is irrelevant for a particular task, a bag-of-words comparison can provide another perspective.",
+        "Let:",
+        "countGT(w)",
+        "be the frequency of word w in ground truth and:",
+        "countOCR(w)",
+        "its frequency in OCR output.",
+        "A bag-of-words difference can compare counts without requiring the words to appear in identical sequence positions.",
+        "OCR-D includes a Bag-of-Words Error Rate specifically as a way of describing lexical disagreement independent of layout ordering.",
+        "This can be useful for retrieval-oriented applications but deliberately discards sequence information.",
+        "Thus:",
+        "good bag-of-words similarity does not imply correct reading order."
+      ]
+    },
+    {
+      "heading": "20. Error analysis requires the alignment, not just CER",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 9,
+      "word_count": 96,
+      "evidence": "Two OCR systems may both obtain:",
+      "paragraphs": [
+        "Two OCR systems may both obtain:",
+        "CER = 2%",
+        "but have very different errors.",
+        "System Typical error Likely consequence A 1 -> l Numbers and identifiers corrupted B Punctuation deletion Sentence structure degraded C Whitespace insertion Words split D Historical glyph modernization Diplomatic fidelity degraded",
+        "A useful diagnostic therefore retains a confusion matrix:",
+        "(reference symbol, OCR symbol) -> frequency",
+        "For example:",
+        "(\"1\", \"l\") -> 412 (\"0\", \"O\") -> 287 (\"rn\", \"m\") -> 156 (\"ſ\", \"f\") -> 121",
+        "Strictly speaking, multi-character confusions such as rn -> m require a richer error representation than a single-character substitution table."
+      ]
+    },
+    {
+      "heading": "21. OCR errors are often structured rather than independent",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 18,
+      "word_count": 74,
+      "evidence": "OCR noise is strongly conditioned on visual and linguistic context.",
+      "paragraphs": [
+        "OCR noise is strongly conditioned on visual and linguistic context.",
+        "Error probability can depend on:",
+        "typeface;",
+        "font size;",
+        "printing technology;",
+        "ink spread;",
+        "page degradation;",
+        "scan resolution;",
+        "character neighbors;",
+        "language;",
+        "historical orthography;",
+        "line segmentation;",
+        "hyphenation;",
+        "model training distribution.",
+        "For example:",
+        "rn -> m cl -> d 1 -> l O -> 0 ſ -> f",
+        "may occur at very different frequencies.",
+        "This motivates weighted edit-distance models in which likely OCR confusions can receive different costs."
+      ]
+    },
+    {
+      "heading": "22. Weighted edit costs as an OCR error model",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 9,
+      "word_count": 76,
+      "evidence": "Classic unit-cost edit distance assigns:",
+      "paragraphs": [
+        "Classic unit-cost edit distance assigns:",
+        "insert = 1 delete = 1 substitute = 1",
+        "A learned OCR channel may instead estimate:",
+        "cost(a -> b) = -negative log P(observed=b | intended=a)",
+        "so a common confusion receives lower cost than an unlikely one.",
+        "For example:",
+        "cost(\"l\" -> \"1\") = 0.4 cost(\"l\" -> \"x\") = 3.1",
+        "could express that l/1 confusion is much more plausible under a particular OCR system.",
+        "This idea becomes important in candidate ranking for post-correction."
+      ]
+    },
+    {
+      "heading": "23. OCR post-correction as an inference problem",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 14,
+      "word_count": 88,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "O = observed OCR sequence T = intended textual sequence",
+        "The correction problem is:",
+        "T* = argmax_T P(T | O)",
+        "Using Bayes' rule:",
+        "P(T | O) proportional to P(O | T) * P(T)",
+        "where:",
+        "P(O | T) is an OCR error or channel model;",
+        "P(T) is a language or source-text model.",
+        "This is the classic noisy-channel decomposition.",
+        "The channel asks:",
+        "If the intended text were T, how plausible is it that OCR produced O?",
+        "The language model asks:",
+        "How plausible is T before observing the OCR output?"
+      ]
+    },
+    {
+      "heading": "24. Why the noisy-channel decomposition matters",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 16,
+      "word_count": 67,
+      "evidence": "Suppose OCR produces:",
+      "paragraphs": [
+        "Suppose OCR produces:",
+        "modem",
+        "Possible candidates include:",
+        "modem modern model mode",
+        "A generic language model may favor:",
+        "modern",
+        "in some contexts.",
+        "But an OCR channel model can use visual-error evidence:",
+        "rn -> m",
+        "to explain how:",
+        "modern -> modem",
+        "could occur.",
+        "Thus correction is not merely:",
+        "find nearest dictionary word.",
+        "It is ideally:",
+        "visual / OCR confusion evidence + lexical evidence + contextual evidence + document-specific evidence."
+      ]
+    },
+    {
+      "heading": "25. Edit distance as candidate generation",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 11,
+      "word_count": 87,
+      "evidence": "A basic correction system can use approximate string matching .",
+      "paragraphs": [
+        "A basic correction system can use approximate string matching .",
+        "For an OCR token:",
+        "modem",
+        "generate dictionary candidates satisfying:",
+        "d(candidate, \"modem\") <= k.",
+        "For example:",
+        "modem distance 0 model distance 1 modern distance 2",
+        "The candidate set can then be ranked using context.",
+        "This architecture is:",
+        "OCR token | v candidate generation (edit distance / confusion model) | v candidate ranking (language + context) | v accept / reject correction",
+        "Using edit distance alone is rarely sufficient because the nearest string is not necessarily the intended word."
+      ]
+    },
+    {
+      "heading": "26. Nonword correction versus real-word correction",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Post-correction has at least two fundamentally different cases.",
+      "paragraphs": [
+        "Post-correction has at least two fundamentally different cases."
+      ]
+    },
+    {
+      "heading": "Nonword OCR error",
+      "level": 3,
+      "id": "ux-section-32",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "OCR: govemment dictionary: not a word",
+      "paragraphs": [
+        "OCR: govemment dictionary: not a word",
+        "Possible correction:",
+        "government",
+        "This is relatively easy to detect."
+      ]
+    },
+    {
+      "heading": "Real-word OCR error",
+      "level": 3,
+      "id": "ux-section-33",
+      "paragraph_count": 8,
+      "word_count": 44,
+      "evidence": "GT: modern OCR: modem",
+      "paragraphs": [
+        "GT: modern OCR: modem",
+        "modem is itself a valid word.",
+        "A dictionary checker therefore sees no error.",
+        "Context is required:",
+        "the modem political system",
+        "versus:",
+        "the modern political system.",
+        "Karen Kukich's classic survey distinguished nonword detection, isolated-word correction, and context-dependent correction. See 10.1145/146370.146380 ."
+      ]
+    },
+    {
+      "heading": "27. Brill and Moore's string-to-string error model",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 6,
+      "word_count": 57,
+      "evidence": "Brill and Moore developed an improved noisy-channel spelling-correction model based on generic string-to-string edits rather than only simplistic independent single-character transformations.",
+      "paragraphs": [
+        "Brill and Moore developed an improved noisy-channel spelling-correction model based on generic string-to-string edits rather than only simplistic independent single-character transformations.",
+        "The paper is particularly relevant to OCR correction because OCR errors often map variable-length substrings:",
+        "rn -> m cl -> d vv -> w",
+        "rather than only:",
+        "a -> b.",
+        "See Brill and Moore, 2000 ."
+      ]
+    },
+    {
+      "heading": "28. Context changes candidate ranking",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 12,
+      "word_count": 75,
+      "evidence": "Suppose OCR produces:",
+      "paragraphs": [
+        "Suppose OCR produces:",
+        "the modem economy",
+        "Two lexical candidates may be:",
+        "modem modern",
+        "A contextual language model can compare:",
+        "P(\"the modem economy\")",
+        "and:",
+        "P(\"the modern economy\").",
+        "The second is normally more plausible.",
+        "But context creates a dangerous new capability: a strong language model can rewrite unfamiliar but correct source text into something more statistically typical.",
+        "This produces the post-correction paradox:",
+        "more language-model power can improve correction but more language-model power can also increase unsupported rewriting."
+      ]
+    },
+    {
+      "heading": "29. Historical documents make post-correction unusually difficult",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 17,
+      "word_count": 70,
+      "evidence": "Historical OCR combines recognition noise with genuine linguistic variation.",
+      "paragraphs": [
+        "Historical OCR combines recognition noise with genuine linguistic variation.",
+        "Potential sources of variation include:",
+        "obsolete spelling;",
+        "historical characters;",
+        "nonstandard punctuation;",
+        "archaic morphology;",
+        "changing capitalization;",
+        "older vocabulary;",
+        "Fraktur and other historical typefaces;",
+        "printer-specific conventions;",
+        "damaged physical pages;",
+        "mixed languages;",
+        "irregular spacing.",
+        "A modern dictionary may classify valid historical forms as errors.",
+        "Likewise, a modern language model may assign low probability to historically correct text.",
+        "Therefore:",
+        "rare historical form != OCR error."
+      ]
+    },
+    {
+      "heading": "30. The purpose of correction must be specified",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Two correction tasks can have different objectives.",
+      "paragraphs": [
+        "Two correction tasks can have different objectives."
+      ]
+    },
+    {
+      "heading": "Diplomatic correction",
+      "level": 3,
+      "id": "ux-section-38",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "Correct OCR recognition errors while preserving source spelling and orthography.",
+      "paragraphs": [
+        "Correct OCR recognition errors while preserving source spelling and orthography.",
+        "IMAGE: ſaid OCR: faid CORRECT: ſaid"
+      ]
+    },
+    {
+      "heading": "Normalized correction",
+      "level": 3,
+      "id": "ux-section-39",
+      "paragraph_count": 4,
+      "word_count": 45,
+      "evidence": "Produce a normalized representation intended for search or linguistic processing.",
+      "paragraphs": [
+        "Produce a normalized representation intended for search or linguistic processing.",
+        "IMAGE: ſaid OCR: faid NORMALIZED OUTPUT: said",
+        "Both outputs may be useful, but they represent different transformations.",
+        "A system should not be evaluated against diplomatic ground truth while silently optimizing for normalization, or vice versa."
+      ]
+    },
+    {
+      "heading": "31. Post-correction is two tasks: detection and correction",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 9,
+      "word_count": 73,
+      "evidence": "Before repairing an OCR error, a system must determine where an error exists.",
+      "paragraphs": [
+        "Before repairing an OCR error, a system must determine where an error exists.",
+        "Conceptually:",
+        "raw OCR | v error detection | v candidate generation | v candidate ranking | v correction / abstention",
+        "The ICDAR post-OCR correction competitions explicitly separated error detection from correction.",
+        "Detection is a binary decision:",
+        "token is erroneous vs. token is valid.",
+        "Correction asks:",
+        "if erroneous, what should replace it?",
+        "See the ICDAR2017 Competition on Post-OCR Text Correction ."
+      ]
+    },
+    {
+      "heading": "32. Correction precision and recall",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 13,
+      "word_count": 74,
+      "evidence": "Evaluating only final CER can hide whether a method is conservative or destructive.",
+      "paragraphs": [
+        "Evaluating only final CER can hide whether a method is conservative or destructive.",
+        "Define:",
+        "TP: a genuine OCR error is corrected;",
+        "FP: correct OCR text is changed incorrectly;",
+        "FN: an OCR error remains uncorrected;",
+        "TN: correct text remains unchanged.",
+        "Then:",
+        "TP Precision = ------- TP + FP",
+        "and:",
+        "TP Recall = ------- TP + FN",
+        "with:",
+        "Precision * Recall F1 = 2 * -------------------------------- Precision + Recall",
+        "These metrics expose the central post-correction trade-off."
+      ]
+    },
+    {
+      "heading": "33. Worked post-correction example",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 14,
+      "word_count": 81,
+      "evidence": "Suppose the raw OCR contains 100 erroneous tokens.",
+      "paragraphs": [
+        "Suppose the raw OCR contains 100 erroneous tokens.",
+        "A correction system:",
+        "corrects 70 genuine errors;",
+        "leaves 30 genuine errors;",
+        "incorrectly modifies 10 originally correct tokens.",
+        "Then:",
+        "TP = 70 FN = 30 FP = 10",
+        "Precision:",
+        "70 / (70 + 10) = 87.5%",
+        "Recall:",
+        "70 / (70 + 30) = 70%",
+        "F1:",
+        "2 * 0.875 * 0.70 ---------------- 0.875 + 0.70 ≈ 77.8%",
+        "The final text may still have lower CER than raw OCR, but the 10 introduced errors matter independently."
+      ]
+    },
+    {
+      "heading": "34. Over-correction is the defining risk of post-processing",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 10,
+      "word_count": 76,
+      "evidence": "An OCR post-corrector should not merely maximize the number of changed errors.",
+      "paragraphs": [
+        "An OCR post-corrector should not merely maximize the number of changed errors.",
+        "It must also preserve correct source text.",
+        "Consider:",
+        "OCR: The surname is Quenouille.",
+        "A language model unfamiliar with the name may rewrite it as:",
+        "The surname is Grenouille.",
+        "The resulting sentence may look linguistically plausible but is textually false.",
+        "This error is often worse than leaving a visibly corrupted OCR token because the rewritten output appears authoritative.",
+        "Thus:",
+        "fluent corrected text != faithful transcription."
+      ]
+    },
+    {
+      "heading": "35. Correction gain should distinguish repairs from damage",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 14,
+      "word_count": 83,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "Ebefore = number of errors before correction Eafter = number of errors after correction",
+        "A simple relative error reduction is:",
+        "Ebefore - Eafter ErrorReduction = ---------------- Ebefore",
+        "If:",
+        "Ebefore = 1000 Eafter = 600",
+        "then:",
+        "ErrorReduction = 40%.",
+        "But this does not tell us whether:",
+        "500 errors were fixed and 100 new errors introduced",
+        "or:",
+        "400 errors were fixed and no new errors introduced.",
+        "These are operationally different systems.",
+        "Therefore before/after CER should be accompanied by correction precision or explicit introduced-error counts."
+      ]
+    },
+    {
+      "heading": "36. Selective correction and abstention",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 13,
+      "word_count": 68,
+      "evidence": "For many corpora, the optimal strategy is not:",
+      "paragraphs": [
+        "For many corpora, the optimal strategy is not:",
+        "correct every suspicious token.",
+        "It is:",
+        "correct only when evidence is sufficiently strong.",
+        "Suppose a correction model estimates:",
+        "P(candidate is correct | evidence)",
+        "and uses threshold τ :",
+        "if P >= τ: replace OCR token else: preserve original",
+        "Increasing τ generally tends to:",
+        "increase correction precision;",
+        "reduce correction recall;",
+        "reduce destructive over-correction.",
+        "The correct threshold depends on the use case."
+      ]
+    },
+    {
+      "heading": "37. Human-in-the-loop correction changes the operating point",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 6,
+      "word_count": 70,
+      "evidence": "For fully automatic correction, false positives can be extremely expensive because no human reviews them.",
+      "paragraphs": [
+        "For fully automatic correction, false positives can be extremely expensive because no human reviews them.",
+        "A semi-automatic proofreading system has different priorities.",
+        "It may prefer high recall:",
+        "find almost every suspicious location",
+        "while allowing a reviewer to reject incorrect suggestions.",
+        "Use case Preferred tendency Automatic archival rewrite Very high precision Human proofreading assistant Higher recall may be acceptable Search indexing May tolerate normalized alternatives Diplomatic scholarly edition Extremely conservative correction"
+      ]
+    },
+    {
+      "heading": "38. Rule-based and dictionary-based correction",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 9,
+      "word_count": 56,
+      "evidence": "A classical post-correction system may combine:",
+      "paragraphs": [
+        "A classical post-correction system may combine:",
+        "dictionary lookup + edit-distance candidates + OCR confusion rules + word frequency",
+        "For OCR token:",
+        "recogmtion",
+        "candidate generation might produce:",
+        "recognition recognizing recognition's",
+        "with ranking features such as:",
+        "edit distance confusion probability lexical frequency neighboring words OCR confidence",
+        "This architecture remains useful because it is interpretable and easy to constrain."
+      ]
+    },
+    {
+      "heading": "39. Statistical language-model correction",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 9,
+      "word_count": 74,
+      "evidence": "Contextual models can rank corrections according to sentence probability.",
+      "paragraphs": [
+        "Contextual models can rank corrections according to sentence probability.",
+        "A simple formulation is:",
+        "score(T) = lambda * log P(O | T) + (1-lambda) * log P(T)",
+        "where:",
+        "P(O | T) models OCR corruption;",
+        "P(T) models language plausibility.",
+        "The weighting parameter controls how strongly linguistic fluency can override visual evidence.",
+        "This is an important design boundary.",
+        "If the language-model contribution dominates too strongly, rare names and historical spellings can be replaced with frequent modern forms."
+      ]
+    },
+    {
+      "heading": "40. Sequence-to-sequence correction",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 14,
+      "word_count": 87,
+      "evidence": "Neural post-correction can model the transformation:",
+      "paragraphs": [
+        "Neural post-correction can model the transformation:",
+        "noisy OCR sequence -> clean transcription sequence",
+        "directly.",
+        "Character-level sequence models are attractive because they can learn variable-length OCR confusions without requiring explicit token dictionaries.",
+        "Lyu, Koutraki, Krickl, and Fetahu investigated neural post-hoc correction of historical corpora using character-level modeling and reported substantial improvement on their historical German corpus. See 10.1162/tacl_a_00379 .",
+        "However, model success on one corpus does not imply universal post-correction capability.",
+        "Performance depends on:",
+        "language;",
+        "historical period;",
+        "OCR engine;",
+        "document genre;",
+        "error distribution;",
+        "training data;",
+        "baseline OCR quality."
+      ]
+    },
+    {
+      "heading": "41. Why train/test splitting matters unusually much",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 18,
+      "word_count": 93,
+      "evidence": "OCR error patterns can repeat across pages from the same book, font, printer, OCR engine, or digitization batch.",
+      "paragraphs": [
+        "OCR error patterns can repeat across pages from the same book, font, printer, OCR engine, or digitization batch.",
+        "A random line-level split can therefore leak highly specific characteristics into both training and test sets.",
+        "Suppose pages from the same book appear in:",
+        "training set validation set test set.",
+        "The post-corrector may learn:",
+        "the author's vocabulary;",
+        "the printer's spelling patterns;",
+        "the specific typeface;",
+        "recurring named entities;",
+        "systematic OCR confusions.",
+        "A more demanding test may split by:",
+        "document;",
+        "publication;",
+        "year;",
+        "printer;",
+        "collection;",
+        "OCR engine.",
+        "Evaluation should therefore explain what type of generalization is being measured."
+      ]
+    },
+    {
+      "heading": "42. LLM-based post-correction",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 13,
+      "word_count": 94,
+      "evidence": "Large language models make OCR post-correction superficially attractive because they can infer missing context, repair malformed words, and process long sequences without task-specific candidate generation.",
+      "paragraphs": [
+        "Large language models make OCR post-correction superficially attractive because they can infer missing context, repair malformed words, and process long sequences without task-specific candidate generation.",
+        "A prompt might conceptually ask:",
+        "Correct OCR errors while preserving all names, numbers, historical spelling, punctuation, and factual content.",
+        "But instruction text does not mathematically guarantee faithful correction.",
+        "The model still generates text according to learned distributions.",
+        "This introduces several risks:",
+        "over-correction;",
+        "modernization of historical forms;",
+        "normalization of unusual names;",
+        "rewriting grammatical but uncommon constructions;",
+        "changing numbers;",
+        "removing repeated text that appears accidental;",
+        "introducing words unsupported by the source."
+      ]
+    },
+    {
+      "heading": "43. LLMs are not automatically superior post-correctors",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 5,
+      "word_count": 103,
+      "evidence": "Boros, Ehrmann, Romanello, Najem-Meyer, and Kaplan evaluated fourteen foundation models on historical transcription post-correction across multiple languages and document types. Their 2024 study found that large language models were not uniformly efficient at this task despite their strength on many general text transformations. See 10.18653/v1/2024.latechclfl-1.14 .",
+      "paragraphs": [
+        "Boros, Ehrmann, Romanello, Najem-Meyer, and Kaplan evaluated fourteen foundation models on historical transcription post-correction across multiple languages and document types. Their 2024 study found that large language models were not uniformly efficient at this task despite their strength on many general text transformations. See 10.18653/v1/2024.latechclfl-1.14 .",
+        "Subsequent work has continued to find strong dataset and language dependence.",
+        "Kanerva, Ledins, Käpyaho, and Ginter reported that open-weight LLMs could reduce CER on historical English data while practically useful results were harder to obtain for Finnish. See the 2025 RESOURCEFUL study .",
+        "The important conclusion is:",
+        "LLM capability does not eliminate the need for OCR-specific evaluation."
+      ]
+    },
+    {
+      "heading": "44. Modern LLM post-correction makes over-correction evaluation more important",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 10,
+      "word_count": 88,
+      "evidence": "As post-correctors become generative, conventional CER improvement becomes insufficient.",
+      "paragraphs": [
+        "As post-correctors become generative, conventional CER improvement becomes insufficient.",
+        "Consider:",
+        "GROUND TRUTH: In 1783 Mr. Quenouille paid £7 4s. OCR: In 1783 Mr. Quenouilie paid £7 4s.",
+        "A conservative correction might produce:",
+        "In 1783 Mr. Quenouille paid £7 4s.",
+        "A generative system might instead produce:",
+        "In 1783 Mr. Grenouille paid £7.",
+        "It fixed one apparent name error but changed both identity and monetary evidence.",
+        "A fluent sentence does not reveal this damage visually.",
+        "Modern evaluation therefore needs explicit analysis of unsupported modifications in addition to aggregate error reduction."
+      ]
+    },
+    {
+      "heading": "45. Current research confirms that low-noise text is especially vulnerable",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 6,
+      "word_count": 78,
+      "evidence": "When raw OCR is extremely noisy, a post-corrector has many opportunities to make genuine repairs.",
+      "paragraphs": [
+        "When raw OCR is extremely noisy, a post-corrector has many opportunities to make genuine repairs.",
+        "When raw OCR is already highly accurate, most available tokens are correct.",
+        "Even a small tendency to alter correct text can then outweigh the remaining benefits.",
+        "This creates a base-rate problem:",
+        "high-quality OCR + aggressive correction -> over-correction risk.",
+        "Recent historical-document evaluation, including the 2026 HIPE-OCRepair competition, has highlighted over-correction on low-noise input as a recurring challenge. See the HIPE-OCRepair 2026 report ."
+      ]
+    },
+    {
+      "heading": "46. Correction should preserve uncertainty when possible",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 11,
+      "word_count": 59,
+      "evidence": "For archival systems, the final representation need not discard raw OCR.",
+      "paragraphs": [
+        "For archival systems, the final representation need not discard raw OCR.",
+        "A stronger architecture is:",
+        "source image | +--> raw OCR | +--> correction candidate | +--> corrected text | +--> provenance / confidence",
+        "For each change, preserve:",
+        "original OCR span;",
+        "proposed replacement;",
+        "model confidence;",
+        "correction method;",
+        "source location;",
+        "approval status if human reviewed.",
+        "This makes the transformation auditable."
+      ]
+    },
+    {
+      "heading": "47. Confidence from the OCR engine is valuable evidence",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 9,
+      "word_count": 66,
+      "evidence": "An OCR recognizer may output character-, word-, or sequence-level confidence.",
+      "paragraphs": [
+        "An OCR recognizer may output character-, word-, or sequence-level confidence.",
+        "A post-correction model should distinguish:",
+        "low-confidence malformed token",
+        "from:",
+        "high-confidence unusual token.",
+        "For example:",
+        "OCR token: Quenouille OCR confidence: 0.99 dictionary frequency: very low",
+        "should not automatically be rewritten simply because the language model prefers a more common string.",
+        "OCR confidence is not perfectly calibrated, but it can be an important part of the evidence model."
+      ]
+    },
+    {
+      "heading": "48. Image evidence can outperform text-only correction",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 10,
+      "word_count": 62,
+      "evidence": "A text-only post-corrector sees:",
+      "paragraphs": [
+        "A text-only post-corrector sees:",
+        "rnoderna",
+        "but not the pixels that generated it.",
+        "If two candidates are:",
+        "moderna moderma",
+        "language context may not resolve the ambiguity.",
+        "The original image may.",
+        "Therefore a fundamental information boundary is:",
+        "text-only post-correction cannot recover visual evidence that was discarded.",
+        "For difficult cases, re-recognition or multimodal correction using the original image can be preferable to unconstrained textual rewriting."
+      ]
+    },
+    {
+      "heading": "49. OCR post-correction cannot repair missing document structure by language modeling alone",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 7,
+      "word_count": 67,
+      "evidence": "Suppose two columns have been merged:",
+      "paragraphs": [
+        "Suppose two columns have been merged:",
+        "Column A1 Column B1 Column A2 Column B2 Column A3 Column B3",
+        "A language model may attempt to make this sequence grammatical, but the actual problem is structural.",
+        "The correct remedy is not necessarily textual correction.",
+        "It may require:",
+        "layout re-analysis + reading-order repair + re-recognition.",
+        "This is why post-correction must not become a universal patch for upstream OCR pipeline failures."
+      ]
+    },
+    {
+      "heading": "50. Search-oriented quality differs from diplomatic fidelity",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 16,
+      "word_count": 75,
+      "evidence": "A digital library may primarily require discoverability.",
+      "paragraphs": [
+        "A digital library may primarily require discoverability.",
+        "Suppose OCR contains:",
+        "govemment regulation",
+        "A search for:",
+        "government regulation",
+        "may fail.",
+        "Correcting the token clearly improves retrieval.",
+        "But search can also tolerate alternative strategies:",
+        "fuzzy query matching;",
+        "OCR-aware indexing;",
+        "character n-gram retrieval;",
+        "query expansion;",
+        "approximate matching.",
+        "Thus:",
+        "better OCR text is one way to improve retrieval, but not the only way.",
+        "The relationship between edit distance and retrieval is explored in fuzzy search with edit distance ."
+      ]
+    },
+    {
+      "heading": "51. Downstream NLP evaluation can disagree with CER",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 15,
+      "word_count": 61,
+      "evidence": "Consider two OCR errors:",
+      "paragraphs": [
+        "Consider two OCR errors:",
+        "government -> govemment",
+        "and:",
+        "John Smith -> John Smlth",
+        "Each may contribute one small character edit.",
+        "But their effects can differ for:",
+        "full-text retrieval;",
+        "named-entity recognition;",
+        "topic modeling;",
+        "sentiment analysis;",
+        "information extraction;",
+        "historical person linkage.",
+        "Similarly, punctuation errors may have low CER impact but high sentence-segmentation impact.",
+        "Therefore:",
+        "lower CER does not guarantee proportionally better downstream performance."
+      ]
+    },
+    {
+      "heading": "52. String fidelity and semantic fidelity are distinct",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 5,
+      "word_count": 66,
+      "evidence": "A post-corrector can produce semantically plausible text that differs substantially from the source.",
+      "paragraphs": [
+        "A post-corrector can produce semantically plausible text that differs substantially from the source.",
+        "Conversely, a diplomatic transcription can preserve every historical spelling even when modern readers would prefer normalization.",
+        "The distinction follows the broader principle discussed in string similarity versus semantic similarity :",
+        "small edit distance != same meaning and same meaning != textual identity.",
+        "OCR transcription usually cares about textual evidence, not merely semantic equivalence."
+      ]
+    },
+    {
+      "heading": "53. Precision should often dominate recall in automatic archival correction",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 10,
+      "word_count": 64,
+      "evidence": "Suppose a corpus contains:",
+      "paragraphs": [
+        "Suppose a corpus contains:",
+        "10,000,000 tokens",
+        "with:",
+        "1% OCR error rate.",
+        "Then approximately:",
+        "100,000 tokens are wrong 9,900,000 tokens are correct.",
+        "If a corrector changes only 0.5% of valid tokens incorrectly, it introduces:",
+        "9,900,000 * 0.005 = 49,500 new errors.",
+        "Even apparently small false-positive rates can therefore be damaging because valid text is the majority class.",
+        "This is the base-rate problem of automatic correction."
+      ]
+    },
+    {
+      "heading": "54. Error prevalence changes the optimal threshold",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 3,
+      "word_count": 41,
+      "evidence": "Consider two datasets.",
+      "paragraphs": [
+        "Consider two datasets.",
+        "Dataset Raw CER Correction strategy Severely degraded historical OCR 20% More aggressive correction may be beneficial High-quality modern OCR 0.3% Very conservative correction may be necessary",
+        "The same model and threshold should not automatically be deployed on both."
+      ]
+    },
+    {
+      "heading": "55. Per-document adaptation can help and hurt",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 7,
+      "word_count": 61,
+      "evidence": "Historical documents often contain repeated vocabulary, names, and typeface-specific errors.",
+      "paragraphs": [
+        "Historical documents often contain repeated vocabulary, names, and typeface-specific errors.",
+        "Adaptation to a particular volume can exploit this structure.",
+        "For example:",
+        "repeated OCR confusion: ſt -> ft",
+        "may occur hundreds of times in one book.",
+        "A document-specific correction model can learn this pattern efficiently.",
+        "But evaluation must avoid learning from the same ground-truth passages that later appear in the test set."
+      ]
+    },
+    {
+      "heading": "56. Correction consistency is an important secondary property",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 7,
+      "word_count": 58,
+      "evidence": "If the same OCR error occurs 500 times:",
+      "paragraphs": [
+        "If the same OCR error occurs 500 times:",
+        "govemment",
+        "and the model outputs:",
+        "government 420 times government. 30 times governments 20 times goverment 20 times unchanged 10 times",
+        "then the post-corrector behaves inconsistently.",
+        "Context may justify some variation, but repeated systematic OCR confusions should often yield stable repairs.",
+        "Consistency analysis can therefore reveal behavior hidden by overall CER."
+      ]
+    },
+    {
+      "heading": "57. Entity-sensitive evaluation",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 10,
+      "word_count": 48,
+      "evidence": "Proper names are particularly vulnerable to correction models because they are rare by definition.",
+      "paragraphs": [
+        "Proper names are particularly vulnerable to correction models because they are rare by definition.",
+        "Examples include:",
+        "people;",
+        "places;",
+        "ship names;",
+        "companies;",
+        "historical institutions;",
+        "scientific terminology.",
+        "A system can lower global CER while making rare entities less reliable.",
+        "For research archives, entity-specific accuracy may therefore be worth measuring separately."
+      ]
+    },
+    {
+      "heading": "58. Numerical fidelity deserves separate attention",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 9,
+      "word_count": 49,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "1873 -> 1878",
+        "or:",
+        "£17 -> £77",
+        "or:",
+        "0.05 -> 0.5",
+        "Each may involve only one character substitution.",
+        "Yet the factual consequence can be enormous.",
+        "For invoices, scientific tables, census data, dates, legal documents, and historical records, number-specific error analysis can be more informative than generic CER alone."
+      ]
+    },
+    {
+      "heading": "59. Tables require structural evaluation",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 7,
+      "word_count": 54,
+      "evidence": "A table can contain every recognized character while still be unusable if cells are assigned incorrectly.",
+      "paragraphs": [
+        "A table can contain every recognized character while still be unusable if cells are assigned incorrectly.",
+        "For example:",
+        "Name Year Alice 1872 Bob 1875",
+        "could be serialized as:",
+        "Name Alice Bob Year 1872 1875",
+        "Character-level recognition may be excellent while row-column relationships are lost.",
+        "Thus OCR text evaluation and document-structure evaluation must remain distinct."
+      ]
+    },
+    {
+      "heading": "60. Modern document models make this distinction even more important",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 10,
+      "word_count": 74,
+      "evidence": "Contemporary OCR and document-understanding systems increasingly combine:",
+      "paragraphs": [
+        "Contemporary OCR and document-understanding systems increasingly combine:",
+        "vision;",
+        "layout detection;",
+        "text recognition;",
+        "language modeling;",
+        "structured extraction;",
+        "generative decoding.",
+        "A single final text output can therefore hide errors originating in several model components.",
+        "Recent evaluation research has emphasized that historical and complex documents expose structural failures that are poorly summarized by modern-document character accuracy alone.",
+        "The 2026 survey by Beyene and Dancy reviews this evaluation problem across modern OCR and document-understanding research. See 10.1145/3805689.3806442 ."
+      ]
+    },
+    {
+      "heading": "61. Reproducible OCR evaluation pipeline",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 3,
+      "word_count": 51,
+      "evidence": "A robust experiment should freeze the evaluation transformation.",
+      "paragraphs": [
+        "A robust experiment should freeze the evaluation transformation.",
+        "REFERENCE | +--> deterministic normalization | +--> deterministic segmentation | +--> evaluation representation | +--------------------+ | v alignment ^ | +--------------------+ | OCR OUTPUT | +--> same documented normalization policy | +--> same evaluation representation",
+        "Any normalization that differs between systems compromises comparison."
+      ]
+    },
+    {
+      "heading": "62. Reference pseudocode for CER",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 2,
+      "word_count": 114,
+      "evidence": "function evaluate_cer(reference, hypothesis): reference = normalize_for_benchmark(reference) hypothesis = normalize_for_benchmark(hypothesis) R = segment_into_evaluation_units(reference) H = segment_into_evaluation_units(hypothesis) N = length(R) M = length(H) d = matrix(N + 1, M + 1) for i in 0..N: d[i][0] = i for j in 0..M: d[0][j] = j for i in 1..N: for j in 1..M: substitution = d[i-1][j-1] + (0 if R[i-1] == H[j-1] else 1) deletion = d[i-1][j] + 1 insertion = d[i][j-1] + 1 d[i][j] = min( substitution, deletion, insertion ) errors = d[N][M] if N == 0: apply explicitly documented empty-reference policy return errors / N",
+      "paragraphs": [
+        "function evaluate_cer(reference, hypothesis): reference = normalize_for_benchmark(reference) hypothesis = normalize_for_benchmark(hypothesis) R = segment_into_evaluation_units(reference) H = segment_into_evaluation_units(hypothesis) N = length(R) M = length(H) d = matrix(N + 1, M + 1) for i in 0..N: d[i][0] = i for j in 0..M: d[0][j] = j for i in 1..N: for j in 1..M: substitution = d[i-1][j-1] + (0 if R[i-1] == H[j-1] else 1) deletion = d[i-1][j] + 1 insertion = d[i][j-1] + 1 d[i][j] = min( substitution, deletion, insertion ) errors = d[N][M] if N == 0: apply explicitly documented empty-reference policy return errors / N",
+        "If error decomposition is required, the implementation must retain backtrace information and define deterministic tie-breaking for multiple optimal alignments."
+      ]
+    },
+    {
+      "heading": "63. Post-correction evaluation pipeline",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 9,
+      "word_count": 61,
+      "evidence": "A post-correction benchmark should preserve three distinct sequences:",
+      "paragraphs": [
+        "A post-correction benchmark should preserve three distinct sequences:",
+        "G = ground truth O = original OCR C = corrected OCR",
+        "Compute:",
+        "CER_before = CER(G, O) CER_after = CER(G, C)",
+        "but also identify changes:",
+        "O -> C",
+        "and classify whether they were beneficial.",
+        "This yields two complementary questions:",
+        "Did final text become closer to ground truth? and Were the changes themselves reliable?"
+      ]
+    },
+    {
+      "heading": "64. Worked correction audit",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 9,
+      "word_count": 65,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "GT: the modern government acted OCR: the modem govemment acted CORRECTED: the modern government acted",
+        "Both changes are valid:",
+        "modem -> modern govemment -> government",
+        "Now consider:",
+        "GT: the modern Quenouille archive OCR: the modem Quenouille archive CORRECTED: the modern Grenouille archive",
+        "Changes:",
+        "modem -> modern beneficial Quenouille -> Grenouille destructive",
+        "A final CER may still improve, but correction precision exposes the second failure."
+      ]
+    },
+    {
+      "heading": "65. Ablation experiments are essential",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 5,
+      "word_count": 79,
+      "evidence": "A complex post-correction system might combine:",
+      "paragraphs": [
+        "A complex post-correction system might combine:",
+        "OCR confidence + edit distance + dictionary + character error model + language model + document context",
+        "To understand what contributes to performance, compare:",
+        "Configuration Purpose Raw OCR Baseline Edit distance only Measure string-similarity contribution Edit distance + dictionary Measure lexical constraint + OCR confusion model Measure channel knowledge + language context Measure contextual contribution + confidence threshold Measure selective correction",
+        "Without ablation, aggregate improvement does not reveal which evidence source caused it."
+      ]
+    },
+    {
+      "heading": "66. Evaluate across baseline quality levels",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 7,
+      "word_count": 80,
+      "evidence": "A correction system should be tested across bins such as:",
+      "paragraphs": [
+        "A correction system should be tested across bins such as:",
+        "CER < 1% 1% <= CER < 5% 5% <= CER < 10% 10% <= CER < 20% CER >= 20%",
+        "This can reveal a crossover point where correction becomes harmful.",
+        "For example:",
+        "raw CER corrected CER 0.5% 0.8% worse 3.0% 2.2% better 10.0% 5.4% much better 25.0% 12.0% much better",
+        "The correct deployment policy might therefore be:",
+        "do not post-correct high-confidence low-error pages but apply correction to noisy pages."
+      ]
+    },
+    {
+      "heading": "67. Evaluate by error family",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 3,
+      "word_count": 66,
+      "evidence": "A useful taxonomy includes:",
+      "paragraphs": [
+        "A useful taxonomy includes:",
+        "Error family Example Character confusion 1 -> l Multi-character confusion rn -> m Deletion government -> goverment Insertion book -> boook Word split database -> data base Word merge in the -> inthe Hyphenation informa- tion Historical glyph ſ -> f Reading-order error column interleaving Generative over-correction rare valid word replaced by common word",
+        "A single CER value cannot expose this structure."
+      ]
+    },
+    {
+      "heading": "68. Dataset composition determines what the benchmark means",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 13,
+      "word_count": 54,
+      "evidence": "An OCR benchmark should document:",
+      "paragraphs": [
+        "An OCR benchmark should document:",
+        "languages;",
+        "scripts;",
+        "publication periods;",
+        "document genres;",
+        "page layouts;",
+        "scanning conditions;",
+        "typefaces;",
+        "degradation levels;",
+        "handwritten versus printed text;",
+        "OCR engines used to create noisy input;",
+        "baseline error distribution.",
+        "A model trained and evaluated on nineteenth-century English newspapers does not automatically establish quality for seventeenth-century German Fraktur or modern multilingual invoices."
+      ]
+    },
+    {
+      "heading": "69. Benchmark representativeness is a scientific question",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "A large benchmark can still be narrow.",
+      "paragraphs": [
+        "A large benchmark can still be narrow.",
+        "If almost all pages contain:",
+        "clean modern typography;",
+        "single-column layouts;",
+        "high-resolution scans;",
+        "dominant-language text;",
+        "then a strong result primarily demonstrates performance under those conditions.",
+        "It does not justify claims about historical archives in general."
+      ]
+    },
+    {
+      "heading": "70. Post-correction should be measured against the correct baseline",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 10,
+      "word_count": 54,
+      "evidence": "Suppose OCR engine A produces:",
+      "paragraphs": [
+        "Suppose OCR engine A produces:",
+        "CER = 8%",
+        "and OCR engine B produces:",
+        "CER = 3%.",
+        "A correction system may reduce A to:",
+        "4%",
+        "but increase B to:",
+        "3.4%.",
+        "Reporting only improvement on A can create a misleading impression of universal benefit.",
+        "Post-correction should be evaluated on the OCR quality distribution expected in deployment."
+      ]
+    },
+    {
+      "heading": "71. Re-OCR versus post-correction",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 3,
+      "word_count": 71,
+      "evidence": "When source images remain available, an important alternative is to re-run OCR with a stronger recognizer.",
+      "paragraphs": [
+        "When source images remain available, an important alternative is to re-run OCR with a stronger recognizer.",
+        "Decision boundary:",
+        "Situation Likely strategy Good source images + obsolete OCR Re-OCR may outperform text-only correction Images unavailable Text post-correction may be necessary Systematic lexical noise Post-correction can be effective Severe layout failure Reprocess document structure Rare historical language Conservative correction or domain adaptation Very clean OCR Correction may introduce more errors than it removes"
+      ]
+    },
+    {
+      "heading": "72. Ensemble OCR can provide correction evidence",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 9,
+      "word_count": 70,
+      "evidence": "If multiple OCR engines transcribe the same image:",
+      "paragraphs": [
+        "If multiple OCR engines transcribe the same image:",
+        "OCR A: government OCR B: govemment OCR C: government",
+        "agreement provides evidence that:",
+        "government",
+        "is likely correct.",
+        "For another token:",
+        "OCR A: Quenouille OCR B: Quenouilie OCR C: Quenouille",
+        "the ensemble can protect a rare name that a generic language model might otherwise rewrite.",
+        "Ensembling is not infallible—systems can share correlated errors—but it introduces independent visual evidence unavailable to a text-only corrector."
+      ]
+    },
+    {
+      "heading": "73. Confidence calibration matters",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 6,
+      "word_count": 65,
+      "evidence": "Suppose a model outputs correction confidence:",
+      "paragraphs": [
+        "Suppose a model outputs correction confidence:",
+        "0.95",
+        "Ideally, among corrections assigned approximately 0.95 confidence, roughly 95% should actually be valid under the evaluation definition.",
+        "If not, the confidence value is poorly calibrated.",
+        "Calibration matters because deployment thresholds depend on predicted probabilities.",
+        "A model with slightly worse CER but well-calibrated confidence may be more useful for human-assisted correction than a model whose scores cannot be trusted."
+      ]
+    },
+    {
+      "heading": "74. Preserve raw OCR when automatic correction is non-reversible",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 5,
+      "word_count": 46,
+      "evidence": "Never design archival processing such that:",
+      "paragraphs": [
+        "Never design archival processing such that:",
+        "raw OCR -> corrected text -> raw OCR deleted.",
+        "A safer model is:",
+        "source image | +-- raw OCR | +-- corrected OCR | +-- provenance",
+        "This allows later correction methods to be improved without losing the original machine transcription."
+      ]
+    },
+    {
+      "heading": "75.1 Reporting “99% accuracy” without defining the denominator",
+      "level": 3,
+      "id": "ux-section-85",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "It may mean character accuracy, normalized CER, word accuracy, or something else entirely.",
+      "paragraphs": [
+        "It may mean character accuracy, normalized CER, word accuracy, or something else entirely."
+      ]
+    },
+    {
+      "heading": "75.2 Comparing CER values computed after different normalization",
+      "level": 3,
+      "id": "ux-section-86",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "The systems are not being evaluated on the same sequence.",
+      "paragraphs": [
+        "The systems are not being evaluated on the same sequence."
+      ]
+    },
+    {
+      "heading": "75.3 Treating Unicode code points as user-visible characters without documenting it",
+      "level": 3,
+      "id": "ux-section-87",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Combining sequences can distort counts.",
+      "paragraphs": [
+        "Combining sequences can distort counts."
+      ]
+    },
+    {
+      "heading": "75.4 Ignoring reading order",
+      "level": 3,
+      "id": "ux-section-88",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Global edit distance can punish layout errors as if they were character-recognition failures.",
+      "paragraphs": [
+        "Global edit distance can punish layout errors as if they were character-recognition failures."
+      ]
+    },
+    {
+      "heading": "75.5 Reporting only corpus-average CER",
+      "level": 3,
+      "id": "ux-section-89",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Bad page classes can disappear inside a large denominator.",
+      "paragraphs": [
+        "Bad page classes can disappear inside a large denominator."
+      ]
+    },
+    {
+      "heading": "75.6 Evaluating post-correction only by final CER",
+      "level": 3,
+      "id": "ux-section-90",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Destructive changes to correct text remain hidden.",
+      "paragraphs": [
+        "Destructive changes to correct text remain hidden."
+      ]
+    },
+    {
+      "heading": "75.7 Using a modern dictionary against historical ground truth",
+      "level": 3,
+      "id": "ux-section-91",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Valid historical forms can be falsely “corrected.”",
+      "paragraphs": [
+        "Valid historical forms can be falsely “corrected.”"
+      ]
+    },
+    {
+      "heading": "75.8 Randomly splitting lines from the same source document",
+      "level": 3,
+      "id": "ux-section-92",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Document-specific information can leak into the test set.",
+      "paragraphs": [
+        "Document-specific information can leak into the test set."
+      ]
+    },
+    {
+      "heading": "75.9 Allowing generative models to rewrite freely",
+      "level": 3,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Fluency can replace transcription fidelity.",
+      "paragraphs": [
+        "Fluency can replace transcription fidelity."
+      ]
+    },
+    {
+      "heading": "75.10 Correcting structural errors with text generation",
+      "level": 3,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Layout and reading-order failures require structural remedies.",
+      "paragraphs": [
+        "Layout and reading-order failures require structural remedies."
+      ]
+    },
+    {
+      "heading": "75.11 Ignoring names and numbers",
+      "level": 3,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Small edit counts can conceal high factual damage.",
+      "paragraphs": [
+        "Small edit counts can conceal high factual damage."
+      ]
+    },
+    {
+      "heading": "75.12 Assuming lower edit distance means better semantic quality",
+      "level": 3,
+      "id": "ux-section-96",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "String similarity and semantic correctness remain distinct.",
+      "paragraphs": [
+        "String similarity and semantic correctness remain distinct."
+      ]
+    },
+    {
+      "heading": "76. Recommended OCR evaluation report",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 1,
+      "word_count": 102,
+      "evidence": "Category Report Corpus Languages, dates, document types, scripts, fonts, layouts, scan conditions Ground truth Annotation source and transcription policy Unicode Normalization form and evaluation unit Whitespace Whether spaces and line breaks are scored Hyphenation Line-break treatment Primary text metric Exact CER definition Lexical metric WER and tokenizer definition where useful Aggregation Pooled versus page-macro Distribution Median and high-error percentiles Layout Separate structural evaluation where applicable Error breakdown Insertions, deletions, substitutions, major confusions Post-correction Raw versus corrected CER Correction reliability Precision, recall, introduced errors Splits Document-level leakage controls Special classes Names, numbers, rare historical forms if relevant",
+      "paragraphs": [
+        "Category Report Corpus Languages, dates, document types, scripts, fonts, layouts, scan conditions Ground truth Annotation source and transcription policy Unicode Normalization form and evaluation unit Whitespace Whether spaces and line breaks are scored Hyphenation Line-break treatment Primary text metric Exact CER definition Lexical metric WER and tokenizer definition where useful Aggregation Pooled versus page-macro Distribution Median and high-error percentiles Layout Separate structural evaluation where applicable Error breakdown Insertions, deletions, substitutions, major confusions Post-correction Raw versus corrected CER Correction reliability Precision, recall, introduced errors Splits Document-level leakage controls Special classes Names, numbers, rare historical forms if relevant Reproducibility Scorer, version, configuration, deterministic preprocessing"
+      ]
+    },
+    {
+      "heading": "77. Recommended production post-correction architecture",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 2,
+      "word_count": 110,
+      "evidence": "+--------------------+ | document image | +----------+---------+ | v +--------------------+ | OCR engine | +----------+---------+ | +-------------+-------------+ | | v v raw OCR text OCR confidence | | +-------------+-------------+ | v +--------------------+ | error detection | +----------+---------+ | v +--------------------+ | candidate creation | | edit/channel model | +----------+---------+ | v +--------------------+ | contextual ranking | +----------+---------+ | v +--------------------+ | confidence / risk | +----------+---------+ | +----------+----------+ | | high confidence uncertain | | v v auto-correction preserve / review | | +----------+----------+ | v corrected text | v audit against raw OCR",
+      "paragraphs": [
+        "+--------------------+ | document image | +----------+---------+ | v +--------------------+ | OCR engine | +----------+---------+ | +-------------+-------------+ | | v v raw OCR text OCR confidence | | +-------------+-------------+ | v +--------------------+ | error detection | +----------+---------+ | v +--------------------+ | candidate creation | | edit/channel model | +----------+---------+ | v +--------------------+ | contextual ranking | +----------+---------+ | v +--------------------+ | confidence / risk | +----------+---------+ | +----------+----------+ | | high confidence uncertain | | v v auto-correction preserve / review | | +----------+----------+ | v corrected text | v audit against raw OCR",
+        "This architecture makes abstention a first-class behavior rather than treating every suspected token as requiring a replacement."
+      ]
+    },
+    {
+      "heading": "78. Decision boundaries",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 1,
+      "word_count": 105,
+      "evidence": "Question If yes If no Is source-image fidelity the objective? Use diplomatic GT and conservative correction Normalized evaluation may be appropriate Is layout complex? Evaluate recognition and structure separately Global serialized CER may be sufficient Are word boundaries reliable? WER can complement CER Prefer suitable character/grapheme metrics Is raw OCR already highly accurate? Use high correction thresholds or no correction Post-correction has more potential upside Are images available? Consider re-OCR or multimodal evidence Text-only post-correction may be necessary Are historical spellings important? Do not normalize them implicitly Retrieval-oriented normalization may help Is human review available? Optimize candidate recall plus useful confidence Prioritize precision and abstenti",
+      "paragraphs": [
+        "Question If yes If no Is source-image fidelity the objective? Use diplomatic GT and conservative correction Normalized evaluation may be appropriate Is layout complex? Evaluate recognition and structure separately Global serialized CER may be sufficient Are word boundaries reliable? WER can complement CER Prefer suitable character/grapheme metrics Is raw OCR already highly accurate? Use high correction thresholds or no correction Post-correction has more potential upside Are images available? Consider re-OCR or multimodal evidence Text-only post-correction may be necessary Are historical spellings important? Do not normalize them implicitly Retrieval-oriented normalization may help Is human review available? Optimize candidate recall plus useful confidence Prioritize precision and abstention"
+      ]
+    },
+    {
+      "heading": "79. The correct role of Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 14,
+      "word_count": 107,
+      "evidence": "Levenshtein distance has two major roles in OCR systems.",
+      "paragraphs": [
+        "Levenshtein distance has two major roles in OCR systems.",
+        "First, it provides the mathematical foundation of common sequence-error metrics:",
+        "ground truth vs. OCR output -> minimum edit alignment -> CER / WER",
+        "Second, it can support candidate generation and OCR-aware correction:",
+        "noisy token -> nearby candidate strings -> contextual / probabilistic ranking.",
+        "But these roles should not be overstated.",
+        "Levenshtein distance does not know:",
+        "which glyphs look similar;",
+        "which spelling is historically valid;",
+        "which candidate fits context;",
+        "which page region comes first;",
+        "which name is factually correct;",
+        "whether a change is semantically faithful.",
+        "It is a sequence-comparison primitive embedded inside a larger OCR evaluation or correction system."
+      ]
+    },
+    {
+      "heading": "80. Final interpretation",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 11,
+      "word_count": 184,
+      "evidence": "A rigorous OCR experiment should separate three questions.",
+      "paragraphs": [
+        "A rigorous OCR experiment should separate three questions.",
+        "1. What text did the source contain? 2. How different is the OCR output from the chosen reference representation? 3. Can post-processing reduce genuine OCR error without changing valid source evidence?",
+        "The first question is governed by ground-truth and transcription policy.",
+        "The second can often be quantified using character- or word-level edit distance .",
+        "The third requires evaluating both improvement and damage.",
+        "This yields the core model:",
+        "OCR quality = recognition fidelity + structural fidelity + evaluation protocol + post-correction reliability + task-specific utility.",
+        "CER remains one of the most useful OCR evaluation metrics because it provides a simple, model-independent measure of sequence disagreement. But its value depends on precise definitions of character representation, normalization, ground truth, layout treatment, and aggregation.",
+        "Post-correction should likewise not be judged by fluency. A strong correction system must reduce genuine transcription error while preserving names, numbers, historical spellings, unusual vocabulary, and other evidence already recognized correctly.",
+        "The decisive boundary is therefore:",
+        "post-correction should repair OCR evidence, not replace the source with what a language model believes the source probably meant."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 13,
+      "word_count": 266,
+      "evidence": "OCR-D. Quality Assurance in OCR-D. Defines OCR evaluation principles, CER/WER conventions, grapheme-based character handling, page-level evaluation, and layout-related considerations. OCR-D evaluation specification .",
+      "paragraphs": [
+        "OCR-D. Quality Assurance in OCR-D. Defines OCR evaluation principles, CER/WER conventions, grapheme-based character handling, page-level evaluation, and layout-related considerations. OCR-D evaluation specification .",
+        "OCR-D. Ground Truth Guidelines. OCR-D Ground Truth Guidelines .",
+        "Unicode Consortium. Unicode Standard Annex #29: Unicode Text Segmentation. UAX #29 .",
+        "Clausner, C., Pletschacher, S., and Antonacopoulos, A. Flexible character accuracy measure for reading-order-independent evaluation. Pattern Recognition Letters, 2020. https://doi.org/10.1016/j.patrec.2020.02.003 .",
+        "Kukich, K. Techniques for Automatically Correcting Words in Text. ACM Computing Surveys, 1992. https://doi.org/10.1145/146370.146380 .",
+        "Brill, E., and Moore, R. C. An Improved Error Model for Noisy Channel Spelling Correction. ACL, 2000. https://doi.org/10.3115/1075218.1075255 .",
+        "Chiron, G., Doucet, A., Coustaty, M., and Moreux, J.-P. ICDAR2017 Competition on Post-OCR Text Correction. ICDAR, 2017. https://doi.org/10.1109/ICDAR.2017.232 .",
+        "Nguyen, T. T. H., Jatowt, A., Coustaty, M., and Doucet, A. Survey of Post-OCR Processing Approaches. ACM Computing Surveys, 2021. https://doi.org/10.1145/3453476 .",
+        "Lyu, L., Koutraki, M., Krickl, M., and Fetahu, B. Neural OCR Post-Hoc Correction of Historical Corpora. Transactions of the Association for Computational Linguistics, 2021. https://doi.org/10.1162/tacl_a_00379 .",
+        "Boros, E., Ehrmann, M., Romanello, M., Najem-Meyer, S., and Kaplan, F. Post-Correction of Historical Text Transcripts with Large Language Models: An Exploratory Study. LaTeCH-CLfL, 2024. https://doi.org/10.18653/v1/2024.latechclfl-1.14 .",
+        "Kanerva, J., Ledins, C., Käpyaho, S., and Ginter, F. OCR Error Post-Correction with LLMs in Historical Documents: No Free Lunches. RESOURCEFUL, 2025. ACL Anthology record .",
+        "Ehrmann, M., Boros, E., Opitz, J., et al. ICDAR 2026 HIPE-OCRepair Competition on LLM-Assisted OCR Post-Correction for Historical Documents. 2026. arXiv record .",
+        "Beyene, F. S., and Dancy, C. L. A Survey of OCR Evaluation Methods and Metrics and the Invisibility of Historical Documents. FAccT 2026. https://doi.org/10.1145/3805689.3806442 ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "25. Edit distance as candidate generation",
+          "anchor_id": "ux-section-30",
+          "alias": "approximate string matching",
+          "excerpt": "A basic correction system can use approximate string matching ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "OCR Evaluation and Post-Correction",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Post-correction adds another layer of difficulty. A correction system can remove genuine OCR errors, leave errors untouched, or damage text that was already correct. A method that aggressively rewrites noisy text may reduce one aggregate edit-distance metric while destroying historically meaningful spellings, proper names, numerical values, punctuation, or document-specific terminology."
+        },
+        {
+          "section": "5. Character Error Rate",
+          "anchor_id": "ux-section-8",
+          "alias": "edit distance",
+          "excerpt": "Character error rate (CER) applies edit-distance alignment at character level."
+        },
+        {
+          "section": "7. There is more than one normalized CER convention",
+          "anchor_id": "ux-section-11",
+          "alias": "edit distance",
+          "excerpt": "Other systems may normalize edit distance using:"
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-with-edit-distance",
+      "evidence": [
+        {
+          "section": "50. Search-oriented quality differs from diplomatic fidelity",
+          "anchor_id": "ux-section-59",
+          "alias": "fuzzy search with edit distance",
+          "excerpt": "The relationship between edit distance and retrieval is explored in fuzzy search with edit distance ."
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "9. Unicode normalization and OCR evaluation",
+          "anchor_id": "ux-section-13",
+          "alias": "text normalization and transliteration",
+          "excerpt": "The broader distinction between normalization and language-level transformation is treated in text normalization and transliteration ."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "8. What counts as a character?",
+          "anchor_id": "ux-section-12",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "The implementation consequences are examined more generally in Unicode- and grapheme-safe Levenshtein computation ."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "4. The mathematical core: edit distance",
+          "anchor_id": "ux-section-7",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "The full algorithmic structure is discussed in the Wagner-Fischer algorithm ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#page",
+      "type": "WebPage",
+      "name": "OCR Evaluation and Post-Correction: Character Error Rate, Ground Truth, Error Models, and Reliable Correction",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#character-error-rate"
+        },
+        {
+          "@id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#post-ocr-correction"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "type": "TechArticle",
+      "name": "OCR Evaluation and Post-Correction: Character Error Rate, Ground Truth, Error Models, and Reliable Correction",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#character-error-rate"
+        },
+        {
+          "@id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#post-ocr-correction"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#concept",
+      "type": "DefinedTerm",
+      "name": "OCR Evaluation and Post-Correction",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#character-error-rate",
+      "type": "DefinedTerm",
+      "name": "Character Error Rate",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#word-error-rate",
+      "type": "DefinedTerm",
+      "name": "Word Error Rate",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#post-ocr-correction",
+      "type": "DefinedTerm",
+      "name": "Post-OCR Correction",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#ground-truth",
+      "type": "DefinedTerm",
+      "name": "OCR Ground Truth",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#noisy-channel-model",
+      "type": "DefinedTerm",
+      "name": "Noisy-Channel Model",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#over-correction",
+      "type": "DefinedTerm",
+      "name": "OCR Over-Correction",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#reading-order",
+      "type": "DefinedTerm",
+      "name": "Document Reading Order",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/ocr-evaluation-and-post-correction#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#page",
+      "about",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#concept"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#page",
+      "about",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#character-error-rate"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#page",
+      "about",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#post-ocr-correction"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#page",
+      "mainEntity",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#concept"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#page",
+      "isPartOf",
+      "https://www.levenshtein.net/language-processing#collection"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "about",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#concept"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "about",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#character-error-rate"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "about",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#post-ocr-correction"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#ground-truth"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#word-error-rate"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#noisy-channel-model"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#over-correction"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#reading-order"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "isPartOf",
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#page"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://ocr-d.de/en/spec/ocrd_eval.html"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://ocr-d.de/en/gt-guidelines/trans/"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://unicode.org/reports/tr29/"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://doi.org/10.1016/j.patrec.2020.02.003"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://doi.org/10.1145/146370.146380"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://doi.org/10.3115/1075218.1075255"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://doi.org/10.1109/ICDAR.2017.232"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://doi.org/10.1145/3453476"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://doi.org/10.1162/tacl_a_00379"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://doi.org/10.18653/v1/2024.latechclfl-1.14"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://aclanthology.org/2025.resourceful-1.8/"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://arxiv.org/abs/2607.08143"
+    ],
+    [
+      "https://www.levenshtein.net/ocr-evaluation-and-post-correction#article",
+      "citation",
+      "https://doi.org/10.1145/3805689.3806442"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://ocr-d.de/en/gt-guidelines/trans/",
+      "anchor": "OCR-D Ground Truth Guidelines"
+    },
+    {
+      "url": "https://unicode.org/reports/tr29/",
+      "anchor": "UAX #29"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.patrec.2020.02.003",
+      "anchor": "https://doi.org/10.1016/j.patrec.2020.02.003"
+    },
+    {
+      "url": "https://doi.org/10.1145/146370.146380",
+      "anchor": "https://doi.org/10.1145/146370.146380"
+    },
+    {
+      "url": "https://doi.org/10.3115/1075218.1075255",
+      "anchor": "https://doi.org/10.3115/1075218.1075255"
+    },
+    {
+      "url": "https://doi.org/10.1109/ICDAR.2017.232",
+      "anchor": "https://doi.org/10.1109/ICDAR.2017.232"
+    },
+    {
+      "url": "https://doi.org/10.1162/tacl_a_00379",
+      "anchor": "https://doi.org/10.1162/tacl_a_00379"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/2024.latechclfl-1.14",
+      "anchor": "https://doi.org/10.18653/v1/2024.latechclfl-1.14"
+    },
+    {
+      "url": "https://aclanthology.org/2025.resourceful-1.8/",
+      "anchor": "ACL Anthology record"
+    },
+    {
+      "url": "https://arxiv.org/abs/2607.08143",
+      "anchor": "arXiv record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3805689.3806442",
+      "anchor": "https://doi.org/10.1145/3805689.3806442"
+    },
+    {
+      "url": "https://ocr-d.de/en/spec/ocrd_eval.html",
+      "anchor": "OCR-D evaluation specification"
+    },
+    {
+      "url": "https://doi.org/10.1145/3453476",
+      "anchor": "https://doi.org/10.1145/3453476"
+    }
+  ]
+}

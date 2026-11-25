@@ -1,0 +1,4167 @@
+{
+  "url": "/source-code-and-ast-similarity",
+  "title": "Source Code and AST Similarity: Edit Distance, Clone Detection, Tree Differencing, and Semantic Limits",
+  "h1": [
+    "Source Code and AST Similarity: Edit Distance, Clone Detection, Tree Differencing, and Semantic Limits"
+  ],
+  "group": "Software",
+  "provisional_mission": "So sánh AST và mã nguồn",
+  "content_sha256": "6aa71fc86ec6d03af3a6f7f3ed4788e27fc7265cb3cf6d9b37aea4cc111cd1a2",
+  "canonical": "https://www.levenshtein.net/source-code-and-ast-similarity",
+  "primary_entity_candidate": "Source Code and AST Similarity: Edit Distance, Clone Detection, Tree Differencing, and Semantic Limits",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Source Code and AST Similarity",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 9,
+      "word_count": 210,
+      "evidence": "Source-code similarity is not one mathematical problem. Two programs can be identical as text, similar after formatting is removed, structurally similar as abstract syntax trees, behaviorally similar under a set of tests, or semantically equivalent despite sharing almost no surface syntax.",
+      "paragraphs": [
+        "Source-code similarity is not one mathematical problem. Two programs can be identical as text, similar after formatting is removed, structurally similar as abstract syntax trees, behaviorally similar under a set of tests, or semantically equivalent despite sharing almost no surface syntax.",
+        "These relationships form a hierarchy:",
+        "raw characters | v tokens | v normalized tokens | v syntax tree | v control/data-flow structure | v program behavior | v semantic equivalence.",
+        "Levenshtein distance is a valuable baseline near the bottom of this hierarchy. It measures the minimum number of insertions, deletions, and substitutions needed to transform one sequence into another. Applied to source code, however, the result depends critically on what the sequence elements are:",
+        "characters? lines? lexer tokens? normalized tokens? AST nodes? execution events?",
+        "Changing the representation changes the meaning of the distance.",
+        "This article develops source-code similarity from raw text through tokens and abstract syntax trees, explains tree edit distance and source-code differencing, examines classical clone-detection systems including MOSS, NiCad, Deckard, SourcererCC, and GumTree, and establishes a critical boundary:",
+        "source-code similarity != program equivalence.",
+        "Two fragments can be nearly identical and behave differently because of one critical operator, constant, API call, or condition. Conversely, two programs can implement the same mathematical function using completely different algorithms and syntax."
+      ]
+    },
+    {
+      "heading": "1. What does “similar code” mean?",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 14,
+      "word_count": 74,
+      "evidence": "Suppose two source fragments are:",
+      "paragraphs": [
+        "Suppose two source fragments are:",
+        "int sum(int a, int b) { return a + b; }",
+        "and:",
+        "int add(int x, int y) { return x + y; }",
+        "They differ textually in:",
+        "function name;",
+        "parameter names;",
+        "formatting choices if present.",
+        "Structurally, however, they represent almost the same syntax pattern.",
+        "Now compare:",
+        "return a + b;",
+        "with:",
+        "return a - b;",
+        "The character and token difference is extremely small, yet program behavior has changed fundamentally."
+      ]
+    },
+    {
+      "heading": "2. Similarity has multiple representation layers",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 1,
+      "word_count": 65,
+      "evidence": "Representation Typical question Characters How much literal text changed? Lines Which source lines were added or removed? Tokens How similar is the lexical program structure? Normalized tokens Are fragments similar after renaming or literal normalization? AST How similar is their syntactic structure? Control/data-flow Do they organize computation similarly? Behavior Do they produce similar outputs/effects? Semantics Do they compute the same function under all relevant inputs?",
+      "paragraphs": [
+        "Representation Typical question Characters How much literal text changed? Lines Which source lines were added or removed? Tokens How similar is the lexical program structure? Normalized tokens Are fragments similar after renaming or literal normalization? AST How similar is their syntactic structure? Control/data-flow Do they organize computation similarly? Behavior Do they produce similar outputs/effects? Semantics Do they compute the same function under all relevant inputs?"
+      ]
+    },
+    {
+      "heading": "3. No single representation dominates every task",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 10,
+      "word_count": 32,
+      "evidence": "Raw text is useful for:",
+      "paragraphs": [
+        "Raw text is useful for:",
+        "ordinary diffs;",
+        "copy detection;",
+        "format-sensitive review.",
+        "ASTs are useful for:",
+        "structural differencing;",
+        "refactoring analysis;",
+        "syntax-aware clone detection.",
+        "Behavioral models are needed when the goal approaches:",
+        "functional equivalence."
+      ]
+    },
+    {
+      "heading": "4. Character-level Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "Let source files be character sequences:",
+      "paragraphs": [
+        "Let source files be character sequences:",
+        "A = a1 a2 ... am B = b1 b2 ... bn.",
+        "Character-level edit distance is:",
+        "dchar(A,B) = minimum number of character insertions, deletions, and substitutions."
+      ]
+    },
+    {
+      "heading": "5. Character distance is formatting-sensitive",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 9,
+      "word_count": 33,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "if(x){return y;}",
+        "and:",
+        "if (x) { return y; }",
+        "The programs may parse identically while their character sequences differ substantially.",
+        "Character edit distance therefore measures:",
+        "textual representation difference,",
+        "not:",
+        "syntactic program difference."
+      ]
+    },
+    {
+      "heading": "6. Comments distort raw similarity",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "// calculate total return price * quantity;",
+        "with:",
+        "return price * quantity;",
+        "The executable code is identical, but character distance increases because of a comment.",
+        "Whether comments should count depends on the application."
+      ]
+    },
+    {
+      "heading": "7. String literals create another ambiguity",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 5,
+      "word_count": 27,
+      "evidence": "These fragments differ by only a few characters:",
+      "paragraphs": [
+        "These fragments differ by only a few characters:",
+        "open(\"production.db\");",
+        "open(\"testing.db\");",
+        "Yet the operational effect can be significant.",
+        "A similarity metric cannot infer importance solely from edit count."
+      ]
+    },
+    {
+      "heading": "8. Identifier length can dominate character distance",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 4,
+      "word_count": 23,
+      "evidence": "int x = lookup(id);",
+      "paragraphs": [
+        "int x = lookup(id);",
+        "versus:",
+        "int customerRecord = lookup(customerIdentifier);",
+        "Renaming variables can create many character edits even though the underlying syntax changes little."
+      ]
+    },
+    {
+      "heading": "9. Character normalization",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 7,
+      "word_count": 24,
+      "evidence": "A preprocessing pipeline may remove:",
+      "paragraphs": [
+        "A preprocessing pipeline may remove:",
+        "comments;",
+        "whitespace;",
+        "formatting;",
+        "some literal differences.",
+        "Then distance is computed on the transformed text.",
+        "But preprocessing changes the question."
+      ]
+    },
+    {
+      "heading": "10. Normalization creates invariance",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 5,
+      "word_count": 45,
+      "evidence": "If whitespace is removed, the similarity measure becomes invariant to whitespace changes.",
+      "paragraphs": [
+        "If whitespace is removed, the similarity measure becomes invariant to whitespace changes.",
+        "If comments are removed, it becomes invariant to comments.",
+        "If identifiers are renamed to placeholders, it becomes invariant to many identifier changes.",
+        "This general principle is:",
+        "normalization = deliberately declaring some differences irrelevant."
+      ]
+    },
+    {
+      "heading": "11. Over-normalization can hide important differences",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 9,
+      "word_count": 31,
+      "evidence": "If every literal becomes:",
+      "paragraphs": [
+        "If every literal becomes:",
+        "LITERAL",
+        "then:",
+        "timeout = 5;",
+        "and:",
+        "timeout = 500000;",
+        "can become structurally identical.",
+        "For some clone-detection tasks that is desirable.",
+        "For security review it may be disastrous."
+      ]
+    },
+    {
+      "heading": "12. Line-level comparison",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "Traditional source-control diffs usually compare sequences of lines.",
+      "paragraphs": [
+        "Traditional source-control diffs usually compare sequences of lines.",
+        "This representation is convenient because developers edit files visually as lines.",
+        "But source-language syntax does not necessarily follow line boundaries."
+      ]
+    },
+    {
+      "heading": "13. One formatting operation can create many line changes",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "Reformatting:",
+      "paragraphs": [
+        "Reformatting:",
+        "call(a, b, c);",
+        "into:",
+        "call( a, b, c );",
+        "produces substantial line-level difference without meaningful syntax change."
+      ]
+    },
+    {
+      "heading": "14. Line diff is optimized for review, not semantic modeling",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "This distinction should remain explicit:",
+      "paragraphs": [
+        "This distinction should remain explicit:",
+        "human-readable diff != program-structure distance."
+      ]
+    },
+    {
+      "heading": "15. Lexical tokenization",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "A lexer converts source text into tokens such as:",
+      "paragraphs": [
+        "A lexer converts source text into tokens such as:",
+        "KEYWORD IDENTIFIER OPERATOR LITERAL PUNCTUATION.",
+        "For:",
+        "return total + tax;",
+        "a simplified token sequence might be:",
+        "RETURN IDENT(total) PLUS IDENT(tax) SEMICOLON."
+      ]
+    },
+    {
+      "heading": "16. Token edit distance",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "After tokenization, compute:",
+      "paragraphs": [
+        "After tokenization, compute:",
+        "dtoken( tokens(A), tokens(B) ).",
+        "Whitespace and comment changes can disappear automatically when the lexer ignores them."
+      ]
+    },
+    {
+      "heading": "17. Token distance better respects language syntax",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "Changing:",
+      "paragraphs": [
+        "Changing:",
+        "customerIdentifier",
+        "to:",
+        "id",
+        "changes one identifier token instead of many characters.",
+        "This often makes token distance more appropriate for code similarity."
+      ]
+    },
+    {
+      "heading": "18. Identifier normalization",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "A detector can transform:",
+      "paragraphs": [
+        "A detector can transform:",
+        "IDENT(x) IDENT(total) IDENT(customer)",
+        "into:",
+        "IDENT IDENT IDENT.",
+        "This allows renamed copies to remain highly similar."
+      ]
+    },
+    {
+      "heading": "19. Consistent renaming versus blind renaming",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "There are two very different normalization strategies.",
+      "paragraphs": [
+        "There are two very different normalization strategies.",
+        "Blind normalization:",
+        "all identifiers -> IDENT.",
+        "Consistent normalization:",
+        "first unique identifier -> VAR_1 second unique identifier -> VAR_2 ...",
+        "Consistent renaming preserves alias relationships."
+      ]
+    },
+    {
+      "heading": "20. Why alias relationships matter",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 11,
+      "word_count": 31,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "return x + x;",
+        "with:",
+        "return x + y;",
+        "Blind identifier normalization produces:",
+        "RETURN IDENT + IDENT",
+        "for both.",
+        "Consistent renaming can preserve:",
+        "VAR_1 + VAR_1",
+        "versus:",
+        "VAR_1 + VAR_2."
+      ]
+    },
+    {
+      "heading": "21. Literal normalization",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "Literal values may be transformed by type:",
+      "paragraphs": [
+        "Literal values may be transformed by type:",
+        "123 -> INT_LITERAL \"hello\" -> STRING_LITERAL.",
+        "This increases tolerance to copied code with changed constants."
+      ]
+    },
+    {
+      "heading": "22. Literal identity may still matter",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "In security and correctness analysis:",
+      "paragraphs": [
+        "In security and correctness analysis:",
+        "permissions = 0644",
+        "versus:",
+        "permissions = 0777",
+        "is not a negligible difference.",
+        "Thus detector configuration must match its task."
+      ]
+    },
+    {
+      "heading": "23. Token multiset similarity",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "Some systems do not preserve complete token ordering.",
+      "paragraphs": [
+        "Some systems do not preserve complete token ordering.",
+        "A fragment can be represented by token frequencies:",
+        "f(token).",
+        "Similarity may then use:",
+        "Jaccard similarity;",
+        "cosine similarity;",
+        "overlap coefficients."
+      ]
+    },
+    {
+      "heading": "24. Multisets trade order for scalability",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "Token frequency representations tolerate certain reorderings but discard sequence information.",
+      "paragraphs": [
+        "Token frequency representations tolerate certain reorderings but discard sequence information.",
+        "Therefore:",
+        "same tokens != same program."
+      ]
+    },
+    {
+      "heading": "25. Example of order destroying semantics",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 5,
+      "word_count": 15,
+      "evidence": "authenticate(); deleteAccount();",
+      "paragraphs": [
+        "authenticate(); deleteAccount();",
+        "versus:",
+        "deleteAccount(); authenticate();",
+        "The token multiset can be almost identical.",
+        "Behavior is not."
+      ]
+    },
+    {
+      "heading": "26. Token n-grams",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 3,
+      "word_count": 12,
+      "evidence": "Another representation uses windows:",
+      "paragraphs": [
+        "Another representation uses windows:",
+        "(t1,t2,...,tq).",
+        "These preserve local ordering while remaining indexable."
+      ]
+    },
+    {
+      "heading": "27. Fingerprinting",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 4,
+      "word_count": 28,
+      "evidence": "Token or character n-grams can be hashed:",
+      "paragraphs": [
+        "Token or character n-grams can be hashed:",
+        "gram -> hash.",
+        "A program fragment is then represented by selected fingerprints.",
+        "This allows large-scale retrieval without comparing every pair directly."
+      ]
+    },
+    {
+      "heading": "28. Winnowing",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 3,
+      "word_count": 39,
+      "evidence": "Schleimer, Wilkerson, and Aiken introduced the winnowing local fingerprint-selection algorithm in 2003.",
+      "paragraphs": [
+        "Schleimer, Wilkerson, and Aiken introduced the winnowing local fingerprint-selection algorithm in 2003.",
+        "The method selects hashes from overlapping windows while providing guarantees about sufficiently long exact matching substrings under its parameterization.",
+        "See Winnowing: Local Algorithms for Document Fingerprinting ."
+      ]
+    },
+    {
+      "heading": "29. MOSS",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "MOSS—Measure of Software Similarity—is a long-running Stanford service used especially for detecting unusually similar programming assignments.",
+      "paragraphs": [
+        "MOSS—Measure of Software Similarity—is a long-running Stanford service used especially for detecting unusually similar programming assignments.",
+        "The official MOSS documentation emphasizes an important distinction:",
+        "MOSS detects program similarity. MOSS does not automatically prove plagiarism.",
+        "See A System for Detecting Software Similarity ."
+      ]
+    },
+    {
+      "heading": "30. Similarity is evidence, not intent",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 9,
+      "word_count": 26,
+      "evidence": "Code can be similar because of:",
+      "paragraphs": [
+        "Code can be similar because of:",
+        "copying;",
+        "shared assignment requirements;",
+        "common libraries;",
+        "standard algorithms;",
+        "generated templates;",
+        "independent convergence.",
+        "Therefore:",
+        "high code similarity != proof of plagiarism."
+      ]
+    },
+    {
+      "heading": "31. The same principle applies to software provenance",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "A cloned code fragment does not automatically establish:",
+      "paragraphs": [
+        "A cloned code fragment does not automatically establish:",
+        "which project copied which;",
+        "whether copying was licensed;",
+        "whether both derived from a third source;",
+        "whether resemblance was independently produced."
+      ]
+    },
+    {
+      "heading": "32. Code clones",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "A code clone is a code fragment similar to another fragment according to a specified syntactic or semantic relationship.",
+      "paragraphs": [
+        "A code clone is a code fragment similar to another fragment according to a specified syntactic or semantic relationship.",
+        "There is no single universally sufficient similarity criterion."
+      ]
+    },
+    {
+      "heading": "33. Common four-type clone taxonomy",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 3,
+      "word_count": 41,
+      "evidence": "A widely used taxonomy distinguishes:",
+      "paragraphs": [
+        "A widely used taxonomy distinguishes:",
+        "Type 1 Type 2 Type 3 Type 4.",
+        "Roy, Cordy, and Koschke organize clone-detection techniques around these increasingly difficult scenarios in their 2009 survey. See Comparison and evaluation of code clone detection techniques and tools ."
+      ]
+    },
+    {
+      "heading": "34. Type-1 clones",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "Type-1 clones are effectively identical except for differences such as:",
+      "paragraphs": [
+        "Type-1 clones are effectively identical except for differences such as:",
+        "whitespace;",
+        "layout;",
+        "comments.",
+        "These are close to textual copies."
+      ]
+    },
+    {
+      "heading": "35. Type-2 clones",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "Type-2 clones additionally allow systematic differences such as:",
+      "paragraphs": [
+        "Type-2 clones additionally allow systematic differences such as:",
+        "identifier names;",
+        "literal values;",
+        "types.",
+        "Normalization is especially useful here."
+      ]
+    },
+    {
+      "heading": "36. Type-3 clones",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 5,
+      "word_count": 20,
+      "evidence": "Type-3 clones contain further statement-level changes such as:",
+      "paragraphs": [
+        "Type-3 clones contain further statement-level changes such as:",
+        "inserted statements;",
+        "deleted statements;",
+        "modified statements.",
+        "They are often called near-miss clones."
+      ]
+    },
+    {
+      "heading": "37. Type-4 clones",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 2,
+      "word_count": 29,
+      "evidence": "Type-4 generally refers to fragments that implement equivalent or strongly similar functionality despite substantial syntactic difference.",
+      "paragraphs": [
+        "Type-4 generally refers to fragments that implement equivalent or strongly similar functionality despite substantial syntactic difference.",
+        "This category is much harder because the detector must move beyond surface resemblance."
+      ]
+    },
+    {
+      "heading": "38. Clone types are not mathematical natural constants",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "The boundaries between Type-2, Type-3, and Type-4 depend on definitions, normalization, granularity, and benchmark methodology.",
+      "paragraphs": [
+        "The boundaries between Type-2, Type-3, and Type-4 depend on definitions, normalization, granularity, and benchmark methodology.",
+        "Therefore:",
+        "clone type should always be interpreted under the taxonomy used by the study."
+      ]
+    },
+    {
+      "heading": "39. Clone granularity",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 10,
+      "word_count": 26,
+      "evidence": "Clones can occur at different levels:",
+      "paragraphs": [
+        "Clones can occur at different levels:",
+        "expression;",
+        "statement sequence;",
+        "block;",
+        "function;",
+        "method;",
+        "class;",
+        "file;",
+        "subsystem.",
+        "A detector optimized for function clones may miss short copied expressions."
+      ]
+    },
+    {
+      "heading": "40. Minimum clone size",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "Almost every practical detector sets some minimum size:",
+      "paragraphs": [
+        "Almost every practical detector sets some minimum size:",
+        "minimum tokens minimum lines minimum AST nodes.",
+        "Otherwise trivial syntax patterns create enormous numbers of meaningless matches."
+      ]
+    },
+    {
+      "heading": "41. Small fragments are naturally non-unique",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "return null;",
+        "may occur independently in thousands of projects.",
+        "Literal similarity alone provides little evidence of copying."
+      ]
+    },
+    {
+      "heading": "42. Clone detection has a base-rate problem",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "Large software corpora contain enormous numbers of syntactically routine fragments.",
+      "paragraphs": [
+        "Large software corpora contain enormous numbers of syntactically routine fragments.",
+        "Even a highly precise detector can generate many matches unless candidate granularity and minimum size are carefully chosen."
+      ]
+    },
+    {
+      "heading": "43. Parsing source code",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 5,
+      "word_count": 40,
+      "evidence": "An abstract syntax tree is constructed by parsing source according to a language grammar.",
+      "paragraphs": [
+        "An abstract syntax tree is constructed by parsing source according to a language grammar.",
+        "For:",
+        "x = a + b * c;",
+        "a simplified AST might be:",
+        "Assignment ├── Identifier(x) └── Add ├── Identifier(a) └── Multiply ├── Identifier(b) └── Identifier(c)"
+      ]
+    },
+    {
+      "heading": "44. AST preserves syntax hierarchy",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 4,
+      "word_count": 25,
+      "evidence": "The AST records that:",
+      "paragraphs": [
+        "The AST records that:",
+        "b * c",
+        "is grouped beneath the addition.",
+        "A flat token sequence preserves order but does not explicitly expose this hierarchy."
+      ]
+    },
+    {
+      "heading": "45. AST is abstract",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 7,
+      "word_count": 29,
+      "evidence": "Depending on the parser, ASTs may omit:",
+      "paragraphs": [
+        "Depending on the parser, ASTs may omit:",
+        "whitespace;",
+        "comments;",
+        "parentheses that do not change structure;",
+        "certain punctuation;",
+        "syntactic sugar.",
+        "This makes AST comparison naturally insensitive to many textual changes."
+      ]
+    },
+    {
+      "heading": "46. There is no universal AST",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 8,
+      "word_count": 25,
+      "evidence": "The same language can have different AST representations depending on:",
+      "paragraphs": [
+        "The same language can have different AST representations depending on:",
+        "compiler;",
+        "parser framework;",
+        "language version;",
+        "desugaring stage;",
+        "node granularity.",
+        "Therefore:",
+        "AST similarity score is representation-dependent."
+      ]
+    },
+    {
+      "heading": "47. Concrete syntax tree versus AST",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "A concrete syntax tree preserves more grammar-level details.",
+      "paragraphs": [
+        "A concrete syntax tree preserves more grammar-level details.",
+        "An AST typically removes syntactic structure considered unnecessary for semantic processing.",
+        "Comparisons at these two levels produce different edit scripts."
+      ]
+    },
+    {
+      "heading": "48. AST normalization",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "An AST can itself be normalized.",
+      "paragraphs": [
+        "An AST can itself be normalized.",
+        "For example:",
+        "Identifier(\"customer\") -> Identifier",
+        "or:",
+        "IntegerLiteral(123) -> IntegerLiteral.",
+        "This increases clone tolerance but discards information."
+      ]
+    },
+    {
+      "heading": "49. AST fingerprints",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "Instead of computing exact tree distance, a subtree can be mapped to a feature vector:",
+      "paragraphs": [
+        "Instead of computing exact tree distance, a subtree can be mapped to a feature vector:",
+        "v(T) = [ count(NodeType_1), count(NodeType_2), ... ].",
+        "Vector similarity then approximates structural similarity."
+      ]
+    },
+    {
+      "heading": "50. Deckard",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "Deckard is a prominent tree-based clone detector introduced by Jiang, Misherghi, Su, and Glondu.",
+      "paragraphs": [
+        "Deckard is a prominent tree-based clone detector introduced by Jiang, Misherghi, Su, and Glondu.",
+        "It characterizes AST subtrees using numerical vectors and clusters nearby vectors to find clone candidates.",
+        "See DECKARD: Scalable and Accurate Tree-Based Detection of Code Clones ."
+      ]
+    },
+    {
+      "heading": "51. Deckard is not exact tree edit distance",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "This distinction is important.",
+      "paragraphs": [
+        "This distinction is important.",
+        "Deckard maps syntax-tree structure into vectors and performs similarity search in vector space.",
+        "It does not simply compute exact Zhang-Shasha tree edit distance between every pair of ASTs."
+      ]
+    },
+    {
+      "heading": "52. Why vectorization helps scale",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "Computing exact structural distance for every pair of fragments would require an enormous number of pairwise comparisons.",
+      "paragraphs": [
+        "Computing exact structural distance for every pair of fragments would require an enormous number of pairwise comparisons.",
+        "Vector representations allow:",
+        "feature extraction + clustering/indexing + candidate comparison."
+      ]
+    },
+    {
+      "heading": "53. Vectorization loses structure",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Two trees can have similar node-count vectors but very different arrangements.",
+      "paragraphs": [
+        "Two trees can have similar node-count vectors but very different arrangements.",
+        "Therefore:",
+        "vector similarity != tree isomorphism != tree edit distance."
+      ]
+    },
+    {
+      "heading": "54. Tree edit distance",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 3,
+      "word_count": 30,
+      "evidence": "The general mathematical extension of string edit distance to trees is tree edit distance .",
+      "paragraphs": [
+        "The general mathematical extension of string edit distance to trees is tree edit distance .",
+        "For ordered labeled trees, standard primitive operations typically include:",
+        "insert node delete node relabel node."
+      ]
+    },
+    {
+      "heading": "55. Ordered labeled trees",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 6,
+      "word_count": 23,
+      "evidence": "An ordered tree distinguishes sibling order.",
+      "paragraphs": [
+        "An ordered tree distinguishes sibling order.",
+        "Thus:",
+        "Add(a,b)",
+        "and:",
+        "Add(b,a)",
+        "have different ordered representations even if the operator happens to be mathematically commutative."
+      ]
+    },
+    {
+      "heading": "56. Tree edit distance is syntax-sensitive, not algebra-aware",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "For integer addition without overflow concerns in a simplified mathematical model:",
+      "paragraphs": [
+        "For integer addition without overflow concerns in a simplified mathematical model:",
+        "a + b",
+        "and:",
+        "b + a",
+        "may be semantically equivalent.",
+        "The ASTs still differ by child ordering."
+      ]
+    },
+    {
+      "heading": "57. Zhang-Shasha tree edit distance",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "Zhang and Shasha's 1989 algorithm is a foundational dynamic-programming method for ordered labeled tree edit distance.",
+      "paragraphs": [
+        "Zhang and Shasha's 1989 algorithm is a foundational dynamic-programming method for ordered labeled tree edit distance.",
+        "See Simple Fast Algorithms for the Editing Distance between Trees and Related Problems ."
+      ]
+    },
+    {
+      "heading": "58. Zhang-Shasha complexity",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "For trees T1 and T2 , the published sequential complexity is:",
+      "paragraphs": [
+        "For trees T1 and T2 , the published sequential complexity is:",
+        "O( |T1| |T2| min(depth(T1), leaves(T1)) min(depth(T2), leaves(T2)) )",
+        "with:",
+        "O(|T1||T2|)",
+        "space.",
+        "The runtime therefore depends not only on tree sizes but also on tree shape."
+      ]
+    },
+    {
+      "heading": "59. Why tree distance is harder than string distance",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 7,
+      "word_count": 24,
+      "evidence": "A string has one linear order.",
+      "paragraphs": [
+        "A string has one linear order.",
+        "A tree contains:",
+        "hierarchy;",
+        "parent-child constraints;",
+        "sibling order;",
+        "subtree structure.",
+        "An edit must preserve a valid tree mapping."
+      ]
+    },
+    {
+      "heading": "60. Node relabeling costs",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 8,
+      "word_count": 28,
+      "evidence": "A tree-distance implementation must decide whether:",
+      "paragraphs": [
+        "A tree-distance implementation must decide whether:",
+        "Identifier(x) -> Identifier(y)",
+        "costs:",
+        "1",
+        "or perhaps:",
+        "0",
+        "after identifier normalization.",
+        "Thus AST distance depends strongly on node labels and cost functions."
+      ]
+    },
+    {
+      "heading": "61. Typed edit costs",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "A syntax-aware cost model might distinguish:",
+      "paragraphs": [
+        "A syntax-aware cost model might distinguish:",
+        "Identifier rename low cost Literal change medium cost operator change higher cost control node change higher cost.",
+        "This is analogous to weighted edit distance ."
+      ]
+    },
+    {
+      "heading": "62. Arbitrary weights need not produce a metric",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "If edit costs violate symmetry or triangle inequality, the resulting score should not automatically be called a metric.",
+      "paragraphs": [
+        "If edit costs violate symmetry or triangle inequality, the resulting score should not automatically be called a metric.",
+        "This matters because metric indexes rely on metric properties."
+      ]
+    },
+    {
+      "heading": "63. AST edit distance versus source-code differencing",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 5,
+      "word_count": 33,
+      "evidence": "These problems overlap but are not identical.",
+      "paragraphs": [
+        "These problems overlap but are not identical.",
+        "Tree edit distance asks:",
+        "What minimum-cost tree operations transform T1 into T2?",
+        "Source differencing often asks:",
+        "What change sequence best explains what a developer actually did?"
+      ]
+    },
+    {
+      "heading": "64. Move operations",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "Traditional tree edit distance with only:",
+      "paragraphs": [
+        "Traditional tree edit distance with only:",
+        "insert delete relabel",
+        "may represent a moved subtree as:",
+        "delete old subtree + insert new subtree.",
+        "Human developers would often describe it simply as:",
+        "move."
+      ]
+    },
+    {
+      "heading": "65. GumTree",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 3,
+      "word_count": 41,
+      "evidence": "Falleri, Morandat, Blanc, Martinez, and Monperrus introduced GumTree for fine-grained source-code differencing at AST granularity.",
+      "paragraphs": [
+        "Falleri, Morandat, Blanc, Martinez, and Monperrus introduced GumTree for fine-grained source-code differencing at AST granularity.",
+        "The method explicitly supports move actions and seeks edit scripts that are short and close to developer intent.",
+        "See Fine-grained and accurate source code differencing ."
+      ]
+    },
+    {
+      "heading": "66. GumTree is not simply “Levenshtein on AST nodes”",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "GumTree performs tree mapping and differencing with heuristics designed for source evolution.",
+      "paragraphs": [
+        "GumTree performs tree mapping and differencing with heuristics designed for source evolution.",
+        "Its goal differs from computing an exact classical tree-edit-distance value.",
+        "Therefore:",
+        "GumTree edit script != necessarily minimum Zhang-Shasha script."
+      ]
+    },
+    {
+      "heading": "67. Shortest edit script and most intuitive edit script can differ",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Suppose a developer moves a method from one class to another.",
+      "paragraphs": [
+        "Suppose a developer moves a method from one class to another.",
+        "One cost model may find:",
+        "delete subtree + insert subtree",
+        "cheap enough.",
+        "A source-differencing tool may instead prefer:",
+        "move method.",
+        "The second representation better matches developer intent."
+      ]
+    },
+    {
+      "heading": "68. AST mapping is fundamental",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "Before describing edits, a differencer needs to determine which node in the old tree corresponds to which node in the new tree.",
+      "paragraphs": [
+        "Before describing edits, a differencer needs to determine which node in the old tree corresponds to which node in the new tree.",
+        "This is the tree-matching problem."
+      ]
+    },
+    {
+      "heading": "69. Mapping ambiguity",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "Repeated structures create multiple plausible mappings.",
+      "paragraphs": [
+        "Repeated structures create multiple plausible mappings.",
+        "For example:",
+        "if (x) log(); if (y) log();",
+        "contains repeated call nodes.",
+        "After one block is moved, determining node identity is not always trivial."
+      ]
+    },
+    {
+      "heading": "70. Mapping quality changes the edit script",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 5,
+      "word_count": 23,
+      "evidence": "A poor mapping can turn:",
+      "paragraphs": [
+        "A poor mapping can turn:",
+        "one move",
+        "into:",
+        "many deletes + many inserts.",
+        "Thus edit-script quality is not determined by operation costs alone."
+      ]
+    },
+    {
+      "heading": "71. APTED and robust tree edit distance",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 3,
+      "word_count": 39,
+      "evidence": "Pawlik and Augsten developed improved algorithms for tree edit distance that choose robust decomposition strategies and control memory usage.",
+      "paragraphs": [
+        "Pawlik and Augsten developed improved algorithms for tree edit distance that choose robust decomposition strategies and control memory usage.",
+        "See Tree edit distance: Robust and memory-efficient .",
+        "These algorithms address exact tree edit distance rather than source-specific developer-intent differencing."
+      ]
+    },
+    {
+      "heading": "72. AST size matters",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 4,
+      "word_count": 23,
+      "evidence": "A source file of:",
+      "paragraphs": [
+        "A source file of:",
+        "1,000 lines",
+        "may contain thousands of AST nodes.",
+        "Pairwise tree distance over a repository can therefore become expensive rapidly."
+      ]
+    },
+    {
+      "heading": "73. Candidate generation before exact tree comparison",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "A scalable system should normally use:",
+      "paragraphs": [
+        "A scalable system should normally use:",
+        "cheap fingerprints / filters | v candidate pairs | v expensive structural comparison.",
+        "This is the same filter-and-verify architecture used in edit-distance indexing and filtering ."
+      ]
+    },
+    {
+      "heading": "74. NiCad",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 3,
+      "word_count": 46,
+      "evidence": "NiCad takes a parser-based but deliberately lightweight approach.",
+      "paragraphs": [
+        "NiCad takes a parser-based but deliberately lightweight approach.",
+        "It uses flexible pretty-printing and normalization so near-miss differences can be compared effectively at the text-line level after syntax-aware transformation.",
+        "See Roy and Cordy, NICAD: Accurate Detection of Near-Miss Intentional Clones Using Flexible Pretty-Printing and Code Normalization ."
+      ]
+    },
+    {
+      "heading": "75. NiCad illustrates a powerful principle",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "A detector does not always need the most sophisticated distance measure.",
+      "paragraphs": [
+        "A detector does not always need the most sophisticated distance measure.",
+        "Sometimes the better strategy is:",
+        "transform code into a representation where a simpler comparison becomes informative."
+      ]
+    },
+    {
+      "heading": "76. Representation engineering can outperform metric complexity",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 3,
+      "word_count": 30,
+      "evidence": "Compare two strategies:",
+      "paragraphs": [
+        "Compare two strategies:",
+        "A: raw text + complex similarity B: careful normalization + simple similarity.",
+        "Depending on the clone type, strategy B can be more robust and easier to scale."
+      ]
+    },
+    {
+      "heading": "77. SourcererCC",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "SourcererCC is a token-based clone detector designed for very large source repositories.",
+      "paragraphs": [
+        "SourcererCC is a token-based clone detector designed for very large source repositories.",
+        "It uses an optimized inverted index and filtering heuristics to reduce candidate comparisons.",
+        "See SourcererCC: Scaling Code Clone Detection to Big Code ."
+      ]
+    },
+    {
+      "heading": "78. SourcererCC demonstrates retrieval architecture",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "source blocks | v token representation | v inverted index | v filtering | v candidate blocks | v token-overlap verification.",
+      "paragraphs": [
+        "source blocks | v token representation | v inverted index | v filtering | v candidate blocks | v token-overlap verification."
+      ]
+    },
+    {
+      "heading": "79. Why all-pairs comparison is impossible at Big Code scale",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 6,
+      "word_count": 16,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "N",
+        "fragments, naïve pairwise comparison requires:",
+        "N(N-1)/2",
+        "comparisons.",
+        "At millions of fragments this is prohibitive."
+      ]
+    },
+    {
+      "heading": "80. Filtering is not merely an optimization",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "At repository scale, candidate retrieval is part of the algorithmic definition of a practical detector.",
+      "paragraphs": [
+        "At repository scale, candidate retrieval is part of the algorithmic definition of a practical detector.",
+        "The challenge becomes:",
+        "eliminate most impossible pairs without eliminating true clones."
+      ]
+    },
+    {
+      "heading": "81. Recall-preserving filters",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "A good filter uses necessary conditions for similarity.",
+      "paragraphs": [
+        "A good filter uses necessary conditions for similarity.",
+        "For example, if a token-overlap threshold is required, fragments with insufficient maximum possible overlap can be rejected without full comparison."
+      ]
+    },
+    {
+      "heading": "82. Heuristic filters",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Other filters trade some recall for speed.",
+      "paragraphs": [
+        "Other filters trade some recall for speed.",
+        "The benchmark must make this trade-off visible."
+      ]
+    },
+    {
+      "heading": "83. Candidate generation and classification should be separated",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Like fuzzy search:",
+      "paragraphs": [
+        "Like fuzzy search:",
+        "retrieval != final similarity judgment.",
+        "A broad candidate generator can prioritize recall while a stronger verifier prioritizes precision."
+      ]
+    },
+    {
+      "heading": "84. Code similarity as information retrieval",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 9,
+      "word_count": 30,
+      "evidence": "A repository can be treated as a collection of code documents.",
+      "paragraphs": [
+        "A repository can be treated as a collection of code documents.",
+        "A query fragment retrieves:",
+        "nearest code fragments.",
+        "This enables:",
+        "clone search;",
+        "example search;",
+        "license analysis;",
+        "bug-pattern search;",
+        "reuse recommendation."
+      ]
+    },
+    {
+      "heading": "85. Search similarity and clone definition are different",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "A code-search system can return loosely related results.",
+      "paragraphs": [
+        "A code-search system can return loosely related results.",
+        "A clone detector usually needs a more explicit relationship.",
+        "Therefore a ranking model cannot automatically be interpreted as a clone classifier."
+      ]
+    },
+    {
+      "heading": "86. BigCloneBench",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "Large-scale clone detection needs curated benchmarks containing realistic clone relationships.",
+      "paragraphs": [
+        "Large-scale clone detection needs curated benchmarks containing realistic clone relationships.",
+        "BigCloneBench was introduced as a benchmark of inter-project Java clones derived from the IJaDataset.",
+        "See Towards a Big Data Curated Benchmark of Inter-Project Code Clones ."
+      ]
+    },
+    {
+      "heading": "87. BigCloneBench evaluation",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Svajlenko and Roy later described systematic evaluation of clone detectors using BigCloneBench.",
+      "paragraphs": [
+        "Svajlenko and Roy later described systematic evaluation of clone detectors using BigCloneBench.",
+        "See Evaluating Clone Detection Tools with BigCloneBench ."
+      ]
+    },
+    {
+      "heading": "88. Precision and recall",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "precision = true clone reports / all clone reports recall = detected true clones / all true clones.",
+      "paragraphs": [
+        "precision = true clone reports / all clone reports recall = detected true clones / all true clones.",
+        "Both matter."
+      ]
+    },
+    {
+      "heading": "89. High recall with unusable precision",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "A detector that reports almost every pair as similar can achieve high recall.",
+      "paragraphs": [
+        "A detector that reports almost every pair as similar can achieve high recall.",
+        "It is operationally useless."
+      ]
+    },
+    {
+      "heading": "90. High precision with tiny recall",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "A detector that reports only byte-identical fragments may have excellent precision while missing most near-miss clones.",
+      "paragraphs": [
+        "A detector that reports only byte-identical fragments may have excellent precision while missing most near-miss clones."
+      ]
+    },
+    {
+      "heading": "91. Clone benchmarks are difficult to construct",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "For a large code corpus, the number of possible fragment pairs is enormous.",
+      "paragraphs": [
+        "For a large code corpus, the number of possible fragment pairs is enormous.",
+        "No human team can manually classify every pair.",
+        "Benchmark construction therefore relies on sampling, search, heuristics, and manual validation."
+      ]
+    },
+    {
+      "heading": "92. Ground truth is representation-dependent",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Humans may disagree about whether two weakly similar fragments should be considered clones.",
+      "paragraphs": [
+        "Humans may disagree about whether two weakly similar fragments should be considered clones.",
+        "This becomes especially difficult near the Type-3/Type-4 boundary."
+      ]
+    },
+    {
+      "heading": "93. Bellon benchmark",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 2,
+      "word_count": 32,
+      "evidence": "Bellon, Koschke, Antoniol, Krinke, and Merlo conducted an influential comparative evaluation of clone-detection tools and built a manually validated corpus of candidate clones.",
+      "paragraphs": [
+        "Bellon, Koschke, Antoniol, Krinke, and Merlo conducted an influential comparative evaluation of clone-detection tools and built a manually validated corpus of candidate clones.",
+        "See Comparison and Evaluation of Clone Detection Tools ."
+      ]
+    },
+    {
+      "heading": "94. Benchmark bias",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "If benchmark candidates were originally generated by particular detector families, the benchmark may overrepresent clone forms those detectors can discover.",
+      "paragraphs": [
+        "If benchmark candidates were originally generated by particular detector families, the benchmark may overrepresent clone forms those detectors can discover.",
+        "This general problem is:",
+        "detector-generated ground truth can inherit detector bias."
+      ]
+    },
+    {
+      "heading": "95. Mutation-based benchmarks",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "Another strategy creates artificial clones through controlled transformations:",
+      "paragraphs": [
+        "Another strategy creates artificial clones through controlled transformations:",
+        "rename identifier change literal insert statement delete statement reorder code.",
+        "This gives exact knowledge of how the clone was generated."
+      ]
+    },
+    {
+      "heading": "96. Synthetic clones are not fully realistic",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Artificial mutation distributions may not reflect real developer edits.",
+      "paragraphs": [
+        "Artificial mutation distributions may not reflect real developer edits.",
+        "A good evaluation should therefore combine:",
+        "real clones + synthetic controlled cases."
+      ]
+    },
+    {
+      "heading": "97. AST similarity can detect refactorings",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 7,
+      "word_count": 21,
+      "evidence": "Examples include:",
+      "paragraphs": [
+        "Examples include:",
+        "method extraction;",
+        "method movement;",
+        "identifier renaming;",
+        "statement insertion;",
+        "statement deletion.",
+        "But each refactoring may require a different structural model."
+      ]
+    },
+    {
+      "heading": "98. Move detection",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "statement block B",
+        "moves from one location to another.",
+        "A line diff may show:",
+        "many deletions + many additions.",
+        "An AST differencer can identify:",
+        "MOVE(B)."
+      ]
+    },
+    {
+      "heading": "99. Move similarity is not universal tree edit distance",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "Adding move as a primitive changes the edit model.",
+      "paragraphs": [
+        "Adding move as a primitive changes the edit model.",
+        "If:",
+        "move cost = 1,",
+        "large structural relocation can become extremely cheap.",
+        "Whether that is desirable depends on the task."
+      ]
+    },
+    {
+      "heading": "100. Function extraction",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "void process() { validate(); normalize(); save(); }",
+        "becoming:",
+        "void process() { prepare(); save(); } void prepare() { validate(); normalize(); }",
+        "Textual distance is substantial.",
+        "The logic represented by:",
+        "validate(); normalize();",
+        "has mostly moved into another method."
+      ]
+    },
+    {
+      "heading": "101. AST-only local comparison can still miss extraction relationships",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "If methods are compared independently, one original method may map to two new methods.",
+      "paragraphs": [
+        "If methods are compared independently, one original method may map to two new methods.",
+        "This is no longer a simple one-tree-to-one-tree problem."
+      ]
+    },
+    {
+      "heading": "102. Program differencing may require graph relationships",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 6,
+      "word_count": 18,
+      "evidence": "Refactoring analysis can require:",
+      "paragraphs": [
+        "Refactoring analysis can require:",
+        "call graphs;",
+        "symbol resolution;",
+        "type information;",
+        "data flow.",
+        "An AST is only one layer."
+      ]
+    },
+    {
+      "heading": "103. Control-flow graph",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "A control-flow graph represents possible execution transitions between program locations.",
+      "paragraphs": [
+        "A control-flow graph represents possible execution transitions between program locations.",
+        "statement | v branch / \\ v v ...",
+        "Two fragments with different syntax can have similar control flow."
+      ]
+    },
+    {
+      "heading": "104. AST and CFG answer different questions",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "AST: How is the program syntactically constructed? CFG: How can control move during execution?",
+      "paragraphs": [
+        "AST: How is the program syntactically constructed? CFG: How can control move during execution?"
+      ]
+    },
+    {
+      "heading": "105. Data-flow graph",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 4,
+      "word_count": 28,
+      "evidence": "Data-flow relationships model how values are defined, transformed, and used.",
+      "paragraphs": [
+        "Data-flow relationships model how values are defined, transformed, and used.",
+        "For example:",
+        "input | v sanitize | v query.",
+        "Renaming variables does not alter the basic dependency structure."
+      ]
+    },
+    {
+      "heading": "106. Data flow can expose semantic similarity",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "Two code fragments may use different variable names and syntax while performing similar sequences of data transformations.",
+      "paragraphs": [
+        "Two code fragments may use different variable names and syntax while performing similar sequences of data transformations.",
+        "This is why structural code models increasingly incorporate data flow."
+      ]
+    },
+    {
+      "heading": "107. Program dependence graph",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 4,
+      "word_count": 23,
+      "evidence": "A program dependence graph combines relationships such as:",
+      "paragraphs": [
+        "A program dependence graph combines relationships such as:",
+        "control dependence;",
+        "data dependence.",
+        "Graph-based matching can detect similarities invisible to text or AST-only methods."
+      ]
+    },
+    {
+      "heading": "108. Graph comparison is more expensive",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Moving from strings to trees to general graphs usually increases algorithmic difficulty.",
+      "paragraphs": [
+        "Moving from strings to trees to general graphs usually increases algorithmic difficulty.",
+        "This is discussed more generally in tree and graph edit distance ."
+      ]
+    },
+    {
+      "heading": "109. Type-4 clones challenge syntax-based methods",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 6,
+      "word_count": 59,
+      "evidence": "Consider two implementations of factorial:",
+      "paragraphs": [
+        "Consider two implementations of factorial:",
+        "int factorial(int n) { int r = 1; for (int i = 2; i <= n; i++) r *= i; return r; }",
+        "and:",
+        "int factorial(int n) { if (n <= 1) return 1; return n * factorial(n - 1); }",
+        "Both compute factorial in the intended domain.",
+        "The syntax trees are radically different."
+      ]
+    },
+    {
+      "heading": "110. AST distance can be large while behavior is similar",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "This illustrates:",
+      "paragraphs": [
+        "This illustrates:",
+        "structural similarity is neither necessary nor sufficient for semantic equivalence."
+      ]
+    },
+    {
+      "heading": "111. Near-identical ASTs can behave differently",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 5,
+      "word_count": 21,
+      "evidence": "if (isAuthorized(user)) allow();",
+      "paragraphs": [
+        "if (isAuthorized(user)) allow();",
+        "versus:",
+        "if (!isAuthorized(user)) allow();",
+        "One inserted negation node creates a tiny structural edit.",
+        "The security semantics are reversed."
+      ]
+    },
+    {
+      "heading": "112. Semantic importance is nonuniform",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 8,
+      "word_count": 33,
+      "evidence": "Uniform edit cost assumes:",
+      "paragraphs": [
+        "Uniform edit cost assumes:",
+        "one changed AST node ≈ one unit of difference.",
+        "Program meaning does not behave that way.",
+        "Changing one node from:",
+        "<",
+        "to:",
+        "<=",
+        "can introduce an important boundary bug."
+      ]
+    },
+    {
+      "heading": "113. One literal can dominate semantics",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 5,
+      "word_count": 20,
+      "evidence": "MAX_RETRIES = 3",
+      "paragraphs": [
+        "MAX_RETRIES = 3",
+        "versus:",
+        "MAX_RETRIES = 3000000.",
+        "The AST difference may be one literal node.",
+        "Operational behavior is very different."
+      ]
+    },
+    {
+      "heading": "114. One API call can dominate semantics",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "hashPassword(password)",
+      "paragraphs": [
+        "hashPassword(password)",
+        "versus:",
+        "storePlaintext(password).",
+        "Syntactic structure can remain highly similar.",
+        "Security meaning does not."
+      ]
+    },
+    {
+      "heading": "115. AST similarity should not be used as proof of software safety",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "A malicious package can copy nearly all legitimate source code and add one harmful statement.",
+      "paragraphs": [
+        "A malicious package can copy nearly all legitimate source code and add one harmful statement.",
+        "This issue is particularly relevant to software supply-chain security ."
+      ]
+    },
+    {
+      "heading": "116. Delta analysis is often more useful than aggregate similarity",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 6,
+      "word_count": 23,
+      "evidence": "If two packages are:",
+      "paragraphs": [
+        "If two packages are:",
+        "99.9% similar,",
+        "the security question is not:",
+        "Are they mostly alike?",
+        "It is:",
+        "What is inside the 0.1% difference?"
+      ]
+    },
+    {
+      "heading": "117. Similarity score hides localization",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "A scalar such as:",
+      "paragraphs": [
+        "A scalar such as:",
+        "0.98 similarity",
+        "does not identify:",
+        "which code differs;",
+        "how it differs;",
+        "whether the difference is security-critical."
+      ]
+    },
+    {
+      "heading": "118. Always preserve the edit script",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "For review applications, return:",
+      "paragraphs": [
+        "For review applications, return:",
+        "similarity score + matching regions + edit script + changed symbols.",
+        "The explanation is often more useful than the scalar."
+      ]
+    },
+    {
+      "heading": "119. Semantic clones",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 7,
+      "word_count": 28,
+      "evidence": "Semantic clone detection attempts to identify programs with similar functionality even when syntactic resemblance becomes weak.",
+      "paragraphs": [
+        "Semantic clone detection attempts to identify programs with similar functionality even when syntactic resemblance becomes weak.",
+        "This can involve:",
+        "program metrics;",
+        "execution traces;",
+        "graphs;",
+        "symbolic representations;",
+        "machine-learned embeddings."
+      ]
+    },
+    {
+      "heading": "120. The “twilight zone”",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 3,
+      "word_count": 44,
+      "evidence": "Saini and colleagues described a difficult region between strongly syntactic Type-3 clones and purely semantic Type-4 clones.",
+      "paragraphs": [
+        "Saini and colleagues described a difficult region between strongly syntactic Type-3 clones and purely semantic Type-4 clones.",
+        "Their Oreo system combines software metrics, information retrieval, and machine learning to target this weakly syntactic region.",
+        "See Oreo: Detection of Clones in the Twilight Zone ."
+      ]
+    },
+    {
+      "heading": "121. Semantic similarity is itself underspecified",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "“Same functionality” can mean:",
+      "paragraphs": [
+        "“Same functionality” can mean:",
+        "same outputs for tested inputs same mathematical function same observable side effects same business purpose same algorithmic intent.",
+        "These are not equivalent definitions."
+      ]
+    },
+    {
+      "heading": "122. Behavioral equivalence",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 8,
+      "word_count": 30,
+      "evidence": "A strong functional relationship might require:",
+      "paragraphs": [
+        "A strong functional relationship might require:",
+        "for every valid input x: A(x) = B(x).",
+        "For stateful programs it may additionally require equivalent:",
+        "state transitions;",
+        "exceptions;",
+        "I/O;",
+        "timing-sensitive effects;",
+        "external calls."
+      ]
+    },
+    {
+      "heading": "123. Tests provide evidence, not universal equivalence",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "If two functions pass the same 1,000 test cases:",
+      "paragraphs": [
+        "If two functions pass the same 1,000 test cases:",
+        "behavior agreed on those 1,000 cases.",
+        "It does not logically establish:",
+        "behavior agrees for every possible input."
+      ]
+    },
+    {
+      "heading": "124. Dynamic behavioral fingerprints",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "Execute both functions on a controlled input set:",
+      "paragraphs": [
+        "Execute both functions on a controlled input set:",
+        "X = {x1,x2,...,xk}.",
+        "Construct:",
+        "F(P) = [ P(x1), P(x2), ... P(xk) ].",
+        "Then compare behavioral fingerprints."
+      ]
+    },
+    {
+      "heading": "125. Behavioral fingerprints depend on the test distribution",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 7,
+      "word_count": 21,
+      "evidence": "Two incorrect implementations can agree on easy inputs while diverging on:",
+      "paragraphs": [
+        "Two incorrect implementations can agree on easy inputs while diverging on:",
+        "boundary cases;",
+        "overflow;",
+        "null input;",
+        "malformed input;",
+        "concurrency;",
+        "large values."
+      ]
+    },
+    {
+      "heading": "126. Side effects complicate behavioral similarity",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 6,
+      "word_count": 27,
+      "evidence": "A function can return the same value while additionally:",
+      "paragraphs": [
+        "A function can return the same value while additionally:",
+        "writing a file;",
+        "sending network traffic;",
+        "logging credentials;",
+        "modifying global state.",
+        "Output equality alone is not semantic equivalence."
+      ]
+    },
+    {
+      "heading": "127. Symbolic execution",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "Symbolic execution can reason about program paths using symbolic inputs instead of enumerating only concrete examples.",
+      "paragraphs": [
+        "Symbolic execution can reason about program paths using symbolic inputs instead of enumerating only concrete examples.",
+        "It can help establish equivalence for bounded or tractable fragments.",
+        "But path explosion limits general scalability."
+      ]
+    },
+    {
+      "heading": "128. Program equivalence is much harder than edit distance",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "For unrestricted general programs, semantic equivalence is not a problem reducible to one simple string metric.",
+      "paragraphs": [
+        "For unrestricted general programs, semantic equivalence is not a problem reducible to one simple string metric.",
+        "This is an essential boundary for any similarity system."
+      ]
+    },
+    {
+      "heading": "129. Neural code representations",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "Modern models can map code into learned vectors:",
+      "paragraphs": [
+        "Modern models can map code into learned vectors:",
+        "code -> embedding z ∈ R^d.",
+        "Similarity is then often measured with cosine similarity or another vector-space measure."
+      ]
+    },
+    {
+      "heading": "130. CodeBERT",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "CodeBERT is a pretrained model designed to learn general-purpose representations for programming language and natural language.",
+      "paragraphs": [
+        "CodeBERT is a pretrained model designed to learn general-purpose representations for programming language and natural language.",
+        "See CodeBERT: A Pre-Trained Model for Programming and Natural Languages ."
+      ]
+    },
+    {
+      "heading": "131. Learned embeddings are not edit distances",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "A model embedding can assign high similarity to syntactically distant code.",
+      "paragraphs": [
+        "A model embedding can assign high similarity to syntactically distant code.",
+        "This is useful for semantic retrieval.",
+        "But:",
+        "embedding similarity != minimum edit count.",
+        "The distinction is developed more generally in learned edit distance and embeddings ."
+      ]
+    },
+    {
+      "heading": "132. Learned similarity depends on training data",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 7,
+      "word_count": 23,
+      "evidence": "A model learns relationships present in:",
+      "paragraphs": [
+        "A model learns relationships present in:",
+        "training repositories;",
+        "pretraining objectives;",
+        "tokenization;",
+        "language distribution;",
+        "fine-tuning labels.",
+        "It is therefore not a universal semantic oracle."
+      ]
+    },
+    {
+      "heading": "133. Embedding similarity can reflect superficial correlations",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "A model may rely partly on:",
+      "paragraphs": [
+        "A model may rely partly on:",
+        "identifier names;",
+        "API names;",
+        "comments;",
+        "common coding templates.",
+        "High embedding similarity should be validated against the actual task."
+      ]
+    },
+    {
+      "heading": "134. Data-flow-aware learned models",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 4,
+      "word_count": 34,
+      "evidence": "GraphCodeBERT extends sequence-oriented code representation by incorporating code data-flow structure during pretraining.",
+      "paragraphs": [
+        "GraphCodeBERT extends sequence-oriented code representation by incorporating code data-flow structure during pretraining.",
+        "This reflects a broader trend:",
+        "tokens + program structure + learned representations.",
+        "But structural attention still does not constitute formal semantic equivalence."
+      ]
+    },
+    {
+      "heading": "135. Cross-language similarity",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "The same algorithm can be implemented in:",
+      "paragraphs": [
+        "The same algorithm can be implemented in:",
+        "Python Java C++ Rust.",
+        "Raw text and language-specific ASTs may differ completely."
+      ]
+    },
+    {
+      "heading": "136. Language-independent intermediate representations",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 6,
+      "word_count": 17,
+      "evidence": "Cross-language analysis can map programs toward:",
+      "paragraphs": [
+        "Cross-language analysis can map programs toward:",
+        "normalized tokens;",
+        "generic AST schemas;",
+        "control-flow representations;",
+        "intermediate representations;",
+        "learned embeddings."
+      ]
+    },
+    {
+      "heading": "137. Generic AST schemas lose language-specific information",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Collapsing several languages into common node categories improves cross-language comparison but can hide important language semantics.",
+      "paragraphs": [
+        "Collapsing several languages into common node categories improves cross-language comparison but can hide important language semantics."
+      ]
+    },
+    {
+      "heading": "138. Compiler IR",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "Compiled languages can sometimes be compared using compiler intermediate representations.",
+      "paragraphs": [
+        "Compiled languages can sometimes be compared using compiler intermediate representations.",
+        "Different source syntax may lower into similar IR patterns.",
+        "However optimization levels can transform the representation heavily."
+      ]
+    },
+    {
+      "heading": "139. Compiler optimization can increase or reduce similarity",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "Inlining, constant folding, loop unrolling, and dead-code elimination can alter structural relationships.",
+      "paragraphs": [
+        "Inlining, constant folding, loop unrolling, and dead-code elimination can alter structural relationships.",
+        "Therefore:",
+        "IR similarity depends on compiler + version + optimization flags."
+      ]
+    },
+    {
+      "heading": "140. Binary similarity is another distinct problem",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "Comparing compiled binaries introduces:",
+      "paragraphs": [
+        "Comparing compiled binaries introduces:",
+        "instruction selection;",
+        "register allocation;",
+        "addresses;",
+        "compiler transformations.",
+        "Source-code similarity results should not automatically be generalized to binary similarity."
+      ]
+    },
+    {
+      "heading": "141. Generated code",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "Generated source can contain enormous repeated structures.",
+      "paragraphs": [
+        "Generated source can contain enormous repeated structures.",
+        "A clone detector may report thousands of technically correct but operationally useless matches.",
+        "Generated code should often be tagged or filtered separately."
+      ]
+    },
+    {
+      "heading": "142. Framework boilerplate",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Framework-generated patterns produce similar code independently across projects.",
+      "paragraphs": [
+        "Framework-generated patterns produce similar code independently across projects.",
+        "Similarity does not imply shared authorship."
+      ]
+    },
+    {
+      "heading": "143. Standard algorithms",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 7,
+      "word_count": 18,
+      "evidence": "Implementations of:",
+      "paragraphs": [
+        "Implementations of:",
+        "binary search;",
+        "quicksort;",
+        "CRC;",
+        "well-known parsing patterns;",
+        "can converge naturally.",
+        "Common algorithm structure weakens provenance inference."
+      ]
+    },
+    {
+      "heading": "144. API constraints create convergent code",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "If a library requires:",
+      "paragraphs": [
+        "If a library requires:",
+        "create() configure() execute() close()",
+        "many independent programs will contain the same call sequence."
+      ]
+    },
+    {
+      "heading": "145. License analysis needs more than clone detection",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 7,
+      "word_count": 22,
+      "evidence": "A similarity detector can identify candidate reused code.",
+      "paragraphs": [
+        "A similarity detector can identify candidate reused code.",
+        "Determining licensing implications requires:",
+        "source provenance;",
+        "license text;",
+        "copyright history;",
+        "jurisdiction;",
+        "actual derivation evidence."
+      ]
+    },
+    {
+      "heading": "146. Similarity is not legal conclusion",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "similar code != copyright infringement.",
+      "paragraphs": [
+        "similar code != copyright infringement.",
+        "The detector can support investigation but should not make legal conclusions automatically."
+      ]
+    },
+    {
+      "heading": "147. Vulnerability clone detection",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Once a vulnerable code fragment is known, clone search can locate structurally similar instances elsewhere.",
+      "paragraphs": [
+        "Once a vulnerable code fragment is known, clone search can locate structurally similar instances elsewhere.",
+        "This can help identify copied bugs."
+      ]
+    },
+    {
+      "heading": "148. Vulnerability patch search",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "AST differencing can derive a patch pattern:",
+      "paragraphs": [
+        "AST differencing can derive a patch pattern:",
+        "before AST -> after AST.",
+        "Repositories can then be searched for related unpatched structures."
+      ]
+    },
+    {
+      "heading": "149. Structural similarity does not guarantee same vulnerability",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 6,
+      "word_count": 9,
+      "evidence": "Context matters:",
+      "paragraphs": [
+        "Context matters:",
+        "input validation;",
+        "callers;",
+        "types;",
+        "environment;",
+        "data-flow constraints."
+      ]
+    },
+    {
+      "heading": "150. One clone can be safe and another unsafe",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Identical helper code may be reachable with attacker-controlled input in one application and only trusted input in another.",
+      "paragraphs": [
+        "Identical helper code may be reachable with attacker-controlled input in one application and only trusted input in another.",
+        "Security is contextual."
+      ]
+    },
+    {
+      "heading": "151. Patch similarity and behavior similarity differ",
+      "level": 2,
+      "id": "ux-section-152",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "Two developers may fix the same vulnerability using completely different syntax.",
+      "paragraphs": [
+        "Two developers may fix the same vulnerability using completely different syntax.",
+        "A patch-clone detector based only on AST distance may miss this relationship."
+      ]
+    },
+    {
+      "heading": "152. Refactoring versus semantic change",
+      "level": 2,
+      "id": "ux-section-153",
+      "paragraph_count": 5,
+      "word_count": 22,
+      "evidence": "Source-history analysis often tries to distinguish:",
+      "paragraphs": [
+        "Source-history analysis often tries to distinguish:",
+        "refactoring",
+        "from:",
+        "behavioral modification.",
+        "AST differencing can provide strong evidence but cannot universally establish behavioral preservation."
+      ]
+    },
+    {
+      "heading": "153. Rename refactoring",
+      "level": 2,
+      "id": "ux-section-154",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "A symbol rename can produce many textual differences:",
+      "paragraphs": [
+        "A symbol rename can produce many textual differences:",
+        "oldName -> newName.",
+        "Symbol-aware analysis can represent the entire operation as one logical refactoring."
+      ]
+    },
+    {
+      "heading": "154. Textual distance overcounts correlated edits",
+      "level": 2,
+      "id": "ux-section-155",
+      "paragraph_count": 5,
+      "word_count": 22,
+      "evidence": "If one identifier occurs 200 times, renaming it can produce:",
+      "paragraphs": [
+        "If one identifier occurs 200 times, renaming it can produce:",
+        "200 substitutions",
+        "at token level.",
+        "A refactoring model sees:",
+        "one rename operation."
+      ]
+    },
+    {
+      "heading": "155. Edit granularity controls distance meaning",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "This is a general principle:",
+      "paragraphs": [
+        "This is a general principle:",
+        "fine-grained operations -> large edit counts high-level operations -> smaller conceptual edit counts."
+      ]
+    },
+    {
+      "heading": "156. There is no universally correct operation vocabulary",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "Possible operations include:",
+      "paragraphs": [
+        "Possible operations include:",
+        "insert character replace token rename identifier move subtree extract method inline method change API.",
+        "Each defines a different distance space."
+      ]
+    },
+    {
+      "heading": "157. Fine-grained distance is objective only relative to its model",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 6,
+      "word_count": 25,
+      "evidence": "A minimum edit path is mathematically exact once:",
+      "paragraphs": [
+        "A minimum edit path is mathematically exact once:",
+        "representation;",
+        "operations;",
+        "costs",
+        "are fixed.",
+        "It is not automatically the uniquely correct interpretation of the developer's change."
+      ]
+    },
+    {
+      "heading": "158. Multiple optimal edit scripts",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "Just as string edit distance can have multiple minimum edit scripts, tree differencing can have multiple equally cheap mappings.",
+      "paragraphs": [
+        "Just as string edit distance can have multiple minimum edit scripts, tree differencing can have multiple equally cheap mappings.",
+        "Repeated code increases ambiguity."
+      ]
+    },
+    {
+      "heading": "159. Tie-breaking matters",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "A differencer should specify how it chooses among equally plausible mappings.",
+      "paragraphs": [
+        "A differencer should specify how it chooses among equally plausible mappings.",
+        "Otherwise output may vary across implementations despite identical distance."
+      ]
+    },
+    {
+      "heading": "160. Stable diffs matter operationally",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "Developers expect small unrelated edits not to completely reorder a diff's interpretation.",
+      "paragraphs": [
+        "Developers expect small unrelated edits not to completely reorder a diff's interpretation.",
+        "Stability can therefore be more important than mathematically minimal operation count."
+      ]
+    },
+    {
+      "heading": "161. Normalized similarity score",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "A distance can be converted into a score such as:",
+      "paragraphs": [
+        "A distance can be converted into a score such as:",
+        "sim(A,B) = 1 - d(A,B) / max(size(A),size(B)).",
+        "But this formula is only one convention."
+      ]
+    },
+    {
+      "heading": "162. Normalization denominator matters",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "Alternatives include:",
+      "paragraphs": [
+        "Alternatives include:",
+        "max size mean size sum size smaller size.",
+        "Different choices produce different numerical interpretations."
+      ]
+    },
+    {
+      "heading": "163. Thresholds are domain-dependent",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 10,
+      "word_count": 24,
+      "evidence": "A rule such as:",
+      "paragraphs": [
+        "A rule such as:",
+        "similarity >= 0.8",
+        "has no universal meaning.",
+        "The appropriate threshold depends on:",
+        "representation;",
+        "fragment size;",
+        "clone type;",
+        "language;",
+        "normalization;",
+        "application."
+      ]
+    },
+    {
+      "heading": "164. Small fragments require stricter thresholds",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "A 90% similarity between ten tokens can arise by chance much more easily than between ten thousand tokens.",
+      "paragraphs": [
+        "A 90% similarity between ten tokens can arise by chance much more easily than between ten thousand tokens.",
+        "Similarity should therefore be interpreted with fragment length."
+      ]
+    },
+    {
+      "heading": "165. Statistical significance of similarity",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 3,
+      "word_count": 30,
+      "evidence": "For provenance analysis, one can ask:",
+      "paragraphs": [
+        "For provenance analysis, one can ask:",
+        "How likely is this amount of similarity under independent code generation?",
+        "This requires a background model of the software domain, not edit distance alone."
+      ]
+    },
+    {
+      "heading": "166. Common language syntax creates a nonuniform background",
+      "level": 2,
+      "id": "ux-section-167",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "Tokens such as:",
+      "paragraphs": [
+        "Tokens such as:",
+        "if return for { } =",
+        "are extremely common.",
+        "Rare identifier or structural sequences can provide stronger evidence than common syntax."
+      ]
+    },
+    {
+      "heading": "167. Weighted information retrieval",
+      "level": 2,
+      "id": "ux-section-168",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "Instead of counting all tokens equally, one can assign inverse-document-frequency-style weights:",
+      "paragraphs": [
+        "Instead of counting all tokens equally, one can assign inverse-document-frequency-style weights:",
+        "idf(t) = log( N / df(t) ).",
+        "Rare tokens receive greater influence."
+      ]
+    },
+    {
+      "heading": "168. Rare does not mean semantically important",
+      "level": 2,
+      "id": "ux-section-169",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "A generated UUID in a comment may be rare but irrelevant.",
+      "paragraphs": [
+        "A generated UUID in a comment may be rare but irrelevant.",
+        "Weighting should remain representation-aware."
+      ]
+    },
+    {
+      "heading": "169. Clone genealogies",
+      "level": 2,
+      "id": "ux-section-170",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "Once clones are discovered across version history, one can track:",
+      "paragraphs": [
+        "Once clones are discovered across version history, one can track:",
+        "origin copy modification divergence deletion.",
+        "This creates clone genealogies."
+      ]
+    },
+    {
+      "heading": "170. Temporal evidence helps provenance inference",
+      "level": 2,
+      "id": "ux-section-171",
+      "paragraph_count": 2,
+      "word_count": 31,
+      "evidence": "If fragment A appears years before fragment B, A is a more plausible source than B.",
+      "paragraphs": [
+        "If fragment A appears years before fragment B, A is a more plausible source than B.",
+        "But chronology alone does not prove direct copying because both may derive from another source."
+      ]
+    },
+    {
+      "heading": "171. Version history changes clone analysis",
+      "level": 2,
+      "id": "ux-section-172",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "A detector operating only on current snapshots cannot see:",
+      "paragraphs": [
+        "A detector operating only on current snapshots cannot see:",
+        "when code appeared;",
+        "when it diverged;",
+        "which repository first contained it."
+      ]
+    },
+    {
+      "heading": "172. Repository forks",
+      "level": 2,
+      "id": "ux-section-173",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Forks naturally contain massive clone relationships.",
+      "paragraphs": [
+        "Forks naturally contain massive clone relationships.",
+        "A clone detector without repository genealogy can treat ordinary fork inheritance as suspicious duplication."
+      ]
+    },
+    {
+      "heading": "173. Deduplicate known forks before cross-project analysis",
+      "level": 2,
+      "id": "ux-section-174",
+      "paragraph_count": 6,
+      "word_count": 16,
+      "evidence": "For large-scale provenance studies, identify:",
+      "paragraphs": [
+        "For large-scale provenance studies, identify:",
+        "fork relationships;",
+        "mirrors;",
+        "vendor copies;",
+        "generated bundles.",
+        "before interpreting clone counts."
+      ]
+    },
+    {
+      "heading": "174. Third-party vendoring",
+      "level": 2,
+      "id": "ux-section-175",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "Repositories often copy dependencies directly into:",
+      "paragraphs": [
+        "Repositories often copy dependencies directly into:",
+        "vendor/ third_party/ external/.",
+        "These similarities may be intentional and licensed."
+      ]
+    },
+    {
+      "heading": "175. Path information can be useful metadata",
+      "level": 2,
+      "id": "ux-section-176",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "A clone inside:",
+      "paragraphs": [
+        "A clone inside:",
+        "third_party/",
+        "has different provenance implications from a clone inside an independently named application module."
+      ]
+    },
+    {
+      "heading": "176. Comments can be weak or strong evidence",
+      "level": 2,
+      "id": "ux-section-177",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "Comments are usually discarded for structural clone detection.",
+      "paragraphs": [
+        "Comments are usually discarded for structural clone detection.",
+        "For provenance investigation, an unusual identical comment or typo can be valuable evidence.",
+        "Thus a system may maintain both:",
+        "semantic-normalized representation and forensic raw representation."
+      ]
+    },
+    {
+      "heading": "177. Security-sensitive Unicode",
+      "level": 2,
+      "id": "ux-section-178",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "Identifiers can contain visually confusable Unicode characters.",
+      "paragraphs": [
+        "Identifiers can contain visually confusable Unicode characters.",
+        "Two source fragments can look nearly identical while token identities differ.",
+        "This is covered in Unicode homoglyph and confusable attacks ."
+      ]
+    },
+    {
+      "heading": "178. Normalize Unicode carefully",
+      "level": 2,
+      "id": "ux-section-179",
+      "paragraph_count": 4,
+      "word_count": 21,
+      "evidence": "Unicode canonical normalization can eliminate representation-only differences.",
+      "paragraphs": [
+        "Unicode canonical normalization can eliminate representation-only differences.",
+        "But:",
+        "normalization != confusable detection.",
+        "Source-code security needs both where Unicode identifiers are allowed."
+      ]
+    },
+    {
+      "heading": "179. AST parser must see the actual compiler semantics",
+      "level": 2,
+      "id": "ux-section-180",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "If a comparison parser interprets source differently from the production compiler, AST-based analysis may become misleading.",
+      "paragraphs": [
+        "If a comparison parser interprets source differently from the production compiler, AST-based analysis may become misleading.",
+        "Language-version compatibility matters."
+      ]
+    },
+    {
+      "heading": "180. Preprocessor languages complicate parsing",
+      "level": 2,
+      "id": "ux-section-181",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "C and C++ source can depend heavily on:",
+      "paragraphs": [
+        "C and C++ source can depend heavily on:",
+        "macros;",
+        "conditional compilation;",
+        "include files.",
+        "The raw source AST and post-preprocessing AST can be very different."
+      ]
+    },
+    {
+      "heading": "181. Compare preprocessor configuration explicitly",
+      "level": 2,
+      "id": "ux-section-182",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "The same file can compile into different programs under:",
+      "paragraphs": [
+        "The same file can compile into different programs under:",
+        "-DDEBUG -DPLATFORM_X -DFEATURE_Y.",
+        "A syntax comparison without configuration may not represent deployed behavior."
+      ]
+    },
+    {
+      "heading": "182. Generated macro code",
+      "level": 2,
+      "id": "ux-section-183",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "One macro definition can expand into many repeated structures.",
+      "paragraphs": [
+        "One macro definition can expand into many repeated structures.",
+        "Clone detection after expansion can therefore greatly inflate duplicate counts."
+      ]
+    },
+    {
+      "heading": "183. Template and generic instantiation",
+      "level": 2,
+      "id": "ux-section-184",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Compilers may instantiate many specialized versions of one generic definition.",
+      "paragraphs": [
+        "Compilers may instantiate many specialized versions of one generic definition.",
+        "Similarity at generated IR level can therefore reflect compiler expansion rather than developer duplication."
+      ]
+    },
+    {
+      "heading": "184. Code formatting tools can collapse Type-1 differences",
+      "level": 2,
+      "id": "ux-section-185",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "If every fragment is passed through a deterministic formatter:",
+      "paragraphs": [
+        "If every fragment is passed through a deterministic formatter:",
+        "formatting variability -> canonical layout.",
+        "Then simple line comparisons become much more informative."
+      ]
+    },
+    {
+      "heading": "185. Formatter version must be recorded",
+      "level": 2,
+      "id": "ux-section-186",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "Formatting output can change across versions.",
+      "paragraphs": [
+        "Formatting output can change across versions.",
+        "Reproducible analysis should record:",
+        "formatter;",
+        "version;",
+        "configuration."
+      ]
+    },
+    {
+      "heading": "186. Parser configuration must also be recorded",
+      "level": 2,
+      "id": "ux-section-187",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "Report:",
+      "paragraphs": [
+        "Report:",
+        "language version parser parser version preprocessor flags normalization rules.",
+        "Otherwise AST similarity results may not be reproducible."
+      ]
+    },
+    {
+      "heading": "187. Benchmark multiple representations",
+      "level": 2,
+      "id": "ux-section-188",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "A rigorous similarity study can compare:",
+      "paragraphs": [
+        "A rigorous similarity study can compare:",
+        "raw text normalized text tokens normalized tokens AST learned embedding.",
+        "This reveals which representation provides the useful invariances."
+      ]
+    },
+    {
+      "heading": "188. Ablation testing",
+      "level": 2,
+      "id": "ux-section-189",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "Remove individual preprocessing steps:",
+      "paragraphs": [
+        "Remove individual preprocessing steps:",
+        "without comment removal without identifier normalization without literal normalization without AST abstraction.",
+        "Measure the effect on precision and recall."
+      ]
+    },
+    {
+      "heading": "189. Do not hide preprocessing inside the detector",
+      "level": 2,
+      "id": "ux-section-190",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "A reported “similarity algorithm” can owe much of its performance to normalization rather than the final comparison function.",
+      "paragraphs": [
+        "A reported “similarity algorithm” can owe much of its performance to normalization rather than the final comparison function.",
+        "Document both."
+      ]
+    },
+    {
+      "heading": "190. Runtime benchmark",
+      "level": 2,
+      "id": "ux-section-191",
+      "paragraph_count": 7,
+      "word_count": 14,
+      "evidence": "Report:",
+      "paragraphs": [
+        "Report:",
+        "parsing time;",
+        "index construction time;",
+        "query time;",
+        "verification time;",
+        "peak memory;",
+        "index size."
+      ]
+    },
+    {
+      "heading": "191. Throughput benchmark",
+      "level": 2,
+      "id": "ux-section-192",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "For large repositories, useful measures include:",
+      "paragraphs": [
+        "For large repositories, useful measures include:",
+        "files / second functions / second million lines / hour candidate pairs / query."
+      ]
+    },
+    {
+      "heading": "192. Scaling curve",
+      "level": 2,
+      "id": "ux-section-193",
+      "paragraph_count": 4,
+      "word_count": 18,
+      "evidence": "Do not report only one corpus size.",
+      "paragraphs": [
+        "Do not report only one corpus size.",
+        "Measure:",
+        "10^3 fragments 10^4 10^5 10^6 ...",
+        "to reveal algorithmic scaling."
+      ]
+    },
+    {
+      "heading": "193. Candidate explosion",
+      "level": 2,
+      "id": "ux-section-194",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "Highly repetitive corpora can produce many near matches.",
+      "paragraphs": [
+        "Highly repetitive corpora can produce many near matches.",
+        "Even efficient indexes can degrade when:",
+        "almost everything resembles everything else."
+      ]
+    },
+    {
+      "heading": "194. Boilerplate-aware filters",
+      "level": 2,
+      "id": "ux-section-195",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "One mitigation is to downweight or remove highly frequent fragments.",
+      "paragraphs": [
+        "One mitigation is to downweight or remove highly frequent fragments.",
+        "But this risks hiding real vulnerabilities copied inside boilerplate."
+      ]
+    },
+    {
+      "heading": "195. Precision should be stratified by clone type",
+      "level": 2,
+      "id": "ux-section-196",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "A single aggregate score can hide behavior such as:",
+      "paragraphs": [
+        "A single aggregate score can hide behavior such as:",
+        "excellent Type-1 recall good Type-2 recall poor Type-3 recall almost no Type-4 recall."
+      ]
+    },
+    {
+      "heading": "196. Recall should also be stratified by similarity strength",
+      "level": 2,
+      "id": "ux-section-197",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "BigCloneBench-based studies often distinguish strong and weak syntactic clone relationships because difficulty changes across the spectrum.",
+      "paragraphs": [
+        "BigCloneBench-based studies often distinguish strong and weak syntactic clone relationships because difficulty changes across the spectrum."
+      ]
+    },
+    {
+      "heading": "197. Inter-project versus intra-project clones",
+      "level": 2,
+      "id": "ux-section-198",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "Intra-project clone search asks:",
+      "paragraphs": [
+        "Intra-project clone search asks:",
+        "Where is code duplicated inside one software system?",
+        "Inter-project clone search asks:",
+        "Where does similar code occur across projects?",
+        "The latter requires much greater scaling and provenance context."
+      ]
+    },
+    {
+      "heading": "198. Clone management",
+      "level": 2,
+      "id": "ux-section-199",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "Detection is only the first stage.",
+      "paragraphs": [
+        "Detection is only the first stage.",
+        "Teams may need to:",
+        "track clones;",
+        "synchronize fixes;",
+        "refactor duplicate code;",
+        "document intentional duplication."
+      ]
+    },
+    {
+      "heading": "199. Duplicate code is not always bad",
+      "level": 2,
+      "id": "ux-section-200",
+      "paragraph_count": 7,
+      "word_count": 24,
+      "evidence": "Cloning can sometimes be intentional because of:",
+      "paragraphs": [
+        "Cloning can sometimes be intentional because of:",
+        "performance;",
+        "platform isolation;",
+        "dependency avoidance;",
+        "generated code;",
+        "temporary development strategy.",
+        "Clone detection should not automatically trigger refactoring."
+      ]
+    },
+    {
+      "heading": "200. Refactoring clones can increase coupling",
+      "level": 2,
+      "id": "ux-section-201",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "Combining two superficially similar fragments into one abstraction can create a bad abstraction if their future evolution differs.",
+      "paragraphs": [
+        "Combining two superficially similar fragments into one abstraction can create a bad abstraction if their future evolution differs.",
+        "Similarity is not proof that deduplication is architecturally correct."
+      ]
+    },
+    {
+      "heading": "201. Clone divergence",
+      "level": 2,
+      "id": "ux-section-202",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "Duplicated fragments can gradually evolve independently.",
+      "paragraphs": [
+        "Duplicated fragments can gradually evolve independently.",
+        "This produces:",
+        "original clone | +---- branch A changes | +---- branch B changes.",
+        "Type-3 clones often arise through this process."
+      ]
+    },
+    {
+      "heading": "202. Inconsistent clone updates",
+      "level": 2,
+      "id": "ux-section-203",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "A bug fix may be applied to one copy but not another.",
+      "paragraphs": [
+        "A bug fix may be applied to one copy but not another.",
+        "Clone detection can locate sibling fragments requiring review."
+      ]
+    },
+    {
+      "heading": "203. AST differencing helps compare clone evolution",
+      "level": 2,
+      "id": "ux-section-204",
+      "paragraph_count": 4,
+      "word_count": 30,
+      "evidence": "Given clone versions:",
+      "paragraphs": [
+        "Given clone versions:",
+        "A_old -> A_new B_old -> B_new,",
+        "compare their structural edit scripts.",
+        "If one branch receives a security fix and the other does not, the difference becomes visible."
+      ]
+    },
+    {
+      "heading": "204. Patch-equivalence detection",
+      "level": 2,
+      "id": "ux-section-205",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "Two patches may be structurally equivalent despite applying to renamed code.",
+      "paragraphs": [
+        "Two patches may be structurally equivalent despite applying to renamed code.",
+        "Normalize identifiers and compare AST edit patterns rather than raw textual patches."
+      ]
+    },
+    {
+      "heading": "205. But equivalent edit scripts do not guarantee equivalent effects",
+      "level": 2,
+      "id": "ux-section-206",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "The surrounding types, APIs, and control flow may differ.",
+      "paragraphs": [
+        "The surrounding types, APIs, and control flow may differ.",
+        "Patch interpretation remains contextual."
+      ]
+    },
+    {
+      "heading": "206. Code review application",
+      "level": 2,
+      "id": "ux-section-207",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "A syntax-aware diff can answer:",
+      "paragraphs": [
+        "A syntax-aware diff can answer:",
+        "Which expression changed? Which method moved? Which identifier was renamed? Which condition was inserted?",
+        "This can reduce noise compared with line-only diffs."
+      ]
+    },
+    {
+      "heading": "207. Reviewers should still see textual context",
+      "level": 2,
+      "id": "ux-section-208",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "An AST omits some source-level information.",
+      "paragraphs": [
+        "An AST omits some source-level information.",
+        "A good interface combines:",
+        "structural edit + original source text."
+      ]
+    },
+    {
+      "heading": "208. Comments can matter operationally",
+      "level": 2,
+      "id": "ux-section-209",
+      "paragraph_count": 5,
+      "word_count": 26,
+      "evidence": "Changing:",
+      "paragraphs": [
+        "Changing:",
+        "// temporary workaround; remove after migration",
+        "may not change AST at all.",
+        "But documentation meaning has changed.",
+        "AST differencing should not replace all textual review."
+      ]
+    },
+    {
+      "heading": "209. API migration",
+      "level": 2,
+      "id": "ux-section-210",
+      "paragraph_count": 2,
+      "word_count": 32,
+      "evidence": "AST or symbol-aware matching can identify repeated calls to an outdated API and map them to a migration pattern.",
+      "paragraphs": [
+        "AST or symbol-aware matching can identify repeated calls to an outdated API and map them to a migration pattern.",
+        "This is a semantic use of structural matching rather than ordinary clone detection."
+      ]
+    },
+    {
+      "heading": "210. Code transformation systems",
+      "level": 2,
+      "id": "ux-section-211",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "Structural patterns can define:",
+      "paragraphs": [
+        "Structural patterns can define:",
+        "match AST pattern -> rewrite AST pattern.",
+        "This is useful for automated refactoring."
+      ]
+    },
+    {
+      "heading": "211. Exact AST matching is often preferable for automated rewrite",
+      "level": 2,
+      "id": "ux-section-212",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "Fuzzy similarity is useful for retrieval.",
+      "paragraphs": [
+        "Fuzzy similarity is useful for retrieval.",
+        "Automated transformation requires stronger guarantees that the intended syntax pattern is present."
+      ]
+    },
+    {
+      "heading": "212. Retrieval versus rewriting",
+      "level": 2,
+      "id": "ux-section-213",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "FUZZY SEARCH: false positive can be reviewed. AUTOMATED REWRITE: false positive may modify software incorrectly.",
+      "paragraphs": [
+        "FUZZY SEARCH: false positive can be reviewed. AUTOMATED REWRITE: false positive may modify software incorrectly.",
+        "Thresholds should therefore be much stricter for automated actions."
+      ]
+    },
+    {
+      "heading": "213. Detection architecture",
+      "level": 2,
+      "id": "ux-section-214",
+      "paragraph_count": 1,
+      "word_count": 63,
+      "evidence": "SOURCE CORPUS | v language detection | v parse / tokenize | +--------------------+ | | v v normalized tokens AST | | v v fingerprints structural features | | +---------+----------+ | v INDEX | v candidate retrieval | +-------+-------+ | | v v token verifier AST verifier | | +-------+-------+ | v optional semantic model | v ranked matches | v human/task interpretation.",
+      "paragraphs": [
+        "SOURCE CORPUS | v language detection | v parse / tokenize | +--------------------+ | | v v normalized tokens AST | | v v fingerprints structural features | | +---------+----------+ | v INDEX | v candidate retrieval | +-------+-------+ | | v v token verifier AST verifier | | +-------+-------+ | v optional semantic model | v ranked matches | v human/task interpretation."
+      ]
+    },
+    {
+      "heading": "214. Reference pseudocode: token normalization",
+      "level": 2,
+      "id": "ux-section-215",
+      "paragraph_count": 1,
+      "word_count": 59,
+      "evidence": "function normalize_tokens(source): tokens = lex(source) map_identifier = {} next_id = 1 output = [] for token in tokens: if token is comment: continue if token is identifier: if token.value not in map_identifier: map_identifier[token.value] = \"ID_\" + next_id next_id += 1 output.append( map_identifier[token.value] ) else if token is integer_literal: output.append(\"INT_LITERAL\") else if token is string_literal: output.append(\"STRING_LITERAL\") else: output.append(token.kind) return output",
+      "paragraphs": [
+        "function normalize_tokens(source): tokens = lex(source) map_identifier = {} next_id = 1 output = [] for token in tokens: if token is comment: continue if token is identifier: if token.value not in map_identifier: map_identifier[token.value] = \"ID_\" + next_id next_id += 1 output.append( map_identifier[token.value] ) else if token is integer_literal: output.append(\"INT_LITERAL\") else if token is string_literal: output.append(\"STRING_LITERAL\") else: output.append(token.kind) return output"
+      ]
+    },
+    {
+      "heading": "215. This normalization is task-specific",
+      "level": 2,
+      "id": "ux-section-216",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "It is appropriate for finding renamed clones.",
+      "paragraphs": [
+        "It is appropriate for finding renamed clones.",
+        "It is inappropriate when exact constants or names are security-sensitive."
+      ]
+    },
+    {
+      "heading": "216. Reference pseudocode: token edit similarity",
+      "level": 2,
+      "id": "ux-section-217",
+      "paragraph_count": 2,
+      "word_count": 33,
+      "evidence": "function token_similarity(a, b): A = normalize_tokens(a) B = normalize_tokens(b) d = levenshtein(A, B) return 1 - d / max( length(A), length(B) )",
+      "paragraphs": [
+        "function token_similarity(a, b): A = normalize_tokens(a) B = normalize_tokens(b) d = levenshtein(A, B) return 1 - d / max( length(A), length(B) )",
+        "The normalization formula is a convention rather than a universal standard."
+      ]
+    },
+    {
+      "heading": "217. Reference pseudocode: AST feature vector",
+      "level": 2,
+      "id": "ux-section-218",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "function ast_feature_vector(tree): vector = zero_vector(NUM_NODE_TYPES) walk(tree): vector[ node_type(node) ] += 1 return vector",
+      "paragraphs": [
+        "function ast_feature_vector(tree): vector = zero_vector(NUM_NODE_TYPES) walk(tree): vector[ node_type(node) ] += 1 return vector"
+      ]
+    },
+    {
+      "heading": "218. Vector similarity",
+      "level": 2,
+      "id": "ux-section-219",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "sim(T1,T2) = cosine( vector(T1), vector(T2) ).",
+      "paragraphs": [
+        "sim(T1,T2) = cosine( vector(T1), vector(T2) ).",
+        "This captures node-distribution similarity but not complete tree arrangement."
+      ]
+    },
+    {
+      "heading": "219. Reference pseudocode: structural verification",
+      "level": 2,
+      "id": "ux-section-220",
+      "paragraph_count": 1,
+      "word_count": 24,
+      "evidence": "function verify_ast_candidate( tree_a, tree_b, threshold ): d = tree_edit_distance( tree_a, tree_b ) norm = d / max( node_count(tree_a), node_count(tree_b) ) return norm <= threshold",
+      "paragraphs": [
+        "function verify_ast_candidate( tree_a, tree_b, threshold ): d = tree_edit_distance( tree_a, tree_b ) norm = d / max( node_count(tree_a), node_count(tree_b) ) return norm <= threshold"
+      ]
+    },
+    {
+      "heading": "220. Exact tree distance need not be the final verifier",
+      "level": 2,
+      "id": "ux-section-221",
+      "paragraph_count": 6,
+      "word_count": 14,
+      "evidence": "Other verifiers can use:",
+      "paragraphs": [
+        "Other verifiers can use:",
+        "subtree matching;",
+        "token overlap;",
+        "GumTree mappings;",
+        "graph similarity;",
+        "learned models."
+      ]
+    },
+    {
+      "heading": "221. Hybrid similarity model",
+      "level": 2,
+      "id": "ux-section-222",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "S = w1 * token_similarity + w2 * ast_similarity + w3 * dataflow_similarity + w4 * embedding_similarity.",
+      "paragraphs": [
+        "S = w1 * token_similarity + w2 * ast_similarity + w3 * dataflow_similarity + w4 * embedding_similarity.",
+        "This can improve retrieval but introduces calibration and interpretability challenges."
+      ]
+    },
+    {
+      "heading": "222. Do not average incompatible scales blindly",
+      "level": 2,
+      "id": "ux-section-223",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "If one component lies in:",
+      "paragraphs": [
+        "If one component lies in:",
+        "[0,1]",
+        "and another is an unbounded distance, weights have no clear meaning until the features are normalized."
+      ]
+    },
+    {
+      "heading": "223. Calibrate against the downstream task",
+      "level": 2,
+      "id": "ux-section-224",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "Possible tasks include:",
+      "paragraphs": [
+        "Possible tasks include:",
+        "copy detection refactoring bug clone search code recommendation license review security review.",
+        "Each may need a different similarity model."
+      ]
+    },
+    {
+      "heading": "224. Common failure mode: raw Levenshtein is source-code semantics",
+      "level": 2,
+      "id": "ux-section-225",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "Raw edit distance measures textual sequence edits."
+      ]
+    },
+    {
+      "heading": "225. Common failure mode: whitespace difference means code difference",
+      "level": 2,
+      "id": "ux-section-226",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Formatting often has no effect on parsed structure.",
+      "paragraphs": [
+        "Formatting often has no effect on parsed structure."
+      ]
+    },
+    {
+      "heading": "226. Common failure mode: comments are always irrelevant",
+      "level": 2,
+      "id": "ux-section-227",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Comments are irrelevant to executable syntax but may matter for provenance, documentation, and review.",
+      "paragraphs": [
+        "Comments are irrelevant to executable syntax but may matter for provenance, documentation, and review."
+      ]
+    },
+    {
+      "heading": "227. Common failure mode: variable renaming means different logic",
+      "level": 2,
+      "id": "ux-section-228",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Identifier normalization can reveal structurally identical code beneath renaming.",
+      "paragraphs": [
+        "Identifier normalization can reveal structurally identical code beneath renaming."
+      ]
+    },
+    {
+      "heading": "228. Common failure mode: identifier normalization is always safe",
+      "level": 2,
+      "id": "ux-section-229",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Alias relationships and security-sensitive identifiers can make names important.",
+      "paragraphs": [
+        "Alias relationships and security-sensitive identifiers can make names important."
+      ]
+    },
+    {
+      "heading": "229. Common failure mode: literal normalization preserves meaning",
+      "level": 2,
+      "id": "ux-section-230",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Changing one numeric constant can radically alter behavior.",
+      "paragraphs": [
+        "Changing one numeric constant can radically alter behavior."
+      ]
+    },
+    {
+      "heading": "230. Common failure mode: token multiset similarity preserves execution order",
+      "level": 2,
+      "id": "ux-section-231",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "Token bags discard ordering.",
+      "paragraphs": [
+        "Token bags discard ordering."
+      ]
+    },
+    {
+      "heading": "231. Common failure mode: AST equality means semantic equality",
+      "level": 2,
+      "id": "ux-section-232",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "AST nodes can refer to different symbols, types, external functions, or runtime contexts.",
+      "paragraphs": [
+        "AST nodes can refer to different symbols, types, external functions, or runtime contexts."
+      ]
+    },
+    {
+      "heading": "232. Common failure mode: similar AST means same behavior",
+      "level": 2,
+      "id": "ux-section-233",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "A single changed operator or condition can reverse behavior.",
+      "paragraphs": [
+        "A single changed operator or condition can reverse behavior."
+      ]
+    },
+    {
+      "heading": "233. Common failure mode: very different ASTs mean different behavior",
+      "level": 2,
+      "id": "ux-section-234",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Iterative and recursive implementations can compute the same function.",
+      "paragraphs": [
+        "Iterative and recursive implementations can compute the same function."
+      ]
+    },
+    {
+      "heading": "234. Common failure mode: tree edit distance understands algebra",
+      "level": 2,
+      "id": "ux-section-235",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Standard ordered-tree distance does not automatically know that some operators are commutative or associative.",
+      "paragraphs": [
+        "Standard ordered-tree distance does not automatically know that some operators are commutative or associative."
+      ]
+    },
+    {
+      "heading": "235. Common failure mode: GumTree computes exact classical tree edit distance",
+      "level": 2,
+      "id": "ux-section-236",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "GumTree is a source-code differencing algorithm designed to infer useful AST mappings and edit scripts including moves.",
+      "paragraphs": [
+        "GumTree is a source-code differencing algorithm designed to infer useful AST mappings and edit scripts including moves."
+      ]
+    },
+    {
+      "heading": "236. Common failure mode: Deckard is exact AST edit distance",
+      "level": 2,
+      "id": "ux-section-237",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Deckard uses structural vectors and similarity clustering.",
+      "paragraphs": [
+        "Deckard uses structural vectors and similarity clustering."
+      ]
+    },
+    {
+      "heading": "237. Common failure mode: MOSS proves plagiarism",
+      "level": 2,
+      "id": "ux-section-238",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "MOSS itself explicitly warns against this interpretation.",
+      "paragraphs": [
+        "MOSS itself explicitly warns against this interpretation.",
+        "It detects suspicious similarity that requires human evaluation."
+      ]
+    },
+    {
+      "heading": "238. Common failure mode: code clone means illegal copying",
+      "level": 2,
+      "id": "ux-section-239",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "A clone is a software similarity relationship, not a legal conclusion.",
+      "paragraphs": [
+        "A clone is a software similarity relationship, not a legal conclusion."
+      ]
+    },
+    {
+      "heading": "239. Common failure mode: Type-4 clone has one universal formal definition",
+      "level": 2,
+      "id": "ux-section-240",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Semantic clone terminology varies by benchmark and research tradition.",
+      "paragraphs": [
+        "Semantic clone terminology varies by benchmark and research tradition."
+      ]
+    },
+    {
+      "heading": "240. Common failure mode: high aggregate similarity proves safety",
+      "level": 2,
+      "id": "ux-section-241",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "One tiny malicious difference can matter more than thousands of identical lines.",
+      "paragraphs": [
+        "One tiny malicious difference can matter more than thousands of identical lines."
+      ]
+    },
+    {
+      "heading": "241. Common failure mode: low aggregate similarity proves unrelated functionality",
+      "level": 2,
+      "id": "ux-section-242",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Alternative algorithms can implement the same behavior.",
+      "paragraphs": [
+        "Alternative algorithms can implement the same behavior."
+      ]
+    },
+    {
+      "heading": "242. Common failure mode: test agreement proves universal equivalence",
+      "level": 2,
+      "id": "ux-section-243",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Tests cover observed cases, not all possible execution states.",
+      "paragraphs": [
+        "Tests cover observed cases, not all possible execution states."
+      ]
+    },
+    {
+      "heading": "243. Common failure mode: embedding similarity is semantic proof",
+      "level": 2,
+      "id": "ux-section-244",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Embeddings are learned statistical representations.",
+      "paragraphs": [
+        "Embeddings are learned statistical representations."
+      ]
+    },
+    {
+      "heading": "244. Common failure mode: same embedding neighborhood means copied code",
+      "level": 2,
+      "id": "ux-section-245",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Models can place independently written solutions to the same problem near one another.",
+      "paragraphs": [
+        "Models can place independently written solutions to the same problem near one another."
+      ]
+    },
+    {
+      "heading": "245. Common failure mode: exact text match proves direct copying",
+      "level": 2,
+      "id": "ux-section-246",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Both fragments may originate from a standard template or common third-party source.",
+      "paragraphs": [
+        "Both fragments may originate from a standard template or common third-party source."
+      ]
+    },
+    {
+      "heading": "246. Common failure mode: earliest observed repository proves authorship",
+      "level": 2,
+      "id": "ux-section-247",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Earlier unseen or private sources may exist.",
+      "paragraphs": [
+        "Earlier unseen or private sources may exist."
+      ]
+    },
+    {
+      "heading": "247. Common failure mode: all duplicate code should be refactored",
+      "level": 2,
+      "id": "ux-section-248",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Duplication can sometimes be intentional and safer than premature abstraction.",
+      "paragraphs": [
+        "Duplication can sometimes be intentional and safer than premature abstraction."
+      ]
+    },
+    {
+      "heading": "248. Common failure mode: all ASTs are comparable across parsers",
+      "level": 2,
+      "id": "ux-section-249",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Parser representations and grammar versions differ.",
+      "paragraphs": [
+        "Parser representations and grammar versions differ."
+      ]
+    },
+    {
+      "heading": "249. Common failure mode: parsing source once represents every build",
+      "level": 2,
+      "id": "ux-section-250",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Preprocessor options and language configuration can produce different programs.",
+      "paragraphs": [
+        "Preprocessor options and language configuration can produce different programs."
+      ]
+    },
+    {
+      "heading": "250. Common failure mode: generated code clones indicate developer copying",
+      "level": 2,
+      "id": "ux-section-251",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Generators naturally produce repeated structures.",
+      "paragraphs": [
+        "Generators naturally produce repeated structures."
+      ]
+    },
+    {
+      "heading": "251. Common failure mode: scalar similarity is sufficient for review",
+      "level": 2,
+      "id": "ux-section-252",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Reviewers need localization and edit explanations.",
+      "paragraphs": [
+        "Reviewers need localization and edit explanations."
+      ]
+    },
+    {
+      "heading": "252. Common failure mode: one threshold works for every fragment size",
+      "level": 2,
+      "id": "ux-section-253",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Short fragments have much higher accidental similarity rates.",
+      "paragraphs": [
+        "Short fragments have much higher accidental similarity rates."
+      ]
+    },
+    {
+      "heading": "253. Common failure mode: one threshold works across languages",
+      "level": 2,
+      "id": "ux-section-254",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Syntax density, token distributions, and parser representations differ.",
+      "paragraphs": [
+        "Syntax density, token distributions, and parser representations differ."
+      ]
+    },
+    {
+      "heading": "254. Common failure mode: one detector should dominate every clone type",
+      "level": 2,
+      "id": "ux-section-255",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Different representations are optimized for different invariances.",
+      "paragraphs": [
+        "Different representations are optimized for different invariances."
+      ]
+    },
+    {
+      "heading": "255. Decision table: representation",
+      "level": 2,
+      "id": "ux-section-256",
+      "paragraph_count": 1,
+      "word_count": 60,
+      "evidence": "Goal Recommended starting representation Exact copied text Text/fingerprint Formatting-insensitive copies Normalized text or tokens Renamed clones Normalized tokens Near-miss statement changes Token or parser-based clone detector Structural refactoring AST mapping/differencing Move detection AST differencer such as GumTree-style approach Very large clone corpus Indexed tokens/fingerprints/structural vectors Weak syntax / similar functionality Graphs, behavioral features, learned representations Formal equivalence Program analysis/proof methods",
+      "paragraphs": [
+        "Goal Recommended starting representation Exact copied text Text/fingerprint Formatting-insensitive copies Normalized text or tokens Renamed clones Normalized tokens Near-miss statement changes Token or parser-based clone detector Structural refactoring AST mapping/differencing Move detection AST differencer such as GumTree-style approach Very large clone corpus Indexed tokens/fingerprints/structural vectors Weak syntax / similar functionality Graphs, behavioral features, learned representations Formal equivalence Program analysis/proof methods"
+      ]
+    },
+    {
+      "heading": "256. Decision table: classical tools",
+      "level": 2,
+      "id": "ux-section-257",
+      "paragraph_count": 1,
+      "word_count": 55,
+      "evidence": "System Main representation/idea Primary strength MOSS Fingerprint-based software similarity Large-scale suspicious-copy detection NiCad Parser-assisted normalization + text comparison Near-miss clones Deckard AST structural vectors Scalable structural clone search SourcererCC Token index + filtering Big-code clone detection GumTree AST mapping + edit script with moves Source evolution/differencing Zhang-Shasha Exact ordered tree edit distance Mathematical tree distance",
+      "paragraphs": [
+        "System Main representation/idea Primary strength MOSS Fingerprint-based software similarity Large-scale suspicious-copy detection NiCad Parser-assisted normalization + text comparison Near-miss clones Deckard AST structural vectors Scalable structural clone search SourcererCC Token index + filtering Big-code clone detection GumTree AST mapping + edit script with moves Source evolution/differencing Zhang-Shasha Exact ordered tree edit distance Mathematical tree distance"
+      ]
+    },
+    {
+      "heading": "257. Decision table: what similarity cannot establish",
+      "level": 2,
+      "id": "ux-section-258",
+      "paragraph_count": 1,
+      "word_count": 42,
+      "evidence": "Observed signal Cannot establish alone High text similarity Direct copying High token similarity Same behavior High AST similarity Semantic equivalence Same tests passed Universal equivalence High embedding similarity Formal semantic identity One repository appeared first Authorship Large clone percentage Poor software design",
+      "paragraphs": [
+        "Observed signal Cannot establish alone High text similarity Direct copying High token similarity Same behavior High AST similarity Semantic equivalence Same tests passed Universal equivalence High embedding similarity Formal semantic identity One repository appeared first Authorship Large clone percentage Poor software design"
+      ]
+    },
+    {
+      "heading": "258. Rigorous evaluation checklist",
+      "level": 2,
+      "id": "ux-section-259",
+      "paragraph_count": 1,
+      "word_count": 57,
+      "evidence": "Category Report explicitly Language Language and version Parser Implementation/version Granularity Function/block/file/etc. Normalization Comments, identifiers, literals, formatting Representation Characters/tokens/AST/graph/embedding Similarity function Exact formula Threshold Exact value Minimum size Tokens/lines/nodes Benchmark Dataset and version Clone taxonomy Definition used Precision With sampling methodology Recall Preferably stratified by clone type Runtime Hardware and corpus size Memory Peak usage and index size",
+      "paragraphs": [
+        "Category Report explicitly Language Language and version Parser Implementation/version Granularity Function/block/file/etc. Normalization Comments, identifiers, literals, formatting Representation Characters/tokens/AST/graph/embedding Similarity function Exact formula Threshold Exact value Minimum size Tokens/lines/nodes Benchmark Dataset and version Clone taxonomy Definition used Precision With sampling methodology Recall Preferably stratified by clone type Runtime Hardware and corpus size Memory Peak usage and index size"
+      ]
+    },
+    {
+      "heading": "259. Recommended layered architecture",
+      "level": 2,
+      "id": "ux-section-260",
+      "paragraph_count": 1,
+      "word_count": 82,
+      "evidence": "SOURCE FILES | v LANGUAGE-AWARE PARSER / LEXER | +------------------------------+ | | v v RAW/TOKEN VIEW AST VIEW | | v v normalization structural features | | v v fingerprints / index tree/vector index | | +---------------+--------------+ | v CANDIDATE RETRIEVAL | +-------+-------+ | | v v token verifier AST mapping | | +-------+-------+ | v optional CFG/data flow | v optional learned semantics | v MATCH EXPLANATION | +------------+------------+ | | | v v v clone review refactoring security/ provenance analysis.",
+      "paragraphs": [
+        "SOURCE FILES | v LANGUAGE-AWARE PARSER / LEXER | +------------------------------+ | | v v RAW/TOKEN VIEW AST VIEW | | v v normalization structural features | | v v fingerprints / index tree/vector index | | +---------------+--------------+ | v CANDIDATE RETRIEVAL | +-------+-------+ | | v v token verifier AST mapping | | +-------+-------+ | v optional CFG/data flow | v optional learned semantics | v MATCH EXPLANATION | +------------+------------+ | | | v v v clone review refactoring security/ provenance analysis."
+      ]
+    },
+    {
+      "heading": "260. The correct role of Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-261",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "Levenshtein distance remains useful because it supplies a clear mathematical baseline:",
+      "paragraphs": [
+        "Levenshtein distance remains useful because it supplies a clear mathematical baseline:",
+        "What is the smallest sequence of insertions, deletions, and substitutions between two representations?",
+        "The important phrase is:",
+        "between two representations."
+      ]
+    },
+    {
+      "heading": "261. Applying Levenshtein after representation design",
+      "level": 2,
+      "id": "ux-section-262",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "Instead of asking:",
+      "paragraphs": [
+        "Instead of asking:",
+        "Should we use Levenshtein or AST similarity?",
+        "a better question is often:",
+        "What representation should be compared, and which edit operations should matter on that representation?"
+      ]
+    },
+    {
+      "heading": "262. Strings, tokens, and trees form a progression",
+      "level": 2,
+      "id": "ux-section-263",
+      "paragraph_count": 1,
+      "word_count": 52,
+      "evidence": "CHARACTER LEVENSHTEIN | v literal source similarity | v TOKEN LEVENSHTEIN | v lexical program similarity | v NORMALIZED TOKEN DISTANCE | v rename/literal-invariant similarity | v TREE EDIT DISTANCE | v syntax-structural similarity | v GRAPH / FLOW SIMILARITY | v behavioral structure | v SEMANTIC ANALYSIS | v program meaning.",
+      "paragraphs": [
+        "CHARACTER LEVENSHTEIN | v literal source similarity | v TOKEN LEVENSHTEIN | v lexical program similarity | v NORMALIZED TOKEN DISTANCE | v rename/literal-invariant similarity | v TREE EDIT DISTANCE | v syntax-structural similarity | v GRAPH / FLOW SIMILARITY | v behavioral structure | v SEMANTIC ANALYSIS | v program meaning."
+      ]
+    },
+    {
+      "heading": "263. Moving upward gains invariance but costs certainty and computation",
+      "level": 2,
+      "id": "ux-section-264",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "Character comparisons are simple and interpretable.",
+      "paragraphs": [
+        "Character comparisons are simple and interpretable.",
+        "Semantic comparisons can detect much deeper relationships but require:",
+        "more modeling;",
+        "more computation;",
+        "stronger assumptions;",
+        "more difficult validation."
+      ]
+    },
+    {
+      "heading": "264. Every abstraction discards information",
+      "level": 2,
+      "id": "ux-section-265",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "Tokenization discards some formatting.",
+      "paragraphs": [
+        "Tokenization discards some formatting.",
+        "Normalization discards names or values.",
+        "AST abstraction discards concrete syntax.",
+        "Feature vectors discard topology.",
+        "Embeddings compress many dimensions into learned representations.",
+        "Discarded information creates invariance but can also create false positives."
+      ]
+    },
+    {
+      "heading": "265. Every representation preserves some nuisance variation",
+      "level": 2,
+      "id": "ux-section-266",
+      "paragraph_count": 5,
+      "word_count": 21,
+      "evidence": "No abstraction removes every irrelevant difference.",
+      "paragraphs": [
+        "No abstraction removes every irrelevant difference.",
+        "ASTs may still preserve:",
+        "statement order;",
+        "language-specific node structures;",
+        "syntactic distinctions with little semantic effect."
+      ]
+    },
+    {
+      "heading": "266. There is no universal source-code distance",
+      "level": 2,
+      "id": "ux-section-267",
+      "paragraph_count": 8,
+      "word_count": 19,
+      "evidence": "A universal scalar that simultaneously captures:",
+      "paragraphs": [
+        "A universal scalar that simultaneously captures:",
+        "copy history;",
+        "syntax;",
+        "behavior;",
+        "security impact;",
+        "developer intent;",
+        "legal provenance",
+        "does not exist."
+      ]
+    },
+    {
+      "heading": "267. Source similarity and semantic similarity",
+      "level": 2,
+      "id": "ux-section-268",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "The broader conceptual boundary mirrors the distinction discussed in string similarity versus semantic similarity .",
+      "paragraphs": [
+        "The broader conceptual boundary mirrors the distinction discussed in string similarity versus semantic similarity .",
+        "For programs:",
+        "small source distance does not imply small behavioral difference and large source distance does not imply different functionality."
+      ]
+    },
+    {
+      "heading": "268. Final interpretation",
+      "level": 2,
+      "id": "ux-section-269",
+      "paragraph_count": 9,
+      "word_count": 492,
+      "evidence": "Source-code similarity begins as a sequence-comparison problem but quickly becomes a representation problem.",
+      "paragraphs": [
+        "Source-code similarity begins as a sequence-comparison problem but quickly becomes a representation problem.",
+        "At raw character level, Levenshtein distance measures literal textual editing. Tokenization removes formatting noise and treats identifiers or operators as lexical units. Identifier and literal normalization make the detector invariant to selected Type-2 clone transformations. Fingerprinting and inverted indexes make similarity retrieval scalable across massive code corpora.",
+        "Abstract syntax trees move the comparison from lexical order toward syntactic hierarchy. Tree edit distance provides a mathematically defined way to compare ordered labeled trees using node edits. The Zhang-Shasha family establishes a foundational exact formulation. Systems such as Deckard approximate structural relationships through AST-derived vectors for scalable clone search. NiCad demonstrates that parser-assisted normalization can make relatively simple comparison methods highly effective. SourcererCC shows how indexing and filtering turn token similarity into a Big Code retrieval problem.",
+        "Source differencing adds another objective. GumTree is not merely an AST version of character Levenshtein distance: it constructs mappings and edit scripts intended to represent software evolution, including moved code. A mathematically minimum tree edit script and the edit sequence that best represents developer intent need not be the same.",
+        "The boundary becomes even more important with semantic clones. Two structurally different programs can implement the same function. Two nearly identical programs can differ by one negation, constant, permission, API call, or condition and therefore behave radically differently. Moving from ASTs toward control flow, data flow, execution behavior, and learned code representations increases the ability to detect deeper relationships but also makes similarity increasingly model-dependent.",
+        "The central distinctions are:",
+        "source text != tokens tokens != AST AST != control-flow graph AST similarity != program equivalence small textual distance != small semantic difference large textual distance != different functionality token overlap != execution-order equivalence normalized code != original code identifier normalization != always-safe abstraction literal normalization != semantic preservation tree edit distance != source differencing GumTree != exact classical tree edit distance Deckard != tree edit distance vector similarity != tree identity Type-4 clone != one universally defined relation test agreement != formal equivalence embedding similarity != semantic proof code clone != plagiarism code similarity != copyright infringement source similarity != shared authorship high similarity != software safety clone detection != automatic refactoring decision.",
+        "The strongest practical architecture therefore uses multiple layers. Cheap textual or token fingerprints retrieve candidates. Structural representations distinguish meaningful syntactic relationships. AST differencing explains how code changed. Control/data-flow features or learned models can extend recall toward weaker syntactic and functional similarity. The final interpretation remains task-specific and, for high-consequence decisions, should preserve inspectable evidence rather than collapse everything into one similarity score.",
+        "Levenshtein distance is most valuable here not because every program should be flattened into a string, but because edit distance supplies the foundational idea: define a representation, define allowed transformations, assign costs, and ask for the minimum transformation. Moving from strings to source tokens, trees, graphs, and program behavior shows both the power and the limit of that idea."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-270",
+      "paragraph_count": 14,
+      "word_count": 339,
+      "evidence": "Roy, C. K., Cordy, J. R., and Koschke, R. Comparison and evaluation of code clone detection techniques and tools: A qualitative approach. Science of Computer Programming 74(7), 470-495, 2009. https://doi.org/10.1016/j.scico.2009.02.007 .",
+      "paragraphs": [
+        "Roy, C. K., Cordy, J. R., and Koschke, R. Comparison and evaluation of code clone detection techniques and tools: A qualitative approach. Science of Computer Programming 74(7), 470-495, 2009. https://doi.org/10.1016/j.scico.2009.02.007 .",
+        "Bellon, S., Koschke, R., Antoniol, G., Krinke, J., and Merlo, E. Comparison and Evaluation of Clone Detection Tools. IEEE Transactions on Software Engineering 33(9), 577-591, 2007. https://doi.org/10.1109/TSE.2007.70725 .",
+        "Jiang, L., Misherghi, G., Su, Z., and Glondu, S. DECKARD: Scalable and Accurate Tree-Based Detection of Code Clones. ICSE, 2007. https://doi.org/10.1109/ICSE.2007.30 .",
+        "Roy, C. K., and Cordy, J. R. NICAD: Accurate Detection of Near-Miss Intentional Clones Using Flexible Pretty-Printing and Code Normalization. ICPC, 2008. https://doi.org/10.1109/ICPC.2008.41 .",
+        "Schleimer, S., Wilkerson, D. S., and Aiken, A. Winnowing: Local Algorithms for Document Fingerprinting. SIGMOD, 2003. https://doi.org/10.1145/872757.872770 .",
+        "Sajnani, H., Saini, V., Svajlenko, J., Roy, C. K., and Lopes, C. V. SourcererCC: Scaling Code Clone Detection to Big Code. ICSE, 2016. https://doi.org/10.1145/2884781.2884877 .",
+        "Zhang, K., and Shasha, D. Simple Fast Algorithms for the Editing Distance between Trees and Related Problems. SIAM Journal on Computing 18(6), 1245-1262, 1989. https://doi.org/10.1137/0218082 .",
+        "Pawlik, M., and Augsten, N. Tree edit distance: Robust and memory-efficient. Information Systems 56, 157-173, 2016. https://doi.org/10.1016/j.is.2015.08.004 .",
+        "Falleri, J.-R., Morandat, F., Blanc, X., Martinez, M., and Monperrus, M. Fine-grained and accurate source code differencing. ASE, 2014. https://doi.org/10.1145/2642937.2642982 .",
+        "Svajlenko, J., Islam, J. F., Keivanloo, I., Roy, C. K., and Mia, M. M. Towards a Big Data Curated Benchmark of Inter-Project Code Clones. ICSME, 2014. https://doi.org/10.1109/ICSME.2014.77 .",
+        "Svajlenko, J., and Roy, C. K. Evaluating Clone Detection Tools with BigCloneBench. ICSME, 2015. https://doi.org/10.1109/ICSM.2015.7332459 .",
+        "Saini, V., Farmahinifarahani, F., Lu, Y., Baldi, P., and Lopes, C. V. Oreo: Detection of Clones in the Twilight Zone. ESEC/FSE, 2018. https://doi.org/10.1145/3236024.3236026 .",
+        "Feng, Z., Guo, D., Tang, D., Duan, N., Feng, X., Gong, M., Shou, L., Qin, B., Liu, T., Jiang, D., and Zhou, M. CodeBERT: A Pre-Trained Model for Programming and Natural Languages. Findings of EMNLP, 2020. https://doi.org/10.18653/v1/2020.findings-emnlp.139 .",
+        "Guo, D., Ren, S., Lu, S., et al. GraphCodeBERT: Pre-Training Code Representations with Data Flow. ICLR, 2021. OpenReview record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Source Code and AST Similarity",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "This article develops source-code similarity from raw text through tokens and abstract syntax trees, explains tree edit distance and source-code differencing, examines classical clone-detection systems including MOSS, NiCad, Deckard, SourcererCC, and GumTree, and establishes a critical boundary:"
+        },
+        {
+          "section": "4. Character-level Levenshtein distance",
+          "anchor_id": "ux-section-5",
+          "alias": "edit distance",
+          "excerpt": "Character-level edit distance is:"
+        },
+        {
+          "section": "5. Character distance is formatting-sensitive",
+          "anchor_id": "ux-section-6",
+          "alias": "edit distance",
+          "excerpt": "Character edit distance therefore measures:"
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "261. Applying Levenshtein after representation design",
+          "anchor_id": "ux-section-262",
+          "alias": "edit operations",
+          "excerpt": "What representation should be compared, and which edit operations should matter on that representation?"
+        }
+      ]
+    },
+    {
+      "target": "/learned-edit-distance-and-embeddings",
+      "evidence": [
+        {
+          "section": "131. Learned embeddings are not edit distances",
+          "anchor_id": "ux-section-132",
+          "alias": "learned edit distance and embeddings",
+          "excerpt": "The distinction is developed more generally in learned edit distance and embeddings ."
+        }
+      ]
+    },
+    {
+      "target": "/tree-and-graph-edit-distance",
+      "evidence": [
+        {
+          "section": "108. Graph comparison is more expensive",
+          "anchor_id": "ux-section-109",
+          "alias": "tree and graph edit distance",
+          "excerpt": "This is discussed more generally in tree and graph edit distance ."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-homoglyph-and-confusable-attacks",
+      "evidence": [
+        {
+          "section": "177. Security-sensitive Unicode",
+          "anchor_id": "ux-section-178",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "This is covered in Unicode homoglyph and confusable attacks ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#page",
+      "type": "WebPage",
+      "name": "Source Code and AST Similarity: Edit Distance, Clone Detection, Tree Differencing, and Semantic Limits",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/source-code-and-ast-similarity#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/source-code-and-ast-similarity#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/source-code-and-ast-similarity#source-code-similarity"
+        },
+        {
+          "@id": "https://www.levenshtein.net/source-code-and-ast-similarity#ast-similarity"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "type": "TechArticle",
+      "name": "Source Code and AST Similarity: Edit Distance, Clone Detection, Tree Differencing, and Semantic Limits",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/source-code-and-ast-similarity#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/source-code-and-ast-similarity#source-code-similarity"
+        },
+        {
+          "@id": "https://www.levenshtein.net/source-code-and-ast-similarity#ast-similarity"
+        },
+        {
+          "@id": "https://www.levenshtein.net/source-code-and-ast-similarity#code-clone"
+        },
+        {
+          "@id": "https://www.levenshtein.net/source-code-and-ast-similarity#tree-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#concept",
+      "type": "DefinedTerm",
+      "name": "Source Code and AST Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#source-code-similarity",
+      "type": "DefinedTerm",
+      "name": "Source Code Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#ast-similarity",
+      "type": "DefinedTerm",
+      "name": "Abstract Syntax Tree Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#token-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Token Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#tree-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Tree Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#code-clone",
+      "type": "DefinedTerm",
+      "name": "Code Clone",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#type-1-clone",
+      "type": "DefinedTerm",
+      "name": "Type-1 Code Clone",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#type-2-clone",
+      "type": "DefinedTerm",
+      "name": "Type-2 Code Clone",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#type-3-clone",
+      "type": "DefinedTerm",
+      "name": "Type-3 Code Clone",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#type-4-clone",
+      "type": "DefinedTerm",
+      "name": "Type-4 Code Clone",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#source-code-differencing",
+      "type": "DefinedTerm",
+      "name": "Source Code Differencing",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#semantic-code-similarity",
+      "type": "DefinedTerm",
+      "name": "Semantic Code Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#code-embedding",
+      "type": "DefinedTerm",
+      "name": "Code Embedding",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/source-code-and-ast-similarity#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#page",
+      "about",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#page",
+      "about",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#source-code-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#page",
+      "about",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#ast-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#page",
+      "mainEntity",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#page",
+      "isPartOf",
+      "https://www.levenshtein.net/software-systems#collection"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "about",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "about",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#source-code-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "about",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#ast-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "about",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#code-clone"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "about",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#tree-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#token-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#type-1-clone"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#type-2-clone"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#type-3-clone"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#type-4-clone"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#source-code-differencing"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#semantic-code-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#code-embedding"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "isPartOf",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#page"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1016/j.scico.2009.02.007"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/TSE.2007.70725"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/ICSE.2007.30"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/ICPC.2008.41"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1145/872757.872770"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1145/2884781.2884877"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1137/0218082"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1016/j.is.2015.08.004"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1145/2642937.2642982"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/ICSME.2014.77"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/ICSM.2015.7332459"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.1145/3236024.3236026"
+    ],
+    [
+      "https://www.levenshtein.net/source-code-and-ast-similarity#article",
+      "citation",
+      "https://doi.org/10.18653/v1/2020.findings-emnlp.139"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1145/872757.872770",
+      "anchor": "https://doi.org/10.1145/872757.872770"
+    },
+    {
+      "url": "https://theory.stanford.edu/~aiken/moss/",
+      "anchor": "A System for Detecting Software Similarity"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.scico.2009.02.007",
+      "anchor": "https://doi.org/10.1016/j.scico.2009.02.007"
+    },
+    {
+      "url": "https://doi.org/10.1109/ICSE.2007.30",
+      "anchor": "https://doi.org/10.1109/ICSE.2007.30"
+    },
+    {
+      "url": "https://doi.org/10.1137/0218082",
+      "anchor": "https://doi.org/10.1137/0218082"
+    },
+    {
+      "url": "https://doi.org/10.1145/2642937.2642982",
+      "anchor": "https://doi.org/10.1145/2642937.2642982"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.is.2015.08.004",
+      "anchor": "https://doi.org/10.1016/j.is.2015.08.004"
+    },
+    {
+      "url": "https://doi.org/10.1109/ICPC.2008.41",
+      "anchor": "https://doi.org/10.1109/ICPC.2008.41"
+    },
+    {
+      "url": "https://doi.org/10.1145/2884781.2884877",
+      "anchor": "https://doi.org/10.1145/2884781.2884877"
+    },
+    {
+      "url": "https://doi.org/10.1109/ICSME.2014.77",
+      "anchor": "https://doi.org/10.1109/ICSME.2014.77"
+    },
+    {
+      "url": "https://doi.org/10.1109/ICSM.2015.7332459",
+      "anchor": "https://doi.org/10.1109/ICSM.2015.7332459"
+    },
+    {
+      "url": "https://doi.org/10.1109/TSE.2007.70725",
+      "anchor": "https://doi.org/10.1109/TSE.2007.70725"
+    },
+    {
+      "url": "https://doi.org/10.1145/3236024.3236026",
+      "anchor": "https://doi.org/10.1145/3236024.3236026"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/2020.findings-emnlp.139",
+      "anchor": "https://doi.org/10.18653/v1/2020.findings-emnlp.139"
+    },
+    {
+      "url": "https://openreview.net/forum?id=jLoC4ez43PZ",
+      "anchor": "OpenReview record"
+    }
+  ]
+}

@@ -1,0 +1,3065 @@
+{
+  "url": "/weighted-levenshtein-distance",
+  "title": "Weighted Levenshtein Distance: Cost Models, Metrics & Algorithms",
+  "h1": [
+    "Weighted Levenshtein Distance: Cost Models, Metrics & Algorithms"
+  ],
+  "group": "Theory",
+  "provisional_mission": "Chi phí có trọng số",
+  "content_sha256": "a7e131f1a30c861eac65512d3270d2ec89b0114d9f759b9998522d50e0d7f770",
+  "canonical": "https://www.levenshtein.net/weighted-levenshtein-distance",
+  "primary_entity_candidate": "Weighted Levenshtein Distance: Cost Models, Metrics & Algorithms",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Weighted Levenshtein Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 7,
+      "word_count": 180,
+      "evidence": "Weighted Levenshtein distance generalizes the classical Levenshtein distance by allowing different insertions, deletions, and substitutions to have different costs. Instead of asking only for the smallest number of edit operations needed to transform one sequence into another, it asks for the minimum total cost of such a transformation.",
+      "paragraphs": [
+        "Weighted Levenshtein distance generalizes the classical Levenshtein distance by allowing different insertions, deletions, and substitutions to have different costs. Instead of asking only for the smallest number of edit operations needed to transform one sequence into another, it asks for the minimum total cost of such a transformation.",
+        "This distinction is fundamental whenever different errors have different meanings or probabilities. Replacing one keyboard character by a neighboring key may be more plausible than replacing it by a distant key. Confusing two visually similar OCR symbols may deserve a lower penalty than an unrelated substitution. In record linkage, dropping a punctuation mark may be less significant than changing a surname letter. In biological sequence analysis, substitutions and gaps may carry very different costs.",
+        "The classical unit-cost model assumes:",
+        "insertion = 1 deletion = 1 substitution = 1 match = 0",
+        "Weighted edit distance replaces those constants with a cost function:",
+        "w(a,b)",
+        "defined over symbols and the empty symbol. The resulting model is more expressive, but it also introduces important questions about metric properties, symmetry, normalization, algorithm compatibility, thresholding, learning, and interpretation."
+      ]
+    },
+    {
+      "heading": "Formal definition",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 17,
+      "word_count": 84,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "Σ",
+        "be an alphabet and define:",
+        "Σ̄ = Σ ∪ {ε}",
+        "where:",
+        "ε",
+        "denotes the empty symbol.",
+        "A weight function:",
+        "w : Σ̄ × Σ̄ → R≥0 ∪ {∞}",
+        "assigns costs to elementary edit actions.",
+        "The standard interpretation is:",
+        "w(a,a) = cost of matching a with itself w(a,b) = cost of substituting a by b w(a,ε) = cost of deleting a w(ε,b) = cost of inserting b",
+        "Usually:",
+        "w(a,a) = 0",
+        "for every:",
+        "a ∈ Σ",
+        "and all nonmatching edits have nonnegative cost."
+      ]
+    },
+    {
+      "heading": "Weighted edit script",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 10,
+      "word_count": 92,
+      "evidence": "An edit script:",
+      "paragraphs": [
+        "An edit script:",
+        "E = (o₁,o₂,...,o_r)",
+        "transforms:",
+        "x → y",
+        "through a sequence of elementary insertions, deletions, and substitutions.",
+        "Its total cost is:",
+        "C(E) = Σ_(t=1)^r w(o_t)",
+        "The weighted edit distance is then conceptually:",
+        "d_w(x,y) = min { C(E) : E transforms x into y }",
+        "This looks like a simple modification of ordinary Levenshtein distance, but the exact meaning of this formula depends on whether the model is defined through arbitrary edit scripts or through sequence alignments. That distinction becomes important when the elementary weight function does not satisfy triangle inequality."
+      ]
+    },
+    {
+      "heading": "Alignment formulation",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 20,
+      "word_count": 93,
+      "evidence": "Weighted edit distance can also be defined through alignments.",
+      "paragraphs": [
+        "Weighted edit distance can also be defined through alignments.",
+        "For example:",
+        "x = c a t y = c u t",
+        "can be aligned:",
+        "c a t c u t",
+        "with cost:",
+        "w(c,c) + w(a,u) + w(t,t)",
+        "An insertion can be represented by:",
+        "ε : b",
+        "and a deletion by:",
+        "a : ε",
+        "Thus an alignment is a sequence:",
+        "( α₁:β₁, α₂:β₂, ... )",
+        "where:",
+        "αᵢ, βᵢ ∈ Σ̄",
+        "and:",
+        "(αᵢ,βᵢ) ≠ (ε,ε)",
+        "The weighted cost of the alignment is:",
+        "Σ_i w(αᵢ,βᵢ)",
+        "and the alignment-based weighted edit distance is the minimum such cost."
+      ]
+    },
+    {
+      "heading": "Alignment and edit-script definitions are not always identical",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 21,
+      "word_count": 105,
+      "evidence": "This is one of the most important subtleties in weighted edit distance.",
+      "paragraphs": [
+        "This is one of the most important subtleties in weighted edit distance.",
+        "Suppose:",
+        "w(a,b) = 10 w(a,c) = 1 w(c,b) = 1",
+        "An unrestricted sequence of edit operations could transform:",
+        "a → c → b",
+        "at total cost:",
+        "2",
+        "even though the direct substitution:",
+        "a → b",
+        "costs:",
+        "10",
+        "A simple alignment of one source symbol against one target symbol, however, normally contains only:",
+        "a : b",
+        "and cannot explicitly represent:",
+        "a → c → b",
+        "through an intermediate symbol that appears in neither final string.",
+        "Therefore arbitrary elementary weights can make:",
+        "minimum edit-script cost",
+        "different from:",
+        "minimum alignment cost",
+        "unless additional conditions are imposed."
+      ]
+    },
+    {
+      "heading": "The quasimetric condition",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 11,
+      "word_count": 82,
+      "evidence": "A particularly important sufficient condition is triangle inequality on the extended alphabet:",
+      "paragraphs": [
+        "A particularly important sufficient condition is triangle inequality on the extended alphabet:",
+        "w(a,c) ≤ w(a,b) + w(b,c)",
+        "for:",
+        "a,b,c ∈ Σ̄",
+        "When the elementary cost function is a quasimetric, performing an unnecessary intermediate transformation cannot be cheaper than the direct transformation it replaces.",
+        "Under that condition, the alignment and edit-script views become equivalent.",
+        "Conceptually:",
+        "a → c → b cannot beat a → b",
+        "because:",
+        "w(a,b) ≤ w(a,c) + w(c,b)",
+        "This condition is extremely useful when reasoning rigorously about weighted edit distance."
+      ]
+    },
+    {
+      "heading": "Distance closure of an arbitrary weight table",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 16,
+      "word_count": 82,
+      "evidence": "If an application starts with arbitrary elementary costs, one can define their shortest-path closure.",
+      "paragraphs": [
+        "If an application starts with arbitrary elementary costs, one can define their shortest-path closure.",
+        "Treat:",
+        "Σ̄",
+        "as the vertices of a directed graph.",
+        "For each pair:",
+        "a,b",
+        "create an edge of weight:",
+        "w(a,b)",
+        "Then define:",
+        "w*(a,b) = shortest path cost from a to b",
+        "The closed costs satisfy:",
+        "w*(a,b) ≤ w(a,b)",
+        "and:",
+        "w*(a,c) ≤ w*(a,b) + w*(b,c)",
+        "by construction.",
+        "If arbitrary repeated edits of the same symbol are allowed, this closure represents the actual effective cost of changing one symbol into another."
+      ]
+    },
+    {
+      "heading": "Classical Levenshtein as a special case",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 10,
+      "word_count": 73,
+      "evidence": "Standard unit-cost Levenshtein distance corresponds to:",
+      "paragraphs": [
+        "Standard unit-cost Levenshtein distance corresponds to:",
+        "w(a,a) = 0 w(a,b) = 1 for a != b w(a,ε) = 1 w(ε,b) = 1",
+        "for every symbol:",
+        "a,b ∈ Σ",
+        "The extended alphabet cost function is the discrete metric:",
+        "w(a,b) = 0 if a = b 1 otherwise",
+        "including:",
+        "ε",
+        "as another distinguished symbol.",
+        "Weighted Levenshtein distance is therefore not a separate unrelated technique. It is the natural cost-sensitive generalization of the same edit framework."
+      ]
+    },
+    {
+      "heading": "Dynamic-programming recurrence",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 12,
+      "word_count": 60,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "x = x₁x₂...xₘ y = y₁y₂...yₙ",
+        "Define:",
+        "D[i][j]",
+        "as the minimum weighted cost of transforming:",
+        "x₁...xᵢ",
+        "into:",
+        "y₁...yⱼ",
+        "The weighted Wagner–Fischer recurrence is:",
+        "D[i][j] = min( D[i-1][j] + w(xᵢ,ε), D[i][j-1] + w(ε,yⱼ), D[i-1][j-1] + w(xᵢ,yⱼ) )",
+        "The three alternatives are:",
+        "D[i-1][j] + w(xᵢ,ε) = delete xᵢ D[i][j-1] + w(ε,yⱼ) = insert yⱼ D[i-1][j-1] + w(xᵢ,yⱼ) = match or substitute"
+      ]
+    },
+    {
+      "heading": "Weighted boundary initialization",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 13,
+      "word_count": 48,
+      "evidence": "Unlike unit-cost Levenshtein distance, the first row and column are not simply:",
+      "paragraphs": [
+        "Unlike unit-cost Levenshtein distance, the first row and column are not simply:",
+        "0,1,2,3,...",
+        "unless all insertions and deletions cost one.",
+        "Instead:",
+        "D[0][0] = 0",
+        "and:",
+        "D[i][0] = D[i-1][0] + w(xᵢ,ε)",
+        "which gives:",
+        "D[i][0] = Σ_(r=1)^i w(x_r,ε)",
+        "Similarly:",
+        "D[0][j] = D[0][j-1] + w(ε,yⱼ)",
+        "and therefore:",
+        "D[0][j] = Σ_(r=1)^j w(ε,y_r)"
+      ]
+    },
+    {
+      "heading": "Worked example: character-sensitive substitution costs",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 11,
+      "word_count": 84,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "x = \"cat\" y = \"cut\"",
+        "and define:",
+        "match: 0 insert: 1 delete: 1 ordinary substitution: 1 a → u: 0.25",
+        "The weighted DP matrix is:",
+        "ε c u t ε 0 1 2 3 c 1 0 1 2 a 2 1 0.25 1.25 t 3 2 1.25 0.25",
+        "Thus:",
+        "d_w( \"cat\", \"cut\" ) = 0.25",
+        "whereas ordinary Levenshtein distance is:",
+        "1",
+        "The strings still differ at exactly one position, but the weighted model says that this particular change is relatively inexpensive."
+      ]
+    },
+    {
+      "heading": "Weighted edit distance is a shortest-path problem",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 19,
+      "word_count": 66,
+      "evidence": "The dynamic-programming matrix can be viewed as a directed acyclic edit graph.",
+      "paragraphs": [
+        "The dynamic-programming matrix can be viewed as a directed acyclic edit graph.",
+        "Each state:",
+        "(i,j)",
+        "represents:",
+        "the prefixes of lengths i and j already consumed.",
+        "The graph contains edges:",
+        "(i-1,j) → (i,j) cost: w(xᵢ,ε)",
+        "for deletion,",
+        "(i,j-1) → (i,j) cost: w(ε,yⱼ)",
+        "for insertion, and:",
+        "(i-1,j-1) → (i,j) cost: w(xᵢ,yⱼ)",
+        "for match or substitution.",
+        "Then:",
+        "d_w(x,y)",
+        "is the shortest-path distance from:",
+        "(0,0)",
+        "to:",
+        "(m,n)",
+        "in this graph."
+      ]
+    },
+    {
+      "heading": "Why dynamic programming is exact",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 11,
+      "word_count": 67,
+      "evidence": "Every edit script can be decomposed according to its final operation.",
+      "paragraphs": [
+        "Every edit script can be decomposed according to its final operation.",
+        "An optimal script transforming:",
+        "x₁...xᵢ",
+        "into:",
+        "y₁...yⱼ",
+        "must end with one of:",
+        "deleting xᵢ ;",
+        "inserting yⱼ ;",
+        "aligning xᵢ with yⱼ .",
+        "The prefix before that final operation must itself be optimally transformed; otherwise replacing it with a cheaper prefix transformation would produce a cheaper full script.",
+        "This optimal-substructure property gives the weighted recurrence directly."
+      ]
+    },
+    {
+      "heading": "Time complexity",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 7,
+      "word_count": 28,
+      "evidence": "The matrix contains:",
+      "paragraphs": [
+        "The matrix contains:",
+        "(m+1)(n+1)",
+        "states.",
+        "Each state performs a constant number of additions and comparisons.",
+        "Therefore:",
+        "Time: O(mn)",
+        "assuming each weight lookup and arithmetic operation takes constant time."
+      ]
+    },
+    {
+      "heading": "Distance-only space complexity",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "Each row depends only on:",
+      "paragraphs": [
+        "Each row depends only on:",
+        "previous row + current row",
+        "Therefore the full matrix is unnecessary when only the numerical distance is required.",
+        "Using the shorter sequence as the DP width gives:",
+        "Space: O(min(m,n))",
+        "while preserving:",
+        "O(mn)",
+        "time."
+      ]
+    },
+    {
+      "heading": "Reference implementation pseudocode",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 1,
+      "word_count": 85,
+      "evidence": "function weighted_edit_distance( X, Y, insert_cost, delete_cost, substitute_cost ): m = length(X) n = length(Y) previous = array of size n+1 current = array of size n+1 previous[0] = 0 for j = 1 to n: previous[j] = previous[j-1] + insert_cost(Y[j-1]) for i = 1 to m: current[0] = previous[0] + delete_cost(X[i-1]) for j = 1 to n: deletion = previous[j] + delete_cost(X[i-1]) insertion = current[j-1] + insert_cost(Y[j-1]) substitution = previous[j-1] + substitute_cost( X[i-1], Y[j-1] ) current[j] = min( deletion, insertion, substitution ) swap(previous,current) return previous[n]",
+      "paragraphs": [
+        "function weighted_edit_distance( X, Y, insert_cost, delete_cost, substitute_cost ): m = length(X) n = length(Y) previous = array of size n+1 current = array of size n+1 previous[0] = 0 for j = 1 to n: previous[j] = previous[j-1] + insert_cost(Y[j-1]) for i = 1 to m: current[0] = previous[0] + delete_cost(X[i-1]) for j = 1 to n: deletion = previous[j] + delete_cost(X[i-1]) insertion = current[j-1] + insert_cost(Y[j-1]) substitution = previous[j-1] + substitute_cost( X[i-1], Y[j-1] ) current[j] = min( deletion, insertion, substitution ) swap(previous,current) return previous[n]"
+      ]
+    },
+    {
+      "heading": "Recovering an optimal edit script",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "If the transformation itself is required, store predecessor information for each cell.",
+      "paragraphs": [
+        "If the transformation itself is required, store predecessor information for each cell.",
+        "For:",
+        "D[i][j]",
+        "record whether the minimum came from:",
+        "D[i-1][j] = deletion D[i][j-1] = insertion D[i-1][j-1] = match/substitution",
+        "Then trace backward from:",
+        "(m,n)",
+        "to:",
+        "(0,0)",
+        "and reverse the resulting operation list."
+      ]
+    },
+    {
+      "heading": "Multiple optimal scripts",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 13,
+      "word_count": 70,
+      "evidence": "Weighted costs frequently create ties.",
+      "paragraphs": [
+        "Weighted costs frequently create ties.",
+        "For example:",
+        "w(a,b) = 2 w(a,ε) = 1 w(ε,b) = 1",
+        "Then:",
+        "a → b",
+        "can be achieved either by:",
+        "one substitution: cost 2",
+        "or:",
+        "delete a insert b cost: 1 + 1 = 2",
+        "The numerical distance is unique:",
+        "2",
+        "but the optimal edit script is not.",
+        "A deterministic implementation should define tie-breaking rules when edit scripts are exposed to users or downstream systems."
+      ]
+    },
+    {
+      "heading": "Direct substitution can be dominated by delete-plus-insert",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 11,
+      "word_count": 55,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "w(a,b) = 8 w(a,ε) = 2 w(ε,b) = 3",
+        "Then:",
+        "substitute a → b: 8",
+        "but:",
+        "delete a: 2 insert b: 3 total: 5",
+        "The dynamic program correctly chooses:",
+        "5",
+        "rather than:",
+        "8",
+        "Thus the effective cost of replacing a symbol is determined by the complete edit system, not by the substitution matrix alone."
+      ]
+    },
+    {
+      "heading": "Cost matrices",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 9,
+      "word_count": 65,
+      "evidence": "For a finite alphabet, substitution costs can be represented as a matrix.",
+      "paragraphs": [
+        "For a finite alphabet, substitution costs can be represented as a matrix.",
+        "For:",
+        "Σ = {a,b,c}",
+        "a simple matrix might be:",
+        "from \\ to a b c a 0 0.4 1.0 b 0.5 0 0.3 c 1.0 0.3 0",
+        "Insertion and deletion costs may be stored separately:",
+        "insert[a] insert[b] insert[c] delete[a] delete[b] delete[c]",
+        "or included in one extended matrix whose rows and columns include:",
+        "ε"
+      ]
+    },
+    {
+      "heading": "The extended cost matrix",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 3,
+      "word_count": 42,
+      "evidence": "Conceptually:",
+      "paragraphs": [
+        "Conceptually:",
+        "ε a b c ε 0 insert a insert b insert c a delete a 0 a→b a→c b delete b b→a 0 b→c c delete c c→a c→b 0",
+        "This representation makes symmetry and triangle-inequality checks easier to reason about."
+      ]
+    },
+    {
+      "heading": "Symmetric weighted edit distance",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 11,
+      "word_count": 36,
+      "evidence": "For symmetry:",
+      "paragraphs": [
+        "For symmetry:",
+        "d_w(x,y) = d_w(y,x)",
+        "a natural sufficient condition is:",
+        "w(a,b) = w(b,a)",
+        "for all:",
+        "a,b ∈ Σ̄",
+        "In particular:",
+        "w(a,ε) = w(ε,a)",
+        "means deleting:",
+        "a",
+        "costs the same as inserting it in the reverse transformation."
+      ]
+    },
+    {
+      "heading": "Asymmetric weighted edit distance",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 15,
+      "word_count": 71,
+      "evidence": "Many real processes are directional.",
+      "paragraphs": [
+        "Many real processes are directional.",
+        "Suppose:",
+        "w(ε,a) = 0.5 w(a,ε) = 2.0",
+        "Then:",
+        "d_w( \"\", \"a\" ) = 0.5",
+        "while:",
+        "d_w( \"a\", \"\" ) = 2.0",
+        "The function is therefore asymmetric.",
+        "This can be appropriate when the score models:",
+        "a directional error channel;",
+        "source-to-observation corruption;",
+        "OCR generation;",
+        "phonetic production;",
+        "one-way transliteration.",
+        "It should then be described as a directed edit cost or quasimetric rather than assumed to be an ordinary metric."
+      ]
+    },
+    {
+      "heading": "Weighted edit distance as a metric",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 18,
+      "word_count": 77,
+      "evidence": "A powerful sufficient construction is to make the elementary cost function:",
+      "paragraphs": [
+        "A powerful sufficient construction is to make the elementary cost function:",
+        "w",
+        "itself a metric over:",
+        "Σ̄",
+        "That requires:",
+        "w(a,b) ≥ 0",
+        "w(a,b) = 0 iff a = b",
+        "w(a,b) = w(b,a)",
+        "and:",
+        "w(a,c) ≤ w(a,b) + w(b,c)",
+        "for all extended symbols.",
+        "Under this construction, the induced weighted edit distance over complete strings is also a metric.",
+        "This matters when the distance is used in:",
+        "BK-trees;",
+        "metric trees;",
+        "metric clustering;",
+        "triangle-inequality pruning;",
+        "nearest-neighbor algorithms requiring metric geometry."
+      ]
+    },
+    {
+      "heading": "Quasimetric weighted edit distance",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 10,
+      "word_count": 39,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "w(a,b)",
+        "satisfies triangle inequality but not necessarily symmetry, it can define a quasimetric.",
+        "Then:",
+        "d_w(x,z) ≤ d_w(x,y) + d_w(y,z)",
+        "still holds, but:",
+        "d_w(x,y)",
+        "may differ from:",
+        "d_w(y,x)",
+        "This is often a better mathematical model for asymmetric corruption processes."
+      ]
+    },
+    {
+      "heading": "Identity can fail",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 14,
+      "word_count": 58,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "w(a,b) = 0",
+        "for:",
+        "a != b",
+        "Then:",
+        "d_w(\"a\",\"b\") = 0",
+        "despite:",
+        "\"a\" != \"b\"",
+        "The resulting function is not a metric because identity of indiscernibles fails.",
+        "Zero-cost normalization operations can still be useful in applications—for example if:",
+        "a",
+        "and:",
+        "á",
+        "are intentionally treated as equivalent—but the resulting score represents equivalence classes rather than strict string identity."
+      ]
+    },
+    {
+      "heading": "Negative weights should normally be forbidden",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 11,
+      "word_count": 84,
+      "evidence": "Distance models usually require:",
+      "paragraphs": [
+        "Distance models usually require:",
+        "w(a,b) ≥ 0",
+        "Negative edit costs create serious interpretive problems.",
+        "In the alignment DP graph, the graph remains acyclic, so a finite optimum can still be computed for a fixed pair of strings.",
+        "But in an unrestricted edit-script interpretation, negative edit cycles could allow:",
+        "cost → -∞",
+        "by repeatedly applying cost-reducing transformations.",
+        "Even without cycles, a negative “distance” is incompatible with ordinary metric interpretation.",
+        "For nearly all weighted Levenshtein applications:",
+        "nonnegative costs",
+        "should therefore be treated as a basic invariant."
+      ]
+    },
+    {
+      "heading": "Scaling all weights",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 10,
+      "word_count": 50,
+      "evidence": "Suppose every cost is multiplied by:",
+      "paragraphs": [
+        "Suppose every cost is multiplied by:",
+        "λ > 0",
+        "Define:",
+        "w'(a,b) = λw(a,b)",
+        "Then every edit script cost is multiplied by:",
+        "λ",
+        "and:",
+        "d_w'(x,y) = λ d_w(x,y)",
+        "The set of optimal edit scripts does not change.",
+        "Thus positive multiplicative scaling changes the numerical unit but not the relative optimization problem."
+      ]
+    },
+    {
+      "heading": "Adding a constant to every edit is not equivalent",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 13,
+      "word_count": 47,
+      "evidence": "Suppose instead:",
+      "paragraphs": [
+        "Suppose instead:",
+        "w'(o) = w(o) + c",
+        "for every nonmatch operation.",
+        "Then a script using:",
+        "1 edit",
+        "receives:",
+        "+c",
+        "while a script using:",
+        "5 edits",
+        "receives:",
+        "+5c",
+        "The relative preference between scripts can therefore change.",
+        "Translation of costs is not an invariant of the edit optimization problem."
+      ]
+    },
+    {
+      "heading": "Length lower bounds with weighted gaps",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 18,
+      "word_count": 68,
+      "evidence": "Classical Levenshtein gives:",
+      "paragraphs": [
+        "Classical Levenshtein gives:",
+        "d_L(x,y) ≥ ||x|-|y||",
+        "For weighted edit distance, an analogous lower bound depends on insertion and deletion costs.",
+        "Define:",
+        "c_ins_min = min over b w(ε,b)",
+        "and:",
+        "c_del_min = min over a w(a,ε)",
+        "If:",
+        "|y| > |x|",
+        "at least:",
+        "|y|-|x|",
+        "net insertions are required, so:",
+        "d_w(x,y) ≥ (|y|-|x|) · c_ins_min",
+        "If:",
+        "|x| > |y|",
+        "then:",
+        "d_w(x,y) ≥ (|x|-|y|) · c_del_min",
+        "These are simple but valuable threshold filters."
+      ]
+    },
+    {
+      "heading": "Thresholded weighted edit distance",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 10,
+      "word_count": 60,
+      "evidence": "Suppose only candidates satisfying:",
+      "paragraphs": [
+        "Suppose only candidates satisfying:",
+        "d_w(x,y) ≤ K",
+        "are relevant.",
+        "If every nonzero edit costs at least:",
+        "c_min > 0",
+        "then any valid script can contain at most:",
+        "floor( K / c_min )",
+        "positive-cost edit operations.",
+        "This converts a weighted-cost threshold into a safe upper bound on edit count.",
+        "However, this bound can be loose when the cost range is large."
+      ]
+    },
+    {
+      "heading": "Weighted diagonal band",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 12,
+      "word_count": 68,
+      "evidence": "For the DP coordinate difference:",
+      "paragraphs": [
+        "For the DP coordinate difference:",
+        "δ = j-i",
+        "only insertions and deletions change:",
+        "δ",
+        "If every insertion and deletion costs at least:",
+        "g_min > 0",
+        "then any alignment of total cost at most:",
+        "K",
+        "cannot move farther than approximately:",
+        "floor( K / g_min )",
+        "diagonals away through gap operations.",
+        "This gives a weighted analogue of banded dynamic-programming pruning, though asymmetric insertion and deletion weights allow tighter direction-specific bounds."
+      ]
+    },
+    {
+      "heading": "Why unit-cost Ukkonen cannot simply be copied",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 7,
+      "word_count": 67,
+      "evidence": "The Ukkonen algorithm exploits the fact that:",
+      "paragraphs": [
+        "The Ukkonen algorithm exploits the fact that:",
+        "one edit = one unit of distance",
+        "in ordinary Levenshtein distance.",
+        "For weighted costs:",
+        "substitution = 0.1 insertion = 4 deletion = 2",
+        "the number of edits and the total distance are no longer interchangeable.",
+        "Some banding and threshold ideas can be generalized through lower bounds on edit costs, but the standard unit-cost formulas should not be reused without rederivation."
+      ]
+    },
+    {
+      "heading": "Why Myers bit vectors do not directly support arbitrary weights",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 8,
+      "word_count": 63,
+      "evidence": "The Myers Bit-Vector Algorithm exploits the highly constrained neighboring differences of unit-cost Levenshtein dynamic programming.",
+      "paragraphs": [
+        "The Myers Bit-Vector Algorithm exploits the highly constrained neighboring differences of unit-cost Levenshtein dynamic programming.",
+        "In the classical matrix:",
+        "adjacent DP differences",
+        "have a small discrete structure that can be encoded in bit vectors.",
+        "Arbitrary weighted costs such as:",
+        "0.3 1.7 4.2",
+        "destroy that simple state representation.",
+        "Therefore the classic Myers bit-vector recurrence should not be described as a general arbitrary-weight Levenshtein algorithm."
+      ]
+    },
+    {
+      "heading": "Why classical Levenshtein automata change under weights",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 9,
+      "word_count": 79,
+      "evidence": "A classical Levenshtein automaton tracks an integer edit budget:",
+      "paragraphs": [
+        "A classical Levenshtein automaton tracks an integer edit budget:",
+        "0 1 2 ... k",
+        "because every insertion, deletion, and substitution costs:",
+        "1",
+        "With weights:",
+        "0.2 0.8 1.5 ...",
+        "the automaton must represent accumulated cost rather than edit count.",
+        "If costs belong to a small discrete set, a finite weighted state construction may still be practical.",
+        "For arbitrary real-valued costs, the simple degree- k Levenshtein DFA is no longer the appropriate model; weighted finite-state automata or transducers are more natural."
+      ]
+    },
+    {
+      "heading": "Masek–Paterson and discrete weighted costs",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 10,
+      "word_count": 84,
+      "evidence": "The Masek–Paterson algorithm is historically important because it already treats nonuniform edit costs.",
+      "paragraphs": [
+        "The Masek–Paterson algorithm is historically important because it already treats nonuniform edit costs.",
+        "Its Four Russians acceleration applies when:",
+        "the alphabet is finite;",
+        "edit costs are integral multiples of one common positive real number.",
+        "Under these conditions, the possible normalized boundary differences of logarithmic DP blocks form a finite discrete state space that can be precomputed.",
+        "For strings of lengths:",
+        "n ≥ m",
+        "the corresponding bound is:",
+        "O( n · max( 1, m/log n ) )",
+        "under the computational assumptions of the original method."
+      ]
+    },
+    {
+      "heading": "Why discreteness matters",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 9,
+      "word_count": 74,
+      "evidence": "Suppose edit costs can take arbitrary real values.",
+      "paragraphs": [
+        "Suppose edit costs can take arbitrary real values.",
+        "Even if every neighboring DP difference is bounded numerically, there can be infinitely many possible values inside that interval.",
+        "A Four Russians block table cannot enumerate an infinite set of boundary states.",
+        "If instead all costs are:",
+        "integer multiples of r",
+        "for some:",
+        "r > 0",
+        "then bounded step values belong to a finite discrete alphabet.",
+        "That is precisely the kind of structure block precomputation needs."
+      ]
+    },
+    {
+      "heading": "Rational weights can be scaled",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 8,
+      "word_count": 61,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "insert = 1/2 delete = 3/4 substitute = 5/4",
+        "Multiplying every cost by:",
+        "4",
+        "gives:",
+        "insert = 2 delete = 3 substitute = 5",
+        "The optimal scripts remain the same because every script cost has been multiplied by the same positive factor.",
+        "Thus finite rational cost systems can often be converted into integer-weight systems without changing the combinatorial optimization problem."
+      ]
+    },
+    {
+      "heading": "Modern bounded weighted edit distance",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 5,
+      "word_count": 89,
+      "evidence": "Weighted bounded edit distance is algorithmically more difficult than the unweighted bounded problem.",
+      "paragraphs": [
+        "Weighted bounded edit distance is algorithmically more difficult than the unweighted bounded problem.",
+        "For the unit-cost problem, farthest-reaching methods such as Landau–Vishkin exploit discrete error layers:",
+        "0 edits 1 edit 2 edits ... k edits",
+        "Arbitrary weighted errors do not naturally fit this structure.",
+        "Modern theoretical work has developed exact bounded weighted edit-distance algorithms whose running time separates the long input dimension from a polynomial function of the distance threshold. This is a distinct algorithmic development rather than a trivial substitution of weighted costs into the classical Landau–Vishkin recurrence."
+      ]
+    },
+    {
+      "heading": "Weighted cost design",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "The most difficult practical question is often not how to run the dynamic program.",
+      "paragraphs": [
+        "The most difficult practical question is often not how to run the dynamic program.",
+        "It is:",
+        "How should the costs be chosen?",
+        "A weighted distance is meaningful only when its costs correspond to the process being modeled."
+      ]
+    },
+    {
+      "heading": "Keyboard-based costs",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 13,
+      "word_count": 60,
+      "evidence": "A spelling model might derive substitution costs from physical keyboard distance.",
+      "paragraphs": [
+        "A spelling model might derive substitution costs from physical keyboard distance.",
+        "Let:",
+        "p(a) = 2D coordinate of key a",
+        "Then one possible substitution cost is:",
+        "c_sub(a,b) = f( ||p(a)-p(b)|| )",
+        "where:",
+        "f",
+        "maps geometric distance to an edit penalty.",
+        "Nearby keys receive lower penalties:",
+        "i → o",
+        "than distant keys:",
+        "i → z",
+        "if that reflects the intended typing model."
+      ]
+    },
+    {
+      "heading": "Geometry is not the same as error probability",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 10,
+      "word_count": 39,
+      "evidence": "Keyboard proximity is only a proxy.",
+      "paragraphs": [
+        "Keyboard proximity is only a proxy.",
+        "Actual typing errors also depend on:",
+        "finger assignment;",
+        "hand alternation;",
+        "language frequency;",
+        "typing speed;",
+        "mobile keyboard autocorrection;",
+        "device geometry;",
+        "individual user behavior.",
+        "A geometrically elegant cost matrix is therefore not automatically statistically calibrated."
+      ]
+    },
+    {
+      "heading": "OCR confusion costs",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 9,
+      "word_count": 64,
+      "evidence": "Optical character recognition often produces strongly nonuniform errors.",
+      "paragraphs": [
+        "Optical character recognition often produces strongly nonuniform errors.",
+        "Examples may include:",
+        "O ↔ 0 I ↔ l 1 ↔ l rn ↔ m",
+        "A weighted character model can give visually plausible single-character confusions lower costs.",
+        "However:",
+        "rn → m",
+        "is a two-character-to-one-character transformation.",
+        "Ordinary single-symbol weighted Levenshtein cannot represent it as one elementary operation.",
+        "A block-edit or finite-state transduction model may be more faithful."
+      ]
+    },
+    {
+      "heading": "Case and diacritic costs",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "An application might define:",
+      "paragraphs": [
+        "An application might define:",
+        "a → A: 0.1 a → á: 0.2 a → z: 1.0",
+        "This makes case and accent differences small but nonzero.",
+        "Alternatively, the application could normalize them away before computing distance:",
+        "Á → a",
+        "and assign:",
+        "zero",
+        "edit cost because the distinction no longer exists in the representation."
+      ]
+    },
+    {
+      "heading": "Preprocessing versus weighting",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "These two strategies are not equivalent.",
+      "paragraphs": [
+        "These two strategies are not equivalent."
+      ]
+    },
+    {
+      "heading": "Preprocessing",
+      "level": 3,
+      "id": "ux-section-46",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "\"Résumé\" → \"resume\"",
+      "paragraphs": [
+        "\"Résumé\" → \"resume\"",
+        "before distance calculation makes the removed distinctions impossible for the distance to recover."
+      ]
+    },
+    {
+      "heading": "Weighting",
+      "level": 3,
+      "id": "ux-section-47",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "Keeping:",
+      "paragraphs": [
+        "Keeping:",
+        "\"Résumé\"",
+        "and assigning low costs to:",
+        "é ↔ e",
+        "preserves the distinction while making it inexpensive.",
+        "Which approach is better depends on whether the distinction carries useful information."
+      ]
+    },
+    {
+      "heading": "Language-specific costs",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 8,
+      "word_count": 46,
+      "evidence": "A transliteration system might assign low costs between symbols that represent similar sounds:",
+      "paragraphs": [
+        "A transliteration system might assign low costs between symbols that represent similar sounds:",
+        "f ↔ ph k ↔ c y ↔ i",
+        "But many such mappings are:",
+        "context-dependent;",
+        "many-to-one;",
+        "one-to-many.",
+        "Single-character weighted Levenshtein may therefore be only a first approximation.",
+        "See Text Normalization and Transliteration ."
+      ]
+    },
+    {
+      "heading": "Frequency-derived confusion costs",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 8,
+      "word_count": 46,
+      "evidence": "Suppose training data provide counts:",
+      "paragraphs": [
+        "Suppose training data provide counts:",
+        "C(a → b)",
+        "for observed edit confusions.",
+        "One can estimate:",
+        "P( b | a )",
+        "and derive a cost such as:",
+        "c(a,b) = -log P( b | a )",
+        "Frequent errors then receive low cost, while rare errors receive high cost."
+      ]
+    },
+    {
+      "heading": "Why negative log probabilities are useful",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 10,
+      "word_count": 60,
+      "evidence": "Suppose an edit script contains independent operation probabilities:",
+      "paragraphs": [
+        "Suppose an edit script contains independent operation probabilities:",
+        "P(o₁) P(o₂) ... P(o_r)",
+        "The script probability is:",
+        "P(E) = Π_i P(o_i)",
+        "Taking negative logarithms:",
+        "-log P(E) = Σ_i -log P(o_i)",
+        "converts a multiplicative probability objective into an additive edit cost.",
+        "Thus finding the minimum:",
+        "Σ_i -log P(o_i)",
+        "is equivalent to finding the most probable individual edit script under the assumed factorization."
+      ]
+    },
+    {
+      "heading": "Most probable path is not total transformation probability",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 14,
+      "word_count": 68,
+      "evidence": "There may be many distinct edit scripts transforming:",
+      "paragraphs": [
+        "There may be many distinct edit scripts transforming:",
+        "x → y",
+        "A weighted shortest-path calculation with:",
+        "-log probabilities",
+        "finds:",
+        "max_E P(E)",
+        "the probability of the single most probable edit path.",
+        "It does not compute:",
+        "P(y|x) = Σ_E P(E)",
+        "over every possible edit script.",
+        "The latter requires summation over paths rather than minimization.",
+        "This is the same conceptual distinction as:",
+        "Viterbi decoding versus forward probability",
+        "in probabilistic sequence models."
+      ]
+    },
+    {
+      "heading": "Stochastic edit distance",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 8,
+      "word_count": 54,
+      "evidence": "A stochastic edit model can learn:",
+      "paragraphs": [
+        "A stochastic edit model can learn:",
+        "insertion probabilities;",
+        "deletion probabilities;",
+        "substitution probabilities;",
+        "possibly more complex transduction parameters",
+        "from labeled training examples.",
+        "The learned model can then reflect empirical error structure rather than an arbitrary uniform cost assumption.",
+        "This direction has been studied in string classification, pronunciation modeling, speech recognition, handwriting, and other sequence tasks."
+      ]
+    },
+    {
+      "heading": "Cost learning as supervised optimization",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 15,
+      "word_count": 54,
+      "evidence": "Suppose training examples contain:",
+      "paragraphs": [
+        "Suppose training examples contain:",
+        "( x_i, y_i, label_i )",
+        "where labels indicate whether two strings should be considered:",
+        "similar or different",
+        "A parameterized weight model:",
+        "w_θ",
+        "can be optimized so that:",
+        "d_(w_θ)( x_i, y_i )",
+        "separates positive and negative examples.",
+        "The learning objective may optimize:",
+        "classification accuracy;",
+        "ranking loss;",
+        "likelihood;",
+        "margin separation;",
+        "retrieval recall."
+      ]
+    },
+    {
+      "heading": "Learned weights can destroy metricity",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 13,
+      "word_count": 57,
+      "evidence": "If the optimizer independently chooses:",
+      "paragraphs": [
+        "If the optimizer independently chooses:",
+        "w(a,b)",
+        "for every pair, the learned matrix may violate:",
+        "symmetry",
+        "or:",
+        "triangle inequality",
+        "For example:",
+        "w(a,b) = 0.2 w(b,c) = 0.2 w(a,c) = 2.0",
+        "violates:",
+        "w(a,c) ≤ w(a,b)+w(b,c)",
+        "because:",
+        "2.0 > 0.4",
+        "This may be perfectly acceptable for a task-specific scoring function, but metric indexing assumptions can no longer be inherited automatically."
+      ]
+    },
+    {
+      "heading": "Metric-constrained cost learning",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 8,
+      "word_count": 42,
+      "evidence": "If metric properties matter, learning can impose constraints such as:",
+      "paragraphs": [
+        "If metric properties matter, learning can impose constraints such as:",
+        "w(a,b) ≥ 0",
+        "w(a,a) = 0",
+        "w(a,b) = w(b,a)",
+        "and:",
+        "w(a,c) ≤ w(a,b)+w(b,c)",
+        "for every symbol triple.",
+        "This makes the learning problem harder but preserves the geometric guarantees needed by metric algorithms."
+      ]
+    },
+    {
+      "heading": "Weighted Levenshtein and Unicode",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 8,
+      "word_count": 46,
+      "evidence": "The cost model is meaningful only after the sequence unit has been defined.",
+      "paragraphs": [
+        "The cost model is meaningful only after the sequence unit has been defined.",
+        "Possible units include:",
+        "bytes;",
+        "UTF-8 code units;",
+        "UTF-16 code units;",
+        "Unicode code points;",
+        "grapheme clusters.",
+        "A weight table indexed by code points solves a different mathematical problem from one indexed by grapheme clusters."
+      ]
+    },
+    {
+      "heading": "Canonical Unicode equivalence",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 13,
+      "word_count": 54,
+      "evidence": "The visible character:",
+      "paragraphs": [
+        "The visible character:",
+        "é",
+        "can be represented as:",
+        "U+00E9",
+        "or:",
+        "U+0065 U+0301",
+        "A weighted code-point implementation without normalization sees:",
+        "one symbol",
+        "versus:",
+        "two symbols",
+        "and can assign a nonzero distance to canonically equivalent text.",
+        "Therefore the intended Unicode normalization policy should be defined before constructing the weight system.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Grapheme-level weights",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 4,
+      "word_count": 51,
+      "evidence": "If edits are intended to correspond to user-perceived characters:",
+      "paragraphs": [
+        "If edits are intended to correspond to user-perceived characters:",
+        "raw Unicode ↓ normalization ↓ grapheme segmentation ↓ grapheme tokens ↓ weighted edit distance",
+        "Weights can then be assigned between complete graphemes rather than individual code points.",
+        "The theoretical DP recurrence is unchanged because the algorithm only requires a sequence of symbols."
+      ]
+    },
+    {
+      "heading": "Token-level weighted edit distance",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 8,
+      "word_count": 62,
+      "evidence": "The same framework applies to words or tokens.",
+      "paragraphs": [
+        "The same framework applies to words or tokens.",
+        "Suppose:",
+        "x = [the, quick, brown, fox] y = [the, fast, brown, fox]",
+        "A token substitution cost can encode semantic or confusion information:",
+        "w( quick, fast ) = 0.4",
+        "while:",
+        "w( quick, refrigerator ) = 2.0",
+        "The DP operates exactly as before, but the alphabet is now a vocabulary rather than a character set."
+      ]
+    },
+    {
+      "heading": "Token weighting is not automatically semantic distance",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 5,
+      "word_count": 49,
+      "evidence": "Assigning semantic token substitution costs can make an edit model more meaning-aware, but the global structure remains an additive sequence alignment.",
+      "paragraphs": [
+        "Assigning semantic token substitution costs can make an edit model more meaning-aware, but the global structure remains an additive sequence alignment.",
+        "It still assumes:",
+        "sequence order matters transformations decompose into local edit operations",
+        "A general semantic model may require broader contextual representations.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Weighted Levenshtein versus affine-gap alignment",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 15,
+      "word_count": 96,
+      "evidence": "A common misconception is that assigning a different cost to insertion and deletion automatically captures realistic gap penalties.",
+      "paragraphs": [
+        "A common misconception is that assigning a different cost to insertion and deletion automatically captures realistic gap penalties.",
+        "Ordinary weighted edit distance is still memoryless.",
+        "If:",
+        "w(a,ε) = 2",
+        "then deleting:",
+        "abcde",
+        "costs:",
+        "5 × 2 = 10",
+        "Each deletion is charged independently.",
+        "An affine-gap model instead uses:",
+        "gap_cost(l) = gap_open + (l-1)gap_extend",
+        "so a long consecutive gap is treated partly as one structural event.",
+        "The algorithm must remember whether it is currently inside a gap.",
+        "That is a state-dependent alignment model rather than ordinary symbol-local weighted Levenshtein distance.",
+        "See Sequence Alignment and Gap Models ."
+      ]
+    },
+    {
+      "heading": "Weighted Levenshtein versus substitution matrices in biology",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 7,
+      "word_count": 55,
+      "evidence": "Biological sequence alignment often uses substitution matrices in which different residue pairs have different scores.",
+      "paragraphs": [
+        "Biological sequence alignment often uses substitution matrices in which different residue pairs have different scores.",
+        "This resembles weighted edit distance, but complete biological models commonly include:",
+        "match rewards;",
+        "negative mismatch scores;",
+        "affine gap penalties;",
+        "local or semiglobal alignment objectives.",
+        "Such models are better understood as general sequence alignment rather than automatically called weighted Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Weighted distance normalization",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 11,
+      "word_count": 32,
+      "evidence": "Weighted distances can vary dramatically with:",
+      "paragraphs": [
+        "Weighted distances can vary dramatically with:",
+        "string length;",
+        "cost scale;",
+        "alphabet;",
+        "application-specific weights.",
+        "This motivates normalization.",
+        "A simple normalized score is:",
+        "d_norm(x,y) = d_w(x,y) / Z(x,y)",
+        "where:",
+        "Z(x,y)",
+        "is a chosen scale."
+      ]
+    },
+    {
+      "heading": "Possible normalization denominators",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "Examples include:",
+      "paragraphs": [
+        "Examples include:",
+        "max(|x|,|y|)",
+        "or:",
+        "|x| + |y|",
+        "or a weighted maximum transformation cost.",
+        "There is no universally correct denominator.",
+        "The normalization must correspond to the meaning the application wants to attach to the score."
+      ]
+    },
+    {
+      "heading": "Cost scale must be considered",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 11,
+      "word_count": 55,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "all unit edits = 1",
+        "and another model simply multiplies every cost by:",
+        "100",
+        "Then:",
+        "d_w",
+        "is numerically 100 times larger, even though the relative edit geometry is identical.",
+        "Dividing only by:",
+        "string length",
+        "does not remove this arbitrary cost scaling.",
+        "Normalization across different weight models may therefore also require a defined cost unit."
+      ]
+    },
+    {
+      "heading": "Normalization may destroy metricity",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 10,
+      "word_count": 49,
+      "evidence": "Even if:",
+      "paragraphs": [
+        "Even if:",
+        "d_w",
+        "is a valid metric, a transformation such as:",
+        "d_w(x,y) / max(|x|,|y|)",
+        "must not automatically be assumed to preserve triangle inequality.",
+        "Metric properties of the normalized function require separate proof.",
+        "This matters before using normalized scores in:",
+        "BK-trees;",
+        "metric nearest-neighbor indexes;",
+        "clustering methods that assume a metric."
+      ]
+    },
+    {
+      "heading": "Weighted similarity scores",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 6,
+      "word_count": 39,
+      "evidence": "Applications frequently transform distance into a similarity:",
+      "paragraphs": [
+        "Applications frequently transform distance into a similarity:",
+        "s(x,y) = 1 - d_norm(x,y)",
+        "or:",
+        "s(x,y) = exp( -λd_w(x,y) )",
+        "These can be useful ranking scores but are not themselves the weighted edit distance.",
+        "Their mathematical properties must be evaluated separately."
+      ]
+    },
+    {
+      "heading": "Asymmetric normalization",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "If a weighted model itself is directional, normalization may also be directional.",
+      "paragraphs": [
+        "If a weighted model itself is directional, normalization may also be directional.",
+        "For example:",
+        "d_w(x,y) / cost_of_deleting_all_x_and_inserting_y",
+        "can differ when source and target are exchanged.",
+        "A system should not silently present such a score as a symmetric percentage similarity."
+      ]
+    },
+    {
+      "heading": "Weighted thresholds",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 8,
+      "word_count": 42,
+      "evidence": "A threshold:",
+      "paragraphs": [
+        "A threshold:",
+        "d_w(x,y) ≤ K",
+        "has meaning only relative to the cost scale.",
+        "If every weight is multiplied by:",
+        "10",
+        "the equivalent threshold must also be multiplied by:",
+        "10",
+        "A fixed numerical threshold cannot be transferred unchanged between independently calibrated weight systems."
+      ]
+    },
+    {
+      "heading": "Threshold calibration from data",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "Suppose the application has labeled pairs:",
+      "paragraphs": [
+        "Suppose the application has labeled pairs:",
+        "same entity different entity",
+        "A threshold can be selected by measuring:",
+        "precision;",
+        "recall;",
+        "false-positive rate;",
+        "false-negative rate;",
+        "ROC or precision-recall behavior.",
+        "This is calibration of a decision rule, not part of the mathematical definition of the edit distance."
+      ]
+    },
+    {
+      "heading": "Weighted q-gram filtering",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 13,
+      "word_count": 100,
+      "evidence": "Standard q-gram filtering for unit-cost edit distance uses the fact that:",
+      "paragraphs": [
+        "Standard q-gram filtering for unit-cost edit distance uses the fact that:",
+        "τ edits",
+        "can damage only a bounded number of q-grams.",
+        "A weighted threshold:",
+        "K",
+        "does not directly bound the edit count unless there is a positive minimum edit cost.",
+        "If:",
+        "c_min = minimum positive edit cost",
+        "then:",
+        "number of edits ≤ floor( K/c_min )",
+        "for every script whose total cost does not exceed K .",
+        "This gives a safe way to reuse some unit-edit filtering logic, but it can be much weaker than a filter derived directly from the weighted model.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Metric indexing under weighted costs",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 9,
+      "word_count": 53,
+      "evidence": "A BK-tree or other metric structure uses triangle inequality:",
+      "paragraphs": [
+        "A BK-tree or other metric structure uses triangle inequality:",
+        "d(x,z) ≤ d(x,y) + d(y,z)",
+        "If the weighted edit distance is metric, such pruning remains valid.",
+        "If the weight model is:",
+        "asymmetric;",
+        "nonmetric;",
+        "arbitrarily normalized;",
+        "the same metric-index proof may fail.",
+        "Changing the pairwise cost matrix therefore requires auditing the indexing architecture as well."
+      ]
+    },
+    {
+      "heading": "Weighted search architecture",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 2,
+      "word_count": 45,
+      "evidence": "RAW QUERY ↓ NORMALIZATION ↓ SEQUENCE REPRESENTATION ↓ CHEAP SAFE FILTERS ↓ CANDIDATE GENERATION ↓ WEIGHTED LOWER BOUNDS ↓ WEIGHTED EDIT-DISTANCE VERIFICATION ↓ DOMAIN-SPECIFIC RANKING",
+      "paragraphs": [
+        "RAW QUERY ↓ NORMALIZATION ↓ SEQUENCE REPRESENTATION ↓ CHEAP SAFE FILTERS ↓ CANDIDATE GENERATION ↓ WEIGHTED LOWER BOUNDS ↓ WEIGHTED EDIT-DISTANCE VERIFICATION ↓ DOMAIN-SPECIFIC RANKING",
+        "This separation is important because the cheapest candidate filter does not necessarily use the same score as the final verifier."
+      ]
+    },
+    {
+      "heading": "Weighted Levenshtein in spelling correction",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 6,
+      "word_count": 59,
+      "evidence": "A spelling system can use:",
+      "paragraphs": [
+        "A spelling system can use:",
+        "observed query ↓ candidate dictionary terms ↓ weighted edit distance ↓ language frequency / context ↓ ranking",
+        "Weighted distance can model the error channel while language frequency models the prior probability of candidate words.",
+        "A complete probabilistic interpretation may resemble:",
+        "P( intended word | observed word )",
+        "rather than ranking by edit distance alone."
+      ]
+    },
+    {
+      "heading": "Weighted distance should not replace language context",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 7,
+      "word_count": 48,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "from form",
+        "are close under edit operations.",
+        "Which one is correct may depend entirely on the sentence:",
+        "I came ___ London.",
+        "No character-level weight matrix can infer this grammatical context by itself.",
+        "Weighted edit distance is therefore one component of spelling correction, not a complete language model."
+      ]
+    },
+    {
+      "heading": "Weighted OCR correction",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "A useful OCR pipeline can be:",
+      "paragraphs": [
+        "A useful OCR pipeline can be:",
+        "OCR token ↓ candidate lexicon ↓ visual-confusion weighted distance ↓ language-model probability ↓ best correction",
+        "The edit costs can encode known OCR confusions, but word frequency and sentence context remain necessary when several lexically plausible candidates exist."
+      ]
+    },
+    {
+      "heading": "Weighted entity matching",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 17,
+      "word_count": 54,
+      "evidence": "Record linkage may assign low costs to:",
+      "paragraphs": [
+        "Record linkage may assign low costs to:",
+        "common abbreviation differences;",
+        "accent differences;",
+        "frequent transliteration substitutions;",
+        "punctuation deletion;",
+        "known OCR noise.",
+        "But:",
+        "small weighted edit distance",
+        "still does not imply:",
+        "same real-world entity",
+        "A complete linkage system may also require:",
+        "address;",
+        "date of birth;",
+        "organization;",
+        "geography;",
+        "identifier consistency.",
+        "See Entity Resolution and Record Linkage ."
+      ]
+    },
+    {
+      "heading": "Cost matrices can encode bias",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 8,
+      "word_count": 70,
+      "evidence": "Because weighted distance embeds assumptions about which transformations are cheap, the cost model directly influences which strings are treated as similar.",
+      "paragraphs": [
+        "Because weighted distance embeds assumptions about which transformations are cheap, the cost model directly influences which strings are treated as similar.",
+        "For example, a transliteration matrix trained predominantly on one language group may perform poorly on another.",
+        "A keyboard model optimized for QWERTY may be inappropriate for:",
+        "AZERTY;",
+        "QWERTZ;",
+        "mobile keyboards;",
+        "non-Latin layouts.",
+        "Cost design should therefore be treated as a data and modeling decision, not only an implementation detail."
+      ]
+    },
+    {
+      "heading": "Context-dependent weighted edits",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 12,
+      "word_count": 54,
+      "evidence": "Ordinary weighted Levenshtein assumes:",
+      "paragraphs": [
+        "Ordinary weighted Levenshtein assumes:",
+        "cost of an operation depends only on the symbols directly involved",
+        "For example:",
+        "w(a,b)",
+        "does not depend on neighboring symbols.",
+        "Some processes violate this assumption.",
+        "A deletion might be more likely inside:",
+        "aaaa",
+        "than in:",
+        "abcd",
+        "or a substitution may depend on:",
+        "previous character next character word position language context"
+      ]
+    },
+    {
+      "heading": "Additional state for contextual costs",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 14,
+      "word_count": 62,
+      "evidence": "If the next cost depends on the previous edit state, the DP state must be expanded.",
+      "paragraphs": [
+        "If the next cost depends on the previous edit state, the DP state must be expanded.",
+        "Instead of:",
+        "D[i][j]",
+        "one may need:",
+        "D[i][j][s]",
+        "where:",
+        "s",
+        "represents contextual information.",
+        "Examples include:",
+        "inside gap versus outside gap;",
+        "previous character class;",
+        "finite-state error process;",
+        "phonetic state.",
+        "At that point the model becomes a generalized weighted finite-state edit system rather than ordinary symbol-local weighted Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Weighted finite-state transducers",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 16,
+      "word_count": 67,
+      "evidence": "A weighted finite-state transducer can encode edit operations explicitly.",
+      "paragraphs": [
+        "A weighted finite-state transducer can encode edit operations explicitly.",
+        "Transitions such as:",
+        "a : a / 0",
+        "represent a match,",
+        "a : b / 0.3",
+        "a substitution,",
+        "a : ε / 1.1",
+        "a deletion, and:",
+        "ε : b / 0.7",
+        "an insertion.",
+        "More complex transducers can also encode:",
+        "multi-character substitutions;",
+        "context;",
+        "phonetic rules;",
+        "language-specific transformations.",
+        "The shortest path through the composed transducer then generalizes weighted edit-distance computation."
+      ]
+    },
+    {
+      "heading": "Semiring perspective",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "The standard weighted edit DP operates in the min-plus semiring:",
+      "paragraphs": [
+        "The standard weighted edit DP operates in the min-plus semiring:",
+        "combine alternative paths: min combine operations along a path: +",
+        "Conceptually:",
+        "alternative scripts ↓ take minimum cost operations in one script ↓ add costs",
+        "Changing the algebra changes the meaning of the computation."
+      ]
+    },
+    {
+      "heading": "Probability semiring",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 4,
+      "word_count": 45,
+      "evidence": "A probabilistic model interested in total transformation probability may use:",
+      "paragraphs": [
+        "A probabilistic model interested in total transformation probability may use:",
+        "alternative paths: sum operations along a path: multiply",
+        "or log-domain equivalents.",
+        "Thus weighted edit distance belongs to a broader family of sequence dynamic programs whose difference lies partly in the algebra used to aggregate paths."
+      ]
+    },
+    {
+      "heading": "Integer versus floating-point weights",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 10,
+      "word_count": 36,
+      "evidence": "Integer costs are attractive because they provide:",
+      "paragraphs": [
+        "Integer costs are attractive because they provide:",
+        "exact arithmetic;",
+        "stable comparisons;",
+        "compact storage;",
+        "compatibility with discrete-cost algorithms.",
+        "Floating-point costs are useful when weights come from:",
+        "probabilities;",
+        "geometric distances;",
+        "learned models.",
+        "But floating-point arithmetic introduces implementation concerns."
+      ]
+    },
+    {
+      "heading": "Floating-point equality",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 9,
+      "word_count": 36,
+      "evidence": "Two mathematically equal path costs may differ numerically:",
+      "paragraphs": [
+        "Two mathematically equal path costs may differ numerically:",
+        "0.1 + 0.2",
+        "versus:",
+        "0.3",
+        "under binary floating-point arithmetic.",
+        "If tie-breaking or reproducible traceback matters, the implementation should define:",
+        "comparison tolerance;",
+        "deterministic tie rules;",
+        "possibly fixed-point integer scaling."
+      ]
+    },
+    {
+      "heading": "Fixed-point scaling",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "Suppose all application weights have at most:",
+      "paragraphs": [
+        "Suppose all application weights have at most:",
+        "3 decimal places",
+        "Multiplying by:",
+        "1000",
+        "allows:",
+        "0.125 → 125 1.750 → 1750",
+        "and exact integer arithmetic.",
+        "This is appropriate only when the chosen scale preserves the intended cost distinctions."
+      ]
+    },
+    {
+      "heading": "Overflow",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "Integer scaling increases numerical magnitude.",
+      "paragraphs": [
+        "Integer scaling increases numerical magnitude.",
+        "If:",
+        "maximum operation cost = W",
+        "and the alignment can contain:",
+        "O(m+n)",
+        "operations, total costs can approach:",
+        "O( (m+n)W )",
+        "The accumulator type must therefore be large enough to avoid overflow."
+      ]
+    },
+    {
+      "heading": "Infinity as a forbidden operation",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 9,
+      "word_count": 34,
+      "evidence": "A useful weighted model may assign:",
+      "paragraphs": [
+        "A useful weighted model may assign:",
+        "w(a,b) = ∞",
+        "to forbid specific transformations.",
+        "For example:",
+        "substitution forbidden but insert/delete allowed",
+        "produces an indel-style distance.",
+        "The DP recurrence remains valid when:",
+        "∞",
+        "is handled correctly."
+      ]
+    },
+    {
+      "heading": "Hamming distance through weighted edit costs",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 4,
+      "word_count": 51,
+      "evidence": "For equal-length strings, Hamming-style behavior can be induced by:",
+      "paragraphs": [
+        "For equal-length strings, Hamming-style behavior can be induced by:",
+        "w(a,b) = 0 if a=b 1 otherwise w(a,ε) = ∞ w(ε,b) = ∞",
+        "Then insertions and deletions are impossible and only positional substitutions remain.",
+        "This demonstrates how many edit-distance variants can be described through different weight systems over the same general framework."
+      ]
+    },
+    {
+      "heading": "Insertion-deletion distance through weights",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "Indel distance can be represented by:",
+      "paragraphs": [
+        "Indel distance can be represented by:",
+        "w(a,ε) = 1 w(ε,b) = 1 w(a,b) = 2 for a != b",
+        "because a substitution costs exactly the same as:",
+        "delete + insert",
+        "and can therefore be removed without changing the optimal cost.",
+        "The resulting distance satisfies:",
+        "d_ID(x,y) = |x| + |y| - 2LCS(x,y)"
+      ]
+    },
+    {
+      "heading": "Weighted cost models are not all equally identifiable",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "w(a,b) = w(a,ε) + w(ε,b)",
+        "Then observed alignments may not distinguish whether a transformation occurred through:",
+        "substitution",
+        "or:",
+        "delete + insert",
+        "without additional modeling assumptions.",
+        "This matters when learning edit costs from aligned or unaligned training data."
+      ]
+    },
+    {
+      "heading": "Regularization in learned costs",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 14,
+      "word_count": 56,
+      "evidence": "A learned cost matrix with many free parameters can overfit.",
+      "paragraphs": [
+        "A learned cost matrix with many free parameters can overfit.",
+        "For alphabet size:",
+        "|Σ| = σ",
+        "a full substitution matrix contains:",
+        "σ²",
+        "entries before insertion and deletion parameters are added.",
+        "For a large token vocabulary, direct free-parameter learning becomes impractical.",
+        "Useful regularization strategies include:",
+        "symmetry constraints;",
+        "low-dimensional embeddings;",
+        "character-class sharing;",
+        "Bayesian priors;",
+        "frequency smoothing;",
+        "metric constraints."
+      ]
+    },
+    {
+      "heading": "Embedding-based substitution costs",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 10,
+      "word_count": 52,
+      "evidence": "Instead of storing every:",
+      "paragraphs": [
+        "Instead of storing every:",
+        "w(a,b)",
+        "independently, associate each symbol with a vector:",
+        "v(a) ∈ R^d",
+        "and define:",
+        "w(a,b) = f( ||v(a)-v(b)|| )",
+        "This can reduce parameter count and impose geometric structure on substitution costs.",
+        "If:",
+        "f",
+        "and the embedding metric are chosen appropriately, symmetry and triangle-related properties can be easier to maintain."
+      ]
+    },
+    {
+      "heading": "Weight sparsity",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 9,
+      "word_count": 54,
+      "evidence": "In many applications almost all substitutions have a default cost:",
+      "paragraphs": [
+        "In many applications almost all substitutions have a default cost:",
+        "1",
+        "and only a small number of special confusions differ:",
+        "i ↔ l 0 ↔ o c ↔ k ...",
+        "The matrix can then be stored sparsely:",
+        "default_cost = 1 override[(i,l)] = 0.2 override[(0,o)] = 0.1 ...",
+        "This avoids:",
+        "O(σ²)",
+        "memory for large alphabets."
+      ]
+    },
+    {
+      "heading": "Fast weight lookup matters",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 13,
+      "word_count": 49,
+      "evidence": "The dynamic program performs a substitution-cost lookup for almost every matrix cell.",
+      "paragraphs": [
+        "The dynamic program performs a substitution-cost lookup for almost every matrix cell.",
+        "Thus:",
+        "O(mn)",
+        "distance complexity can hide expensive:",
+        "hash lookups;",
+        "object allocation;",
+        "Unicode string keys;",
+        "function dispatch.",
+        "For performance-critical code, map input symbols to compact integer IDs and use:",
+        "arrays;",
+        "flat matrices;",
+        "compact sparse maps;",
+        "specialized default-cost branches."
+      ]
+    },
+    {
+      "heading": "Branch-free substitution lookup",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "For a small dense alphabet:",
+      "paragraphs": [
+        "For a small dense alphabet:",
+        "cost = matrix[ source_id * alphabet_size + target_id ]",
+        "can be significantly cheaper than:",
+        "dictionary[(source,target)]",
+        "inside the hot DP loop."
+      ]
+    },
+    {
+      "heading": "Row reuse",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "Allocate:",
+      "paragraphs": [
+        "Allocate:",
+        "previous current",
+        "once and reuse them.",
+        "Avoid allocating a new row for every source character:",
+        "for each i: allocate row",
+        "because allocation overhead can become significant for repeated comparisons."
+      ]
+    },
+    {
+      "heading": "Batch processing",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "If one query is compared against many candidates:",
+      "paragraphs": [
+        "If one query is compared against many candidates:",
+        "query ↓ candidate 1 candidate 2 candidate 3 ...",
+        "precompute any query-dependent information such as:",
+        "symbol IDs;",
+        "normalization;",
+        "cost-row pointers;",
+        "length bounds.",
+        "The weighted DP itself still needs candidate-specific computation, but preprocessing can be amortized."
+      ]
+    },
+    {
+      "heading": "Early threshold abandonment",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 9,
+      "word_count": 46,
+      "evidence": "Suppose only:",
+      "paragraphs": [
+        "Suppose only:",
+        "d_w(x,y) ≤ K",
+        "matters.",
+        "If every value on the active DP frontier exceeds:",
+        "K",
+        "and all future edit costs are nonnegative, no continuation can reduce the accumulated path cost below the threshold.",
+        "The computation can terminate and return:",
+        ">K",
+        "without finishing the full matrix."
+      ]
+    },
+    {
+      "heading": "Weighted lower-bound pruning inside DP",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 22,
+      "word_count": 67,
+      "evidence": "Suppose the current state is:",
+      "paragraphs": [
+        "Suppose the current state is:",
+        "(i,j)",
+        "with accumulated cost:",
+        "D[i][j]",
+        "There remain:",
+        "m-i",
+        "source symbols and:",
+        "n-j",
+        "target symbols.",
+        "A lower bound on future gap cost comes from the remaining length imbalance:",
+        "r = (n-j) - (m-i)",
+        "If:",
+        "r > 0",
+        "at least r net insertions remain.",
+        "If:",
+        "r < 0",
+        "at least:",
+        "-r",
+        "net deletions remain.",
+        "Therefore:",
+        "current_cost + remaining_length_lower_bound > K",
+        "allows safe state pruning."
+      ]
+    },
+    {
+      "heading": "Heuristic pruning versus exact pruning",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 8,
+      "word_count": 44,
+      "evidence": "A lower bound is safe only if:",
+      "paragraphs": [
+        "A lower bound is safe only if:",
+        "LB(state) ≤ minimum possible remaining cost",
+        "for every continuation.",
+        "Using an empirical estimate that occasionally overestimates future cost can introduce false negatives.",
+        "An exact weighted-distance engine should clearly distinguish:",
+        "mathematically valid lower bounds",
+        "from:",
+        "heuristic ranking estimates"
+      ]
+    },
+    {
+      "heading": "Testing a weighted implementation",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "Weighted models need more tests than unit-cost Levenshtein because errors can arise both from dynamic programming and from the cost model.",
+      "paragraphs": [
+        "Weighted models need more tests than unit-cost Levenshtein because errors can arise both from dynamic programming and from the cost model."
+      ]
+    },
+    {
+      "heading": "Identity",
+      "level": 3,
+      "id": "ux-section-103",
+      "paragraph_count": 4,
+      "word_count": 12,
+      "evidence": "d_w(x,x) = 0",
+      "paragraphs": [
+        "d_w(x,x) = 0",
+        "when:",
+        "w(a,a) = 0",
+        "and no negative-cost alternatives exist."
+      ]
+    },
+    {
+      "heading": "Empty strings",
+      "level": 3,
+      "id": "ux-section-104",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "d_w( \"\", y ) = Σ insertion costs of y",
+      "paragraphs": [
+        "d_w( \"\", y ) = Σ insertion costs of y",
+        "and:",
+        "d_w( x, \"\" ) = Σ deletion costs of x"
+      ]
+    },
+    {
+      "heading": "Unit-cost reduction",
+      "level": 3,
+      "id": "ux-section-105",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "When every nonmatch operation is assigned:",
+      "paragraphs": [
+        "When every nonmatch operation is assigned:",
+        "1",
+        "the weighted implementation must agree exactly with ordinary Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Cheap substitution",
+      "level": 3,
+      "id": "ux-section-106",
+      "paragraph_count": 6,
+      "word_count": 17,
+      "evidence": "w(a,b) = 0.2",
+      "paragraphs": [
+        "w(a,b) = 0.2",
+        "should produce:",
+        "d_w(\"a\",\"b\") ≤ 0.2",
+        "and exactly:",
+        "0.2",
+        "when no cheaper multi-operation route exists."
+      ]
+    },
+    {
+      "heading": "Expensive substitution",
+      "level": 3,
+      "id": "ux-section-107",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "Set:",
+      "paragraphs": [
+        "Set:",
+        "w(a,b) = 10 w(a,ε) = 1 w(ε,b) = 1",
+        "and verify:",
+        "d_w(\"a\",\"b\") = 2",
+        "under ordinary alignment DP."
+      ]
+    },
+    {
+      "heading": "Asymmetry",
+      "level": 3,
+      "id": "ux-section-108",
+      "paragraph_count": 7,
+      "word_count": 13,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "w(a,ε) != w(ε,a)",
+        "verify that:",
+        "d_w(x,y)",
+        "and:",
+        "d_w(y,x)",
+        "can differ as intended."
+      ]
+    },
+    {
+      "heading": "Metric tests",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 8,
+      "word_count": 49,
+      "evidence": "If the model is intended to be a metric, test:",
+      "paragraphs": [
+        "If the model is intended to be a metric, test:",
+        "d_w(x,y) ≥ 0",
+        "d_w(x,y) = 0 iff x = y",
+        "d_w(x,y) = d_w(y,x)",
+        "and:",
+        "d_w(x,z) ≤ d_w(x,y) + d_w(y,z)",
+        "over exhaustive small strings.",
+        "Testing cannot replace a proof, but it is highly effective at detecting implementation or cost-table mistakes."
+      ]
+    },
+    {
+      "heading": "Exhaustive small-alphabet validation",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 13,
+      "word_count": 42,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "Σ = {a,b}",
+        "generate every string up to length:",
+        "4",
+        "or:",
+        "5",
+        "and compute all pairwise weighted distances.",
+        "Then verify:",
+        "metric properties if intended;",
+        "symmetry if intended;",
+        "agreement with a reference full-matrix implementation;",
+        "agreement between optimized and scalar implementations;",
+        "threshold decisions."
+      ]
+    },
+    {
+      "heading": "Check the elementary weight matrix separately",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 9,
+      "word_count": 34,
+      "evidence": "Before testing complete strings, validate:",
+      "paragraphs": [
+        "Before testing complete strings, validate:",
+        "w(a,a) = 0",
+        "and, if required:",
+        "w(a,b) = w(b,a)",
+        "and:",
+        "w(a,c) ≤ w(a,b) + w(b,c)",
+        "for every:",
+        "a,b,c ∈ Σ̄",
+        "A small alphabet permits exhaustive validation of all triples."
+      ]
+    },
+    {
+      "heading": "Testing distance closure",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "For arbitrary learned costs:",
+      "paragraphs": [
+        "For arbitrary learned costs:",
+        "w",
+        "compute:",
+        "w*",
+        "through an all-pairs shortest-path algorithm over the extended alphabet.",
+        "Then check whether:",
+        "w*(a,b) < w(a,b)",
+        "for any pair.",
+        "Such an inequality reveals that the original direct edit cost is dominated by an indirect sequence of symbol transformations."
+      ]
+    },
+    {
+      "heading": "Cost-matrix diagnostics",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 9,
+      "word_count": 43,
+      "evidence": "Useful diagnostics include:",
+      "paragraphs": [
+        "Useful diagnostics include:",
+        "minimum positive cost;",
+        "maximum finite cost;",
+        "fraction of asymmetric pairs;",
+        "triangle-inequality violations;",
+        "zero-cost equivalence pairs;",
+        "direct substitutions dominated by insert/delete;",
+        "indirect substitutions cheaper than direct substitutions.",
+        "These properties often explain surprising retrieval behavior more clearly than inspecting individual query results."
+      ]
+    },
+    {
+      "heading": "Common misconception: weighted means only different operation types",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 5,
+      "word_count": 40,
+      "evidence": "A simple weighted model might assign:",
+      "paragraphs": [
+        "A simple weighted model might assign:",
+        "insertion = 1 deletion = 1 substitution = 2",
+        "But weighted edit distance can be much richer:",
+        "delete(a) delete(b) ... insert(a) insert(b) ... substitute(a,b) substitute(a,c) ...",
+        "Weights may depend on the actual symbols involved."
+      ]
+    },
+    {
+      "heading": "Common misconception: a substitution matrix determines the whole distance",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Insertion and deletion routes compete with substitution.",
+        "If:",
+        "w(a,b) > w(a,ε) + w(ε,b)",
+        "the direct substitution may never appear in an optimal alignment."
+      ]
+    },
+    {
+      "heading": "Common misconception: weighted edit distance is always symmetric",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Symmetry depends on the elementary cost model."
+      ]
+    },
+    {
+      "heading": "Common misconception: weighted edit distance is always a metric",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 5,
+      "word_count": 10,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Arbitrary cost matrices can violate:",
+        "identity;",
+        "symmetry;",
+        "triangle inequality."
+      ]
+    },
+    {
+      "heading": "Common misconception: any weight table can be used with BK-trees",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "BK-tree pruning depends on metric properties.",
+        "A nonmetric weighted score can cause branches containing valid results to be pruned incorrectly if metric reasoning is applied unchanged."
+      ]
+    },
+    {
+      "heading": "Common misconception: Myers automatically supports custom weights",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "The classical bit-vector formulas are specialized to the structure of unit-cost edit distance."
+      ]
+    },
+    {
+      "heading": "Common misconception: weighted Ukkonen is obtained by replacing +1 with +weight",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "The standard distance-sensitive geometry relies on edit count and cost being tightly linked.",
+        "A correct weighted threshold algorithm must be derived from weighted lower bounds rather than mechanically modifying the unit-cost recurrence."
+      ]
+    },
+    {
+      "heading": "Common misconception: probability-derived edit costs give the probability of the target string",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "Not necessarily.",
+      "paragraphs": [
+        "Not necessarily.",
+        "The minimum negative-log-cost path gives the most probable individual path under a suitable model.",
+        "The total probability of the target generally requires summing over all possible paths."
+      ]
+    },
+    {
+      "heading": "Common misconception: low weighted distance proves entity identity",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "A cost matrix encodes lexical transformation plausibility, not real-world identity."
+      ]
+    },
+    {
+      "heading": "Common misconception: learned costs are objectively correct",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 7,
+      "word_count": 25,
+      "evidence": "Learned weights are conditional on:",
+      "paragraphs": [
+        "Learned weights are conditional on:",
+        "training data;",
+        "labels;",
+        "model structure;",
+        "regularization;",
+        "objective function.",
+        "They can reproduce biases and distribution shifts present in the training corpus."
+      ]
+    },
+    {
+      "heading": "Algorithm compatibility table",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 1,
+      "word_count": 102,
+      "evidence": "Method Arbitrary local weighted costs? Important condition Wagner–Fischer DP Yes Local additive insertion, deletion, substitution costs Masek–Paterson Restricted weighted support Finite alphabet and discrete common cost unit for stated bound Ukkonen-style banding Requires rederivation Weighted lower bounds and positive gap costs Myers bit-vector No in classical form Relies on unit-cost DP structure Landau–Vishkin No in classical form Classical recurrence uses unit error layers Levenshtein automata Not in ordinary degree-k form Weighted-state or transducer model required q-gram filtering Possible with adapted bounds Need a safe operation-count or weighted lower bound BK-tree Yes only when distance is metric Triangle inequality required for correct pruning",
+      "paragraphs": [
+        "Method Arbitrary local weighted costs? Important condition Wagner–Fischer DP Yes Local additive insertion, deletion, substitution costs Masek–Paterson Restricted weighted support Finite alphabet and discrete common cost unit for stated bound Ukkonen-style banding Requires rederivation Weighted lower bounds and positive gap costs Myers bit-vector No in classical form Relies on unit-cost DP structure Landau–Vishkin No in classical form Classical recurrence uses unit error layers Levenshtein automata Not in ordinary degree-k form Weighted-state or transducer model required q-gram filtering Possible with adapted bounds Need a safe operation-count or weighted lower bound BK-tree Yes only when distance is metric Triangle inequality required for correct pruning"
+      ]
+    },
+    {
+      "heading": "Model-selection checklist",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 11,
+      "word_count": 61,
+      "evidence": "Define the sequence unit. Byte, code point, grapheme, token, phoneme, residue?",
+      "paragraphs": [
+        "Define the sequence unit. Byte, code point, grapheme, token, phoneme, residue?",
+        "Define insertion cost. Constant or symbol-dependent?",
+        "Define deletion cost.",
+        "Define substitution costs.",
+        "Decide whether direction matters.",
+        "Decide whether metricity matters.",
+        "Check triangle inequality if metric indexing will be used.",
+        "Choose preprocessing separately from weighting.",
+        "Define normalization explicitly if used.",
+        "Calibrate thresholds on representative data.",
+        "Audit downstream algorithms for unit-cost assumptions."
+      ]
+    },
+    {
+      "heading": "Implementation checklist",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 13,
+      "word_count": 92,
+      "evidence": "Normalize input before weight lookup if required.",
+      "paragraphs": [
+        "Normalize input before weight lookup if required.",
+        "Map symbols to integer IDs.",
+        "Store substitution weights densely for small alphabets and sparsely for large ones.",
+        "Initialize the first row with cumulative insertion costs.",
+        "Initialize the first column with cumulative deletion costs.",
+        "Use the exact weighted recurrence.",
+        "Reuse two DP rows for distance-only computation.",
+        "Store predecessor information only when traceback is required.",
+        "Handle infinity explicitly for forbidden edits.",
+        "Define floating-point comparison policy.",
+        "Apply safe length lower bounds before DP.",
+        "Apply threshold abandonment when only bounded results are needed.",
+        "Differential-test against a full reference implementation."
+      ]
+    },
+    {
+      "heading": "A complete conceptual model",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 1,
+      "word_count": 93,
+      "evidence": "RAW SEQUENCES ↓ REPRESENTATION │ ├── bytes ├── code points ├── graphemes └── tokens ↓ WEIGHT FUNCTION w : Σ̄ × Σ̄ → R≥0 ∪ {∞} │ ├── match ├── substitution ├── insertion └── deletion ↓ OPTIONAL STRUCTURAL CHECKS │ ├── symmetry ├── triangle inequality ├── metric closure └── scale normalization ↓ WEIGHTED EDIT GRAPH ↓ DYNAMIC PROGRAMMING ↓ MINIMUM-COST ALIGNMENT ↓ WEIGHTED EDIT DISTANCE │ ├── raw score ├── threshold decision ├── normalized score └── edit script ↓ APPLICATION │ ├── spelling ├── OCR ├── record linkage ├── transliteration └── sequence matching",
+      "paragraphs": [
+        "RAW SEQUENCES ↓ REPRESENTATION │ ├── bytes ├── code points ├── graphemes └── tokens ↓ WEIGHT FUNCTION w : Σ̄ × Σ̄ → R≥0 ∪ {∞} │ ├── match ├── substitution ├── insertion └── deletion ↓ OPTIONAL STRUCTURAL CHECKS │ ├── symmetry ├── triangle inequality ├── metric closure └── scale normalization ↓ WEIGHTED EDIT GRAPH ↓ DYNAMIC PROGRAMMING ↓ MINIMUM-COST ALIGNMENT ↓ WEIGHTED EDIT DISTANCE │ ├── raw score ├── threshold decision ├── normalized score └── edit script ↓ APPLICATION │ ├── spelling ├── OCR ├── record linkage ├── transliteration └── sequence matching"
+      ]
+    },
+    {
+      "heading": "Weighted Levenshtein versus classical Levenshtein",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 1,
+      "word_count": 74,
+      "evidence": "Property Classical Levenshtein Weighted Levenshtein Insertion cost 1 Arbitrary nonnegative local cost Deletion cost 1 Arbitrary nonnegative local cost Substitution cost 0 or 1 Can depend on symbol pair Symmetric? Yes Not necessarily Metric? Yes Depends on cost system Basic DP complexity O(mn) O(mn) Two-row space O(min(m,n)) O(min(m,n)) Classical Myers bit-vector Applicable Not for arbitrary weights Classical degree-k automaton Applicable Requires generalized weighted model Interpretation Minimum number of edits Minimum total cost of edits",
+      "paragraphs": [
+        "Property Classical Levenshtein Weighted Levenshtein Insertion cost 1 Arbitrary nonnegative local cost Deletion cost 1 Arbitrary nonnegative local cost Substitution cost 0 or 1 Can depend on symbol pair Symmetric? Yes Not necessarily Metric? Yes Depends on cost system Basic DP complexity O(mn) O(mn) Two-row space O(min(m,n)) O(min(m,n)) Classical Myers bit-vector Applicable Not for arbitrary weights Classical degree-k automaton Applicable Requires generalized weighted model Interpretation Minimum number of edits Minimum total cost of edits"
+      ]
+    },
+    {
+      "heading": "Key mathematical facts",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 1,
+      "word_count": 69,
+      "evidence": "Property Weighted edit distance General elementary cost w : Σ̄ × Σ̄ → R≥0 ∪ {∞} Deletion w(a,ε) Insertion w(ε,b) Substitution w(a,b) Match Normally w(a,a)=0 Classical Levenshtein Discrete unit-cost special case DP time O(mn) Distance-only space O(min(m,n)) Automatically symmetric? No Automatically metric? No Metric sufficient condition Elementary cost is a metric over Σ̄ Quasimetric sufficient condition Elementary cost satisfies directed triangle inequality Alignment/script equivalence Guaranteed under suitable quasimetric costs",
+      "paragraphs": [
+        "Property Weighted edit distance General elementary cost w : Σ̄ × Σ̄ → R≥0 ∪ {∞} Deletion w(a,ε) Insertion w(ε,b) Substitution w(a,b) Match Normally w(a,a)=0 Classical Levenshtein Discrete unit-cost special case DP time O(mn) Distance-only space O(min(m,n)) Automatically symmetric? No Automatically metric? No Metric sufficient condition Elementary cost is a metric over Σ̄ Quasimetric sufficient condition Elementary cost satisfies directed triangle inequality Alignment/script equivalence Guaranteed under suitable quasimetric costs"
+      ]
+    },
+    {
+      "heading": "The most important modeling principle",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 17,
+      "word_count": 90,
+      "evidence": "Weighted Levenshtein distance should not begin with:",
+      "paragraphs": [
+        "Weighted Levenshtein distance should not begin with:",
+        "Which numbers should go in the cost matrix?",
+        "It should begin with:",
+        "What real transformation process is the distance supposed to model?",
+        "Only then should costs be assigned.",
+        "If the process is:",
+        "typing errors",
+        "the model may depend on keyboard behavior.",
+        "If it is:",
+        "OCR noise",
+        "the costs should reflect visual confusions.",
+        "If it is:",
+        "phonetic transcription",
+        "the units themselves may need to be phonemes.",
+        "If it is:",
+        "biological evolution",
+        "ordinary weighted Levenshtein may be too simple because realistic gap models contain state."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 7,
+      "word_count": 374,
+      "evidence": "Weighted Levenshtein distance replaces the uniform edit count of classical Levenshtein distance with a minimum-cost transformation problem. Insertions, deletions, and substitutions can receive different penalties, and those penalties may depend on the particular symbols involved. Classical Levenshtein distance is recovered when every nonmatching elementary edit has unit cost.",
+      "paragraphs": [
+        "Weighted Levenshtein distance replaces the uniform edit count of classical Levenshtein distance with a minimum-cost transformation problem. Insertions, deletions, and substitutions can receive different penalties, and those penalties may depend on the particular symbols involved. Classical Levenshtein distance is recovered when every nonmatching elementary edit has unit cost.",
+        "The basic dynamic program remains structurally identical to Wagner–Fischer. For prefixes x[1..i] and y[1..j] , the recurrence chooses the cheapest of deleting x_i , inserting y_j , or aligning x_i with y_j . The resulting exact algorithm runs in O(mn) time and can compute the numerical distance in O(min(m,n)) working space.",
+        "The mathematical consequences of weighting are much deeper than this small recurrence change suggests. A cost system can be asymmetric, can violate identity, and can fail triangle inequality. If the elementary cost over Σ ∪ {ε} is a metric, the induced string distance is a metric; if it is a suitable quasimetric, the induced distance preserves directed triangle inequality. These properties determine whether metric indexes and other geometric algorithms remain correct.",
+        "There is also a subtle difference between alignment-based and unrestricted edit-script definitions. When the elementary cost table violates triangle inequality, repeatedly transforming one symbol through intermediate symbols can be cheaper than aligning it directly with the target symbol. Under quasimetric costs, such detours provide no advantage, and the alignment and edit-script views coincide.",
+        "Weighted costs also affect algorithm selection. Ordinary Wagner–Fischer naturally supports them. The Masek–Paterson Four Russians method supports a discrete weighted regime under finite-alphabet and common-cost-unit assumptions. Classical Myers bit vectors, Landau–Vishkin error layers, and degree-k Levenshtein automata depend much more strongly on unit-cost structure and cannot simply be reused with arbitrary real-valued weights.",
+        "In practical systems, the quality of the cost model is often more important than the DP implementation. Costs can be designed from keyboard geometry, OCR confusions, transliteration rules, observed error frequencies, or learned probabilistic models. But learned or hand-designed weights should be audited for symmetry, triangle inequality, scale, calibration, and downstream algorithm assumptions.",
+        "Weighted Levenshtein distance is therefore best understood as a general framework for cost-sensitive sequence transformation. Its value comes not merely from assigning different numbers to edits, but from making the mathematical error model correspond more closely to the real process that generated the observed difference."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 8,
+      "word_count": 113,
+      "evidence": "Edit Distance Variants — the wider taxonomy containing weighted, Hamming, indel, transposition, normalized, and structured edit models.",
+      "paragraphs": [
+        "Edit Distance Variants — the wider taxonomy containing weighted, Hamming, indel, transposition, normalized, and structured edit models.",
+        "Damerau–Levenshtein Distance — adding adjacent transposition as a primitive edit operation.",
+        "Edit Distance Complexity — exact and parameterized complexity across unit-cost and generalized edit models.",
+        "Bounded and Parameterized Edit Distance — threshold-sensitive algorithms and the role of the distance parameter.",
+        "Masek–Paterson Algorithm — Four Russians acceleration for discrete edit costs.",
+        "Learned Edit Distance and Embeddings — learning cost functions and surrogate representations from data.",
+        "Unicode and Grapheme-Safe Levenshtein — choosing the correct sequence unit before weighting edits.",
+        "Sequence Alignment and Gap Models — models where gap cost depends on gap structure rather than independent symbol edits."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 6,
+      "word_count": 152,
+      "evidence": "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI record .",
+      "paragraphs": [
+        "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI record .",
+        "Peter H. Sellers, “On the Theory and Computation of Evolutionary Distances,” SIAM Journal on Applied Mathematics , 26(4), 787–793, 1974. DOI record .",
+        "William J. Masek and Michael S. Paterson, “A Faster Algorithm Computing String Edit Distances,” Journal of Computer and System Sciences , 20(1), 18–31, 1980. DOI record .",
+        "Eric Sven Ristad and Peter N. Yianilos, “Learning String-Edit Distance,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 20(5), 522–532, 1998. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI record .",
+        "Debarati Das, Jacob Gilbert, MohammadTaghi Hajiaghayi, Tomasz Kociumaka, and Barna Saha, “Weighted Edit Distance Computation: Strings, Trees, and Dyck,” Proceedings of the 55th Annual ACM Symposium on Theory of Computing , 377–390, 2023. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "References",
+          "anchor_id": "ux-section-133",
+          "alias": "approximate string matching",
+          "excerpt": "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI record ."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-132",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — threshold-sensitive algorithms and the role of the distance parameter."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-132",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Damerau–Levenshtein Distance — adding adjacent transposition as a primitive edit operation."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-132",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — exact and parameterized complexity across unit-cost and generalized edit models."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-variants",
+      "evidence": [
+        {
+          "section": "Hamming distance through weighted edit costs",
+          "anchor_id": "ux-section-89",
+          "alias": "edit distance variants",
+          "excerpt": "This demonstrates how many edit-distance variants can be described through different weight systems over the same general framework."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-132",
+          "alias": "edit distance variants",
+          "excerpt": "Edit Distance Variants — the wider taxonomy containing weighted, Hamming, indel, transposition, normalized, and structured edit models."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Weighted Levenshtein Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Weighted edit distance replaces those constants with a cost function:"
+        },
+        {
+          "section": "Weighted edit script",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "The weighted edit distance is then conceptually:"
+        },
+        {
+          "section": "Alignment formulation",
+          "anchor_id": "ux-section-4",
+          "alias": "edit distance",
+          "excerpt": "Weighted edit distance can also be defined through alignments."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Weighted Levenshtein Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "edit operations",
+          "excerpt": "Weighted Levenshtein distance generalizes the classical Levenshtein distance by allowing different insertions, deletions, and substitutions to have different costs. Instead of asking only for the smallest number of edit operations needed to transform one sequence into another, it asks for the minimum total cost of such a transformation."
+        },
+        {
+          "section": "Alignment and edit-script definitions are not always identical",
+          "anchor_id": "ux-section-5",
+          "alias": "edit operations",
+          "excerpt": "An unrestricted sequence of edit operations could transform:"
+        },
+        {
+          "section": "Thresholded weighted edit distance",
+          "anchor_id": "ux-section-31",
+          "alias": "edit operations",
+          "excerpt": "positive-cost edit operations."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "Weighted entity matching",
+          "anchor_id": "ux-section-77",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "See Entity Resolution and Record Linkage ."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Weighted q-gram filtering",
+          "anchor_id": "ux-section-71",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/learned-edit-distance-and-embeddings",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-132",
+          "alias": "learned edit distance and embeddings",
+          "excerpt": "Learned Edit Distance and Embeddings — learning cost functions and surrogate representations from data."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "Algorithm compatibility table",
+          "anchor_id": "ux-section-124",
+          "alias": "levenshtein automata",
+          "excerpt": "Method Arbitrary local weighted costs? Important condition Wagner–Fischer DP Yes Local additive insertion, deletion, substitution costs Masek–Paterson Restricted weighted support Finite alphabet and discrete common cost unit for stated bound Ukkonen-style banding Requires rederivation Weighted lower bounds and positive gap costs Myers bit-vector No in classical form Relies on unit-cost DP structure Landau–Vishkin No in classical form Classical recurrence uses unit error layers Levenshtein automata Not in ordinary degree-k form Weighted-state or transducer model required q-gram filtering Possible with adapted bounds Need a safe operation-count or weighted lower bound BK-tree Yes only when dis"
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-131",
+          "alias": "levenshtein automata",
+          "excerpt": "Weighted costs also affect algorithm selection. Ordinary Wagner–Fischer naturally supports them. The Masek–Paterson Four Russians method supports a discrete weighted regime under finite-alphabet and common-cost-unit assumptions. Classical Myers bit vectors, Landau–Vishkin error layers, and degree-k Levenshtein automata depend much more strongly on unit-cost structure and cannot simply be reused with arbitrary real-valued weights."
+        }
+      ]
+    },
+    {
+      "target": "/masek-paterson-algorithm",
+      "evidence": [
+        {
+          "section": "Masek–Paterson and discrete weighted costs",
+          "anchor_id": "ux-section-36",
+          "alias": "masek paterson algorithm",
+          "excerpt": "The Masek–Paterson algorithm is historically important because it already treats nonuniform edit costs."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-132",
+          "alias": "masek paterson algorithm",
+          "excerpt": "Masek–Paterson Algorithm — Four Russians acceleration for discrete edit costs."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Why Myers bit vectors do not directly support arbitrary weights",
+          "anchor_id": "ux-section-34",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "The Myers Bit-Vector Algorithm exploits the highly constrained neighboring differences of unit-cost Levenshtein dynamic programming."
+        }
+      ]
+    },
+    {
+      "target": "/sequence-alignment-and-gap-models",
+      "evidence": [
+        {
+          "section": "Weighted Levenshtein versus affine-gap alignment",
+          "anchor_id": "ux-section-61",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "See Sequence Alignment and Gap Models ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-132",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "Sequence Alignment and Gap Models — models where gap cost depends on gap structure rather than independent symbol edits."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Token weighting is not automatically semantic distance",
+          "anchor_id": "ux-section-60",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "Language-specific costs",
+          "anchor_id": "ux-section-48",
+          "alias": "text normalization and transliteration",
+          "excerpt": "See Text Normalization and Transliteration ."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Why unit-cost Ukkonen cannot simply be copied",
+          "anchor_id": "ux-section-33",
+          "alias": "ukkonen algorithm",
+          "excerpt": "The Ukkonen algorithm exploits the fact that:"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Canonical Unicode equivalence",
+          "anchor_id": "ux-section-57",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-132",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "Unicode and Grapheme-Safe Levenshtein — choosing the correct sequence unit before weighting edits."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/weighted-levenshtein-distance#page",
+      "type": "WebPage",
+      "name": "Weighted Levenshtein Distance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "type": "TechArticle",
+      "name": "Weighted Levenshtein Distance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/weighted-levenshtein-distance#term",
+      "type": "DefinedTerm",
+      "name": "Weighted Levenshtein Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/weighted-levenshtein-distance#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "hasPart",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#page",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#page",
+      "mainEntity",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#page",
+      "isPartOf",
+      "https://www.levenshtein.net/theory#collection"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#page",
+      "hasPart",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-variants#concept"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/masek-paterson-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-automata#concept"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "isPartOf",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1145/321796.321811"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1137/0126070"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1016/0022-0000(80)90002-1"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1109/34.682181"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ],
+    [
+      "https://www.levenshtein.net/weighted-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1145/3564246.3585178"
+    ],
+    [
+      "https://doi.org/10.1145/321796.321811",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://doi.org/10.1145/321796.321811",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1137/0126070",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1016/0022-0000(80)90002-1",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1109/34.682181",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1109/34.682181",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3564246.3585178",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/0126070",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/0022-0000(80)90002-1",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/34.682181",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3564246.3585178",
+      "anchor": "DOI record"
+    }
+  ]
+}

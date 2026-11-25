@@ -1,0 +1,4122 @@
+{
+  "url": "/levenshtein-vs-jaro-winkler-and-phonetic-matching",
+  "title": "Levenshtein vs Jaro-Winkler and Phonetic Matching: Name Similarity, Record Linkage, and Phonetic Algorithms",
+  "h1": [
+    "Levenshtein vs Jaro-Winkler and Phonetic Matching: Name Similarity, Record Linkage, and Phonetic Algorithms"
+  ],
+  "group": "Comparisons",
+  "provisional_mission": "So sánh đo tên và âm vị",
+  "content_sha256": "65c04cc0ea18784466f3f6cae8a8e23e70baafd1a45fb9bac7543c6ba25d1cff",
+  "canonical": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching",
+  "primary_entity_candidate": "Levenshtein vs Jaro-Winkler and Phonetic Matching: Name Similarity, Record Linkage, and Phonetic Algorithms",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Levenshtein vs Jaro-Winkler and Phonetic Matching",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 15,
+      "word_count": 244,
+      "evidence": "Levenshtein distance, Jaro-Winkler similarity, and phonetic matching are frequently used for the same practical task—finding names, words, or records that “look similar”—but they model three fundamentally different kinds of resemblance.",
+      "paragraphs": [
+        "Levenshtein distance, Jaro-Winkler similarity, and phonetic matching are frequently used for the same practical task—finding names, words, or records that “look similar”—but they model three fundamentally different kinds of resemblance.",
+        "Levenshtein: How many sequence edits separate the spellings? Jaro / Jaro-Winkler: How strongly do nearby characters correspond, and how much of their ordering is preserved? Phonetic matching: Do the spellings map to similar pronunciations under a phonetic representation?",
+        "These are not interchangeable questions.",
+        "The strings:",
+        "MARTHA MARHTA",
+        "illustrate a local ordering error. Jaro gives high similarity because almost every character can be matched inside its positional window, while its transposition component detects the changed order. Jaro-Winkler increases the score further because the strings share the prefix MAR .",
+        "By contrast:",
+        "SMITH SMYTH",
+        "illustrates a spelling difference that preserves pronunciation especially well. Soundex deliberately maps both surnames into the same phonetic code.",
+        "And:",
+        "ABCDE ABXDE",
+        "is naturally described by Levenshtein distance as one substitution, without requiring assumptions about names or pronunciation.",
+        "The appropriate method therefore depends on what variation the application wants to tolerate:",
+        "orthographic edits? near-position character rearrangement? shared prefixes? pronunciation variation? transliteration? nicknames? aliases? real-world entity identity?",
+        "This article develops these distinctions rigorously, derives the Jaro and Jaro-Winkler formulas, explains their historical connection to record linkage, compares them with Levenshtein geometry, examines Soundex, NYSIIS, Metaphone, Double Metaphone, and phoneme-level edit distance, and shows why none of these techniques alone establishes that two records represent the same person, organization, place, or other real-world entity."
+      ]
+    },
+    {
+      "heading": "1. Three different similarity spaces",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "It is useful to begin by separating three spaces.",
+      "paragraphs": [
+        "It is useful to begin by separating three spaces."
+      ]
+    },
+    {
+      "heading": "Orthographic edit space",
+      "level": 3,
+      "id": "ux-section-3",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "spelling -> insert/delete/substitute -> minimum edit distance.",
+      "paragraphs": [
+        "spelling -> insert/delete/substitute -> minimum edit distance."
+      ]
+    },
+    {
+      "heading": "Character-correspondence space",
+      "level": 3,
+      "id": "ux-section-4",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "characters -> nearby matching positions + ordering consistency + optional prefix emphasis.",
+      "paragraphs": [
+        "characters -> nearby matching positions + ordering consistency + optional prefix emphasis."
+      ]
+    },
+    {
+      "heading": "Phonetic space",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "written form -> phonetic representation -> compare representations.",
+      "paragraphs": [
+        "written form -> phonetic representation -> compare representations."
+      ]
+    },
+    {
+      "heading": "2. They produce different invariances",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 1,
+      "word_count": 60,
+      "evidence": "Method family What it tries to tolerate What it directly preserves Levenshtein Insertions, deletions, substitutions Global sequence order Jaro Nearby character displacement and partial ordering variation Character identity within positional windows Jaro-Winkler Jaro variation plus favored common prefix Beginning-of-string agreement Soundex/NYSIIS/Metaphone Selected spelling differences associated with similar pronunciation Rule-defined phonetic classes Phoneme edit distance Pronunciation-sequence differences Order of phonetic units",
+      "paragraphs": [
+        "Method family What it tries to tolerate What it directly preserves Levenshtein Insertions, deletions, substitutions Global sequence order Jaro Nearby character displacement and partial ordering variation Character identity within positional windows Jaro-Winkler Jaro variation plus favored common prefix Beginning-of-string agreement Soundex/NYSIIS/Metaphone Selected spelling differences associated with similar pronunciation Rule-defined phonetic classes Phoneme edit distance Pronunciation-sequence differences Order of phonetic units"
+      ]
+    },
+    {
+      "heading": "3. “Name similarity” is not one mathematical problem",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 10,
+      "word_count": 46,
+      "evidence": "Suppose a customer database contains:",
+      "paragraphs": [
+        "Suppose a customer database contains:",
+        "Jon Smith John Smith J. Smith Jonathan Smith Jon Smyth Smith, Jon Sean Smith.",
+        "Different pairs involve different transformations:",
+        "missing character;",
+        "abbreviation;",
+        "nickname;",
+        "phonetic spelling;",
+        "token reordering;",
+        "possibly entirely different names.",
+        "No single character comparator models all of these transformations correctly."
+      ]
+    },
+    {
+      "heading": "4. Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "Classic Levenshtein distance allows three primitive operations:",
+      "paragraphs": [
+        "Classic Levenshtein distance allows three primitive operations:",
+        "insertion deletion substitution.",
+        "Under unit costs:",
+        "dL(x,y) = minimum number of those operations needed to transform x into y."
+      ]
+    },
+    {
+      "heading": "5. Dynamic-programming recurrence",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "X = x1...xm Y = y1...yn,",
+        "initialize:",
+        "D(i,0) = i D(0,j) = j.",
+        "Then:",
+        "D(i,j) = min( D(i-1,j) + 1, D(i,j-1) + 1, D(i-1,j-1) + [xi != yj] )."
+      ]
+    },
+    {
+      "heading": "6. Levenshtein produces a true edit distance",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 7,
+      "word_count": 21,
+      "evidence": "Its score has an explicit transformation interpretation.",
+      "paragraphs": [
+        "Its score has an explicit transformation interpretation.",
+        "For:",
+        "JOHN JON",
+        "one deletion is enough:",
+        "JOHN -> JON.",
+        "Therefore:",
+        "dL = 1."
+      ]
+    },
+    {
+      "heading": "7. Levenshtein does not know these are names",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 7,
+      "word_count": 23,
+      "evidence": "The exact same recurrence can compare:",
+      "paragraphs": [
+        "The exact same recurrence can compare:",
+        "DNA symbols;",
+        "source tokens;",
+        "event IDs;",
+        "ordinary words;",
+        "surnames.",
+        "This generality is one of its greatest strengths."
+      ]
+    },
+    {
+      "heading": "8. The same generality is also a limitation for names",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "Unit-cost Levenshtein does not know:",
+      "paragraphs": [
+        "Unit-cost Levenshtein does not know:",
+        "which name positions are especially informative;",
+        "which spellings sound alike;",
+        "which abbreviations are conventional;",
+        "which nicknames correspond;",
+        "which names are common in a population."
+      ]
+    },
+    {
+      "heading": "9. Uniform substitution costs",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "Classic Levenshtein treats:",
+      "paragraphs": [
+        "Classic Levenshtein treats:",
+        "SMITH -> SMYTH",
+        "and a substitution between two completely unrelated characters as the same one-unit event."
+      ]
+    },
+    {
+      "heading": "10. Weighted edit distance can improve this",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 4,
+      "word_count": 25,
+      "evidence": "A domain model can use:",
+      "paragraphs": [
+        "A domain model can use:",
+        "c_sub(x,y) c_ins(y) c_del(x).",
+        "See weighted Levenshtein distance .",
+        "But even weighted orthographic edits do not automatically create a pronunciation model."
+      ]
+    },
+    {
+      "heading": "11. Jaro was developed in record-linkage context",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 3,
+      "word_count": 37,
+      "evidence": "Matthew Jaro's work addressed matching records where identifying text fields such as names may contain errors or legitimate variation.",
+      "paragraphs": [
+        "Matthew Jaro's work addressed matching records where identifying text fields such as names may contain errors or legitimate variation.",
+        "His 1989 paper describes record-linkage methodology used around the 1985 Census of Tampa, Florida.",
+        "See Jaro, 1989 ."
+      ]
+    },
+    {
+      "heading": "12. Jaro does not compute a minimum edit script",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "This distinction is fundamental.",
+      "paragraphs": [
+        "This distinction is fundamental.",
+        "Jaro asks approximately:",
+        "How many characters can be matched between the two strings within reasonable positional windows, and how consistently ordered are those matched characters?"
+      ]
+    },
+    {
+      "heading": "13. Jaro therefore belongs to a different family of comparison models",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Levenshtein: optimization over edit paths Jaro: heuristic/statistical-style character correspondence.",
+      "paragraphs": [
+        "Levenshtein: optimization over edit paths Jaro: heuristic/statistical-style character correspondence."
+      ]
+    },
+    {
+      "heading": "14. Jaro matching window",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 3,
+      "word_count": 49,
+      "evidence": "In the widely used modern formulation, a character is eligible to match an identical character in the other string only when their positions differ by no more than approximately:",
+      "paragraphs": [
+        "In the widely used modern formulation, a character is eligible to match an identical character in the other string only when their positions differ by no more than approximately:",
+        "w = floor( max(|X|,|Y|) / 2 ) - 1.",
+        "Implementations normally clip negative windows to zero for very short strings."
+      ]
+    },
+    {
+      "heading": "15. Matching is not unrestricted",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "If an identical character occurs very far away in the other string, Jaro may not count it as a match.",
+      "paragraphs": [
+        "If an identical character occurs very far away in the other string, Jaro may not count it as a match.",
+        "This reflects the record-linkage intuition that:",
+        "small positional displacement can plausibly arise from data-entry error, large displacement is less convincing."
+      ]
+    },
+    {
+      "heading": "16. Define the matched-character count",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "m = number of matched characters within the allowed positional window.",
+        "Each character occurrence should be matched at most once."
+      ]
+    },
+    {
+      "heading": "17. Repeated characters make matching nontrivial",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 4,
+      "word_count": 14,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "ANNA NANA.",
+        "Several identical letters occur.",
+        "An implementation must identify which occurrences correspond."
+      ]
+    },
+    {
+      "heading": "18. Jaro's “transposition” terminology is easy to misunderstand",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "After identifying matching characters, extract those matches from each string in sequence order.",
+      "paragraphs": [
+        "After identifying matching characters, extract those matches from each string in sequence order.",
+        "Compare the two matched-character sequences.",
+        "Let the number of positions where those matched sequences disagree be:",
+        "q.",
+        "Then Jaro uses:",
+        "t = q / 2."
+      ]
+    },
+    {
+      "heading": "19. Jaro transposition is NOT a Damerau transposition",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 3,
+      "word_count": 39,
+      "evidence": "This is one of the most important distinctions in this article.",
+      "paragraphs": [
+        "This is one of the most important distinctions in this article.",
+        "Damerau-Levenshtein transposition: one primitive operation swapping two adjacent symbols. Jaro transposition quantity: half the number of out-of-order matched-character disagreements.",
+        "They should not be interpreted as the same object."
+      ]
+    },
+    {
+      "heading": "20. Jaro does not search for a minimum number of swaps",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 4,
+      "word_count": 16,
+      "evidence": "The variable:",
+      "paragraphs": [
+        "The variable:",
+        "t",
+        "is part of its correspondence score.",
+        "It is not a shortest edit-script length."
+      ]
+    },
+    {
+      "heading": "21. Jaro similarity formula",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 6,
+      "word_count": 19,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "m = 0,",
+        "define:",
+        "J(X,Y) = 0.",
+        "Otherwise:",
+        "J(X,Y) = 1/3 [ m/|X| + m/|Y| + (m-t)/m ]."
+      ]
+    },
+    {
+      "heading": "22. Three components",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "The terms represent:",
+      "paragraphs": [
+        "The terms represent:",
+        "m / |X| = coverage of X m / |Y| = coverage of Y (m-t) / m = ordering agreement among matched characters."
+      ]
+    },
+    {
+      "heading": "23. Jaro returns similarity rather than edit count",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "Conventionally:",
+      "paragraphs": [
+        "Conventionally:",
+        "0 = little/no similarity 1 = maximum similarity.",
+        "This direction is opposite to ordinary edit distance:",
+        "Levenshtein: smaller = closer Jaro similarity: larger = closer."
+      ]
+    },
+    {
+      "heading": "24. Be careful with APIs named “distance”",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 5,
+      "word_count": 16,
+      "evidence": "Some libraries return:",
+      "paragraphs": [
+        "Some libraries return:",
+        "similarity J.",
+        "Others define:",
+        "distance = 1 - J.",
+        "Always inspect the API."
+      ]
+    },
+    {
+      "heading": "25. Worked example: MARTHA vs MARHTA",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "X = MARTHA Y = MARHTA.",
+      "paragraphs": [
+        "X = MARTHA Y = MARHTA.",
+        "All six characters can be matched inside the Jaro window:",
+        "m = 6."
+      ]
+    },
+    {
+      "heading": "26. Ordering disagreement",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 6,
+      "word_count": 19,
+      "evidence": "The matched-character sequences expose the swapped:",
+      "paragraphs": [
+        "The matched-character sequences expose the swapped:",
+        "TH",
+        "versus:",
+        "HT.",
+        "Two matched positions disagree, therefore:",
+        "t = 2/2 = 1."
+      ]
+    },
+    {
+      "heading": "27. Jaro calculation",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "J = 1/3 [ 6/6 + 6/6 + (6-1)/6 ] = 1/3 [ 1 + 1 + 5/6 ] = 17/18 ≈ 0.944444.",
+      "paragraphs": [
+        "J = 1/3 [ 6/6 + 6/6 + (6-1)/6 ] = 1/3 [ 1 + 1 + 5/6 ] = 17/18 ≈ 0.944444."
+      ]
+    },
+    {
+      "heading": "28. Compare with Levenshtein",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 5,
+      "word_count": 17,
+      "evidence": "Classic Levenshtein does not contain a transposition primitive.",
+      "paragraphs": [
+        "Classic Levenshtein does not contain a transposition primitive.",
+        "For:",
+        "MARTHA MARHTA,",
+        "two substitutions suffice:",
+        "dL = 2."
+      ]
+    },
+    {
+      "heading": "29. True Damerau-Levenshtein would treat the adjacent swap differently",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "If adjacent transposition is one primitive operation:",
+      "paragraphs": [
+        "If adjacent transposition is one primitive operation:",
+        "dDL = 1.",
+        "The detailed distinction is covered in Levenshtein vs Damerau-Levenshtein and Hamming distance ."
+      ]
+    },
+    {
+      "heading": "30. Jaro does not say “one edit”",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "It says:",
+      "paragraphs": [
+        "It says:",
+        "very high partial character agreement with limited order disagreement."
+      ]
+    },
+    {
+      "heading": "31. This is why comparing raw Jaro and Levenshtein numbers is meaningless",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "Levenshtein = 2 Jaro = 0.9444.",
+      "paragraphs": [
+        "Levenshtein = 2 Jaro = 0.9444.",
+        "The units are completely different."
+      ]
+    },
+    {
+      "heading": "32. Jaro-Winkler adds common-prefix emphasis",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 3,
+      "word_count": 47,
+      "evidence": "William Winkler extended Jaro-style comparison for record linkage by increasing scores when the beginnings of strings agree.",
+      "paragraphs": [
+        "William Winkler extended Jaro-style comparison for record linkage by increasing scores when the beginnings of strings agree.",
+        "The 1990 paper String Comparator Metrics and Enhanced Decision Rules in the Fellegi-Sunter Model of Record Linkage describes the approach in the U.S. Census matching context.",
+        "See Winkler, 1990 ."
+      ]
+    },
+    {
+      "heading": "33. Common modern Jaro-Winkler formulation",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "J = Jaro similarity l = common prefix length usually capped at 4 p = prefix scaling factor.",
+        "Then:",
+        "JW = J + l p (1-J)."
+      ]
+    },
+    {
+      "heading": "34. Typical scaling value",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 7,
+      "word_count": 31,
+      "evidence": "A commonly used value is:",
+      "paragraphs": [
+        "A commonly used value is:",
+        "p = 0.1.",
+        "For the simple form with:",
+        "l <= 4,",
+        "keeping:",
+        "p <= 0.25",
+        "prevents the prefix term from pushing the basic expression beyond one."
+      ]
+    },
+    {
+      "heading": "35. MARTHA/MARHTA common prefix",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 4,
+      "word_count": 8,
+      "evidence": "They begin with:",
+      "paragraphs": [
+        "They begin with:",
+        "MAR.",
+        "Therefore:",
+        "l = 3."
+      ]
+    },
+    {
+      "heading": "36. Jaro-Winkler calculation",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "With:",
+      "paragraphs": [
+        "With:",
+        "J = 17/18 p = 0.1 l = 3,",
+        "JW = 17/18 + 3(0.1)(1-17/18) ≈ 0.961111."
+      ]
+    },
+    {
+      "heading": "37. Prefix agreement raises the score",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "Jaro: 0.944444 Jaro-Winkler: 0.961111.",
+      "paragraphs": [
+        "Jaro: 0.944444 Jaro-Winkler: 0.961111.",
+        "That difference is intentional."
+      ]
+    },
+    {
+      "heading": "38. The prefix boost encodes a domain assumption",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "It assumes agreement at the beginning of a string deserves additional confidence.",
+      "paragraphs": [
+        "It assumes agreement at the beginning of a string deserves additional confidence.",
+        "This was motivated by name/record-linkage behavior, not by a universal theorem of string similarity."
+      ]
+    },
+    {
+      "heading": "39. Prefix weighting can improve name matching",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "If errors frequently occur later in a name, two strings sharing their initial characters may be more plausible variants.",
+      "paragraphs": [
+        "If errors frequently occur later in a name, two strings sharing their initial characters may be more plausible variants."
+      ]
+    },
+    {
+      "heading": "40. Prefix weighting can also hurt",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "Suppose a corpus contains many identifiers sharing a standard prefix:",
+      "paragraphs": [
+        "Suppose a corpus contains many identifiers sharing a standard prefix:",
+        "ACME-ACCOUNT-... ACME-ASSET-... ACME-ACCESS-...",
+        "Prefix similarity may contribute little discriminative evidence."
+      ]
+    },
+    {
+      "heading": "41. Common prefixes can generate false confidence",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 5,
+      "word_count": 23,
+      "evidence": "If thousands of unrelated entities begin with:",
+      "paragraphs": [
+        "If thousands of unrelated entities begin with:",
+        "Mohamed",
+        "or:",
+        "International",
+        "or some standardized corporate prefix, initial agreement should not automatically dominate identity decisions."
+      ]
+    },
+    {
+      "heading": "42. Jaro-Winkler's prefix assumption is field-specific",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 9,
+      "word_count": 31,
+      "evidence": "It can be useful for:",
+      "paragraphs": [
+        "It can be useful for:",
+        "short personal names;",
+        "surnames;",
+        "some standardized textual fields.",
+        "It may be inappropriate for:",
+        "random identifiers;",
+        "cryptographic strings;",
+        "suffix-important fields;",
+        "codes where every position is equally significant."
+      ]
+    },
+    {
+      "heading": "43. Historical Jaro-Winkler and modern implementations are not always identical",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "This point deserves explicit attention.",
+      "paragraphs": [
+        "This point deserves explicit attention.",
+        "Winkler's original Census work combined partial string agreement with record-linkage weighting procedures and documented empirical comparator values.",
+        "Modern software libraries often expose a simplified, standardized-looking formula:",
+        "J + l p (1-J)."
+      ]
+    },
+    {
+      "heading": "44. Library results can therefore differ",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 8,
+      "word_count": 26,
+      "evidence": "Differences may arise from:",
+      "paragraphs": [
+        "Differences may arise from:",
+        "matching-window convention;",
+        "greedy matching of repeated characters;",
+        "prefix scaling;",
+        "prefix caps;",
+        "additional historical adjustments;",
+        "whether a boost is conditional;",
+        "normalization and preprocessing."
+      ]
+    },
+    {
+      "heading": "45. Do not assume “Jaro-Winkler” uniquely identifies one implementation",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "For reproducible research, record:",
+      "paragraphs": [
+        "For reproducible research, record:",
+        "library version matching-window rule prefix cap p value preprocessing similarity/distance convention."
+      ]
+    },
+    {
+      "heading": "46. Jaro-Winkler is not phonetic matching",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "This is another major conceptual boundary.",
+      "paragraphs": [
+        "This is another major conceptual boundary.",
+        "Jaro-Winkler examines characters and their positions.",
+        "It does not convert letters into pronunciations.",
+        "Jaro-Winkler = orthographic character comparator not pronunciation model."
+      ]
+    },
+    {
+      "heading": "47. Similar pronunciation is not directly encoded",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "Consider names whose spellings differ substantially but pronunciation is close.",
+      "paragraphs": [
+        "Consider names whose spellings differ substantially but pronunciation is close.",
+        "Jaro-Winkler can score them well if character correspondence happens to be strong, but this is an indirect consequence of orthography."
+      ]
+    },
+    {
+      "heading": "48. Phonetic matching changes representation",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "The general phonetic approach is:",
+      "paragraphs": [
+        "The general phonetic approach is:",
+        "written name | v phonetic coding | v phonetic key | v compare keys."
+      ]
+    },
+    {
+      "heading": "49. Phonetic algorithms do not merely assign cheaper character substitutions",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "They often rewrite the input according to pronunciation-oriented rules.",
+      "paragraphs": [
+        "They often rewrite the input according to pronunciation-oriented rules.",
+        "Several different spellings can deliberately collapse to the same code."
+      ]
+    },
+    {
+      "heading": "50. Soundex",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 3,
+      "word_count": 37,
+      "evidence": "Soundex is one of the best-known phonetic surname-coding systems.",
+      "paragraphs": [
+        "Soundex is one of the best-known phonetic surname-coding systems.",
+        "The U.S. National Archives describes it as a surname index based on how a surname sounds rather than how it is spelled.",
+        "See National Archives: Soundex System ."
+      ]
+    },
+    {
+      "heading": "51. Soundex code structure",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "In the Census Soundex system, a code consists of:",
+      "paragraphs": [
+        "In the Census Soundex system, a code consists of:",
+        "first surname letter + three digits.",
+        "For example:",
+        "Washington -> W-252."
+      ]
+    },
+    {
+      "heading": "52. Soundex consonant groups",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 2,
+      "word_count": 33,
+      "evidence": "The Census mapping groups consonants approximately as:",
+      "paragraphs": [
+        "The Census mapping groups consonants approximately as:",
+        "Code Letters 1 B, F, P, V 2 C, G, J, K, Q, S, X, Z 3 D, T 4 L 5 M, N 6 R"
+      ]
+    },
+    {
+      "heading": "53. Soundex deliberately collapses spellings",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "The National Archives gives:",
+      "paragraphs": [
+        "The National Archives gives:",
+        "SMITH SMYTH",
+        "as surnames that receive the same Soundex code:",
+        "S-530."
+      ]
+    },
+    {
+      "heading": "54. Levenshtein sees a character difference",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 3,
+      "word_count": 11,
+      "evidence": "SMITH SMYTH dL = 1.",
+      "paragraphs": [
+        "SMITH SMYTH dL = 1.",
+        "Soundex instead says:",
+        "same phonetic bucket."
+      ]
+    },
+    {
+      "heading": "55. These outputs have different semantics",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Levenshtein 1: one unit orthographic edit Soundex equality: same rule-defined phonetic key.",
+      "paragraphs": [
+        "Levenshtein 1: one unit orthographic edit Soundex equality: same rule-defined phonetic key."
+      ]
+    },
+    {
+      "heading": "56. Soundex equality is coarse",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Many different surnames can map to the same four-character key.",
+      "paragraphs": [
+        "Many different surnames can map to the same four-character key.",
+        "This creates collisions by design."
+      ]
+    },
+    {
+      "heading": "57. Soundex therefore behaves naturally as candidate generation",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "A practical system can use:",
+      "paragraphs": [
+        "A practical system can use:",
+        "same Soundex code -> possible candidates then stronger comparison -> ranking or linkage decision."
+      ]
+    },
+    {
+      "heading": "58. Soundex does not produce a graded similarity by itself",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "Basic use commonly looks like:",
+      "paragraphs": [
+        "Basic use commonly looks like:",
+        "code(X) == code(Y) ? match bucket : different bucket.",
+        "This differs from continuous Jaro-Winkler scores."
+      ]
+    },
+    {
+      "heading": "59. The retained initial letter creates a strong boundary",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 1,
+      "word_count": 22,
+      "evidence": "Because the first surname letter remains literal, two similarly pronounced names beginning with different letters can end up in different Soundex buckets.",
+      "paragraphs": [
+        "Because the first surname letter remains literal, two similarly pronounced names beginning with different letters can end up in different Soundex buckets."
+      ]
+    },
+    {
+      "heading": "60. This can reduce recall",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Phonetic equivalence is not guaranteed merely because human listeners might consider pronunciations similar.",
+      "paragraphs": [
+        "Phonetic equivalence is not guaranteed merely because human listeners might consider pronunciations similar."
+      ]
+    },
+    {
+      "heading": "61. Code truncation creates another limitation",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "Soundex keeps only three numeric groups after the initial letter.",
+      "paragraphs": [
+        "Soundex keeps only three numeric groups after the initial letter.",
+        "Differences later in long surnames may disappear."
+      ]
+    },
+    {
+      "heading": "62. This increases collisions",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Names sharing the same early phonetic pattern can become indistinguishable at the Soundex-key level.",
+      "paragraphs": [
+        "Names sharing the same early phonetic pattern can become indistinguishable at the Soundex-key level."
+      ]
+    },
+    {
+      "heading": "63. Soundex is historically and linguistically specialized",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "NIST's Dictionary of Algorithms and Data Structures notes that standard Soundex was devised for U.S. census-name use and works best on European names, with variants developed for other cultures.",
+      "paragraphs": [
+        "NIST's Dictionary of Algorithms and Data Structures notes that standard Soundex was devised for U.S. census-name use and works best on European names, with variants developed for other cultures.",
+        "See NIST DADS: Soundex ."
+      ]
+    },
+    {
+      "heading": "64. This is not a minor caveat",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 7,
+      "word_count": 20,
+      "evidence": "Names across the world may involve:",
+      "paragraphs": [
+        "Names across the world may involve:",
+        "phonemes absent from English;",
+        "non-Latin scripts;",
+        "language-specific transliteration;",
+        "tone;",
+        "consonant clusters;",
+        "morphological naming conventions."
+      ]
+    },
+    {
+      "heading": "65. One English-oriented phonetic encoder should not define multilingual similarity",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "The deeper linguistic problem is covered in phonetic, dialect, and language distance .",
+      "paragraphs": [
+        "The deeper linguistic problem is covered in phonetic, dialect, and language distance ."
+      ]
+    },
+    {
+      "heading": "66. NYSIIS",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 3,
+      "word_count": 44,
+      "evidence": "NYSIIS—the New York State Identification and Intelligence System algorithm—is another phonetic name encoder.",
+      "paragraphs": [
+        "NYSIIS—the New York State Identification and Intelligence System algorithm—is another phonetic name encoder.",
+        "NIST describes it as converting a name to a phonetic coding of up to six characters and cites Robert L. Taft's 1970 Name Search Techniques .",
+        "See NIST DADS: NYSIIS ."
+      ]
+    },
+    {
+      "heading": "67. NYSIIS uses transformation rules rather than Soundex's simple numeric grouping",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Conceptually:",
+      "paragraphs": [
+        "Conceptually:",
+        "name -> prefix/suffix transformations -> phonetic letter transformations -> canonical phonetic code."
+      ]
+    },
+    {
+      "heading": "68. This can retain more useful character structure than classic Soundex",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "But it remains a rule-based encoder.",
+      "paragraphs": [
+        "But it remains a rule-based encoder."
+      ]
+    },
+    {
+      "heading": "69. NYSIIS equality is still not identity",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "Two names sharing a phonetic code can be:",
+      "paragraphs": [
+        "Two names sharing a phonetic code can be:",
+        "variants of one name;",
+        "different legitimate names;",
+        "different people with similar names."
+      ]
+    },
+    {
+      "heading": "70. Metaphone",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "Lawrence Philips introduced Metaphone in 1990 as a more sophisticated English-oriented phonetic coding algorithm.",
+      "paragraphs": [
+        "Lawrence Philips introduced Metaphone in 1990 as a more sophisticated English-oriented phonetic coding algorithm.",
+        "NIST describes it as reducing English words to a code based on a set of consonant sounds.",
+        "See NIST DADS: Metaphone ."
+      ]
+    },
+    {
+      "heading": "71. Metaphone models pronunciation rules more explicitly",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Unlike basic Soundex, rules depend on letter context and common English spelling patterns.",
+      "paragraphs": [
+        "Unlike basic Soundex, rules depend on letter context and common English spelling patterns."
+      ]
+    },
+    {
+      "heading": "72. Rule context matters",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 6,
+      "word_count": 27,
+      "evidence": "The pronunciation of a letter can depend on:",
+      "paragraphs": [
+        "The pronunciation of a letter can depend on:",
+        "neighboring letters;",
+        "position in word;",
+        "special clusters;",
+        "initial combinations.",
+        "A context-aware phonetic encoder can account for some of this."
+      ]
+    },
+    {
+      "heading": "73. Metaphone is still not a full speech recognizer",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "It does not infer pronunciation from arbitrary language, accent, morphology, and conversational context.",
+      "paragraphs": [
+        "It does not infer pronunciation from arbitrary language, accent, morphology, and conversational context."
+      ]
+    },
+    {
+      "heading": "74. Rule-based phonetic code is an approximation",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "written form -> heuristic phonetic signature not written form -> perfect human pronunciation.",
+      "paragraphs": [
+        "written form -> heuristic phonetic signature not written form -> perfect human pronunciation."
+      ]
+    },
+    {
+      "heading": "75. Double Metaphone",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 3,
+      "word_count": 34,
+      "evidence": "Philips later introduced Double Metaphone.",
+      "paragraphs": [
+        "Philips later introduced Double Metaphone.",
+        "NIST describes it as an improved phonetic coding algorithm that can return two codes when a word has more than one plausible pronunciation.",
+        "See NIST DADS: Double Metaphone ."
+      ]
+    },
+    {
+      "heading": "76. Primary and secondary codes",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "Conceptually:",
+      "paragraphs": [
+        "Conceptually:",
+        "name -> primary phonetic key and possibly secondary phonetic key."
+      ]
+    },
+    {
+      "heading": "77. Why two codes help",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "Names of foreign origin can have more than one plausible pronunciation under English-language usage.",
+      "paragraphs": [
+        "Names of foreign origin can have more than one plausible pronunciation under English-language usage.",
+        "One key can represent the main interpretation while another provides an alternative."
+      ]
+    },
+    {
+      "heading": "78. Double Metaphone expands recall",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Two names can be considered candidate phonetic matches if:",
+      "paragraphs": [
+        "Two names can be considered candidate phonetic matches if:",
+        "primary(A) = primary(B) or primary(A) = secondary(B) or secondary(A) = primary(B) or secondary(A) = secondary(B)."
+      ]
+    },
+    {
+      "heading": "79. Increased recall can reduce precision",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "Additional accepted codes create more possible collisions.",
+      "paragraphs": [
+        "Additional accepted codes create more possible collisions.",
+        "This is another instance of the universal tradeoff:",
+        "more invariance -> more candidate matches -> potentially more false positives."
+      ]
+    },
+    {
+      "heading": "80. Soundex, NYSIIS, and Metaphone are not interchangeable",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "They encode different phonetic assumptions and therefore partition a vocabulary differently.",
+      "paragraphs": [
+        "They encode different phonetic assumptions and therefore partition a vocabulary differently."
+      ]
+    },
+    {
+      "heading": "81. There is no universal “phonetic distance” implied by the word phonetic",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "At minimum, specify:",
+      "paragraphs": [
+        "At minimum, specify:",
+        "Soundex? NYSIIS? Metaphone? Double Metaphone? phoneme sequence? language-specific model?"
+      ]
+    },
+    {
+      "heading": "82. Phonetic code equality versus phonetic distance",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "Traditional encoders often collapse a name to a code.",
+      "paragraphs": [
+        "Traditional encoders often collapse a name to a code.",
+        "A richer system can instead compare phonetic sequences gradually."
+      ]
+    },
+    {
+      "heading": "83. Phoneme-level representation",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 6,
+      "word_count": 18,
+      "evidence": "Suppose a pronunciation dictionary or grapheme-to-phoneme system maps:",
+      "paragraphs": [
+        "Suppose a pronunciation dictionary or grapheme-to-phoneme system maps:",
+        "X -> P(X) = (p1,p2,...,pm).",
+        "Then compare:",
+        "P(X)",
+        "and:",
+        "P(Y)."
+      ]
+    },
+    {
+      "heading": "84. Levenshtein can operate on phonemes",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 4,
+      "word_count": 14,
+      "evidence": "Compute:",
+      "paragraphs": [
+        "Compute:",
+        "dL( P(X), P(Y) ).",
+        "The algorithm is still Levenshtein.",
+        "The representation has changed."
+      ]
+    },
+    {
+      "heading": "85. This illustrates the difference between metric and representation",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "character Levenshtein = orthographic edit distance phoneme Levenshtein = pronunciation-sequence edit distance.",
+      "paragraphs": [
+        "character Levenshtein = orthographic edit distance phoneme Levenshtein = pronunciation-sequence edit distance."
+      ]
+    },
+    {
+      "heading": "86. The same dynamic program can answer different questions",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 5,
+      "word_count": 31,
+      "evidence": "This is why saying:",
+      "paragraphs": [
+        "This is why saying:",
+        "\"Levenshtein is not phonetic\"",
+        "needs nuance.",
+        "Character-level Levenshtein contains no phonetic knowledge.",
+        "But Levenshtein applied to a phonetic representation can become part of a phonetic matching system."
+      ]
+    },
+    {
+      "heading": "87. Weighted phoneme edit distance",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 4,
+      "word_count": 16,
+      "evidence": "Not all phoneme substitutions are equally similar.",
+      "paragraphs": [
+        "Not all phoneme substitutions are equally similar.",
+        "A model can define:",
+        "c_sub(p_i,p_j)",
+        "according to phonetic features."
+      ]
+    },
+    {
+      "heading": "88. Articulatory-feature distance",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "Phonemes can differ in dimensions such as:",
+      "paragraphs": [
+        "Phonemes can differ in dimensions such as:",
+        "voicing;",
+        "place of articulation;",
+        "manner of articulation;",
+        "vowel height;",
+        "vowel backness.",
+        "Substitutions sharing most features can receive lower cost."
+      ]
+    },
+    {
+      "heading": "89. That is richer than Soundex equality",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "Instead of:",
+      "paragraphs": [
+        "Instead of:",
+        "same phonetic bucket or different phonetic bucket,",
+        "the system returns graded phonological similarity."
+      ]
+    },
+    {
+      "heading": "90. But phoneme transcription introduces its own uncertainty",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "A written name may have multiple pronunciations.",
+      "paragraphs": [
+        "A written name may have multiple pronunciations."
+      ]
+    },
+    {
+      "heading": "91. Homographs",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "The same spelling can represent different pronunciations depending on language or lexical identity.",
+      "paragraphs": [
+        "The same spelling can represent different pronunciations depending on language or lexical identity."
+      ]
+    },
+    {
+      "heading": "92. Names are especially variable",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 6,
+      "word_count": 15,
+      "evidence": "Pronunciation can depend on:",
+      "paragraphs": [
+        "Pronunciation can depend on:",
+        "family preference;",
+        "regional accent;",
+        "language of origin;",
+        "local adaptation;",
+        "individual choice."
+      ]
+    },
+    {
+      "heading": "93. A pronunciation dictionary is not authoritative for every person",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "It supplies a model of likely pronunciation.",
+      "paragraphs": [
+        "It supplies a model of likely pronunciation."
+      ]
+    },
+    {
+      "heading": "94. Grapheme-to-phoneme prediction also has errors",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Unusual names, borrowed names, and uncommon transliterations are particularly challenging.",
+      "paragraphs": [
+        "Unusual names, borrowed names, and uncommon transliterations are particularly challenging."
+      ]
+    },
+    {
+      "heading": "95. Jaro-Winkler avoids pronunciation uncertainty",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "It works directly on the observed spelling.",
+      "paragraphs": [
+        "It works directly on the observed spelling.",
+        "This makes it robust in one sense:",
+        "no pronunciation model required."
+      ]
+    },
+    {
+      "heading": "96. But that also limits its invariance",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Orthographically distant homophones can remain poorly matched.",
+      "paragraphs": [
+        "Orthographically distant homophones can remain poorly matched."
+      ]
+    },
+    {
+      "heading": "97. Levenshtein is similarly pronunciation-neutral",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Its result is deterministic from the chosen symbol sequence and costs.",
+      "paragraphs": [
+        "Its result is deterministic from the chosen symbol sequence and costs."
+      ]
+    },
+    {
+      "heading": "98. Name matching therefore benefits from ensembles",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "A strong architecture may compute several independent features:",
+      "paragraphs": [
+        "A strong architecture may compute several independent features:",
+        "Levenshtein similarity Jaro similarity Jaro-Winkler similarity phonetic-code agreement token similarity nickname evidence transliteration evidence."
+      ]
+    },
+    {
+      "heading": "99. These should not simply be averaged blindly",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "The scores occupy different scales and encode overlapping but nonidentical evidence.",
+      "paragraphs": [
+        "The scores occupy different scales and encode overlapping but nonidentical evidence."
+      ]
+    },
+    {
+      "heading": "100. Record linkage provides the natural statistical framework",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "The purpose is not to ask:",
+      "paragraphs": [
+        "The purpose is not to ask:",
+        "Are the strings similar?",
+        "but:",
+        "How much evidence does this comparison provide that two records belong to the same underlying entity?"
+      ]
+    },
+    {
+      "heading": "101. Fellegi-Sunter framework",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "Fellegi and Sunter's classical record-linkage model distinguishes:",
+      "paragraphs": [
+        "Fellegi and Sunter's classical record-linkage model distinguishes:",
+        "M = true matching record pairs U = true nonmatching record pairs.",
+        "See Fellegi and Sunter, 1969 ."
+      ]
+    },
+    {
+      "heading": "102. Comparison evidence",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 4,
+      "word_count": 17,
+      "evidence": "For a comparison pattern:",
+      "paragraphs": [
+        "For a comparison pattern:",
+        "γ,",
+        "one considers quantities related to:",
+        "P(γ | M) and P(γ | U)."
+      ]
+    },
+    {
+      "heading": "103. Likelihood-ratio intuition",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "A comparison is valuable when it is:",
+      "paragraphs": [
+        "A comparison is valuable when it is:",
+        "common among true matches but rare among nonmatches."
+      ]
+    },
+    {
+      "heading": "104. This immediately explains why similarity alone is insufficient",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 6,
+      "word_count": 25,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "SMITH",
+        "and:",
+        "SMYTH",
+        "have high lexical and phonetic similarity.",
+        "If the population contains thousands of unrelated Smith/Smyth individuals, that evidence is not uniquely identifying."
+      ]
+    },
+    {
+      "heading": "105. Rarity matters",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "A rare surname agreement can provide more linkage information than agreement on a very common surname.",
+      "paragraphs": [
+        "A rare surname agreement can provide more linkage information than agreement on a very common surname.",
+        "Levenshtein, Jaro-Winkler, and Soundex do not know population frequency by themselves."
+      ]
+    },
+    {
+      "heading": "106. Same similarity can have different evidential value",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "rare-name similarity = 0.95 common-name similarity = 0.95.",
+      "paragraphs": [
+        "rare-name similarity = 0.95 common-name similarity = 0.95.",
+        "The numerical string score is the same.",
+        "The identity evidence need not be."
+      ]
+    },
+    {
+      "heading": "107. Entity-resolution system",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "A production model may combine:",
+      "paragraphs": [
+        "A production model may combine:",
+        "first-name comparison surname comparison date of birth address phone email organization geography.",
+        "See entity resolution and record linkage ."
+      ]
+    },
+    {
+      "heading": "108. Name-address-place matching adds structure",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "Names, addresses, and places have different internal semantics and should not necessarily use the same comparator.",
+      "paragraphs": [
+        "Names, addresses, and places have different internal semantics and should not necessarily use the same comparator.",
+        "See name, address, and place matching ."
+      ]
+    },
+    {
+      "heading": "109. Example multi-field comparison",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 3,
+      "word_count": 44,
+      "evidence": "Record A: John Smyth 12 King Road Boston 1970-04-08 Record B: Jon Smith 12 King Rd Boston 1970-04-08.",
+      "paragraphs": [
+        "Record A: John Smyth 12 King Road Boston 1970-04-08 Record B: Jon Smith 12 King Rd Boston 1970-04-08.",
+        "A system can use:",
+        "first name: Jaro-Winkler / edit score surname: phonetic + edit score address: component/token comparison city: canonicalized exact match date: exact structured comparison."
+      ]
+    },
+    {
+      "heading": "110. One concatenated Levenshtein distance would destroy field semantics",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "It would treat the entire record as one character sequence.",
+      "paragraphs": [
+        "It would treat the entire record as one character sequence."
+      ]
+    },
+    {
+      "heading": "111. Jaro-Winkler was designed with field-level record linkage in mind",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "This historical context explains why it is especially associated with:",
+      "paragraphs": [
+        "This historical context explains why it is especially associated with:",
+        "first names;",
+        "surnames;",
+        "addresses;",
+        "short identifying text fields."
+      ]
+    },
+    {
+      "heading": "112. Jaro-Winkler's common-prefix boost is not universally statistically optimal",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "The true usefulness of prefix agreement depends on:",
+      "paragraphs": [
+        "The true usefulness of prefix agreement depends on:",
+        "P(prefix agreement | match) versus P(prefix agreement | nonmatch)."
+      ]
+    },
+    {
+      "heading": "113. Different populations can produce different optimal behavior",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "different languages;",
+        "different naming conventions;",
+        "different OCR systems;",
+        "different data-entry interfaces."
+      ]
+    },
+    {
+      "heading": "114. Similarity thresholds require calibration",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 3,
+      "word_count": 13,
+      "evidence": "Rules such as:",
+      "paragraphs": [
+        "Rules such as:",
+        "JW >= 0.90 -> same person",
+        "have no universal validity."
+      ]
+    },
+    {
+      "heading": "115. Threshold should follow the decision problem",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Candidate generation may use a permissive threshold.",
+      "paragraphs": [
+        "Candidate generation may use a permissive threshold.",
+        "Automatic linkage may require much stronger evidence."
+      ]
+    },
+    {
+      "heading": "116. False merge and false split have different costs",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "In some systems:",
+      "paragraphs": [
+        "In some systems:",
+        "false merge",
+        "is much more dangerous than:",
+        "false split.",
+        "The threshold should reflect that risk."
+      ]
+    },
+    {
+      "heading": "117. Jaro-Winkler similarity is not a probability",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "A value:",
+      "paragraphs": [
+        "A value:",
+        "0.96",
+        "does not mean:",
+        "96% probability of same entity."
+      ]
+    },
+    {
+      "heading": "118. Levenshtein normalized similarity is not a probability either",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "The same warning applies to:",
+      "paragraphs": [
+        "The same warning applies to:",
+        "1 - d/max(length)."
+      ]
+    },
+    {
+      "heading": "119. Soundex equality is also not probability one",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Two names sharing a code simply satisfy one phonetic-coding rule.",
+      "paragraphs": [
+        "Two names sharing a code simply satisfy one phonetic-coding rule."
+      ]
+    },
+    {
+      "heading": "120. Calibration can map similarity features toward probability",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Given labeled matched and unmatched record pairs, a model can estimate:",
+      "paragraphs": [
+        "Given labeled matched and unmatched record pairs, a model can estimate:",
+        "P( same entity | JW, edit, phonetic, other fields )."
+      ]
+    },
+    {
+      "heading": "121. That is a classification/linkage model, not Jaro-Winkler itself",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "Keep the layers separate.",
+      "paragraphs": [
+        "Keep the layers separate."
+      ]
+    },
+    {
+      "heading": "122. Mathematical metric properties",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "Classic unit-cost Levenshtein distance is a true metric.",
+      "paragraphs": [
+        "Classic unit-cost Levenshtein distance is a true metric.",
+        "It satisfies:",
+        "non-negativity identity symmetry triangle inequality."
+      ]
+    },
+    {
+      "heading": "123. Do not assume the same for Jaro-Winkler",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 4,
+      "word_count": 23,
+      "evidence": "The commonly defined:",
+      "paragraphs": [
+        "The commonly defined:",
+        "dJW = 1 - JW",
+        "should not be assumed to be a mathematical metric.",
+        "In particular, triangle inequality can fail."
+      ]
+    },
+    {
+      "heading": "124. Why this matters",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "Metric trees and related nearest-neighbor indexes rely on triangle inequality for safe pruning.",
+      "paragraphs": [
+        "Metric trees and related nearest-neighbor indexes rely on triangle inequality for safe pruning.",
+        "A Jaro-Winkler implementation cannot automatically use metric-index reasoning simply because its API calls the output a “distance.”"
+      ]
+    },
+    {
+      "heading": "125. Comparator versus metric",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Winkler's 1990 paper explicitly notes that a string comparator mapping into:",
+      "paragraphs": [
+        "Winkler's 1990 paper explicitly notes that a string comparator mapping into:",
+        "[0,1]",
+        "need not be a metric in the mathematical sense."
+      ]
+    },
+    {
+      "heading": "126. This historical wording is useful today",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "Call Jaro-Winkler a:",
+      "paragraphs": [
+        "Call Jaro-Winkler a:",
+        "similarity or string comparator",
+        "unless mathematical metric properties have been established for the exact variant used."
+      ]
+    },
+    {
+      "heading": "127. Levenshtein has clearer metric geometry",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 5,
+      "word_count": 15,
+      "evidence": "This can be advantageous for:",
+      "paragraphs": [
+        "This can be advantageous for:",
+        "bounded neighborhoods;",
+        "metric indexes;",
+        "proofs using triangle inequality;",
+        "theoretical analysis."
+      ]
+    },
+    {
+      "heading": "128. Jaro-Winkler has stronger name-oriented inductive bias",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Its positional window and prefix adjustment encode assumptions useful for certain record fields.",
+      "paragraphs": [
+        "Its positional window and prefix adjustment encode assumptions useful for certain record fields."
+      ]
+    },
+    {
+      "heading": "129. This is a recurring engineering tradeoff",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "more mathematically generic vs more domain-specific heuristic structure.",
+      "paragraphs": [
+        "more mathematically generic vs more domain-specific heuristic structure."
+      ]
+    },
+    {
+      "heading": "130. Compare one deletion",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 8,
+      "word_count": 30,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "JOHN JON.",
+        "Levenshtein gives:",
+        "1.",
+        "A standard Jaro implementation gives high similarity because three of four characters align strongly.",
+        "Jaro-Winkler increases the result because:",
+        "JO",
+        "is a common prefix."
+      ]
+    },
+    {
+      "heading": "131. Numerical example",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "Under a common modern implementation:",
+      "paragraphs": [
+        "Under a common modern implementation:",
+        "Jaro(JOHN,JON) ≈ 0.916667 Jaro-Winkler ≈ 0.933333."
+      ]
+    },
+    {
+      "heading": "132. The same pair illustrates different interpretations",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Levenshtein: one deletion Jaro: high matched-character coverage Jaro-Winkler: high coverage + common-prefix evidence.",
+      "paragraphs": [
+        "Levenshtein: one deletion Jaro: high matched-character coverage Jaro-Winkler: high coverage + common-prefix evidence."
+      ]
+    },
+    {
+      "heading": "133. Compare transposition-like error",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 2,
+      "word_count": 32,
+      "evidence": "MARTHA MARHTA.",
+      "paragraphs": [
+        "MARTHA MARHTA.",
+        "Method Typical result Interpretation Levenshtein 2 Two unit edits Damerau-Levenshtein 1 One adjacent transposition Jaro ≈ 0.9444 High character correspondence with order disagreement Jaro-Winkler ≈ 0.9611 Jaro plus common-prefix boost"
+      ]
+    },
+    {
+      "heading": "134. Jaro's transposition signal is softer than edit geometry",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "It contributes one component of a similarity average rather than defining one explicit primitive transformation.",
+      "paragraphs": [
+        "It contributes one component of a similarity average rather than defining one explicit primitive transformation."
+      ]
+    },
+    {
+      "heading": "135. Compare spelling/pronunciation variant",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "SMITH SMYTH.",
+      "paragraphs": [
+        "SMITH SMYTH.",
+        "Under ordinary character comparison:",
+        "Levenshtein = 1.",
+        "Under Census Soundex:",
+        "SMITH -> S530 SMYTH -> S530."
+      ]
+    },
+    {
+      "heading": "136. Soundex collapses the difference completely at code level",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "This is desirable if:",
+      "paragraphs": [
+        "This is desirable if:",
+        "I/Y variation should not distinguish these surname candidates."
+      ]
+    },
+    {
+      "heading": "137. But code-level equality loses the original spelling evidence",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "Do not throw away the raw name after phonetic coding.",
+      "paragraphs": [
+        "Do not throw away the raw name after phonetic coding.",
+        "A stronger system retains:",
+        "original string phonetic code orthographic score."
+      ]
+    },
+    {
+      "heading": "138. Phonetic matching can produce false positives",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Two different surnames can sound similar or map to the same coarse phonetic bucket.",
+      "paragraphs": [
+        "Two different surnames can sound similar or map to the same coarse phonetic bucket."
+      ]
+    },
+    {
+      "heading": "139. Collision rate depends on the name population",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "A phonetic key that is discriminative in one dataset can be extremely common in another.",
+      "paragraphs": [
+        "A phonetic key that is discriminative in one dataset can be extremely common in another."
+      ]
+    },
+    {
+      "heading": "140. Evaluate bucket size",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "For each phonetic code:",
+      "paragraphs": [
+        "For each phonetic code:",
+        "bucket_size(code) = number of records assigned.",
+        "Very large buckets create expensive and noisy candidate sets."
+      ]
+    },
+    {
+      "heading": "141. Frequency-aware blocking",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Instead of treating every code equally, a linkage pipeline can downweight or subdivide extremely common phonetic buckets.",
+      "paragraphs": [
+        "Instead of treating every code equally, a linkage pipeline can downweight or subdivide extremely common phonetic buckets."
+      ]
+    },
+    {
+      "heading": "142. Combine phonetic and prefix evidence carefully",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "A pipeline such as:",
+      "paragraphs": [
+        "A pipeline such as:",
+        "same Soundex AND JW > threshold",
+        "is much stricter than:",
+        "same Soundex OR JW > threshold."
+      ]
+    },
+    {
+      "heading": "143. Boolean combination changes recall and precision dramatically",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "There is no universally correct operator.",
+      "paragraphs": [
+        "There is no universally correct operator."
+      ]
+    },
+    {
+      "heading": "144. Candidate-generation architecture",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 1,
+      "word_count": 40,
+      "evidence": "records | v normalization | +------------------+ | | v v phonetic keys textual signatures | | +--------+---------+ | v blocking | v candidate pairs | v Levenshtein / Jaro-Winkler | v multi-field model | v link / review / non-link.",
+      "paragraphs": [
+        "records | v normalization | +------------------+ | | v v phonetic keys textual signatures | | +--------+---------+ | v blocking | v candidate pairs | v Levenshtein / Jaro-Winkler | v multi-field model | v link / review / non-link."
+      ]
+    },
+    {
+      "heading": "145. Blocking and comparison are separate",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "Soundex can be useful primarily for:",
+      "paragraphs": [
+        "Soundex can be useful primarily for:",
+        "blocking.",
+        "Jaro-Winkler can then help rank candidate name pairs."
+      ]
+    },
+    {
+      "heading": "146. Phonetic blocking can miss true matches",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "If a true pair maps to different codes:",
+      "paragraphs": [
+        "If a true pair maps to different codes:",
+        "candidate never generated.",
+        "No later sophisticated comparator can recover it."
+      ]
+    },
+    {
+      "heading": "147. Candidate recall must be measured separately",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "Evaluate:",
+      "paragraphs": [
+        "Evaluate:",
+        "blocking recall = true matches surviving blocking / all true matches."
+      ]
+    },
+    {
+      "heading": "148. Final comparator recall is conditional on surviving candidates",
+      "level": 2,
+      "id": "ux-section-152",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "This is why end-to-end linkage metrics matter.",
+      "paragraphs": [
+        "This is why end-to-end linkage metrics matter."
+      ]
+    },
+    {
+      "heading": "149. Text normalization precedes all of these methods",
+      "level": 2,
+      "id": "ux-section-153",
+      "paragraph_count": 8,
+      "word_count": 15,
+      "evidence": "Name comparison often requires decisions about:",
+      "paragraphs": [
+        "Name comparison often requires decisions about:",
+        "Unicode normalization;",
+        "case folding;",
+        "punctuation;",
+        "titles;",
+        "spaces;",
+        "hyphens;",
+        "diacritics."
+      ]
+    },
+    {
+      "heading": "150. Normalization can improve robustness",
+      "level": 2,
+      "id": "ux-section-154",
+      "paragraph_count": 3,
+      "word_count": 8,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "O'CONNOR OCONNOR",
+        "may need punctuation-aware handling."
+      ]
+    },
+    {
+      "heading": "151. But normalization can erase real distinctions",
+      "level": 2,
+      "id": "ux-section-155",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Removing all punctuation, spaces, accents, and case is not automatically safe.",
+      "paragraphs": [
+        "Removing all punctuation, spaces, accents, and case is not automatically safe."
+      ]
+    },
+    {
+      "heading": "152. Unicode normalization has a specific purpose",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Canonical normalization can remove encoding-level differences.",
+      "paragraphs": [
+        "Canonical normalization can remove encoding-level differences.",
+        "It does not solve phonetic, transliteration, or identity ambiguity.",
+        "See Unicode and grapheme-safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "153. Diacritic folding is language-dependent",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 4,
+      "word_count": 14,
+      "evidence": "Removing diacritics may:",
+      "paragraphs": [
+        "Removing diacritics may:",
+        "improve recall in cross-system matching;",
+        "collapse distinct names;",
+        "remove pronunciation information."
+      ]
+    },
+    {
+      "heading": "154. Transliteration is another separate layer",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "Names can move between writing systems:",
+      "paragraphs": [
+        "Names can move between writing systems:",
+        "source script -> Latin transliteration.",
+        "Different transliteration standards can produce substantially different Latin spellings."
+      ]
+    },
+    {
+      "heading": "155. Phonetic algorithms usually expect a particular script",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Classic Soundex and Metaphone implementations primarily operate on Latin-script inputs.",
+      "paragraphs": [
+        "Classic Soundex and Metaphone implementations primarily operate on Latin-script inputs."
+      ]
+    },
+    {
+      "heading": "156. Transliterate first?",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 4,
+      "word_count": 16,
+      "evidence": "Sometimes:",
+      "paragraphs": [
+        "Sometimes:",
+        "source script -> transliteration -> phonetic encoding",
+        "is useful.",
+        "But every stage can lose information."
+      ]
+    },
+    {
+      "heading": "157. Transliteration is not pronunciation",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "A transliteration maps writing systems.",
+      "paragraphs": [
+        "A transliteration maps writing systems.",
+        "A phonetic transcription maps toward speech sounds.",
+        "See text normalization and transliteration ."
+      ]
+    },
+    {
+      "heading": "158. Two transliterations can represent the same original name",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Character distance between those transliterations can be substantial.",
+      "paragraphs": [
+        "Character distance between those transliterations can be substantial."
+      ]
+    },
+    {
+      "heading": "159. External alias knowledge may outperform every string metric",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "If a trusted source establishes:",
+      "paragraphs": [
+        "If a trusted source establishes:",
+        "Alias A = canonical name B,",
+        "that evidence is stronger than inferring identity from spelling similarity alone."
+      ]
+    },
+    {
+      "heading": "160. Nicknames are semantic/lexical relations",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Examples such as conventional short forms cannot reliably be derived from character distance alone.",
+      "paragraphs": [
+        "Examples such as conventional short forms cannot reliably be derived from character distance alone."
+      ]
+    },
+    {
+      "heading": "161. Jaro-Winkler also cannot infer arbitrary nicknames",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Some nickname pairs share little orthographic structure.",
+      "paragraphs": [
+        "Some nickname pairs share little orthographic structure."
+      ]
+    },
+    {
+      "heading": "162. Soundex cannot solve all nicknames either",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Phonetic similarity does not imply nickname equivalence.",
+      "paragraphs": [
+        "Phonetic similarity does not imply nickname equivalence."
+      ]
+    },
+    {
+      "heading": "163. Use alias dictionaries when available",
+      "level": 2,
+      "id": "ux-section-167",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Architecture:",
+      "paragraphs": [
+        "Architecture:",
+        "exact canonical alias | v high-confidence candidate otherwise | v fuzzy comparison."
+      ]
+    },
+    {
+      "heading": "164. Tokenized personal names",
+      "level": 2,
+      "id": "ux-section-168",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "Full names contain components:",
+      "paragraphs": [
+        "Full names contain components:",
+        "given name middle name family name prefix suffix."
+      ]
+    },
+    {
+      "heading": "165. Comparing the entire full name as one string can be misleading",
+      "level": 2,
+      "id": "ux-section-169",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "JOHN MICHAEL SMITH SMITH JOHN MICHAEL.",
+      "paragraphs": [
+        "JOHN MICHAEL SMITH SMITH JOHN MICHAEL.",
+        "Global Levenshtein is highly order-sensitive."
+      ]
+    },
+    {
+      "heading": "166. Jaro-Winkler also sees positional differences",
+      "level": 2,
+      "id": "ux-section-170",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Its character window does not make full token permutation free.",
+      "paragraphs": [
+        "Its character window does not make full token permutation free."
+      ]
+    },
+    {
+      "heading": "167. Parse name components when possible",
+      "level": 2,
+      "id": "ux-section-171",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "given_name to given_name surname to surname."
+      ]
+    },
+    {
+      "heading": "168. But name order varies culturally",
+      "level": 2,
+      "id": "ux-section-172",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "A robust system cannot assume the same component order across all naming traditions.",
+      "paragraphs": [
+        "A robust system cannot assume the same component order across all naming traditions."
+      ]
+    },
+    {
+      "heading": "169. Token matching may supplement component parsing",
+      "level": 2,
+      "id": "ux-section-173",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "A set or assignment strategy can search for the best mapping between name tokens.",
+      "paragraphs": [
+        "A set or assignment strategy can search for the best mapping between name tokens."
+      ]
+    },
+    {
+      "heading": "170. This becomes a structured matching problem",
+      "level": 2,
+      "id": "ux-section-174",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "It is no longer adequately described as:",
+      "paragraphs": [
+        "It is no longer adequately described as:",
+        "one string vs one string."
+      ]
+    },
+    {
+      "heading": "171. Jaro-Winkler works best when strings are already comparable fields",
+      "level": 2,
+      "id": "ux-section-175",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "This matches its record-linkage heritage.",
+      "paragraphs": [
+        "This matches its record-linkage heritage."
+      ]
+    },
+    {
+      "heading": "172. Comparing surname to an entire address is meaningless",
+      "level": 2,
+      "id": "ux-section-176",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Similarity algorithms do not repair incorrect schema alignment.",
+      "paragraphs": [
+        "Similarity algorithms do not repair incorrect schema alignment."
+      ]
+    },
+    {
+      "heading": "173. Field standardization matters before fuzzy comparison",
+      "level": 2,
+      "id": "ux-section-177",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "Winkler's Census work explicitly operated in a larger system where names and addresses were parsed and standardized for record linkage.",
+      "paragraphs": [
+        "Winkler's Census work explicitly operated in a larger system where names and addresses were parsed and standardized for record linkage."
+      ]
+    },
+    {
+      "heading": "174. Jaro-Winkler's prefix boost can privilege erroneous alignment",
+      "level": 2,
+      "id": "ux-section-178",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "If two different names share a common prefix by chance, Winkler adjustment raises similarity even though the shared prefix may not be discriminative.",
+      "paragraphs": [
+        "If two different names share a common prefix by chance, Winkler adjustment raises similarity even though the shared prefix may not be discriminative."
+      ]
+    },
+    {
+      "heading": "175. Example pattern",
+      "level": 2,
+      "id": "ux-section-179",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "ALEXANDER... ALEXANDRA...",
+      "paragraphs": [
+        "ALEXANDER... ALEXANDRA...",
+        "High prefix agreement is real.",
+        "Whether the records refer to the same entity remains unknown."
+      ]
+    },
+    {
+      "heading": "176. Prefix boost should therefore be treated as evidence, not identity",
+      "level": 2,
+      "id": "ux-section-180",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "This mirrors the general principle:",
+      "paragraphs": [
+        "This mirrors the general principle:",
+        "string similarity != entity identity."
+      ]
+    },
+    {
+      "heading": "177. Jaro matching windows also encode length dependence",
+      "level": 2,
+      "id": "ux-section-181",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "The permissible positional displacement grows with the longer input length.",
+      "paragraphs": [
+        "The permissible positional displacement grows with the longer input length."
+      ]
+    },
+    {
+      "heading": "178. Thus the same absolute displacement can behave differently at different lengths",
+      "level": 2,
+      "id": "ux-section-182",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "A two-position shift may be:",
+      "paragraphs": [
+        "A two-position shift may be:",
+        "outside the match window for a short string;",
+        "inside the window for a longer string."
+      ]
+    },
+    {
+      "heading": "179. Jaro is therefore not simply length-normalized Levenshtein",
+      "level": 2,
+      "id": "ux-section-183",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "The correspondence rule itself depends on length.",
+      "paragraphs": [
+        "The correspondence rule itself depends on length."
+      ]
+    },
+    {
+      "heading": "180. Jaro can give high similarity despite multiple edits",
+      "level": 2,
+      "id": "ux-section-184",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "If most characters remain nearby and in approximately the same order, Jaro can remain high even when minimum edit count is not tiny.",
+      "paragraphs": [
+        "If most characters remain nearby and in approximately the same order, Jaro can remain high even when minimum edit count is not tiny."
+      ]
+    },
+    {
+      "heading": "181. Levenshtein can be low while Jaro-Winkler is relatively high",
+      "level": 2,
+      "id": "ux-section-185",
+      "paragraph_count": 4,
+      "word_count": 18,
+      "evidence": "For the common example:",
+      "paragraphs": [
+        "For the common example:",
+        "DIXON DICKSONX,",
+        "a standard implementation gives approximately:",
+        "Levenshtein distance: 4 Jaro: 0.7667 Jaro-Winkler: 0.8133."
+      ]
+    },
+    {
+      "heading": "182. None of those numbers is inherently contradictory",
+      "level": 2,
+      "id": "ux-section-186",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "They answer different questions.",
+      "paragraphs": [
+        "They answer different questions."
+      ]
+    },
+    {
+      "heading": "183. Jaro-Winkler can rank differently from Levenshtein",
+      "level": 2,
+      "id": "ux-section-187",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "Candidate A may require fewer edit operations.",
+      "paragraphs": [
+        "Candidate A may require fewer edit operations.",
+        "Candidate B may preserve more characters near original positions and share a longer prefix.",
+        "The methods can therefore reverse rankings."
+      ]
+    },
+    {
+      "heading": "184. Ranking reversal is expected",
+      "level": 2,
+      "id": "ux-section-188",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "It is evidence that the comparators encode different preference structures.",
+      "paragraphs": [
+        "It is evidence that the comparators encode different preference structures."
+      ]
+    },
+    {
+      "heading": "185. Phonetic methods can reverse rankings again",
+      "level": 2,
+      "id": "ux-section-189",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "A spelling farther away character-by-character may receive an identical phonetic code.",
+      "paragraphs": [
+        "A spelling farther away character-by-character may receive an identical phonetic code."
+      ]
+    },
+    {
+      "heading": "186. This is useful when pronunciation is the true nuisance variable",
+      "level": 2,
+      "id": "ux-section-190",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "It is harmful when spelling distinctions are semantically important.",
+      "paragraphs": [
+        "It is harmful when spelling distinctions are semantically important."
+      ]
+    },
+    {
+      "heading": "187. Product identifiers are a clear counterexample",
+      "level": 2,
+      "id": "ux-section-191",
+      "paragraph_count": 4,
+      "word_count": 16,
+      "evidence": "Two codes that sound alike:",
+      "paragraphs": [
+        "Two codes that sound alike:",
+        "AB15 AP15",
+        "can represent different products.",
+        "Phonetic collapsing would be inappropriate."
+      ]
+    },
+    {
+      "heading": "188. Medical names can also require extreme caution",
+      "level": 2,
+      "id": "ux-section-192",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "Drug names may be intentionally distinguished despite phonetic or orthographic similarity.",
+      "paragraphs": [
+        "Drug names may be intentionally distinguished despite phonetic or orthographic similarity.",
+        "Automatic collapsing of names based on fuzzy similarity can create safety risks."
+      ]
+    },
+    {
+      "heading": "189. Fuzzy comparison is usually safer as decision support",
+      "level": 2,
+      "id": "ux-section-193",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "High-consequence applications should often use it for:",
+      "paragraphs": [
+        "High-consequence applications should often use it for:",
+        "candidate generation warning review prioritization",
+        "rather than silent identity substitution."
+      ]
+    },
+    {
+      "heading": "190. Search autocomplete has different risk",
+      "level": 2,
+      "id": "ux-section-194",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "A false suggestion is usually less severe than a false identity merge.",
+      "paragraphs": [
+        "A false suggestion is usually less severe than a false identity merge.",
+        "Therefore:",
+        "same comparator can justify different thresholds for different tasks."
+      ]
+    },
+    {
+      "heading": "191. Spelling correction",
+      "level": 2,
+      "id": "ux-section-195",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "For query correction, Levenshtein is a strong baseline because common errors include:",
+      "paragraphs": [
+        "For query correction, Levenshtein is a strong baseline because common errors include:",
+        "missing character;",
+        "extra character;",
+        "wrong character.",
+        "See spell and query correction ."
+      ]
+    },
+    {
+      "heading": "192. Jaro-Winkler can work especially well on short names",
+      "level": 2,
+      "id": "ux-section-196",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "Nearby-character matching and prefix emphasis can be useful when data-entry variations do not behave like clean global edit paths.",
+      "paragraphs": [
+        "Nearby-character matching and prefix emphasis can be useful when data-entry variations do not behave like clean global edit paths."
+      ]
+    },
+    {
+      "heading": "193. Phonetic coding can retrieve spelling variants that edit distance misses",
+      "level": 2,
+      "id": "ux-section-197",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "This is particularly valuable when the user knows pronunciation better than spelling.",
+      "paragraphs": [
+        "This is particularly valuable when the user knows pronunciation better than spelling."
+      ]
+    },
+    {
+      "heading": "194. Hybrid spelling search",
+      "level": 2,
+      "id": "ux-section-198",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "query | +--> edit candidates | +--> Jaro-Winkler candidates | +--> phonetic candidates | v candidate union | v ranking model.",
+      "paragraphs": [
+        "query | +--> edit candidates | +--> Jaro-Winkler candidates | +--> phonetic candidates | v candidate union | v ranking model."
+      ]
+    },
+    {
+      "heading": "195. Candidate union increases recall",
+      "level": 2,
+      "id": "ux-section-199",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "But it also increases candidate volume.",
+      "paragraphs": [
+        "But it also increases candidate volume."
+      ]
+    },
+    {
+      "heading": "196. Ranking then becomes critical",
+      "level": 2,
+      "id": "ux-section-200",
+      "paragraph_count": 7,
+      "word_count": 14,
+      "evidence": "Useful ranking features can include:",
+      "paragraphs": [
+        "Useful ranking features can include:",
+        "edit distance;",
+        "Jaro-Winkler;",
+        "phonetic-code agreement;",
+        "frequency/popularity;",
+        "context;",
+        "field consistency."
+      ]
+    },
+    {
+      "heading": "197. Name frequency can dominate near ties",
+      "level": 2,
+      "id": "ux-section-201",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Two candidates can have identical string scores while one is vastly more likely in the target population.",
+      "paragraphs": [
+        "Two candidates can have identical string scores while one is vastly more likely in the target population."
+      ]
+    },
+    {
+      "heading": "198. But popularity should not automatically decide identity",
+      "level": 2,
+      "id": "ux-section-202",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "That creates bias against rare names.",
+      "paragraphs": [
+        "That creates bias against rare names."
+      ]
+    },
+    {
+      "heading": "199. Evaluate by population subgroup",
+      "level": 2,
+      "id": "ux-section-203",
+      "paragraph_count": 6,
+      "word_count": 14,
+      "evidence": "Name matching can behave differently across:",
+      "paragraphs": [
+        "Name matching can behave differently across:",
+        "languages;",
+        "scripts;",
+        "regions;",
+        "ethnic naming traditions;",
+        "name lengths."
+      ]
+    },
+    {
+      "heading": "200. Aggregate accuracy can hide systematic failure",
+      "level": 2,
+      "id": "ux-section-204",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "A system that performs extremely well on dominant-name groups can still perform poorly on minority or multilingual names.",
+      "paragraphs": [
+        "A system that performs extremely well on dominant-name groups can still perform poorly on minority or multilingual names."
+      ]
+    },
+    {
+      "heading": "201. Cross-cultural evaluation is essential",
+      "level": 2,
+      "id": "ux-section-205",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "Phonetic encoders should not be evaluated only on the linguistic population they were implicitly designed around if deployment is multilingual.",
+      "paragraphs": [
+        "Phonetic encoders should not be evaluated only on the linguistic population they were implicitly designed around if deployment is multilingual."
+      ]
+    },
+    {
+      "heading": "202. Benchmark categories",
+      "level": 2,
+      "id": "ux-section-206",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "A serious evaluation should separate:",
+      "paragraphs": [
+        "A serious evaluation should separate:",
+        "exact spelling single insertion single deletion single substitution adjacent transposition phonetic spelling variant transliteration variant token reorder nickname/alias true nonmatch with similar name."
+      ]
+    },
+    {
+      "heading": "203. Hard negatives matter especially for names",
+      "level": 2,
+      "id": "ux-section-207",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "Example category:",
+      "paragraphs": [
+        "Example category:",
+        "different people with nearly identical names.",
+        "A comparator designed only on positive variations can look deceptively strong."
+      ]
+    },
+    {
+      "heading": "204. Hard positives are equally important",
+      "level": 2,
+      "id": "ux-section-208",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "Include:",
+      "paragraphs": [
+        "Include:",
+        "same person with orthographically distant legitimate name variants."
+      ]
+    },
+    {
+      "heading": "205. Precision and recall",
+      "level": 2,
+      "id": "ux-section-209",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "precision = correct predicted matches / all predicted matches recall = correct predicted matches / all real matches.",
+      "paragraphs": [
+        "precision = correct predicted matches / all predicted matches recall = correct predicted matches / all real matches."
+      ]
+    },
+    {
+      "heading": "206. Similarity metric evaluation should also examine ranking",
+      "level": 2,
+      "id": "ux-section-210",
+      "paragraph_count": 6,
+      "word_count": 16,
+      "evidence": "For candidate search:",
+      "paragraphs": [
+        "For candidate search:",
+        "Recall@k;",
+        "MRR;",
+        "top-1 accuracy;",
+        "candidate-set size",
+        "may matter more than binary threshold accuracy."
+      ]
+    },
+    {
+      "heading": "207. Evaluate each stage independently",
+      "level": 2,
+      "id": "ux-section-211",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "normalization blocking similarity multi-field linkage final decision.",
+      "paragraphs": [
+        "normalization blocking similarity multi-field linkage final decision."
+      ]
+    },
+    {
+      "heading": "208. Otherwise improvements can be attributed to the wrong component",
+      "level": 2,
+      "id": "ux-section-212",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "A phonetic method may appear strong because it generated better candidates rather than because its final pairwise score was superior.",
+      "paragraphs": [
+        "A phonetic method may appear strong because it generated better candidates rather than because its final pairwise score was superior."
+      ]
+    },
+    {
+      "heading": "209. Complexity comparison",
+      "level": 2,
+      "id": "ux-section-213",
+      "paragraph_count": 3,
+      "word_count": 13,
+      "evidence": "Classic pairwise Levenshtein with dynamic programming uses:",
+      "paragraphs": [
+        "Classic pairwise Levenshtein with dynamic programming uses:",
+        "O(mn)",
+        "time in its standard formulation."
+      ]
+    },
+    {
+      "heading": "210. Jaro implementation complexity",
+      "level": 2,
+      "id": "ux-section-214",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Naïve implementations can perform substantial window searches for matching characters.",
+      "paragraphs": [
+        "Naïve implementations can perform substantial window searches for matching characters.",
+        "Efficient practical implementations use marking structures and bounded positional scans."
+      ]
+    },
+    {
+      "heading": "211. Jaro-Winkler prefix adjustment is cheap after Jaro",
+      "level": 2,
+      "id": "ux-section-215",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Only the first few common prefix characters need to be counted.",
+      "paragraphs": [
+        "Only the first few common prefix characters need to be counted."
+      ]
+    },
+    {
+      "heading": "212. Phonetic codes are attractive for indexing",
+      "level": 2,
+      "id": "ux-section-216",
+      "paragraph_count": 3,
+      "word_count": 8,
+      "evidence": "Compute:",
+      "paragraphs": [
+        "Compute:",
+        "code(name)",
+        "once, then index records by code."
+      ]
+    },
+    {
+      "heading": "213. Candidate lookup can become hash-based",
+      "level": 2,
+      "id": "ux-section-217",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "phonetic_code -> list of candidate records.",
+      "paragraphs": [
+        "phonetic_code -> list of candidate records."
+      ]
+    },
+    {
+      "heading": "214. But large collision buckets can dominate runtime",
+      "level": 2,
+      "id": "ux-section-218",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "After retrieval, every candidate may still require stronger comparison.",
+      "paragraphs": [
+        "After retrieval, every candidate may still require stronger comparison."
+      ]
+    },
+    {
+      "heading": "215. Blocking quality is therefore a three-way tradeoff",
+      "level": 2,
+      "id": "ux-section-219",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "recall bucket size false-candidate rate.",
+      "paragraphs": [
+        "recall bucket size false-candidate rate."
+      ]
+    },
+    {
+      "heading": "216. Multi-key blocking",
+      "level": 2,
+      "id": "ux-section-220",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "A system can generate candidates through several independent routes:",
+      "paragraphs": [
+        "A system can generate candidates through several independent routes:",
+        "Soundex surname first-name Jaro prefix postal code date-of-birth block.",
+        "Unioning candidate sets improves recall."
+      ]
+    },
+    {
+      "heading": "217. Sorted-neighborhood and canopy-style approaches can supplement exact phonetic buckets",
+      "level": 2,
+      "id": "ux-section-221",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "The best architecture depends on corpus scale and error distribution.",
+      "paragraphs": [
+        "The best architecture depends on corpus scale and error distribution."
+      ]
+    },
+    {
+      "heading": "218. Do not force Jaro-Winkler into a metric tree",
+      "level": 2,
+      "id": "ux-section-222",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "If the index requires triangle inequality, use a comparator with verified metric properties or another retrieval architecture.",
+      "paragraphs": [
+        "If the index requires triangle inequality, use a comparator with verified metric properties or another retrieval architecture."
+      ]
+    },
+    {
+      "heading": "219. Levenshtein supports metric-index reasoning",
+      "level": 2,
+      "id": "ux-section-223",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Standard unit-cost Levenshtein's triangle inequality enables structures based on metric balls.",
+      "paragraphs": [
+        "Standard unit-cost Levenshtein's triangle inequality enables structures based on metric balls."
+      ]
+    },
+    {
+      "heading": "220. But Levenshtein indexes do not solve phonetic mismatch automatically",
+      "level": 2,
+      "id": "ux-section-224",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "The geometry is still orthographic unless phonetic representation is used first.",
+      "paragraphs": [
+        "The geometry is still orthographic unless phonetic representation is used first."
+      ]
+    },
+    {
+      "heading": "221. Hybrid metric strategy",
+      "level": 2,
+      "id": "ux-section-225",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "name -> phoneme sequence -> Levenshtein metric index.",
+        "This preserves an actual edit-distance geometry over a phonetic representation."
+      ]
+    },
+    {
+      "heading": "222. The quality now depends on pronunciation mapping",
+      "level": 2,
+      "id": "ux-section-226",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Representation error can dominate distance quality.",
+      "paragraphs": [
+        "Representation error can dominate distance quality."
+      ]
+    },
+    {
+      "heading": "223. “Phonetic” itself is not semantic",
+      "level": 2,
+      "id": "ux-section-227",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Two names that sound the same can refer to different people.",
+      "paragraphs": [
+        "Two names that sound the same can refer to different people."
+      ]
+    },
+    {
+      "heading": "224. Homophones are a natural false-positive class",
+      "level": 2,
+      "id": "ux-section-228",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Phonetic similarity deliberately collapses them.",
+      "paragraphs": [
+        "Phonetic similarity deliberately collapses them."
+      ]
+    },
+    {
+      "heading": "225. String similarity versus semantic similarity",
+      "level": 2,
+      "id": "ux-section-229",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Names also demonstrate the broader distinction explained in string similarity vs semantic similarity .",
+      "paragraphs": [
+        "Names also demonstrate the broader distinction explained in string similarity vs semantic similarity ."
+      ]
+    },
+    {
+      "heading": "226. Semantic relatedness does not imply string similarity",
+      "level": 2,
+      "id": "ux-section-230",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Aliases and translated names can be semantically/entity-related despite low orthographic similarity.",
+      "paragraphs": [
+        "Aliases and translated names can be semantically/entity-related despite low orthographic similarity."
+      ]
+    },
+    {
+      "heading": "227. String similarity does not imply semantic equivalence",
+      "level": 2,
+      "id": "ux-section-231",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Near-identical words can have different meanings.",
+      "paragraphs": [
+        "Near-identical words can have different meanings."
+      ]
+    },
+    {
+      "heading": "228. For names there is an even stronger distinction",
+      "level": 2,
+      "id": "ux-section-232",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "same spelling != same entity.",
+      "paragraphs": [
+        "same spelling != same entity."
+      ]
+    },
+    {
+      "heading": "229. Example",
+      "level": 2,
+      "id": "ux-section-233",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "John Smith",
+      "paragraphs": [
+        "John Smith",
+        "can identify many different people.",
+        "Every string comparator gives perfect similarity between identical spellings.",
+        "None can tell which John Smith is intended."
+      ]
+    },
+    {
+      "heading": "230. Identity requires contextual evidence",
+      "level": 2,
+      "id": "ux-section-234",
+      "paragraph_count": 7,
+      "word_count": 15,
+      "evidence": "Potential evidence includes:",
+      "paragraphs": [
+        "Potential evidence includes:",
+        "date of birth;",
+        "address history;",
+        "organization;",
+        "contact information;",
+        "stable identifiers;",
+        "temporal consistency."
+      ]
+    },
+    {
+      "heading": "231. Common failure mode: Jaro-Winkler is Levenshtein with different weights",
+      "level": 2,
+      "id": "ux-section-235",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "Jaro uses positional character matching and an order-disagreement term rather than minimum edit-path optimization."
+      ]
+    },
+    {
+      "heading": "232. Common failure mode: Jaro transposition equals Damerau transposition",
+      "level": 2,
+      "id": "ux-section-236",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "Jaro's transposition quantity is derived from out-of-order matched characters.",
+        "Damerau transposition is an explicit adjacent swap operation."
+      ]
+    },
+    {
+      "heading": "233. Common failure mode: Jaro-Winkler is phonetic",
+      "level": 2,
+      "id": "ux-section-237",
+      "paragraph_count": 2,
+      "word_count": 5,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "It compares orthographic characters."
+      ]
+    },
+    {
+      "heading": "234. Common failure mode: Soundex is a distance metric",
+      "level": 2,
+      "id": "ux-section-238",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Classic Soundex primarily produces a code.",
+      "paragraphs": [
+        "Classic Soundex primarily produces a code.",
+        "Code equality is not a graded edit distance."
+      ]
+    },
+    {
+      "heading": "235. Common failure mode: same Soundex means same pronunciation",
+      "level": 2,
+      "id": "ux-section-239",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "Soundex is a coarse rule system.",
+      "paragraphs": [
+        "Soundex is a coarse rule system.",
+        "Collisions occur."
+      ]
+    },
+    {
+      "heading": "236. Common failure mode: different Soundex means different pronunciation",
+      "level": 2,
+      "id": "ux-section-240",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Rule boundaries, first-letter preservation, and language mismatch can separate genuinely similar pronunciations.",
+      "paragraphs": [
+        "Rule boundaries, first-letter preservation, and language mismatch can separate genuinely similar pronunciations."
+      ]
+    },
+    {
+      "heading": "237. Common failure mode: Metaphone solves every language",
+      "level": 2,
+      "id": "ux-section-241",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "It is a rule-based phonetic model with language assumptions.",
+      "paragraphs": [
+        "It is a rule-based phonetic model with language assumptions."
+      ]
+    },
+    {
+      "heading": "238. Common failure mode: Double Metaphone means two independent similarity scores",
+      "level": 2,
+      "id": "ux-section-242",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "It typically produces primary and optionally secondary phonetic encodings for plausible pronunciations.",
+      "paragraphs": [
+        "It typically produces primary and optionally secondary phonetic encodings for plausible pronunciations."
+      ]
+    },
+    {
+      "heading": "239. Common failure mode: phonetic equality proves one person",
+      "level": 2,
+      "id": "ux-section-243",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "It proves only agreement under the phonetic coding model.",
+      "paragraphs": [
+        "It proves only agreement under the phonetic coding model."
+      ]
+    },
+    {
+      "heading": "240. Common failure mode: Jaro-Winkler 0.95 means 95% same person",
+      "level": 2,
+      "id": "ux-section-244",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "It does not.",
+      "paragraphs": [
+        "It does not."
+      ]
+    },
+    {
+      "heading": "241. Common failure mode: normalized Levenshtein 0.95 means the same thing as Jaro-Winkler 0.95",
+      "level": 2,
+      "id": "ux-section-245",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "The score spaces are constructed differently.",
+      "paragraphs": [
+        "The score spaces are constructed differently."
+      ]
+    },
+    {
+      "heading": "242. Common failure mode: thresholds transfer across comparators",
+      "level": 2,
+      "id": "ux-section-246",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "A threshold calibrated for Levenshtein similarity should not be reused automatically for Jaro-Winkler.",
+      "paragraphs": [
+        "A threshold calibrated for Levenshtein similarity should not be reused automatically for Jaro-Winkler."
+      ]
+    },
+    {
+      "heading": "243. Common failure mode: thresholds transfer across fields",
+      "level": 2,
+      "id": "ux-section-247",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "A good threshold for surnames may be poor for street names or organization names.",
+      "paragraphs": [
+        "A good threshold for surnames may be poor for street names or organization names."
+      ]
+    },
+    {
+      "heading": "244. Common failure mode: thresholds transfer across languages",
+      "level": 2,
+      "id": "ux-section-248",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Different orthographies and name distributions produce different score distributions.",
+      "paragraphs": [
+        "Different orthographies and name distributions produce different score distributions."
+      ]
+    },
+    {
+      "heading": "245. Common failure mode: prefix agreement is always informative",
+      "level": 2,
+      "id": "ux-section-249",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Common prefixes can be extremely frequent and weakly discriminative.",
+      "paragraphs": [
+        "Common prefixes can be extremely frequent and weakly discriminative."
+      ]
+    },
+    {
+      "heading": "246. Common failure mode: suffix differences are always less important",
+      "level": 2,
+      "id": "ux-section-250",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "That is not universally true across naming systems or identifier types.",
+      "paragraphs": [
+        "That is not universally true across naming systems or identifier types."
+      ]
+    },
+    {
+      "heading": "247. Common failure mode: the first four characters are intrinsically special",
+      "level": 2,
+      "id": "ux-section-251",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "The four-character prefix cap belongs to a particular Jaro-Winkler design convention, not a universal property of text.",
+      "paragraphs": [
+        "The four-character prefix cap belongs to a particular Jaro-Winkler design convention, not a universal property of text."
+      ]
+    },
+    {
+      "heading": "248. Common failure mode: every Jaro-Winkler library implements the same algorithm",
+      "level": 2,
+      "id": "ux-section-252",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Matching rules, prefix handling, preprocessing, and historical adjustments can differ.",
+      "paragraphs": [
+        "Matching rules, prefix handling, preprocessing, and historical adjustments can differ."
+      ]
+    },
+    {
+      "heading": "249. Common failure mode: Jaro-Winkler is a mathematical metric because it is called a distance",
+      "level": 2,
+      "id": "ux-section-253",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "The commonly used transformed dissimilarity should not be assumed to satisfy metric axioms such as triangle inequality.",
+      "paragraphs": [
+        "The commonly used transformed dissimilarity should not be assumed to satisfy metric axioms such as triangle inequality."
+      ]
+    },
+    {
+      "heading": "250. Common failure mode: higher lexical similarity always improves record linkage",
+      "level": 2,
+      "id": "ux-section-254",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Two different people can have nearly identical names.",
+      "paragraphs": [
+        "Two different people can have nearly identical names."
+      ]
+    },
+    {
+      "heading": "251. Common failure mode: phonetic preprocessing should replace original names",
+      "level": 2,
+      "id": "ux-section-255",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Keep the original representation for downstream evidence and explanation.",
+      "paragraphs": [
+        "Keep the original representation for downstream evidence and explanation."
+      ]
+    },
+    {
+      "heading": "252. Common failure mode: case folding is always safe",
+      "level": 2,
+      "id": "ux-section-256",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "It depends on the application and identifier semantics.",
+      "paragraphs": [
+        "It depends on the application and identifier semantics."
+      ]
+    },
+    {
+      "heading": "253. Common failure mode: removing diacritics is always safe",
+      "level": 2,
+      "id": "ux-section-257",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Diacritics can carry lexical and phonological distinctions.",
+      "paragraphs": [
+        "Diacritics can carry lexical and phonological distinctions."
+      ]
+    },
+    {
+      "heading": "254. Common failure mode: transliteration equals phonetic transcription",
+      "level": 2,
+      "id": "ux-section-258",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "They solve different representation problems.",
+      "paragraphs": [
+        "They solve different representation problems."
+      ]
+    },
+    {
+      "heading": "255. Common failure mode: phonetic algorithms remove the need for multilingual evaluation",
+      "level": 2,
+      "id": "ux-section-259",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "They make multilingual validation more important, not less.",
+      "paragraphs": [
+        "They make multilingual validation more important, not less."
+      ]
+    },
+    {
+      "heading": "256. Common failure mode: exact name equality proves identity",
+      "level": 2,
+      "id": "ux-section-260",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "Duplicate names exist.",
+      "paragraphs": [
+        "Duplicate names exist."
+      ]
+    },
+    {
+      "heading": "257. Common failure mode: different names prove different entities",
+      "level": 2,
+      "id": "ux-section-261",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Aliases, name changes, transliteration, and data-entry corruption exist.",
+      "paragraphs": [
+        "Aliases, name changes, transliteration, and data-entry corruption exist."
+      ]
+    },
+    {
+      "heading": "258. Common failure mode: one similarity function should make the final linkage decision",
+      "level": 2,
+      "id": "ux-section-262",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Strong entity resolution combines multiple independent fields.",
+      "paragraphs": [
+        "Strong entity resolution combines multiple independent fields."
+      ]
+    },
+    {
+      "heading": "259. Decision table: Levenshtein vs Jaro-Winkler vs phonetic coding",
+      "level": 2,
+      "id": "ux-section-263",
+      "paragraph_count": 1,
+      "word_count": 79,
+      "evidence": "Question Best starting approach How many insertions/deletions/substitutions separate two spellings? Levenshtein Are short name strings strongly matched despite nearby displacement? Jaro Should a common prefix increase name similarity? Jaro-Winkler Do surnames sound alike under coarse English-oriented rules? Soundex Need another rule-based phonetic name representation? NYSIIS Need more context-sensitive English phonetic coding? Metaphone Need primary/secondary phonetic interpretations? Double Metaphone Need graded pronunciation-sequence difference? Phoneme + weighted edit distance Need to decide whether records are the same person? Multi-field entity-resolution model",
+      "paragraphs": [
+        "Question Best starting approach How many insertions/deletions/substitutions separate two spellings? Levenshtein Are short name strings strongly matched despite nearby displacement? Jaro Should a common prefix increase name similarity? Jaro-Winkler Do surnames sound alike under coarse English-oriented rules? Soundex Need another rule-based phonetic name representation? NYSIIS Need more context-sensitive English phonetic coding? Metaphone Need primary/secondary phonetic interpretations? Double Metaphone Need graded pronunciation-sequence difference? Phoneme + weighted edit distance Need to decide whether records are the same person? Multi-field entity-resolution model"
+      ]
+    },
+    {
+      "heading": "260. Comparison matrix",
+      "level": 2,
+      "id": "ux-section-264",
+      "paragraph_count": 1,
+      "word_count": 93,
+      "evidence": "Property Levenshtein Jaro-Winkler Soundex-like phonetic coding Primary input Symbol sequence Character strings Name/word spelling Primary output Edit distance Similarity score Phonetic key Insertions explicit? Yes No explicit edit operation No Deletions explicit? Yes No explicit edit operation No Substitutions explicit? Yes No explicit edit path Collapsed through phonetic rules Position window? No Yes Rule-dependent Prefix bias? No Yes in Winkler extension Algorithm-dependent Pronunciation model? No, unless representation is phonetic No Yes, heuristic True metric? Yes under classic unit costs Do not assume Usually code equality, not metric distance Entity identity? No No No",
+      "paragraphs": [
+        "Property Levenshtein Jaro-Winkler Soundex-like phonetic coding Primary input Symbol sequence Character strings Name/word spelling Primary output Edit distance Similarity score Phonetic key Insertions explicit? Yes No explicit edit operation No Deletions explicit? Yes No explicit edit operation No Substitutions explicit? Yes No explicit edit path Collapsed through phonetic rules Position window? No Yes Rule-dependent Prefix bias? No Yes in Winkler extension Algorithm-dependent Pronunciation model? No, unless representation is phonetic No Yes, heuristic True metric? Yes under classic unit costs Do not assume Usually code equality, not metric distance Entity identity? No No No"
+      ]
+    },
+    {
+      "heading": "261. Decision table: typical name-error patterns",
+      "level": 2,
+      "id": "ux-section-265",
+      "paragraph_count": 1,
+      "word_count": 83,
+      "evidence": "Variation Levenshtein Jaro-Winkler Phonetic coding One missing letter Strong Often strong May collapse or change One extra letter Strong Often strong May collapse or change Adjacent swap Costs two in classic model Often tolerant Depends on resulting code Common prefix + divergent suffix Length/edit dependent Explicitly favored Rule-dependent Same sound, different spelling Variable Variable Primary target Nickname Often weak Often weak Often weak Token reordering Weak Weak/moderate Usually requires component processing Cross-script variant Needs representation change Needs representation change Usually needs transliteration/other model",
+      "paragraphs": [
+        "Variation Levenshtein Jaro-Winkler Phonetic coding One missing letter Strong Often strong May collapse or change One extra letter Strong Often strong May collapse or change Adjacent swap Costs two in classic model Often tolerant Depends on resulting code Common prefix + divergent suffix Length/edit dependent Explicitly favored Rule-dependent Same sound, different spelling Variable Variable Primary target Nickname Often weak Often weak Often weak Token reordering Weak Weak/moderate Usually requires component processing Cross-script variant Needs representation change Needs representation change Usually needs transliteration/other model"
+      ]
+    },
+    {
+      "heading": "262. Decision table: evidence interpretation",
+      "level": 2,
+      "id": "ux-section-266",
+      "paragraph_count": 1,
+      "word_count": 63,
+      "evidence": "Observation What it establishes What it does not establish Levenshtein = 0 Identical compared sequences Same real-world entity Levenshtein = 1 One minimum unit edit Same pronunciation Jaro-Winkler = high Strong configured character correspondence Probability of identity Same Soundex Same Soundex bucket Same surname or person Same Metaphone Same rule-defined phonetic representation Identical pronunciation Same phoneme sequence Same modeled pronunciation sequence Same person/entity",
+      "paragraphs": [
+        "Observation What it establishes What it does not establish Levenshtein = 0 Identical compared sequences Same real-world entity Levenshtein = 1 One minimum unit edit Same pronunciation Jaro-Winkler = high Strong configured character correspondence Probability of identity Same Soundex Same Soundex bucket Same surname or person Same Metaphone Same rule-defined phonetic representation Identical pronunciation Same phoneme sequence Same modeled pronunciation sequence Same person/entity"
+      ]
+    },
+    {
+      "heading": "263. Reference pseudocode: Jaro similarity",
+      "level": 2,
+      "id": "ux-section-267",
+      "paragraph_count": 1,
+      "word_count": 118,
+      "evidence": "function jaro(A, B): if A and B are both empty: return 1 if exactly one is empty: return 0 radius = max( 0, floor( max(len(A), len(B)) / 2 ) - 1 ) matched_A = boolean array len(A) matched_B = boolean array len(B) matches = 0 for i in A: search B positions from i-radius through i+radius find an unmatched identical character if found: mark both matched matches += 1 if matches == 0: return 0 sequence_A = matched chars from A in original order sequence_B = matched chars from B in original order mismatched_order = count positions where sequence_A[k] != sequence_B[k] transpositions = mismatched_order / 2 return ( matches/len(A) + matches/len(B) + (matches-transpositions) / matches ) / 3",
+      "paragraphs": [
+        "function jaro(A, B): if A and B are both empty: return 1 if exactly one is empty: return 0 radius = max( 0, floor( max(len(A), len(B)) / 2 ) - 1 ) matched_A = boolean array len(A) matched_B = boolean array len(B) matches = 0 for i in A: search B positions from i-radius through i+radius find an unmatched identical character if found: mark both matched matches += 1 if matches == 0: return 0 sequence_A = matched chars from A in original order sequence_B = matched chars from B in original order mismatched_order = count positions where sequence_A[k] != sequence_B[k] transpositions = mismatched_order / 2 return ( matches/len(A) + matches/len(B) + (matches-transpositions) / matches ) / 3"
+      ]
+    },
+    {
+      "heading": "264. Matching duplicate characters requires deterministic bookkeeping",
+      "level": 2,
+      "id": "ux-section-268",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "An implementation must not match one occurrence in B to several occurrences in A .",
+      "paragraphs": [
+        "An implementation must not match one occurrence in B to several occurrences in A ."
+      ]
+    },
+    {
+      "heading": "265. Reference pseudocode: common modern Jaro-Winkler",
+      "level": 2,
+      "id": "ux-section-269",
+      "paragraph_count": 1,
+      "word_count": 34,
+      "evidence": "function jaro_winkler(A, B, p=0.1): J = jaro(A, B) prefix = 0 while prefix < min( 4, len(A), len(B) ) and A[prefix] == B[prefix]: prefix += 1 return J + prefix * p * (1-J)",
+      "paragraphs": [
+        "function jaro_winkler(A, B, p=0.1): J = jaro(A, B) prefix = 0 while prefix < min( 4, len(A), len(B) ) and A[prefix] == B[prefix]: prefix += 1 return J + prefix * p * (1-J)"
+      ]
+    },
+    {
+      "heading": "266. Treat this pseudocode as one common specification",
+      "level": 2,
+      "id": "ux-section-270",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Do not assume every historical or library implementation uses exactly this variant.",
+      "paragraphs": [
+        "Do not assume every historical or library implementation uses exactly this variant."
+      ]
+    },
+    {
+      "heading": "267. Reference pseudocode: Soundex-style candidate generation",
+      "level": 2,
+      "id": "ux-section-271",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "function phonetic_candidates(name): canonical = normalize_name(name) code = soundex(canonical) return index[code]",
+      "paragraphs": [
+        "function phonetic_candidates(name): canonical = normalize_name(name) code = soundex(canonical) return index[code]"
+      ]
+    },
+    {
+      "heading": "268. Reference hybrid verifier",
+      "level": 2,
+      "id": "ux-section-272",
+      "paragraph_count": 1,
+      "word_count": 30,
+      "evidence": "function compare_name(A, B): result = {} result.edit = normalized_levenshtein(A, B) result.jaro = jaro(A, B) result.jaro_winkler = jaro_winkler(A, B) result.soundex_equal = soundex(A) == soundex(B) result.metaphone_equal = metaphone(A) == metaphone(B) return result",
+      "paragraphs": [
+        "function compare_name(A, B): result = {} result.edit = normalized_levenshtein(A, B) result.jaro = jaro(A, B) result.jaro_winkler = jaro_winkler(A, B) result.soundex_equal = soundex(A) == soundex(B) result.metaphone_equal = metaphone(A) == metaphone(B) return result"
+      ]
+    },
+    {
+      "heading": "269. Do not immediately collapse the result vector",
+      "level": 2,
+      "id": "ux-section-273",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "The vector:",
+      "paragraphs": [
+        "The vector:",
+        "{ edit: 0.82, jaro_winkler: 0.96, soundex_equal: true, metaphone_equal: true }",
+        "is more interpretable than:",
+        "similarity = 0.91."
+      ]
+    },
+    {
+      "heading": "270. A trained linkage model can combine them later",
+      "level": 2,
+      "id": "ux-section-274",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "logit P(match) = β0 + β1 * edit + β2 * JW + β3 * phonetic_agreement + β4 * DOB_agreement + ..."
+      ]
+    },
+    {
+      "heading": "271. Feature correlation matters",
+      "level": 2,
+      "id": "ux-section-275",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "Levenshtein, Jaro-Winkler, and phonetic codes all depend partly on spelling.",
+      "paragraphs": [
+        "Levenshtein, Jaro-Winkler, and phonetic codes all depend partly on spelling.",
+        "They are not statistically independent evidence sources."
+      ]
+    },
+    {
+      "heading": "272. Adding many similar metrics can overcount one signal",
+      "level": 2,
+      "id": "ux-section-276",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Three lexical similarity scores do not necessarily provide three independent pieces of evidence.",
+      "paragraphs": [
+        "Three lexical similarity scores do not necessarily provide three independent pieces of evidence."
+      ]
+    },
+    {
+      "heading": "273. Ablation testing",
+      "level": 2,
+      "id": "ux-section-277",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "Train/evaluate:",
+      "paragraphs": [
+        "Train/evaluate:",
+        "model without Levenshtein model without Jaro-Winkler model without phonetic feature.",
+        "Measure actual incremental value."
+      ]
+    },
+    {
+      "heading": "274. Score calibration",
+      "level": 2,
+      "id": "ux-section-278",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "A calibrated model can transform combinations of raw similarity features into empirically interpretable probabilities.",
+      "paragraphs": [
+        "A calibrated model can transform combinations of raw similarity features into empirically interpretable probabilities.",
+        "Calibration should be measured on held-out data from the deployment population."
+      ]
+    },
+    {
+      "heading": "275. Distribution shift matters",
+      "level": 2,
+      "id": "ux-section-279",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "Name patterns can change when moving from:",
+      "paragraphs": [
+        "Name patterns can change when moving from:",
+        "one country to another;",
+        "historical records to modern records;",
+        "manual entry to OCR;",
+        "one transliteration system to another."
+      ]
+    },
+    {
+      "heading": "276. OCR name matching",
+      "level": 2,
+      "id": "ux-section-280",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "OCR errors have a visual confusion process.",
+      "paragraphs": [
+        "OCR errors have a visual confusion process.",
+        "Character edit distance can model insertions/deletions/substitutions.",
+        "But phonetic coding may be irrelevant when the corruption is visual rather than acoustic."
+      ]
+    },
+    {
+      "heading": "277. Do not use phonetic matching merely because data contains names",
+      "level": 2,
+      "id": "ux-section-281",
+      "paragraph_count": 2,
+      "word_count": 29,
+      "evidence": "The error source determines the useful model.",
+      "paragraphs": [
+        "The error source determines the useful model.",
+        "typing error -> orthographic comparator speech transcription error -> phonetic/acoustic model OCR error -> visual confusion model transliteration difference -> script/transliteration model."
+      ]
+    },
+    {
+      "heading": "278. Voice-derived data changes the problem",
+      "level": 2,
+      "id": "ux-section-282",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "If a person's spoken name was manually or automatically transcribed, pronunciation-based variants become much more plausible.",
+      "paragraphs": [
+        "If a person's spoken name was manually or automatically transcribed, pronunciation-based variants become much more plausible."
+      ]
+    },
+    {
+      "heading": "279. Error-channel awareness improves metric selection",
+      "level": 2,
+      "id": "ux-section-283",
+      "paragraph_count": 4,
+      "word_count": 14,
+      "evidence": "Ask:",
+      "paragraphs": [
+        "Ask:",
+        "How was this corrupted string generated?",
+        "before asking:",
+        "Which similarity algorithm is popular?"
+      ]
+    },
+    {
+      "heading": "280. Reproducibility checklist",
+      "level": 2,
+      "id": "ux-section-284",
+      "paragraph_count": 1,
+      "word_count": 45,
+      "evidence": "Component Report explicitly Unicode policy NFC/NFKC/etc. Case handling Exact/case-folded Diacritics Preserved/folded Tokenization Whole field/components Levenshtein Raw/weighted/normalized formula Jaro window Exact implementation rule Jaro-Winkler Prefix cap and scaling factor Phonetic algorithm Soundex/NYSIIS/Metaphone/etc. Transliteration Standard/library/version Thresholds Validation procedure Blocking Candidate-generation rules Population Language/geography/name distribution Evaluation Precision/recall/ranking metrics",
+      "paragraphs": [
+        "Component Report explicitly Unicode policy NFC/NFKC/etc. Case handling Exact/case-folded Diacritics Preserved/folded Tokenization Whole field/components Levenshtein Raw/weighted/normalized formula Jaro window Exact implementation rule Jaro-Winkler Prefix cap and scaling factor Phonetic algorithm Soundex/NYSIIS/Metaphone/etc. Transliteration Standard/library/version Thresholds Validation procedure Blocking Candidate-generation rules Population Language/geography/name distribution Evaluation Precision/recall/ranking metrics"
+      ]
+    },
+    {
+      "heading": "281. Recommended architecture for serious name matching",
+      "level": 2,
+      "id": "ux-section-285",
+      "paragraph_count": 1,
+      "word_count": 74,
+      "evidence": "RAW NAME | v Unicode normalization | v language/script detection | +---------+---------+ | | v v orthographic form transliteration / | phonetic pathway | | +-------+------+ +-----+------+ | | | | v v v v Levenshtein Jaro Soundex/ phoneme/ | Metaphone G2P model | | | +--------------+--------+------------+ | v comparison features | v other record attributes | +--------+---------+ | | v v linkage model review evidence | v link / possible link / non-link.",
+      "paragraphs": [
+        "RAW NAME | v Unicode normalization | v language/script detection | +---------+---------+ | | v v orthographic form transliteration / | phonetic pathway | | +-------+------+ +-----+------+ | | | | v v v v Levenshtein Jaro Soundex/ phoneme/ | Metaphone G2P model | | | +--------------+--------+------------+ | v comparison features | v other record attributes | +--------+---------+ | | v v linkage model review evidence | v link / possible link / non-link."
+      ]
+    },
+    {
+      "heading": "282. Final conceptual hierarchy",
+      "level": 2,
+      "id": "ux-section-286",
+      "paragraph_count": 1,
+      "word_count": 58,
+      "evidence": "RAW SPELLING | +--------------------------+ | | v v ORTHOGRAPHIC PATH PHONETIC PATH | | | phonetic encoding | | +---+------------+ +----+----------+ | | | | v v v v Levenshtein Jaro Soundex Metaphone/ | NYSIIS Double Metaphone v | Jaro-Winkler v phonetic code(s) | +---------------------------+ | v NAME SIMILARITY FEATURES | v RECORD CONTEXT | v ENTITY LINKAGE.",
+      "paragraphs": [
+        "RAW SPELLING | +--------------------------+ | | v v ORTHOGRAPHIC PATH PHONETIC PATH | | | phonetic encoding | | +---+------------+ +----+----------+ | | | | v v v v Levenshtein Jaro Soundex Metaphone/ | NYSIIS Double Metaphone v | Jaro-Winkler v phonetic code(s) | +---------------------------+ | v NAME SIMILARITY FEATURES | v RECORD CONTEXT | v ENTITY LINKAGE."
+      ]
+    },
+    {
+      "heading": "283. Final interpretation",
+      "level": 2,
+      "id": "ux-section-287",
+      "paragraph_count": 16,
+      "word_count": 523,
+      "evidence": "Levenshtein distance, Jaro-Winkler similarity, and phonetic matching are powerful precisely because they model different forms of variation.",
+      "paragraphs": [
+        "Levenshtein distance, Jaro-Winkler similarity, and phonetic matching are powerful precisely because they model different forms of variation.",
+        "Levenshtein distance is the cleanest of the three mathematically. It defines a sequence geometry through insertion, deletion, and substitution. When name variation can reasonably be described using those edits, it provides an interpretable answer:",
+        "the minimum number of configured sequence edits between the two spellings.",
+        "Jaro changes the problem. Instead of searching over edit scripts, it identifies identical characters within positional windows and combines three quantities: the proportion of each string that was matched and the degree to which matched characters preserve order. The quantity historically called a transposition inside Jaro is therefore not the adjacent-swap operation used by Damerau-Levenshtein. It is an order-disagreement statistic over matched characters.",
+        "Jaro-Winkler then adds another assumption: agreement at the beginning of the strings deserves additional weight. In many record-linkage settings this is useful. It can also be inappropriate when common prefixes carry little information. The prefix boost should therefore be understood as domain-specific inductive bias, not as a universal improvement to string distance.",
+        "Phonetic algorithms move the problem to another representation altogether. Soundex maps surname spellings into coarse pronunciation-oriented codes and was historically used to retrieve differently spelled census surnames such as SMITH and SMYTH . NYSIIS applies a different family of name-transformation rules. Metaphone uses richer English-oriented phonetic rules, while Double Metaphone can produce primary and secondary encodings for pronunciation ambiguity.",
+        "These encoders create invariance by deliberately throwing information away. That is both their power and their limitation. Orthographically different names can meet in the same phonetic bucket, increasing recall. Unrelated names can also collide in that bucket, reducing precision.",
+        "A more expressive phonetic system can transform names into phoneme sequences and then apply edit distance to those sequences. This illustrates an important general principle:",
+        "distance algorithm and representation are separate design decisions.",
+        "Levenshtein over characters measures orthographic edits. Levenshtein over phonemes measures phonetic-sequence edits. The recurrence can remain unchanged while the meaning of the resulting distance changes fundamentally.",
+        "The key distinctions are:",
+        "Levenshtein != Jaro Jaro != Jaro-Winkler Jaro-Winkler != phonetic matching Jaro transposition != Damerau transposition minimum edit path != character correspondence score common prefix != identity evidence by itself phonetic code equality != identical pronunciation identical pronunciation != same person same spelling != same person small edit distance != same entity high Jaro-Winkler != match probability Soundex != graded phonetic distance transliteration != phonetic transcription orthographic similarity != phonetic similarity phonetic similarity != semantic equivalence name similarity != record linkage record linkage != one-field string matching.",
+        "The strongest real-world architecture therefore does not ask which one of these methods should “win.” It assigns each one the job its assumptions justify.",
+        "Levenshtein can quantify ordinary spelling edits. Jaro-Winkler can provide a useful short-field correspondence feature for typographical name variation. Phonetic encoders can retrieve pronunciation-oriented spelling variants. Transliteration and alias dictionaries can handle relationships neither character nor pronunciation distance captures. Other record attributes can then determine whether the accumulated evidence actually supports an entity match.",
+        "For serious entity resolution and record linkage , that last distinction is decisive:",
+        "similarity algorithms generate evidence. They do not create identity."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-288",
+      "paragraph_count": 8,
+      "word_count": 175,
+      "evidence": "Jaro, M. A. Advances in Record-Linkage Methodology as Applied to Matching the 1985 Census of Tampa, Florida. Journal of the American Statistical Association 84(406), 414-420, 1989. https://doi.org/10.1080/01621459.1989.10478785 .",
+      "paragraphs": [
+        "Jaro, M. A. Advances in Record-Linkage Methodology as Applied to Matching the 1985 Census of Tampa, Florida. Journal of the American Statistical Association 84(406), 414-420, 1989. https://doi.org/10.1080/01621459.1989.10478785 .",
+        "Winkler, W. E. String Comparator Metrics and Enhanced Decision Rules in the Fellegi-Sunter Model of Record Linkage. Proceedings of the Section on Survey Research Methods, American Statistical Association, 1990. paper .",
+        "Fellegi, I. P., and Sunter, A. B. A Theory for Record Linkage. Journal of the American Statistical Association 64(328), 1183-1210, 1969. https://doi.org/10.1080/01621459.1969.10501049 .",
+        "National Archives and Records Administration. The Soundex Indexing System. National Archives Soundex documentation .",
+        "Black, P. E. Soundex. NIST Dictionary of Algorithms and Data Structures. NIST DADS .",
+        "Taft, R. L. Name Search Techniques. New York State Identification and Intelligence System, Special Report No. 1, 1970. Bibliographic details summarized by NIST DADS: NYSIIS .",
+        "Philips, L. Hanging on the Metaphone. Computer Language 7(12), 1990. Bibliographic details summarized by NIST DADS: Metaphone .",
+        "Philips, L. The Double Metaphone Search Algorithm. C/C++ Users Journal, June 2000. Bibliographic details summarized by NIST DADS: Double Metaphone ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Levenshtein vs Jaro-Winkler and Phonetic Matching",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "This article develops these distinctions rigorously, derives the Jaro and Jaro-Winkler formulas, explains their historical connection to record linkage, compares them with Levenshtein geometry, examines Soundex, NYSIIS, Metaphone, Double Metaphone, and phoneme-level edit distance, and shows why none of these techniques alone establishes that two records represent the same person, organization, place, or other real-world entity."
+        },
+        {
+          "section": "Orthographic edit space",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "spelling -> insert/delete/substitute -> minimum edit distance."
+        },
+        {
+          "section": "2. They produce different invariances",
+          "anchor_id": "ux-section-6",
+          "alias": "edit distance",
+          "excerpt": "Method family What it tries to tolerate What it directly preserves Levenshtein Insertions, deletions, substitutions Global sequence order Jaro Nearby character displacement and partial ordering variation Character identity within positional windows Jaro-Winkler Jaro variation plus favored common prefix Beginning-of-string agreement Soundex/NYSIIS/Metaphone Selected spelling differences associated with similar pronunciation Rule-defined phonetic classes Phoneme edit distance Pronunciation-sequence differences Order of phonetic units"
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "183. Jaro-Winkler can rank differently from Levenshtein",
+          "anchor_id": "ux-section-187",
+          "alias": "edit operations",
+          "excerpt": "Candidate A may require fewer edit operations."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "107. Entity-resolution system",
+          "anchor_id": "ux-section-111",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "See entity resolution and record linkage ."
+        },
+        {
+          "section": "283. Final interpretation",
+          "anchor_id": "ux-section-287",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "For serious entity resolution and record linkage , that last distinction is decisive:"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-damerau-and-hamming",
+      "evidence": [
+        {
+          "section": "29. True Damerau-Levenshtein would treat the adjacent swap differently",
+          "anchor_id": "ux-section-33",
+          "alias": "levenshtein vs damerau levenshtein and hamming distance",
+          "excerpt": "The detailed distinction is covered in Levenshtein vs Damerau-Levenshtein and Hamming distance ."
+        }
+      ]
+    },
+    {
+      "target": "/name-address-and-place-matching",
+      "evidence": [
+        {
+          "section": "108. Name-address-place matching adds structure",
+          "anchor_id": "ux-section-112",
+          "alias": "name address and place matching",
+          "excerpt": "See name, address, and place matching ."
+        }
+      ]
+    },
+    {
+      "target": "/phonetic-dialect-and-language-distance",
+      "evidence": [
+        {
+          "section": "65. One English-oriented phonetic encoder should not define multilingual similarity",
+          "anchor_id": "ux-section-69",
+          "alias": "phonetic dialect and language distance",
+          "excerpt": "The deeper linguistic problem is covered in phonetic, dialect, and language distance ."
+        }
+      ]
+    },
+    {
+      "target": "/spell-and-query-correction",
+      "evidence": [
+        {
+          "section": "191. Spelling correction",
+          "anchor_id": "ux-section-195",
+          "alias": "spell and query correction",
+          "excerpt": "See spell and query correction ."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "225. String similarity versus semantic similarity",
+          "anchor_id": "ux-section-229",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "Names also demonstrate the broader distinction explained in string similarity vs semantic similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "157. Transliteration is not pronunciation",
+          "anchor_id": "ux-section-161",
+          "alias": "text normalization and transliteration",
+          "excerpt": "See text normalization and transliteration ."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "152. Unicode normalization has a specific purpose",
+          "anchor_id": "ux-section-156",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and grapheme-safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "10. Weighted edit distance can improve this",
+          "anchor_id": "ux-section-14",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See weighted Levenshtein distance ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#page",
+      "type": "WebPage",
+      "name": "Levenshtein vs Jaro-Winkler and Phonetic Matching: Name Similarity, Record Linkage, and Phonetic Algorithms",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro-winkler"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#phonetic-matching"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "type": "TechArticle",
+      "name": "Levenshtein vs Jaro-Winkler and Phonetic Matching: Name Similarity, Record Linkage, and Phonetic Algorithms",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro-winkler"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#phonetic-matching"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#soundex"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#nysiis"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#metaphone"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#double-metaphone"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#concept",
+      "type": "DefinedTerm",
+      "name": "Levenshtein, Jaro-Winkler, and Phonetic Matching Comparison",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro",
+      "type": "DefinedTerm",
+      "name": "Jaro Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro-winkler",
+      "type": "DefinedTerm",
+      "name": "Jaro-Winkler Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro-matching-window",
+      "type": "DefinedTerm",
+      "name": "Jaro Matching Window",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro-transposition",
+      "type": "DefinedTerm",
+      "name": "Jaro Transposition Quantity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#prefix-boost",
+      "type": "DefinedTerm",
+      "name": "Jaro-Winkler Prefix Adjustment",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#phonetic-matching",
+      "type": "DefinedTerm",
+      "name": "Phonetic Matching",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#soundex",
+      "type": "DefinedTerm",
+      "name": "Soundex",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#nysiis",
+      "type": "DefinedTerm",
+      "name": "NYSIIS",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#metaphone",
+      "type": "DefinedTerm",
+      "name": "Metaphone",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#double-metaphone",
+      "type": "DefinedTerm",
+      "name": "Double Metaphone",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#phoneme-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Phoneme Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#record-linkage-evidence",
+      "type": "DefinedTerm",
+      "name": "String Similarity Evidence in Record Linkage",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro-winkler"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#phonetic-matching"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#page",
+      "mainEntity",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#page",
+      "isPartOf",
+      "https://www.levenshtein.net/comparisons#collection"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro-winkler"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#phonetic-matching"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#soundex"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#nysiis"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#metaphone"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#double-metaphone"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro-matching-window"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#jaro-transposition"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#prefix-boost"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#phoneme-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#record-linkage-evidence"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "isPartOf",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#page"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "citation",
+      "https://doi.org/10.1080/01621459.1989.10478785"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "citation",
+      "https://www.stat.cmu.edu/NCRN/PUBLIC/RLClassFiles/HW/Winkler1990.pdf"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "citation",
+      "https://doi.org/10.1080/01621459.1969.10501049"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "citation",
+      "https://www.archives.gov/research/census/soundex"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "citation",
+      "https://www.nist.gov/dads/HTML/nysiis.html"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "citation",
+      "https://www.nist.gov/dads/HTML/metaphone.html"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#article",
+      "citation",
+      "https://www.nist.gov/dads/HTML/doubleMetaphone.html"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://www.archives.gov/research/census/soundex",
+      "anchor": "National Archives Soundex documentation"
+    },
+    {
+      "url": "https://doi.org/10.1080/01621459.1989.10478785",
+      "anchor": "https://doi.org/10.1080/01621459.1989.10478785"
+    },
+    {
+      "url": "https://www.stat.cmu.edu/NCRN/PUBLIC/RLClassFiles/HW/Winkler1990.pdf",
+      "anchor": "paper"
+    },
+    {
+      "url": "https://www.nist.gov/dads/HTML/soundex.html",
+      "anchor": "NIST DADS"
+    },
+    {
+      "url": "https://www.nist.gov/dads/HTML/nysiis.html",
+      "anchor": "NIST DADS: NYSIIS"
+    },
+    {
+      "url": "https://www.nist.gov/dads/HTML/metaphone.html",
+      "anchor": "NIST DADS: Metaphone"
+    },
+    {
+      "url": "https://www.nist.gov/dads/HTML/doubleMetaphone.html",
+      "anchor": "NIST DADS: Double Metaphone"
+    },
+    {
+      "url": "https://doi.org/10.1080/01621459.1969.10501049",
+      "anchor": "https://doi.org/10.1080/01621459.1969.10501049"
+    }
+  ]
+}

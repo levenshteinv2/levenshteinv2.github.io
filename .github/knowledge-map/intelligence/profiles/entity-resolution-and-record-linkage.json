@@ -1,0 +1,1994 @@
+{
+  "url": "/entity-resolution-and-record-linkage",
+  "title": "Entity Resolution & Record Linkage with Edit Distance: Models, Blocking & Decision Rules",
+  "h1": [
+    "Entity Resolution & Record Linkage with Edit Distance: Models, Blocking & Decision Rules"
+  ],
+  "group": "DataMatching",
+  "provisional_mission": "Liên kết bản ghi và định danh",
+  "content_sha256": "b5ea2296bf5181a5b8ad47d05eb30c3135f87c75ecf791ff66d681aef28d60a2",
+  "canonical": "https://www.levenshtein.net/entity-resolution-and-record-linkage",
+  "primary_entity_candidate": "Entity Resolution & Record Linkage with Edit Distance: Models, Blocking & Decision Rules",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Entity Resolution and Record Linkage",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 12,
+      "word_count": 200,
+      "evidence": "Entity resolution and record linkage ask a deceptively difficult question:",
+      "paragraphs": [
+        "Entity resolution and record linkage ask a deceptively difficult question:",
+        "Do two records describe the same real-world entity?",
+        "The records may contain names, addresses, dates, identifiers, telephone numbers, organizations, product attributes, or other fields. Values can be incomplete, misspelled, reformatted, transliterated, outdated, duplicated, or simply wrong.",
+        "A typical pair might look like:",
+        "RECORD A name: Jonathan A. Smith date_of_birth: 1984-07-16 address: 42 West Harrison Street postcode: 60605 RECORD B name: Jonathon Smith date_of_birth: 1984-07-16 address: 42 W Harrison St postcode: 60605",
+        "The names are not identical. The addresses are not identical. Yet the combined evidence may strongly suggest that the records refer to the same person.",
+        "This is where string similarity, including Levenshtein distance , becomes useful—but only as one component of a larger inference problem.",
+        "The central principle of this article is:",
+        "String similarity is evidence about field values. It is not proof of entity identity.",
+        "A reliable entity-resolution system therefore separates several problems:",
+        "raw records ↓ standardization ↓ candidate generation ↓ field comparisons ↓ evidence combination ↓ pairwise decision ↓ optional global consistency ↓ entities / linked records",
+        "Treating Levenshtein distance as the entire matching algorithm collapses these distinct stages into one number and usually produces poor decisions."
+      ]
+    },
+    {
+      "heading": "Terminology: record linkage, deduplication, and entity resolution",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "These terms overlap but are not always identical.",
+      "paragraphs": [
+        "These terms overlap but are not always identical."
+      ]
+    },
+    {
+      "heading": "Record linkage",
+      "level": 3,
+      "id": "ux-section-3",
+      "paragraph_count": 6,
+      "word_count": 43,
+      "evidence": "Record linkage traditionally refers to identifying records in different files that correspond to the same underlying entity.",
+      "paragraphs": [
+        "Record linkage traditionally refers to identifying records in different files that correspond to the same underlying entity.",
+        "FILE A FILE B a₁ b₁ a₂ ↔ b₂ a₃ b₃ ... ...",
+        "For example:",
+        "hospital registry ↔ insurance database",
+        "or:",
+        "voter file ↔ survey respondents"
+      ]
+    },
+    {
+      "heading": "Deduplication",
+      "level": 3,
+      "id": "ux-section-4",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "Deduplication applies essentially the same reasoning within one collection:",
+      "paragraphs": [
+        "Deduplication applies essentially the same reasoning within one collection:",
+        "record 172 and record 9831 may describe the same entity"
+      ]
+    },
+    {
+      "heading": "Entity resolution",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 8,
+      "word_count": 61,
+      "evidence": "Entity resolution is often used more broadly for the complete process of determining which observed records belong to which latent real-world entities.",
+      "paragraphs": [
+        "Entity resolution is often used more broadly for the complete process of determining which observed records belong to which latent real-world entities.",
+        "It may involve:",
+        "cross-file linkage;",
+        "within-file deduplication;",
+        "multi-source integration;",
+        "cluster formation;",
+        "canonical entity construction.",
+        "The terminology varies across statistics, databases, information retrieval, public health, knowledge graphs, and machine learning. What matters computationally is the structure of the matching problem."
+      ]
+    },
+    {
+      "heading": "The latent-entity view",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 14,
+      "word_count": 83,
+      "evidence": "Suppose observed records are:",
+      "paragraphs": [
+        "Suppose observed records are:",
+        "r₁, r₂, ..., rₙ",
+        "but the real world contains latent entities:",
+        "e₁, e₂, ..., eₖ",
+        "with:",
+        "k ≤ n",
+        "Entity resolution seeks an assignment:",
+        "zᵢ ∈ {1,...,k}",
+        "where:",
+        "zᵢ = j",
+        "means that record rᵢ refers to entity eⱼ .",
+        "Pairwise record linkage instead often focuses first on:",
+        "Mᵢⱼ = 1 if records i and j match 0 otherwise",
+        "The two formulations are related but not identical. Pairwise predictions can violate the global structure required by an entity partition."
+      ]
+    },
+    {
+      "heading": "The fundamental distinction: similarity is not identity",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 10,
+      "word_count": 78,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "\"John Smith\" \"Jon Smith\"",
+        "Their character strings are close.",
+        "But millions of people can share those names.",
+        "Now consider:",
+        "\"Aleksandr Sergeyevich Pushkin\" \"Alexander Pushkin\"",
+        "The strings may differ substantially, yet domain knowledge, transliteration, dates, locations, and other attributes could establish that both records describe the same person.",
+        "Thus:",
+        "small edit distance ⇏ same entity large edit distance ⇏ different entity",
+        "This is a special case of the wider distinction developed in String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Entity resolution is an evidence-combination problem",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 5,
+      "word_count": 95,
+      "evidence": "Suppose two person records provide:",
+      "paragraphs": [
+        "Suppose two person records provide:",
+        "name date of birth street postcode email telephone",
+        "Each field contributes a different kind of evidence.",
+        "Observation Possible interpretation Same exact email Potentially very strong positive evidence Same surname Strength depends heavily on surname frequency Name edit distance = 1 Evidence of lexical similarity, not identity Different birth dates Could be strong negative evidence or one data-entry error Same postcode Weak or moderate evidence depending on population density Missing telephone Absence of evidence, not necessarily evidence of non-match",
+        "The job of the linkage model is to combine these observations coherently."
+      ]
+    },
+    {
+      "heading": "A complete linkage pipeline",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 1,
+      "word_count": 104,
+      "evidence": "INPUT RECORDS │ ▼ ┌───────────────────────┐ │ parsing / cleaning │ │ standardization │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ candidate generation │ │ blocking / indexing │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ field comparison │ │ │ │ exact │ │ edit distance │ │ token similarity │ │ phonetic similarity │ │ numeric differences │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ comparison vector │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ evidence model │ │ probability / score │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ match / non-match / │ │ review │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ constraints / │ │ clustering │ └───────────┬───────────┘ │ ▼ ENTITIES",
+      "paragraphs": [
+        "INPUT RECORDS │ ▼ ┌───────────────────────┐ │ parsing / cleaning │ │ standardization │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ candidate generation │ │ blocking / indexing │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ field comparison │ │ │ │ exact │ │ edit distance │ │ token similarity │ │ phonetic similarity │ │ numeric differences │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ comparison vector │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ evidence model │ │ probability / score │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ match / non-match / │ │ review │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ constraints / │ │ clustering │ └───────────┬───────────┘ │ ▼ ENTITIES"
+      ]
+    },
+    {
+      "heading": "Stage 1: standardization",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 19,
+      "word_count": 92,
+      "evidence": "Raw field values often differ for reasons unrelated to identity.",
+      "paragraphs": [
+        "Raw field values often differ for reasons unrelated to identity.",
+        "For example:",
+        "\"42 West Harrison Street\" \"42 W. Harrison St.\" \"42 W HARRISON ST\"",
+        "A normalization pipeline might standardize:",
+        "case;",
+        "punctuation;",
+        "whitespace;",
+        "abbreviations;",
+        "Unicode representation;",
+        "date formats;",
+        "telephone formats;",
+        "known address conventions.",
+        "But normalization changes the strings on which similarity is calculated.",
+        "Therefore:",
+        "normalize then compare",
+        "is mathematically a different operation from:",
+        "compare raw values",
+        "The transformation policy must be explicit and reproducible.",
+        "Multilingual names and transliteration require additional caution; these issues are treated more generally in Text Normalization and Transliteration ."
+      ]
+    },
+    {
+      "heading": "Over-normalization can destroy evidence",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "Consider identifiers:",
+      "paragraphs": [
+        "Consider identifiers:",
+        "AB-120 AB120",
+        "Removing punctuation may be harmless.",
+        "But for another field:",
+        "Unit 12 12",
+        "aggressive token deletion may remove meaningful structure.",
+        "Normalization should therefore be field-specific rather than one universal text-cleaning function."
+      ]
+    },
+    {
+      "heading": "Stage 2: candidate generation",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 11,
+      "word_count": 38,
+      "evidence": "For two files containing:",
+      "paragraphs": [
+        "For two files containing:",
+        "n and m",
+        "records, exhaustive cross-file comparison requires:",
+        "n × m",
+        "candidate pairs.",
+        "If:",
+        "n = 10,000,000 m = 10,000,000",
+        "then:",
+        "10^14",
+        "possible pairs exist.",
+        "Pairwise comparison alone is therefore not a scalable architecture."
+      ]
+    },
+    {
+      "heading": "Blocking",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 5,
+      "word_count": 40,
+      "evidence": "Blocking creates candidate subsets using inexpensive conditions.",
+      "paragraphs": [
+        "Blocking creates candidate subsets using inexpensive conditions.",
+        "For example:",
+        "compare records only if same birth year OR same postcode prefix OR same surname initial",
+        "The objective is:",
+        "retain nearly all true matches while eliminating the overwhelming majority of impossible pairs"
+      ]
+    },
+    {
+      "heading": "Blocking is a recall-sensitive filter",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 9,
+      "word_count": 71,
+      "evidence": "Suppose two true records contain:",
+      "paragraphs": [
+        "Suppose two true records contain:",
+        "postcode A: 60605 postcode B: 60606",
+        "because one postcode was entered incorrectly.",
+        "If the only blocking rule is:",
+        "postcode must match exactly",
+        "the pair is never evaluated by the sophisticated linkage model.",
+        "Its probability of matching downstream becomes irrelevant because:",
+        "candidate recall = 0 for that pair",
+        "This is analogous to exact candidate-generation requirements in large-scale edit-distance search. See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Multiple blocking rules",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 6,
+      "word_count": 62,
+      "evidence": "A safer strategy frequently uses a union:",
+      "paragraphs": [
+        "A safer strategy frequently uses a union:",
+        "C = C₁ ∪ C₂ ∪ C₃ ...",
+        "where each Cᵢ comes from a different blocking condition.",
+        "For example:",
+        "RULE 1 same date of birth RULE 2 same postcode and similar surname RULE 3 same telephone suffix RULE 4 same rare surname and same city",
+        "A true pair lost by one rule may survive another."
+      ]
+    },
+    {
+      "heading": "Candidate generation and matching must be evaluated separately",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 10,
+      "word_count": 31,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "true matches = 10,000",
+        "but blocking retains only:",
+        "9,500",
+        "true matches.",
+        "Even a perfect classifier can recover at most:",
+        "95%",
+        "of all true matches.",
+        "Therefore:",
+        "end-to-end recall ≤ blocking recall"
+      ]
+    },
+    {
+      "heading": "Stage 3: field comparison",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 7,
+      "word_count": 63,
+      "evidence": "For each candidate pair:",
+      "paragraphs": [
+        "For each candidate pair:",
+        "(a,b)",
+        "the system constructs comparison features.",
+        "Example:",
+        "Field Record A Record B Comparison Name Jonathon Smith Jonathan Smith Edit distance 1 Date of birth 1984-07-16 1984-07-16 Exact agreement Street 42 W Harrison St 42 West Harrison Street Normalized similarity Postcode 60605 60605 Exact agreement",
+        "The comparison vector might be represented as:",
+        "γ(a,b) = ( name_similarity, dob_agreement, address_similarity, postcode_agreement )"
+      ]
+    },
+    {
+      "heading": "Levenshtein distance as a field comparator",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 15,
+      "word_count": 57,
+      "evidence": "For name fields:",
+      "paragraphs": [
+        "For name fields:",
+        "x = \"Jonathon Smith\" y = \"Jonathan Smith\"",
+        "we may compute:",
+        "d_L(x,y) = 1",
+        "This is useful information.",
+        "But the number:",
+        "1",
+        "does not itself tell us:",
+        "P( same person | d_L = 1 )",
+        "because that probability depends on:",
+        "name frequency;",
+        "other fields;",
+        "the data-generating process;",
+        "the candidate-generation mechanism;",
+        "the population being linked."
+      ]
+    },
+    {
+      "heading": "Distance can be discretized into comparison levels",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 3,
+      "word_count": 51,
+      "evidence": "Instead of feeding raw distance directly into a probabilistic model, a system may use levels such as:",
+      "paragraphs": [
+        "Instead of feeding raw distance directly into a probabilistic model, a system may use levels such as:",
+        "level 0: exact agreement level 1: distance = 1 level 2: distance = 2 level 3: normalized similarity ≥ 0.8 level 4: otherwise disagree",
+        "Each level can then receive its own statistical evidence weight."
+      ]
+    },
+    {
+      "heading": "Length matters",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 6,
+      "word_count": 42,
+      "evidence": "An edit distance of 1 has very different meaning for:",
+      "paragraphs": [
+        "An edit distance of 1 has very different meaning for:",
+        "\"Li\" → \"Lu\"",
+        "than:",
+        "\"Alexandrovich\" → \"Alexandrovit\"",
+        "This is one reason normalized or length-stratified comparison levels may be useful.",
+        "However, normalized edit similarity is an application-defined transformation, not the original Levenshtein metric."
+      ]
+    },
+    {
+      "heading": "Weighted edit distance",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "Some errors are more plausible than others.",
+      "paragraphs": [
+        "Some errors are more plausible than others.",
+        "For example:",
+        "0 ↔ O 1 ↔ I rn ↔ m",
+        "or neighboring keyboard characters may occur more frequently than arbitrary substitutions.",
+        "A domain-specific comparator can use Weighted Levenshtein Distance .",
+        "But learned or manually selected costs should not be interpreted directly as match probabilities unless a probabilistic model explicitly gives them that meaning."
+      ]
+    },
+    {
+      "heading": "Different fields require different comparators",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 3,
+      "word_count": 72,
+      "evidence": "A generic edit-distance comparator is inappropriate for every attribute.",
+      "paragraphs": [
+        "A generic edit-distance comparator is inappropriate for every attribute.",
+        "Field Possible comparator Name Edit distance, Jaro–Winkler, phonetic models Date of birth Exact match, component comparison, date difference Latitude/longitude Geographic distance Telephone Exact normalized number, suffix agreement Email Exact match, local/domain decomposition Address Structured address comparison Numeric amount Absolute or relative numeric difference",
+        "The comparative behavior of Levenshtein, Jaro–Winkler, and phonetic methods is treated separately in Levenshtein vs Jaro–Winkler and Phonetic Matching ."
+      ]
+    },
+    {
+      "heading": "The Fellegi–Sunter framework",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 16,
+      "word_count": 103,
+      "evidence": "The classical probabilistic foundation of record linkage was formalized by Ivan Fellegi and Alan Sunter in 1969.",
+      "paragraphs": [
+        "The classical probabilistic foundation of record linkage was formalized by Ivan Fellegi and Alan Sunter in 1969.",
+        "For a candidate pair, let:",
+        "M = pair is a true match U = pair is a true non-match",
+        "and let:",
+        "γ",
+        "be the observed comparison pattern.",
+        "Define:",
+        "m(γ) = P(γ | M)",
+        "and:",
+        "u(γ) = P(γ | U)",
+        "The evidence supplied by comparison pattern γ can be expressed through the likelihood ratio:",
+        "Λ(γ) = m(γ) / u(γ)",
+        "or log weight:",
+        "w(γ) = log( m(γ) / u(γ) )",
+        "A comparison pattern is strong positive evidence when it is:",
+        "common among true matches but rare among non-matches"
+      ]
+    },
+    {
+      "heading": "Why rarity matters",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 10,
+      "word_count": 72,
+      "evidence": "Suppose two records agree on surname:",
+      "paragraphs": [
+        "Suppose two records agree on surname:",
+        "\"Smith\"",
+        "and another pair agrees on:",
+        "\"Quenel\"",
+        "Exact agreement occurs in both cases.",
+        "But if the first surname is extremely common and the second very rare, the evidential strength is not equal.",
+        "Conceptually:",
+        "rare agreement → large m/u ratio common agreement → smaller m/u ratio",
+        "This is one of the central advantages of probabilistic linkage over a rule such as:",
+        "+1 point for every agreeing field"
+      ]
+    },
+    {
+      "heading": "Field-level Fellegi–Sunter weights",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 9,
+      "word_count": 59,
+      "evidence": "Suppose comparisons are divided into fields:",
+      "paragraphs": [
+        "Suppose comparisons are divided into fields:",
+        "γ = ( γ_name, γ_dob, γ_address, γ_postcode )",
+        "Under a conditional-independence approximation:",
+        "P(γ | M) ≈ ∏ᵢ P(γᵢ | M)",
+        "and:",
+        "P(γ | U) ≈ ∏ᵢ P(γᵢ | U)",
+        "Therefore:",
+        "log P(γ | M) ───────── P(γ | U) ≈ Σᵢ log P(γᵢ | M) ────────── P(γᵢ | U)",
+        "This gives additive comparison weights."
+      ]
+    },
+    {
+      "heading": "Worked probabilistic example",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 6,
+      "word_count": 56,
+      "evidence": "Suppose the estimated comparison probabilities are:",
+      "paragraphs": [
+        "Suppose the estimated comparison probabilities are:",
+        "Observation m u m/u Very similar name 0.80 0.02 40 Exact date of birth 0.95 0.003 316.7 Same postcode 0.70 0.04 17.5",
+        "The approximate combined Bayes factor under conditional independence is:",
+        "40 × 316.7 × 17.5 ≈ 221,690",
+        "That is far stronger evidence than simply saying:",
+        "three fields look similar"
+      ]
+    },
+    {
+      "heading": "Prior probability matters",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 9,
+      "word_count": 85,
+      "evidence": "Evidence must be interpreted relative to how likely two candidate records were to match before examining their comparison features.",
+      "paragraphs": [
+        "Evidence must be interpreted relative to how likely two candidate records were to match before examining their comparison features.",
+        "Let:",
+        "π = P(M)",
+        "Then prior odds are:",
+        "π ───── 1 - π",
+        "Posterior odds can be written conceptually as:",
+        "posterior odds = prior odds × Bayes factor",
+        "If two enormous files are cross-joined randomly, the prior probability that an arbitrary pair describes the same person may be extraordinarily small.",
+        "Blocking changes the candidate population and therefore changes the effective prior match prevalence among evaluated pairs."
+      ]
+    },
+    {
+      "heading": "Blocking and probability cannot be conceptually separated",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 7,
+      "word_count": 53,
+      "evidence": "Suppose candidate generation only allows records sharing:",
+      "paragraphs": [
+        "Suppose candidate generation only allows records sharing:",
+        "birth year",
+        "Then the evaluated pair population is no longer a random sample of all possible record pairs.",
+        "The distribution:",
+        "P(γ | U)",
+        "among blocked non-matches can be very different from its distribution across arbitrary pairs.",
+        "Model estimation and evaluation should reflect the actual candidate-generation process."
+      ]
+    },
+    {
+      "heading": "The original three-way decision rule",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "Fellegi and Sunter formulated decisions as:",
+      "paragraphs": [
+        "Fellegi and Sunter formulated decisions as:",
+        "LINK POSSIBLE LINK NON-LINK",
+        "rather than forcing every pair into a binary classification.",
+        "Conceptually:",
+        "high score ↓ MATCH intermediate score ↓ REVIEW / UNRESOLVED low score ↓ NON-MATCH",
+        "This remains extremely useful in high-stakes applications."
+      ]
+    },
+    {
+      "heading": "Clerical review is a decision region",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 8,
+      "word_count": 51,
+      "evidence": "Human review should not be treated merely as:",
+      "paragraphs": [
+        "Human review should not be treated merely as:",
+        "send random difficult cases to people",
+        "Instead it can be modeled as a deliberate uncertainty region:",
+        "score ≥ T_match → automatic match score ≤ T_nonmatch → automatic non-match otherwise → review",
+        "Thresholds depend on the cost of:",
+        "false links;",
+        "missed links;",
+        "human review."
+      ]
+    },
+    {
+      "heading": "False matches and missed matches can have asymmetric costs",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 7,
+      "word_count": 42,
+      "evidence": "For some tasks:",
+      "paragraphs": [
+        "For some tasks:",
+        "false link ≫ missed link",
+        "because incorrectly merging two people contaminates downstream records.",
+        "In other tasks:",
+        "missed link ≫ false link",
+        "because failure to connect relevant observations has a higher operational cost.",
+        "There is therefore no universal score threshold."
+      ]
+    },
+    {
+      "heading": "Estimating m and u probabilities",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 9,
+      "word_count": 28,
+      "evidence": "The probabilities:",
+      "paragraphs": [
+        "The probabilities:",
+        "m = P(comparison | match) u = P(comparison | non-match)",
+        "may be estimated using:",
+        "labeled match/non-match pairs;",
+        "high-confidence rules;",
+        "mixture models;",
+        "Expectation-Maximization;",
+        "semi-supervised procedures;",
+        "domain-specific estimation."
+      ]
+    },
+    {
+      "heading": "Mixture-model view",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 6,
+      "word_count": 44,
+      "evidence": "Candidate comparison vectors can be viewed as arising from a mixture:",
+      "paragraphs": [
+        "Candidate comparison vectors can be viewed as arising from a mixture:",
+        "P(γ) = π P(γ | M) + (1-π) P(γ | U)",
+        "where the true class:",
+        "M or U",
+        "is latent.",
+        "Expectation-Maximization can estimate parameters in suitable probabilistic linkage models without complete labeled data."
+      ]
+    },
+    {
+      "heading": "Conditional independence is convenient but often false",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 10,
+      "word_count": 59,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "city and postcode",
+        "or:",
+        "first name and sex",
+        "These fields may be strongly dependent.",
+        "If a model simply multiplies field likelihood ratios as though every comparison were conditionally independent, evidence can be double-counted.",
+        "For example:",
+        "same postcode + same city",
+        "does not necessarily provide the same amount of independent evidence as:",
+        "same postcode + same date of birth"
+      ]
+    },
+    {
+      "heading": "Dependence is one limitation of simple Fellegi–Sunter implementations",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 8,
+      "word_count": 32,
+      "evidence": "Possible remedies include:",
+      "paragraphs": [
+        "Possible remedies include:",
+        "joint comparison levels;",
+        "interaction terms;",
+        "logistic models;",
+        "tree-based classifiers;",
+        "Bayesian hierarchical models;",
+        "neural comparison architectures.",
+        "But greater model flexibility requires more data and creates additional calibration and interpretability problems."
+      ]
+    },
+    {
+      "heading": "Missing values are not ordinary disagreement",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 8,
+      "word_count": 39,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "record A telephone: +1 312 555 0184 record B telephone: missing",
+        "Treating this as:",
+        "telephone disagrees",
+        "can generate unjustified negative evidence.",
+        "A missing field may require a separate comparison level:",
+        "missing / unavailable",
+        "rather than agreement or disagreement."
+      ]
+    },
+    {
+      "heading": "Missingness itself can be informative",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 6,
+      "word_count": 33,
+      "evidence": "The situation becomes more complicated when:",
+      "paragraphs": [
+        "The situation becomes more complicated when:",
+        "P(missing | M) ≠ P(missing | U)",
+        "or when missingness depends on source, population, or entity characteristics.",
+        "Thus:",
+        "\"ignore missing fields\"",
+        "is not universally statistically correct either."
+      ]
+    },
+    {
+      "heading": "Frequency-sensitive comparisons",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 12,
+      "word_count": 44,
+      "evidence": "A powerful refinement uses the frequency of the actual agreed value.",
+      "paragraphs": [
+        "A powerful refinement uses the frequency of the actual agreed value.",
+        "Compare:",
+        "surname = Smith",
+        "with:",
+        "surname = Zabriskie",
+        "Even when both are exact agreements, the rare value can carry more discriminative evidence.",
+        "This general principle extends to:",
+        "names;",
+        "addresses;",
+        "postcodes;",
+        "occupations;",
+        "organization names."
+      ]
+    },
+    {
+      "heading": "Value frequency and edit distance interact",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "\"Smith\" \"Smth\"",
+        "and:",
+        "\"Quenel\" \"Quenell\"",
+        "both have small edit distance.",
+        "Their match evidence can still differ substantially because:",
+        "string similarity + population frequency + other attributes",
+        "must be interpreted jointly."
+      ]
+    },
+    {
+      "heading": "Deterministic linkage",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 9,
+      "word_count": 53,
+      "evidence": "Not every linkage system is probabilistic.",
+      "paragraphs": [
+        "Not every linkage system is probabilistic.",
+        "A deterministic rule might say:",
+        "MATCH if: exact date of birth AND ( exact normalized surname OR name edit distance ≤ 1 ) AND same postcode",
+        "Such systems can be:",
+        "transparent;",
+        "easy to deploy;",
+        "easy to audit;",
+        "effective in clean domains.",
+        "But hard thresholds can behave discontinuously."
+      ]
+    },
+    {
+      "heading": "Threshold cliff",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "accept name distance ≤ 2",
+        "Then:",
+        "distance = 2 → acceptable distance = 3 → unacceptable",
+        "even if every other field strongly agrees.",
+        "A probabilistic model can instead let the name comparison contribute graded evidence."
+      ]
+    },
+    {
+      "heading": "Supervised classification",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 10,
+      "word_count": 38,
+      "evidence": "With labeled training pairs:",
+      "paragraphs": [
+        "With labeled training pairs:",
+        "(comparison_vector, match_label)",
+        "entity resolution can be formulated as classification.",
+        "Possible models include:",
+        "logistic regression;",
+        "random forests;",
+        "gradient-boosted trees;",
+        "support-vector machines;",
+        "neural networks.",
+        "The input can still contain classical field comparators such as Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Feature example",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 4,
+      "word_count": 25,
+      "evidence": "x(a,b) = [ name_edit_distance, normalized_name_similarity, dob_exact, postcode_exact, address_token_similarity, email_exact, telephone_suffix_match ]",
+      "paragraphs": [
+        "x(a,b) = [ name_edit_distance, normalized_name_similarity, dob_exact, postcode_exact, address_token_similarity, email_exact, telephone_suffix_match ]",
+        "A classifier estimates:",
+        "P( M = 1 | x(a,b) )",
+        "or another decision score."
+      ]
+    },
+    {
+      "heading": "Labeled pair sampling is dangerous",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 5,
+      "word_count": 62,
+      "evidence": "Suppose training non-matches are generated by selecting random record pairs.",
+      "paragraphs": [
+        "Suppose training non-matches are generated by selecting random record pairs.",
+        "Most will be trivially different:",
+        "different name different city different date of birth different address",
+        "A model trained on these easy negatives may perform poorly on production candidates, because blocking deliberately selects difficult pairs that already share some attributes.",
+        "Training and evaluation data should resemble the candidate distribution encountered at inference time."
+      ]
+    },
+    {
+      "heading": "Pairwise probability is not the whole entity-resolution problem",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 5,
+      "word_count": 34,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "P(A=B) = 0.95 P(B=C) = 0.95 P(A=C) = 0.05",
+        "Independent pair decisions can produce:",
+        "A = B B = C A ≠ C",
+        "which is incompatible with ordinary identity because equality is transitive."
+      ]
+    },
+    {
+      "heading": "Identity is an equivalence relation",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "For ordinary deduplication:",
+      "paragraphs": [
+        "For ordinary deduplication:",
+        "A = A A = B ⇒ B = A A = B and B = C ⇒ A = C",
+        "Pairwise classifiers do not automatically enforce this structure."
+      ]
+    },
+    {
+      "heading": "Clustering",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "One common approach constructs a graph:",
+      "paragraphs": [
+        "One common approach constructs a graph:",
+        "records = vertices likely matches = edges",
+        "and derives entity clusters from the graph.",
+        "But simple connected components can overmerge."
+      ]
+    },
+    {
+      "heading": "Bridge-error problem",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "A ── B ── C ── D",
+        "where only one weak incorrect edge:",
+        "B ── C",
+        "connects two genuinely different groups.",
+        "Connected-components clustering merges:",
+        "A B C D",
+        "into one entity.",
+        "Thus a single false-positive edge can create a much larger entity-level error."
+      ]
+    },
+    {
+      "heading": "Bipartite linkage has structural constraints",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "Suppose two files are known to contain at most one record per person.",
+      "paragraphs": [
+        "Suppose two files are known to contain at most one record per person.",
+        "Then record:",
+        "aᵢ",
+        "should match at most one:",
+        "bⱼ",
+        "and vice versa.",
+        "Independent pairwise probabilities can violate this one-to-one constraint."
+      ]
+    },
+    {
+      "heading": "Global bipartite matching",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 11,
+      "word_count": 54,
+      "evidence": "The pair scores can instead be considered jointly.",
+      "paragraphs": [
+        "The pair scores can instead be considered jointly.",
+        "Suppose:",
+        "B1 B2 A1 0.91 0.89 A2 0.90 0.20",
+        "Greedily choosing the largest score first gives:",
+        "A1 ↔ B1",
+        "and leaves:",
+        "A2 ↔ B2",
+        "with a poor score.",
+        "A global assignment may instead prefer:",
+        "A1 ↔ B2 A2 ↔ B1",
+        "depending on the model and objective."
+      ]
+    },
+    {
+      "heading": "Bayesian bipartite linkage",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "Modern Bayesian formulations can treat the matching structure itself as the parameter of interest rather than assuming independent pair statuses.",
+      "paragraphs": [
+        "Modern Bayesian formulations can treat the matching structure itself as the parameter of interest rather than assuming independent pair statuses.",
+        "This makes it possible to represent:",
+        "one-to-one matching constraints;",
+        "posterior uncertainty;",
+        "unresolved matches;",
+        "different loss functions for final decisions.",
+        "Mauricio Sadinle's Bayesian bipartite framework is an important example of this approach."
+      ]
+    },
+    {
+      "heading": "Uncertainty should survive the linkage pipeline",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "A common anti-pattern is:",
+      "paragraphs": [
+        "A common anti-pattern is:",
+        "probabilistic linkage ↓ hard matched table ↓ pretend linkage was perfect ↓ downstream statistical analysis",
+        "If linkage errors are non-negligible, downstream estimates can be biased.",
+        "In statistical applications it can be important to propagate:",
+        "linkage uncertainty",
+        "into:",
+        "subsequent inference"
+      ]
+    },
+    {
+      "heading": "Entity resolution can be iterative",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "Initial high-confidence links can improve later decisions.",
+      "paragraphs": [
+        "Initial high-confidence links can improve later decisions.",
+        "For example:",
+        "high-confidence matches ↓ learn source-specific errors ↓ improve comparator parameters ↓ resolve harder pairs",
+        "But self-training can also amplify mistakes."
+      ]
+    },
+    {
+      "heading": "Error propagation",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "Suppose an incorrect high-confidence match is accepted early.",
+      "paragraphs": [
+        "Suppose an incorrect high-confidence match is accepted early.",
+        "If its values are then used to:",
+        "train error models;",
+        "construct canonical entities;",
+        "generate new blocking keys;",
+        "infer household relationships;",
+        "one pairwise mistake can affect many later decisions."
+      ]
+    },
+    {
+      "heading": "Canonical records are a separate problem",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 10,
+      "word_count": 53,
+      "evidence": "After several records have been assigned to one entity:",
+      "paragraphs": [
+        "After several records have been assigned to one entity:",
+        "{ \"Jon Smith\", \"Jonathan Smith\", \"Jonathan A Smith\" }",
+        "the system may need to create a canonical representation.",
+        "Possible policies include:",
+        "most recent value;",
+        "most frequent value;",
+        "trusted-source priority;",
+        "probabilistic latent value;",
+        "retain all observed variants.",
+        "Entity resolution and canonicalization should not be conflated."
+      ]
+    },
+    {
+      "heading": "Evaluation requires ground truth",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "When true match labels are available, pairwise evaluation can use:",
+      "paragraphs": [
+        "When true match labels are available, pairwise evaluation can use:",
+        "TP = true matched pairs predicted match FP = non-matched pairs predicted match FN = true matched pairs missed TN = non-matched pairs rejected"
+      ]
+    },
+    {
+      "heading": "Precision",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "precision = TP ─────── TP + FP",
+      "paragraphs": [
+        "precision = TP ─────── TP + FP",
+        "answers:",
+        "Of predicted matches, how many were correct?"
+      ]
+    },
+    {
+      "heading": "Recall",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "recall = TP ─────── TP + FN",
+      "paragraphs": [
+        "recall = TP ─────── TP + FN",
+        "answers:",
+        "Of true matches, how many were recovered?"
+      ]
+    },
+    {
+      "heading": "F1 score",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 3,
+      "word_count": 37,
+      "evidence": "F1 = 2 × precision × recall ────────────────────── precision + recall",
+      "paragraphs": [
+        "F1 = 2 × precision × recall ────────────────────── precision + recall",
+        "provides one balance between precision and recall.",
+        "But F1 implicitly assigns a particular relative importance to the two error types and may not reflect operational cost."
+      ]
+    },
+    {
+      "heading": "Evaluate blocking separately",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "T = all true matching pairs",
+        "and:",
+        "C = candidate pairs produced by blocking",
+        "Then blocking recall is:",
+        "|T ∩ C| ─────── |T|",
+        "The reduction ratio can be measured against the full pair space.",
+        "A useful blocking method seeks:",
+        "very high recall and very large pair reduction"
+      ]
+    },
+    {
+      "heading": "Pairwise metrics are not sufficient for clustering",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 7,
+      "word_count": 30,
+      "evidence": "A clustering system can produce excellent pairwise scores while still creating poor entity groups.",
+      "paragraphs": [
+        "A clustering system can produce excellent pairwise scores while still creating poor entity groups.",
+        "Cluster-level diagnostics can include:",
+        "entity-count error;",
+        "cluster precision and recall;",
+        "overmerge rate;",
+        "undermerge rate;",
+        "cluster-size distortion."
+      ]
+    },
+    {
+      "heading": "Overmerging",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "Overmerging occurs when records from different real entities are assigned to one entity.",
+      "paragraphs": [
+        "Overmerging occurs when records from different real entities are assigned to one entity.",
+        "true: {A,B} {C,D} predicted: {A,B,C,D}"
+      ]
+    },
+    {
+      "heading": "Undermerging",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "Undermerging occurs when records from one real entity remain split:",
+      "paragraphs": [
+        "Undermerging occurs when records from one real entity remain split:",
+        "true: {A,B,C,D} predicted: {A,B} {C,D}",
+        "These errors have different consequences and should be reported separately."
+      ]
+    },
+    {
+      "heading": "Ground truth is often imperfect",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 9,
+      "word_count": 42,
+      "evidence": "Entity-resolution benchmarks frequently rely on labels produced by:",
+      "paragraphs": [
+        "Entity-resolution benchmarks frequently rely on labels produced by:",
+        "manual review;",
+        "existing identifiers;",
+        "historical linkage systems;",
+        "semi-automated labeling.",
+        "Those labels can themselves contain errors.",
+        "A reported:",
+        "precision = 99.8%",
+        "should therefore be interpreted relative to the quality and representativeness of the reference labels."
+      ]
+    },
+    {
+      "heading": "Evaluation must be stratified",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 10,
+      "word_count": 33,
+      "evidence": "Aggregate metrics can hide severe weaknesses.",
+      "paragraphs": [
+        "Aggregate metrics can hide severe weaknesses.",
+        "Useful strata include:",
+        "common versus rare names;",
+        "complete versus missing records;",
+        "short versus long names;",
+        "language or script;",
+        "source system;",
+        "geographic region;",
+        "record age;",
+        "amount of corruption."
+      ]
+    },
+    {
+      "heading": "Why demographic and linguistic variation matters",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "Different populations can have different:",
+      "paragraphs": [
+        "Different populations can have different:",
+        "name-length distributions;",
+        "surname frequencies;",
+        "transliteration patterns;",
+        "address structures;",
+        "missing-data patterns;",
+        "household naming conventions.",
+        "A comparator or threshold calibrated on one population can perform differently on another."
+      ]
+    },
+    {
+      "heading": "Identity signals are domain-specific",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "For people:",
+      "paragraphs": [
+        "For people:",
+        "name birth date address telephone",
+        "may be useful.",
+        "For organizations:",
+        "company name registration number address website industry",
+        "may be relevant.",
+        "For products:",
+        "SKU manufacturer model number title dimensions",
+        "may matter.",
+        "The statistical structure of linkage changes with the entity type."
+      ]
+    },
+    {
+      "heading": "Names and addresses deserve their own treatment",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 8,
+      "word_count": 29,
+      "evidence": "Names, addresses, and places have complex error modes involving:",
+      "paragraphs": [
+        "Names, addresses, and places have complex error modes involving:",
+        "abbreviations;",
+        "token reordering;",
+        "nicknames;",
+        "transliteration;",
+        "street conventions;",
+        "geographic hierarchy.",
+        "These issues are developed in Name, Address and Place Matching ."
+      ]
+    },
+    {
+      "heading": "Patient identity has stronger safety constraints",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "In healthcare, a false merge can incorrectly combine medical histories, while a missed match can fragment one patient's record.",
+      "paragraphs": [
+        "In healthcare, a false merge can incorrectly combine medical histories, while a missed match can fragment one patient's record.",
+        "The relative costs are therefore very different from ordinary marketing deduplication.",
+        "See Patient Identity Matching ."
+      ]
+    },
+    {
+      "heading": "Privacy changes the matching architecture",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "Sometimes two organizations need to identify common entities without revealing raw identifiers to each other.",
+      "paragraphs": [
+        "Sometimes two organizations need to identify common entities without revealing raw identifiers to each other.",
+        "This creates the privacy-preserving record-linkage problem:",
+        "Organization A has identifiers Organization B has identifiers but raw identifiers must not be exchanged",
+        "Cryptographic, encoded, or privacy-enhancing comparison mechanisms create an additional trade-off between:",
+        "linkage accuracy;",
+        "information leakage;",
+        "computational cost;",
+        "attack resistance.",
+        "See Privacy-Preserving Record Linkage ."
+      ]
+    },
+    {
+      "heading": "Common failure mode: one global Levenshtein threshold",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "A naive system might define:",
+      "paragraphs": [
+        "A naive system might define:",
+        "same entity if Levenshtein(nameA,nameB) ≤ 2",
+        "This fails because:",
+        "names are not unique identifiers;",
+        "short and long names behave differently;",
+        "different scripts and transliterations behave differently;",
+        "other attributes are ignored;",
+        "common names create large collision populations."
+      ]
+    },
+    {
+      "heading": "Common failure mode: averaging unrelated similarities",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "name similarity = 0.9 address similarity = 0.8 birth-date similarity = 0 email similarity = 1.0",
+        "Computing:",
+        "(0.9 + 0.8 + 0 + 1.0) / 4 = 0.675",
+        "has no probabilistic interpretation unless the aggregation rule has been justified.",
+        "Different fields have different reliability and discriminative power."
+      ]
+    },
+    {
+      "heading": "Common failure mode: exact equality is not always stronger than fuzzy agreement",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "Exact agreement on:",
+      "paragraphs": [
+        "Exact agreement on:",
+        "surname = Smith",
+        "may be weaker evidence than near agreement on a rare full name combined with exact date of birth.",
+        "Evidence strength depends on probability, not merely comparator category."
+      ]
+    },
+    {
+      "heading": "Common failure mode: treating all disagreements equally",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "These discrepancies are not equivalent:",
+      "paragraphs": [
+        "These discrepancies are not equivalent:",
+        "birth date differs by one transposed digit versus birth dates differ by twenty years",
+        "Nor are:",
+        "\"Jonathan\" \"Jonathon\"",
+        "and:",
+        "\"Jonathan\" \"Mohammed\"",
+        "A useful comparison system preserves severity information."
+      ]
+    },
+    {
+      "heading": "Common failure mode: ignoring field quality",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "Suppose one source's postcode field is known to be:",
+      "paragraphs": [
+        "Suppose one source's postcode field is known to be:",
+        "99.9% accurate",
+        "while another source's free-text address is:",
+        "frequently stale",
+        "Their disagreements should not automatically receive equal negative weight."
+      ]
+    },
+    {
+      "heading": "Common failure mode: blocking on corrupted fields",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "A sophisticated model cannot recover candidate pairs that blocking permanently removed.",
+      "paragraphs": [
+        "A sophisticated model cannot recover candidate pairs that blocking permanently removed.",
+        "Blocking should therefore use:",
+        "multiple keys;",
+        "robust representations;",
+        "high-recall rules;",
+        "measured candidate recall."
+      ]
+    },
+    {
+      "heading": "Common failure mode: treating pair predictions as independent entities",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Identity constraints can be violated if pair decisions are made independently.",
+      "paragraphs": [
+        "Identity constraints can be violated if pair decisions are made independently.",
+        "This is especially dangerous in deduplication and multi-source clustering."
+      ]
+    },
+    {
+      "heading": "Common failure mode: using transitive closure blindly",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "A ~ B B ~ C",
+        "simple connected components imply:",
+        "A ~ C",
+        "even if:",
+        "A and C have strong contradictory evidence",
+        "Global entity construction needs stronger reasoning than graph connectivity alone."
+      ]
+    },
+    {
+      "heading": "Common failure mode: assuming a high match score is calibrated probability",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "A model score:",
+      "paragraphs": [
+        "A model score:",
+        "0.97",
+        "is not necessarily:",
+        "97% probability of a true match",
+        "unless calibration has been validated."
+      ]
+    },
+    {
+      "heading": "Common failure mode: evaluating only easy pairs",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 2,
+      "word_count": 32,
+      "evidence": "If test non-matches are random cross-file pairs, the task can appear nearly perfect because most pairs are obviously unrelated.",
+      "paragraphs": [
+        "If test non-matches are random cross-file pairs, the task can appear nearly perfect because most pairs are obviously unrelated.",
+        "Evaluation should include the difficult candidate population produced by the actual blocking process."
+      ]
+    },
+    {
+      "heading": "Common failure mode: leakage from identifiers",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Suppose ground truth was constructed using:",
+      "paragraphs": [
+        "Suppose ground truth was constructed using:",
+        "email address",
+        "and the model then uses that same email field as a feature.",
+        "Measured performance may partially reflect the procedure used to define the labels rather than generalizable resolution ability."
+      ]
+    },
+    {
+      "heading": "Common failure mode: silently changing preprocessing",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "If production normalization changes from:",
+      "paragraphs": [
+        "If production normalization changes from:",
+        "NFC",
+        "to:",
+        "NFKC + case folding",
+        "comparison distributions can change even though the probabilistic model parameters remain unchanged.",
+        "Preprocessing versions should therefore be part of model versioning."
+      ]
+    },
+    {
+      "heading": "Production architecture",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 1,
+      "word_count": 104,
+      "evidence": "RAW SOURCES │ ▼ ┌─────────────────────┐ │ schema mapping │ │ parsing │ │ normalization │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ candidate blocking │ │ / indexing │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ comparison features │ │ │ │ exact │ │ edit-distance │ │ phonetic │ │ geographic │ │ numeric │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ probabilistic or │ │ supervised model │ └─────────┬───────────┘ │ ┌─────────┴───────────┐ ▼ ▼ high confidence uncertain │ │ ▼ ▼ automatic decision review / defer │ │ └──────────┬──────────┘ ▼ ┌─────────────────────┐ │ structural │ │ constraints │ │ clustering │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ resolved entities │ └─────────────────────┘",
+      "paragraphs": [
+        "RAW SOURCES │ ▼ ┌─────────────────────┐ │ schema mapping │ │ parsing │ │ normalization │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ candidate blocking │ │ / indexing │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ comparison features │ │ │ │ exact │ │ edit-distance │ │ phonetic │ │ geographic │ │ numeric │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ probabilistic or │ │ supervised model │ └─────────┬───────────┘ │ ┌─────────┴───────────┐ ▼ ▼ high confidence uncertain │ │ ▼ ▼ automatic decision review / defer │ │ └──────────┬──────────┘ ▼ ┌─────────────────────┐ │ structural │ │ constraints │ │ clustering │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ resolved entities │ └─────────────────────┘"
+      ]
+    },
+    {
+      "heading": "What should be logged?",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 10,
+      "word_count": 45,
+      "evidence": "For every decision, a production system should ideally retain enough information to reconstruct:",
+      "paragraphs": [
+        "For every decision, a production system should ideally retain enough information to reconstruct:",
+        "which blocking rules generated the pair;",
+        "the normalized field values;",
+        "comparison levels;",
+        "model version;",
+        "match score or probability;",
+        "decision threshold;",
+        "manual-review outcome;",
+        "cluster operation.",
+        "This makes later audit and error analysis possible."
+      ]
+    },
+    {
+      "heading": "Model drift",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 11,
+      "word_count": 43,
+      "evidence": "The distribution of records can change through:",
+      "paragraphs": [
+        "The distribution of records can change through:",
+        "new sources;",
+        "new countries;",
+        "changes in data-entry software;",
+        "new normalization procedures;",
+        "population shifts;",
+        "changes in identifier availability.",
+        "Therefore:",
+        "P(γ | M) and P(γ | U)",
+        "may change over time.",
+        "Linkage systems need monitoring, not one-time calibration."
+      ]
+    },
+    {
+      "heading": "A useful diagnostic decomposition",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "When an end-to-end match is wrong, classify the failure by stage:",
+      "paragraphs": [
+        "When an end-to-end match is wrong, classify the failure by stage:",
+        "1. parsing error 2. normalization error 3. blocking miss 4. comparator weakness 5. model error 6. threshold error 7. clustering / constraint error 8. bad ground truth",
+        "Without this decomposition, every failure tends to be blamed on:",
+        "\"the similarity algorithm\"",
+        "even when Levenshtein distance was computed perfectly."
+      ]
+    },
+    {
+      "heading": "Decision table",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 1,
+      "word_count": 59,
+      "evidence": "Problem Appropriate response Small spelling error in name String comparator such as edit distance Common surname Use frequency-aware evidence Millions of records High-recall blocking/indexing Multiple noisy fields Evidence-combination model One-to-one cross-file matching Consider global bipartite constraints Multiple records per entity Entity-level clustering/model Ambiguous cases Review or unresolved state Privacy-sensitive linkage Privacy-preserving linkage architecture Different scripts/languages Representation and transliteration-aware processing",
+      "paragraphs": [
+        "Problem Appropriate response Small spelling error in name String comparator such as edit distance Common surname Use frequency-aware evidence Millions of records High-recall blocking/indexing Multiple noisy fields Evidence-combination model One-to-one cross-file matching Consider global bipartite constraints Multiple records per entity Entity-level clustering/model Ambiguous cases Review or unresolved state Privacy-sensitive linkage Privacy-preserving linkage architecture Different scripts/languages Representation and transliteration-aware processing"
+      ]
+    },
+    {
+      "heading": "Where Levenshtein distance belongs",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 7,
+      "word_count": 94,
+      "evidence": "The most defensible role for Levenshtein distance in entity resolution is:",
+      "paragraphs": [
+        "The most defensible role for Levenshtein distance in entity resolution is:",
+        "one field-level comparator inside a larger evidence system",
+        "For example:",
+        "name comparison │ ├── exact equality ├── Levenshtein distance ├── Jaro-Winkler └── phonetic signal address comparison │ ├── structured tokens ├── postcode └── geographic evidence date comparison │ ├── exact date └── component-level error ↓ linkage model",
+        "This architecture respects what edit distance actually measures: the cost of transforming one sequence representation into another.",
+        "It does not ask edit distance to answer a fundamentally different question:",
+        "Are these two records the same entity?"
+      ]
+    },
+    {
+      "heading": "The deeper statistical lesson",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 7,
+      "word_count": 65,
+      "evidence": "Entity resolution is an inference problem under uncertainty.",
+      "paragraphs": [
+        "Entity resolution is an inference problem under uncertainty.",
+        "The observed data are imperfect manifestations of an underlying identity.",
+        "REAL ENTITY │ ├── source A │ ↓ │ noisy record │ ├── source B │ ↓ │ noisy record │ └── source C ↓ noisy record",
+        "The task is therefore not merely:",
+        "measure similarity",
+        "but:",
+        "infer the latent entity that most plausibly explains the observed records"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 11,
+      "word_count": 375,
+      "evidence": "Entity resolution and record linkage identify records that correspond to the same underlying real-world entity despite missing values, formatting differences, typographical errors, stale attributes, duplicated records, and other forms of data corruption.",
+      "paragraphs": [
+        "Entity resolution and record linkage identify records that correspond to the same underlying real-world entity despite missing values, formatting differences, typographical errors, stale attributes, duplicated records, and other forms of data corruption.",
+        "Levenshtein distance can be valuable in this process, particularly for noisy textual fields such as names. But edit distance measures string transformation cost, not identity. A small character distance is only one piece of evidence and should normally be interpreted together with other fields.",
+        "A robust linkage architecture begins with representation and standardization, followed by high-recall candidate generation. Blocking is essential at scale because exhaustive pair comparison grows quadratically or as the cross-product of the input files. Any true match removed during blocking cannot be recovered by later modeling.",
+        "Candidate pairs are then converted into comparison vectors. Different attributes require different comparison functions: textual edit distance for some names, exact comparisons for identifiers, structured address comparators, numeric differences, geographic distance, date logic, and domain-specific methods.",
+        "The classical Fellegi–Sunter framework treats these comparisons as statistical evidence. Agreement patterns common among true matches but rare among non-matches receive large positive evidence weights. Common agreements provide less evidence. This explains why exact agreement on a rare surname can be much more informative than exact agreement on a common one.",
+        "Simple Fellegi–Sunter implementations often use conditional independence to combine field weights, but real record attributes can be correlated. City and postcode, for example, can contain overlapping evidence. Missingness, source-specific error, and blocking-induced candidate distributions also complicate probability estimation.",
+        "Modern entity resolution extends beyond independent pair classification. Bipartite linkage can impose one-to-one constraints, Bayesian methods can quantify uncertainty over entire matchings, and multi-record entity resolution must ensure that final clusters obey coherent identity structure.",
+        "Pairwise match quality and entity quality are not equivalent. A single false-positive edge can join two otherwise correct clusters, while missed edges can fragment one entity into several. Evaluation should therefore examine both pairwise errors and entity-level overmerging and undermerging.",
+        "The most important implementation discipline is to preserve stage boundaries:",
+        "representation → candidate generation → field comparison → evidence combination → decision → entity structure",
+        "When these layers are kept separate, Levenshtein distance becomes a precise and useful component of entity resolution rather than an overloaded similarity score asked to infer identity by itself."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 8,
+      "word_count": 111,
+      "evidence": "Name, Address and Place Matching — field-specific matching for names, addresses, geographic records, abbreviations, transliteration, and structured location evidence.",
+      "paragraphs": [
+        "Name, Address and Place Matching — field-specific matching for names, addresses, geographic records, abbreviations, transliteration, and structured location evidence.",
+        "Patient Identity Matching — entity resolution under healthcare-specific error costs and identity constraints.",
+        "Privacy-Preserving Record Linkage — linking entities when raw identifying attributes cannot be directly shared.",
+        "Weighted Levenshtein Distance — nonuniform edit costs for domain-specific textual errors.",
+        "Levenshtein vs Jaro-Winkler and Phonetic Matching — choosing string comparators for different error distributions.",
+        "String Similarity vs Semantic Similarity — why lexical resemblance and real-world equivalence are different relations.",
+        "Indexing and Filtering for Edit Distance — candidate reduction and scalable similarity filtering.",
+        "Text Normalization and Transliteration — representation choices that affect multilingual string comparison."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 8,
+      "word_count": 190,
+      "evidence": "Ivan P. Fellegi and Alan B. Sunter, “A Theory for Record Linkage,” Journal of the American Statistical Association , 64(328), 1183–1210, 1969. DOI record .",
+      "paragraphs": [
+        "Ivan P. Fellegi and Alan B. Sunter, “A Theory for Record Linkage,” Journal of the American Statistical Association , 64(328), 1183–1210, 1969. DOI record .",
+        "Matthew A. Jaro, “Advances in Record-Linkage Methodology as Applied to Matching the 1985 Census of Tampa, Florida,” Journal of the American Statistical Association , 84(406), 414–420, 1989. DOI record .",
+        "Michael D. Larsen and Donald B. Rubin, “Iterative Automated Record Linkage Using Mixture Models,” Journal of the American Statistical Association , 96(453), 32–41, 2001. DOI record .",
+        "Peter Christen, Data Matching: Concepts and Techniques for Record Linkage, Entity Resolution, and Duplicate Detection , Springer, 2012. DOI record .",
+        "William E. Winkler, “Matching and Record Linkage,” WIREs Computational Statistics , 2014. DOI record .",
+        "Mauricio Sadinle, “Bayesian Estimation of Bipartite Matchings for Record Linkage,” Journal of the American Statistical Association , 112(518), 600–612, 2017. DOI record .",
+        "Ted Enamorado, Benjamin Fifield, and Kosuke Imai, “Using a Probabilistic Model to Assist Merging of Large-Scale Administrative Records,” American Political Science Review , 113(2), 353–371, 2019. DOI record .",
+        "Olivier Binette and Rebecca C. Steorts, “(Almost) All of Entity Resolution,” Science Advances , 8(12), eabi8021, 2022. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/data-matching",
+      "evidence": [
+        {
+          "section": "References",
+          "anchor_id": "ux-section-92",
+          "alias": "data matching",
+          "excerpt": "Peter Christen, Data Matching: Concepts and Techniques for Record Linkage, Entity Resolution, and Duplicate Detection , Springer, 2012. DOI record ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "The fundamental distinction: similarity is not identity",
+          "anchor_id": "ux-section-7",
+          "alias": "edit distance",
+          "excerpt": "small edit distance ⇏ same entity large edit distance ⇏ different entity"
+        },
+        {
+          "section": "Entity resolution is an evidence-combination problem",
+          "anchor_id": "ux-section-8",
+          "alias": "edit distance",
+          "excerpt": "Observation Possible interpretation Same exact email Potentially very strong positive evidence Same surname Strength depends heavily on surname frequency Name edit distance = 1 Evidence of lexical similarity, not identity Different birth dates Could be strong negative evidence or one data-entry error Same postcode Weak or moderate evidence depending on population density Missing telephone Absence of evidence, not necessarily evidence of non-match"
+        },
+        {
+          "section": "A complete linkage pipeline",
+          "anchor_id": "ux-section-9",
+          "alias": "edit distance",
+          "excerpt": "INPUT RECORDS │ ▼ ┌───────────────────────┐ │ parsing / cleaning │ │ standardization │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ candidate generation │ │ blocking / indexing │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ field comparison │ │ │ │ exact │ │ edit distance │ │ token similarity │ │ phonetic similarity │ │ numeric differences │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ comparison vector │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ evidence model │ │ probability / score │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ match / non-match / │ │ review │ └───────────┬───────────┘ │ ▼ ┌───────────────────────┐ │ cons"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Blocking is a recall-sensitive filter",
+          "anchor_id": "ux-section-14",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "This is analogous to exact candidate-generation requirements in large-scale edit-distance search. See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-91",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — candidate reduction and scalable similarity filtering."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-jaro-winkler-and-phonetic-matching",
+      "evidence": [
+        {
+          "section": "Different fields require different comparators",
+          "anchor_id": "ux-section-22",
+          "alias": "levenshtein vs jaro winkler and phonetic matching",
+          "excerpt": "The comparative behavior of Levenshtein, Jaro–Winkler, and phonetic methods is treated separately in Levenshtein vs Jaro–Winkler and Phonetic Matching ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-91",
+          "alias": "levenshtein vs jaro winkler and phonetic matching",
+          "excerpt": "Levenshtein vs Jaro-Winkler and Phonetic Matching — choosing string comparators for different error distributions."
+        }
+      ]
+    },
+    {
+      "target": "/name-address-and-place-matching",
+      "evidence": [
+        {
+          "section": "Names and addresses deserve their own treatment",
+          "anchor_id": "ux-section-68",
+          "alias": "name address and place matching",
+          "excerpt": "These issues are developed in Name, Address and Place Matching ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-91",
+          "alias": "name address and place matching",
+          "excerpt": "Name, Address and Place Matching — field-specific matching for names, addresses, geographic records, abbreviations, transliteration, and structured location evidence."
+        }
+      ]
+    },
+    {
+      "target": "/patient-identity-matching",
+      "evidence": [
+        {
+          "section": "Patient identity has stronger safety constraints",
+          "anchor_id": "ux-section-69",
+          "alias": "patient identity matching",
+          "excerpt": "See Patient Identity Matching ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-91",
+          "alias": "patient identity matching",
+          "excerpt": "Patient Identity Matching — entity resolution under healthcare-specific error costs and identity constraints."
+        }
+      ]
+    },
+    {
+      "target": "/privacy-preserving-record-linkage",
+      "evidence": [
+        {
+          "section": "Privacy changes the matching architecture",
+          "anchor_id": "ux-section-70",
+          "alias": "privacy preserving record linkage",
+          "excerpt": "This creates the privacy-preserving record-linkage problem:"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-91",
+          "alias": "privacy preserving record linkage",
+          "excerpt": "Privacy-Preserving Record Linkage — linking entities when raw identifying attributes cannot be directly shared."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "The fundamental distinction: similarity is not identity",
+          "anchor_id": "ux-section-7",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "This is a special case of the wider distinction developed in String Similarity vs Semantic Similarity ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-91",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "String Similarity vs Semantic Similarity — why lexical resemblance and real-world equivalence are different relations."
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "Stage 1: standardization",
+          "anchor_id": "ux-section-10",
+          "alias": "text normalization and transliteration",
+          "excerpt": "Multilingual names and transliteration require additional caution; these issues are treated more generally in Text Normalization and Transliteration ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-91",
+          "alias": "text normalization and transliteration",
+          "excerpt": "Text Normalization and Transliteration — representation choices that affect multilingual string comparison."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted edit distance",
+          "anchor_id": "ux-section-21",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "A domain-specific comparator can use Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-91",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — nonuniform edit costs for domain-specific textual errors."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/entity-resolution-and-record-linkage#page",
+      "type": "WebPage",
+      "name": "Entity Resolution and Record Linkage",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "type": "TechArticle",
+      "name": "Entity Resolution and Record Linkage",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/entity-resolution-and-record-linkage#fellegi-sunter"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept",
+      "type": "DefinedTerm",
+      "name": "Entity Resolution and Record Linkage",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/entity-resolution-and-record-linkage#fellegi-sunter",
+      "type": "DefinedTerm",
+      "name": "Fellegi-Sunter Model",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/entity-resolution-and-record-linkage#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "hasPart",
+      "https://www.levenshtein.net/data-matching#collection"
+    ],
+    [
+      "https://www.levenshtein.net/data-matching#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/applications#collection"
+    ],
+    [
+      "https://www.levenshtein.net/data-matching#collection",
+      "hasPart",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#page"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#page",
+      "about",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#page",
+      "mainEntity",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#page",
+      "isPartOf",
+      "https://www.levenshtein.net/data-matching#collection"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#page",
+      "hasPart",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "about",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "about",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#fellegi-sunter"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/name-address-and-place-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/patient-identity-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/string-similarity-vs-semantic-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "isPartOf",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#page"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1080/01621459.1969.10501049"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1080/01621459.1989.10478785"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1198/016214501750332956"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1007/978-3-642-31164-2"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1002/wics.1317"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1080/01621459.2016.1148612"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1017/S0003055418000783"
+    ],
+    [
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1126/sciadv.abi8021"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1080/01621459.1969.10501049",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1080/01621459.1989.10478785",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1198/016214501750332956",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1007/978-3-642-31164-2",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1002/wics.1317",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1080/01621459.2016.1148612",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1017/S0003055418000783",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1126/sciadv.abi8021",
+      "anchor": "DOI record"
+    }
+  ]
+}

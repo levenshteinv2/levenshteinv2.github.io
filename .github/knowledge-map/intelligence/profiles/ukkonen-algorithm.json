@@ -1,0 +1,1989 @@
+{
+  "url": "/ukkonen-algorithm",
+  "title": "Ukkonen Algorithm: Banded, Output-Sensitive Edit Distance",
+  "h1": [
+    "Ukkonen Algorithm: Banded, Output-Sensitive Edit Distance"
+  ],
+  "group": "Algorithms",
+  "provisional_mission": "Threshold và banded computation",
+  "content_sha256": "0df2ea033755225cd2b41ebb8079ee1747e2b0cd88f91c7aa48d2effa2be4a77",
+  "canonical": "https://www.levenshtein.net/ukkonen-algorithm",
+  "primary_entity_candidate": "Ukkonen Algorithm: Banded, Output-Sensitive Edit Distance",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Ukkonen Algorithm",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 1,
+      "word_count": 94,
+      "evidence": "The Ukkonen algorithm refers to a family of distance-sensitive techniques developed by Esko Ukkonen for computing edit distance and approximate string matches more efficiently when the true distance or an allowed error threshold is small. Instead of evaluating every cell of the classical dynamic-programming matrix, Ukkonen exploits the geometry of edit paths to restrict computation to states that can still participate in a sufficiently cheap transformation. For standard Levenshtein distance , this leads to algorithms whose work can depend on the distance itself rather than on the full product of the two sequence lengths.",
+      "paragraphs": [
+        "The Ukkonen algorithm refers to a family of distance-sensitive techniques developed by Esko Ukkonen for computing edit distance and approximate string matches more efficiently when the true distance or an allowed error threshold is small. Instead of evaluating every cell of the classical dynamic-programming matrix, Ukkonen exploits the geometry of edit paths to restrict computation to states that can still participate in a sufficiently cheap transformation. For standard Levenshtein distance , this leads to algorithms whose work can depend on the distance itself rather than on the full product of the two sequence lengths."
+      ]
+    },
+    {
+      "heading": "Why Ukkonen's algorithm matters",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 15,
+      "word_count": 128,
+      "evidence": "The classical Wagner–Fischer algorithm computes edit distance between strings of lengths m and n by filling a dynamic-programming matrix containing approximately:",
+      "paragraphs": [
+        "The classical Wagner–Fischer algorithm computes edit distance between strings of lengths m and n by filling a dynamic-programming matrix containing approximately:",
+        "m × n",
+        "states.",
+        "Its time complexity is therefore:",
+        "Θ(mn)",
+        "regardless of whether the strings are radically different or almost identical.",
+        "This can be wasteful when the actual edit distance:",
+        "s = d(x,y)",
+        "is much smaller than the string lengths.",
+        "For example:",
+        "m = 1,000,000 n = 1,000,000 s = 3",
+        "A full dynamic-programming algorithm conceptually considers about:",
+        "10^12",
+        "matrix states even though an optimal path contains only three edits.",
+        "Ukkonen's central insight is that a low-cost edit path occupies only a narrow region of the edit graph. Most matrix states cannot belong to a transformation whose total cost is small and therefore need not be evaluated."
+      ]
+    },
+    {
+      "heading": "The historical result",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 12,
+      "word_count": 141,
+      "evidence": "In his 1985 paper Algorithms for Approximate String Matching , Esko Ukkonen started from the classical tabulation method and developed improved algorithms whose running time depends on the actual edit distance s .",
+      "paragraphs": [
+        "In his 1985 paper Algorithms for Approximate String Matching , Esko Ukkonen started from the classical tabulation method and developed improved algorithms whose running time depends on the actual edit distance s .",
+        "For strings of lengths m and n , the paper gives an algorithm with:",
+        "Time: O(s · min(m,n)) Space: O(s · min(m,n))",
+        "and discusses improved space bounds. In the special case where edit operations have character-independent equal costs, Ukkonen gives an algorithm with:",
+        "Time: O(s · min(m,n)) Space: O(s · min(s,m,n))",
+        "When the actual editing sequence is not required, the algorithms can be implemented with space:",
+        "O(min(s,m,n))",
+        "The same work also derives a threshold decision procedure: given a threshold t , determine whether:",
+        "d(x,y) ≤ t",
+        "in:",
+        "Time: O(t · min(m,n)) Space: O(min(t,m,n))",
+        "These bounds make the algorithm output-sensitive : performance improves when the resulting distance is small."
+      ]
+    },
+    {
+      "heading": "\"Ukkonen algorithm\" does not mean only one implementation",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 4,
+      "word_count": 88,
+      "evidence": "Modern software and documentation often use the phrase Ukkonen algorithm to mean a simple banded Levenshtein dynamic program with a maximum distance k .",
+      "paragraphs": [
+        "Modern software and documentation often use the phrase Ukkonen algorithm to mean a simple banded Levenshtein dynamic program with a maximum distance k .",
+        "That is closely related to Ukkonen's central idea, but it is useful to distinguish:",
+        "Usage Meaning Original Ukkonen work A broader family of distance-sensitive algorithms and generalized edit-distance results. Practical \"Ukkonen\" implementation Frequently a thresholded or banded dynamic-programming implementation. Ukkonen principle Do not compute edit states that cannot participate in a sufficiently low-cost path.",
+        "This distinction matters when discussing exact complexity or comparing implementations."
+      ]
+    },
+    {
+      "heading": "The edit-distance matrix",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 13,
+      "word_count": 61,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "x = x₁x₂...xₘ y = y₁y₂...yₙ",
+        "and define:",
+        "D[i][j]",
+        "as the minimum Levenshtein cost required to transform:",
+        "x[1..i]",
+        "into:",
+        "y[1..j]",
+        "The standard recurrence is:",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + cost ) cost = 0 if xᵢ = yⱼ 1 otherwise",
+        "with:",
+        "D[i][0] = i D[0][j] = j",
+        "The classical algorithm evaluates the entire rectangle."
+      ]
+    },
+    {
+      "heading": "Diagonal coordinates",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 12,
+      "word_count": 122,
+      "evidence": "The Ukkonen viewpoint becomes clearer when matrix cells are classified by diagonal.",
+      "paragraphs": [
+        "The Ukkonen viewpoint becomes clearer when matrix cells are classified by diagonal.",
+        "Define the diagonal index:",
+        "δ = j - i",
+        "Cells for which:",
+        "j - i = 0",
+        "lie on the main diagonal.",
+        "Cells with:",
+        "j - i = 1",
+        "lie one diagonal above it, and:",
+        "j - i = -1",
+        "one diagonal below it.",
+        "target index j 0 1 2 3 4 5 source 0 0 + + + + + index 1 - 0 + + + + i 2 - - 0 + + + 3 - - - 0 + + 4 - - - - 0 + 5 - - - - - 0 0 = main diagonal + = positive diagonals - = negative diagonals"
+      ]
+    },
+    {
+      "heading": "What edit operations do to the diagonal",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 4,
+      "word_count": 63,
+      "evidence": "Consider a path through the dynamic-programming matrix.",
+      "paragraphs": [
+        "Consider a path through the dynamic-programming matrix.",
+        "Operation Change in i Change in j Effect on j - i Match +1 +1 0 Substitution +1 +1 0 Insertion 0 +1 +1 Deletion +1 0 -1",
+        "Matches and substitutions remain on the same diagonal.",
+        "An insertion moves the path one diagonal in one direction, while a deletion moves it one diagonal in the other."
+      ]
+    },
+    {
+      "heading": "The fundamental band argument",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 10,
+      "word_count": 71,
+      "evidence": "Suppose we only care about edit paths of cost at most:",
+      "paragraphs": [
+        "Suppose we only care about edit paths of cost at most:",
+        "k",
+        "under unit-cost Levenshtein distance.",
+        "Every insertion or deletion costs 1 and changes the diagonal index by exactly 1.",
+        "Therefore a path containing at most k edits can never reach a cell satisfying:",
+        "|j - i| > k",
+        "and later still have total cost at most k .",
+        "Consequently, every state outside:",
+        "|j - i| ≤ k",
+        "can be ignored."
+      ]
+    },
+    {
+      "heading": "Visualizing the band",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 10,
+      "word_count": 178,
+      "evidence": "For threshold:",
+      "paragraphs": [
+        "For threshold:",
+        "k = 2",
+        "only a narrow strip around the main diagonal can participate in a valid path:",
+        "target 0 1 2 3 4 5 6 7 8 source 0 x x x . . . . . . 1 x x x x . . . . . 2 x x x x x . . . . 3 . x x x x x . . . 4 . . x x x x x . . 5 . . . x x x x x . 6 . . . . x x x x x 7 . . . . . x x x x 8 . . . . . . x x x x = potentially relevant state . = impossible for a path with ≤ 2 edits",
+        "Instead of evaluating approximately:",
+        "m × n",
+        "cells, the algorithm evaluates only approximately:",
+        "(2k + 1) × min(m,n)",
+        "states when the shorter dimension is used as the traversal dimension and the threshold is feasible.",
+        "For small k , this is a dramatic reduction."
+      ]
+    },
+    {
+      "heading": "Length difference gives an immediate lower bound",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 6,
+      "word_count": 44,
+      "evidence": "Before computing any dynamic-programming state, standard Levenshtein distance satisfies:",
+      "paragraphs": [
+        "Before computing any dynamic-programming state, standard Levenshtein distance satisfies:",
+        "d(x,y) ≥ ||x| - |y||",
+        "because only insertion and deletion change sequence length, and each changes it by one.",
+        "Therefore:",
+        "if |m - n| > k: d(x,y) > k",
+        "and the comparison can terminate immediately."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-11",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "m = 100 n = 107 k = 3 |100 - 107| = 7 7 > 3 therefore: distance > 3",
+      "paragraphs": [
+        "m = 100 n = 107 k = 3 |100 - 107| = 7 7 > 3 therefore: distance > 3",
+        "No character comparison is required."
+      ]
+    },
+    {
+      "heading": "Thresholded edit-distance problem",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "There are two distinct computational questions.",
+      "paragraphs": [
+        "There are two distinct computational questions."
+      ]
+    },
+    {
+      "heading": "Exact distance",
+      "level": 3,
+      "id": "ux-section-13",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "What is d(x,y)?",
+      "paragraphs": [
+        "What is d(x,y)?"
+      ]
+    },
+    {
+      "heading": "Threshold decision",
+      "level": 3,
+      "id": "ux-section-14",
+      "paragraph_count": 9,
+      "word_count": 42,
+      "evidence": "Is d(x,y) ≤ k?",
+      "paragraphs": [
+        "Is d(x,y) ≤ k?",
+        "The second question contains less information.",
+        "If:",
+        "k = 2",
+        "then the algorithm does not need to distinguish:",
+        "distance 3 distance 17 distance 10,000",
+        "All three answers are simply:",
+        "distance > 2",
+        "Ukkonen exploits precisely this reduced requirement."
+      ]
+    },
+    {
+      "heading": "A practical banded Ukkonen-style algorithm",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 2,
+      "word_count": 160,
+      "evidence": "The following implementation is a practical thresholded dynamic-programming form based on the Ukkonen principle. It should be understood as a useful implementation of the band idea rather than a complete reproduction of every variant in Ukkonen's 1985 paper.",
+      "paragraphs": [
+        "The following implementation is a practical thresholded dynamic-programming form based on the Ukkonen principle. It should be understood as a useful implementation of the band idea rather than a complete reproduction of every variant in Ukkonen's 1985 paper.",
+        "function bounded_levenshtein(x, y, k): m = length(x) n = length(y) if abs(m - n) > k: return GREATER_THAN_K INF = k + 1 previous[0..n] = INF current[0..n] = INF for j = 0 to min(n, k): previous[j] = j for i = 1 to m: fill current with INF start = max(0, i - k) end = min(n, i + k) if start == 0: current[0] = i for j = max(1, start) to end: substitution_cost = 0 if x[i-1] == y[j-1] else 1 deletion = previous[j] + 1 insertion = current[j-1] + 1 substitution = previous[j-1] + substitution_cost current[j] = min( deletion, insertion, substitution ) if minimum(current[start..end]) > k: return GREATER_THAN_K swap(previous, current) if previous[n] <= k: return previous[n] return GREATER_THAN_K"
+      ]
+    },
+    {
+      "heading": "Why infinity can be k + 1",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 6,
+      "word_count": 47,
+      "evidence": "For a bounded computation, all values greater than k are equivalent from the application's perspective.",
+      "paragraphs": [
+        "For a bounded computation, all values greater than k are equivalent from the application's perspective.",
+        "Therefore an implementation does not require mathematical infinity.",
+        "It can use:",
+        "INF = k + 1",
+        "and saturate irrelevant values there.",
+        "This can simplify arithmetic and prevent unnecessary growth of DP values."
+      ]
+    },
+    {
+      "heading": "Correctness of the band restriction",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 16,
+      "word_count": 108,
+      "evidence": "Assume standard unit-cost insertions, deletions, and substitutions.",
+      "paragraphs": [
+        "Assume standard unit-cost insertions, deletions, and substitutions.",
+        "Consider any edit path from:",
+        "(0,0)",
+        "to:",
+        "(m,n)",
+        "having total cost at most k .",
+        "At any intermediate state (i,j) :",
+        "j - i",
+        "equals the net difference between the number of insertion and deletion movements made so far.",
+        "Therefore:",
+        "|j - i| ≤ number of insertions + deletions so far",
+        "and since every such edit costs 1:",
+        "|j - i| ≤ total edit cost so far ≤ k",
+        "Hence every path whose total cost is at most k lies entirely within:",
+        "|j - i| ≤ k",
+        "Discarding cells outside this band therefore cannot remove a valid solution satisfying the threshold."
+      ]
+    },
+    {
+      "heading": "Correctness inside the band",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 5,
+      "word_count": 70,
+      "evidence": "Within the band, the ordinary Wagner–Fischer recurrence is unchanged:",
+      "paragraphs": [
+        "Within the band, the ordinary Wagner–Fischer recurrence is unchanged:",
+        "D[i][j] = min( deletion, insertion, substitution_or_match )",
+        "Every predecessor capable of belonging to a path of cost at most k is retained.",
+        "Therefore the values computed inside the band are the same values that a full Wagner–Fischer matrix would produce for all states relevant to a successful bounded solution.",
+        "The optimization removes impossible states; it does not alter the objective function."
+      ]
+    },
+    {
+      "heading": "Early termination",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 7,
+      "word_count": 79,
+      "evidence": "Suppose that after processing a source prefix, every reachable state in the active band has value greater than k .",
+      "paragraphs": [
+        "Suppose that after processing a source prefix, every reachable state in the active band has value greater than k .",
+        "Future edit transitions have nonnegative cost.",
+        "Any future path must pass through one of the states already reached at this boundary.",
+        "Therefore no future state can produce a complete path whose total cost falls back to:",
+        "≤ k",
+        "and computation can terminate.",
+        "This reasoning must be applied to the complete relevant frontier rather than to an arbitrary individual cell."
+      ]
+    },
+    {
+      "heading": "Why one large cell does not justify termination",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 7,
+      "word_count": 47,
+      "evidence": "Suppose one cell satisfies:",
+      "paragraphs": [
+        "Suppose one cell satisfies:",
+        "D[i][j] = k + 4",
+        "That does not imply failure.",
+        "Another state on the same frontier might satisfy:",
+        "D[i][j-2] = k - 1",
+        "and later lead to a valid alignment.",
+        "Bounded algorithms reason over the set of viable states, not one fixed alignment."
+      ]
+    },
+    {
+      "heading": "Time complexity of the thresholded band",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 9,
+      "word_count": 64,
+      "evidence": "For each source index, at most approximately:",
+      "paragraphs": [
+        "For each source index, at most approximately:",
+        "2k + 1",
+        "target positions are active.",
+        "If the shorter sequence is chosen as the traversal dimension, the total number of evaluated cells is on the order of:",
+        "O(k · min(m,n))",
+        "for a feasible threshold, matching the key threshold-sensitive behavior established by Ukkonen.",
+        "Compare this with:",
+        "Wagner–Fischer: O(mn) bounded Ukkonen-style: O(k · min(m,n))",
+        "when k is small."
+      ]
+    },
+    {
+      "heading": "Example of the scaling difference",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 10,
+      "word_count": 54,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "m = 100,000 n = 100,000 k = 2",
+        "A full matrix has roughly:",
+        "10,000,000,000",
+        "interior states.",
+        "A width-five band contains on the order of:",
+        "5 × 100,000 = 500,000",
+        "states.",
+        "The exact constant and boundary behavior depend on the implementation, but the structural difference is enormous:",
+        "quadratic rectangle versus narrow linear band"
+      ]
+    },
+    {
+      "heading": "Output-sensitive complexity",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 9,
+      "word_count": 51,
+      "evidence": "A computational problem is called output-sensitive when its running time depends partly on the magnitude or structure of the output.",
+      "paragraphs": [
+        "A computational problem is called output-sensitive when its running time depends partly on the magnitude or structure of the output.",
+        "For Ukkonen's edit-distance algorithm:",
+        "s = actual edit distance",
+        "and the key result is:",
+        "O(s · min(m,n))",
+        "rather than:",
+        "O(mn)",
+        "This means:",
+        "very similar strings → small s → less work"
+      ]
+    },
+    {
+      "heading": "Why the distinction between s and k matters",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 5,
+      "word_count": 54,
+      "evidence": "Symbol Meaning s The actual optimal edit distance. k or t A threshold provided by the application.",
+      "paragraphs": [
+        "Symbol Meaning s The actual optimal edit distance. k or t A threshold provided by the application.",
+        "If:",
+        "s = 2 k = 50",
+        "an algorithm parameterized only by the requested threshold may explore a much wider band than necessary.",
+        "An output-sensitive algorithm seeks to make work depend on the true value s ."
+      ]
+    },
+    {
+      "heading": "Recovering the exact distance when s is unknown",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 10,
+      "word_count": 105,
+      "evidence": "The actual distance is normally unknown before the problem is solved.",
+      "paragraphs": [
+        "The actual distance is normally unknown before the problem is solved.",
+        "One conceptual strategy is to increase a threshold until the bounded computation succeeds:",
+        "k = 1 k = 2 k = 4 k = 8 ...",
+        "until:",
+        "d(x,y) ≤ k",
+        "A geometrically increasing threshold avoids paying for every intermediate value separately.",
+        "Because:",
+        "1 + 2 + 4 + ... + O(s) = O(s)",
+        "repeated banded computations can retain output-sensitive behavior up to constant factors in suitable unit-cost implementations.",
+        "This is a useful implementation intuition; Ukkonen's original paper develops its own algorithms directly from the tabulation structure rather than being reducible merely to this wrapper."
+      ]
+    },
+    {
+      "heading": "Space complexity",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 10,
+      "word_count": 61,
+      "evidence": "A full Wagner–Fischer matrix requires:",
+      "paragraphs": [
+        "A full Wagner–Fischer matrix requires:",
+        "O(mn)",
+        "space.",
+        "A bounded computation only requires the active part of the current and previous rows.",
+        "If the edit script itself is not required, Ukkonen's 1985 result permits:",
+        "O(min(s,m,n))",
+        "space in the distance-sensitive setting, and:",
+        "O(min(t,m,n))",
+        "for threshold testing.",
+        "For practical banded unit-cost code, this corresponds to maintaining only a narrow frontier of useful DP states."
+      ]
+    },
+    {
+      "heading": "Dense row versus compact band storage",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "There are two common implementation strategies.",
+      "paragraphs": [
+        "There are two common implementation strategies."
+      ]
+    },
+    {
+      "heading": "Dense rows",
+      "level": 3,
+      "id": "ux-section-28",
+      "paragraph_count": 10,
+      "word_count": 31,
+      "evidence": "Allocate arrays of length:",
+      "paragraphs": [
+        "Allocate arrays of length:",
+        "n + 1",
+        "but compute only the relevant interval.",
+        "Advantages:",
+        "simple indexing;",
+        "easy implementation;",
+        "good contiguous memory access.",
+        "Disadvantage:",
+        "memory remains O(n)",
+        "even if k is tiny."
+      ]
+    },
+    {
+      "heading": "Compact band",
+      "level": 3,
+      "id": "ux-section-29",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "Store only approximately:",
+      "paragraphs": [
+        "Store only approximately:",
+        "2k + 1",
+        "values per active row.",
+        "Advantages:",
+        "memory proportional to the band;",
+        "especially useful for very long strings and small thresholds.",
+        "Disadvantages:",
+        "index mapping is more complicated;",
+        "band boundaries shift between rows;",
+        "implementation errors are easier to introduce."
+      ]
+    },
+    {
+      "heading": "Compact band coordinates",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 6,
+      "word_count": 53,
+      "evidence": "If row i begins at:",
+      "paragraphs": [
+        "If row i begins at:",
+        "j_start = max(0, i-k)",
+        "then matrix column j can be stored at local index:",
+        "local_j = j - j_start",
+        "The preceding row has a different j_start , so predecessor mapping must account for the shift.",
+        "This is why dense-row implementations are often preferred unless memory pressure is severe."
+      ]
+    },
+    {
+      "heading": "Reconstructing an edit script",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 10,
+      "word_count": 67,
+      "evidence": "Computing only two narrow rows is sufficient for the distance but not for straightforward full backtracking.",
+      "paragraphs": [
+        "Computing only two narrow rows is sufficient for the distance but not for straightforward full backtracking.",
+        "To recover an optimal edit script , an implementation may:",
+        "retain predecessor information for all visited band cells;",
+        "retain the entire banded matrix;",
+        "use recursive or divide-and-conquer reconstruction;",
+        "recompute selected regions during traceback.",
+        "The space complexity therefore depends on whether the application needs:",
+        "distance only",
+        "or:",
+        "distance + actual alignment/edit script"
+      ]
+    },
+    {
+      "heading": "Length imbalance and the center of the useful region",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 13,
+      "word_count": 47,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "m != n",
+        "the final cell:",
+        "(m,n)",
+        "lies on diagonal:",
+        "δ = n - m",
+        "rather than diagonal zero.",
+        "The required path must accumulate at least:",
+        "|n - m|",
+        "insertions or deletions.",
+        "This explains again why:",
+        "|m-n|",
+        "is a fundamental lower bound on the edit distance."
+      ]
+    },
+    {
+      "heading": "Distance budget remaining at a state",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 13,
+      "word_count": 86,
+      "evidence": "A stronger way to reason about DP states is to combine:",
+      "paragraphs": [
+        "A stronger way to reason about DP states is to combine:",
+        "cost already spent;",
+        "a lower bound on the cost still required.",
+        "Suppose a state is:",
+        "(i,j)",
+        "and the remaining suffix lengths are:",
+        "m - i n - j",
+        "At least:",
+        "|(m-i) - (n-j)|",
+        "additional insertion/deletion cost is required under standard unit costs.",
+        "Therefore a state with current cost D[i][j] cannot lead to a solution within threshold k if:",
+        "D[i][j] + |(m-i) - (n-j)| > k",
+        "This lower-bound perspective generalizes the idea behind pruning impossible states."
+      ]
+    },
+    {
+      "heading": "The geometry of viable states",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "For every matrix state, define:",
+      "paragraphs": [
+        "For every matrix state, define:",
+        "lower_bound(i,j) = D[i][j] + remaining_length_imbalance",
+        "Then:",
+        "lower_bound(i,j) > k",
+        "implies that the state cannot lead to an acceptable final alignment.",
+        "The simple diagonal band is an especially cheap version of this reasoning because it derives a bound without first computing full DP costs."
+      ]
+    },
+    {
+      "heading": "Weighted edit costs",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 9,
+      "word_count": 56,
+      "evidence": "Ukkonen's original work also analyzes generalized edit distances, but the simple unit-width band argument must be modified when operations have nonuniform costs.",
+      "paragraphs": [
+        "Ukkonen's original work also analyzes generalized edit distances, but the simple unit-width band argument must be modified when operations have nonuniform costs.",
+        "Suppose:",
+        "insertion cost = 0.25 deletion cost = 0.25",
+        "and the threshold is:",
+        "k = 1",
+        "Then four insertion/deletion operations can occur while total cost remains 1.",
+        "Therefore:",
+        "|i-j| ≤ 1",
+        "would be incorrect."
+      ]
+    },
+    {
+      "heading": "Weighted band width",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 10,
+      "word_count": 78,
+      "evidence": "If every insertion and deletion has cost at least:",
+      "paragraphs": [
+        "If every insertion and deletion has cost at least:",
+        "δ > 0",
+        "then a path of total cost at most t can contain at most:",
+        "floor(t / δ)",
+        "net gap-generating operations before exceeding the budget.",
+        "A safe diagonal bound can therefore be related to:",
+        "|i-j| ≤ floor(t / δ)",
+        "under appropriate cost assumptions.",
+        "If insertion or deletion can have zero cost, this simple finite-band guarantee no longer follows.",
+        "Weighted edit models are treated in Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Character-dependent edit costs",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 5,
+      "word_count": 55,
+      "evidence": "A generalized model might define:",
+      "paragraphs": [
+        "A generalized model might define:",
+        "delete(a) = 0.8 insert(b) = 0.7 substitute(e,i) = 0.2 substitute(e,q) = 1.4",
+        "The Wagner–Fischer recurrence remains conceptually applicable:",
+        "D[i][j] = min( D[i-1][j] + delete(xᵢ), D[i][j-1] + insert(yⱼ), D[i-1][j-1] + substitute(xᵢ,yⱼ) )",
+        "but pruning rules must be derived from the actual cost model rather than copied blindly from unit-cost Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Transpositions and generalized edit sets",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 6,
+      "word_count": 70,
+      "evidence": "Ukkonen's 1985 paper also discusses conditions under which its techniques can be used with generalized edit distances and extended edit-operation sets, including adjacent transpositions.",
+      "paragraphs": [
+        "Ukkonen's 1985 paper also discusses conditions under which its techniques can be used with generalized edit distances and extended edit-operation sets, including adjacent transpositions.",
+        "However, a standard banded Levenshtein implementation with only the three classical predecessors:",
+        "(i-1,j) (i,j-1) (i-1,j-1)",
+        "does not automatically compute Damerau–Levenshtein distance.",
+        "If transposition is introduced as a primitive operation, both the recurrence and relevant state dependencies must correctly represent that edit model.",
+        "See Damerau–Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Ukkonen versus Wagner–Fischer",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 2,
+      "word_count": 72,
+      "evidence": "Property Wagner–Fischer Ukkonen-style bounded computation Main idea Evaluate every prefix pair Evaluate only potentially useful states General time Θ(mn) Depends on distance / threshold Threshold k exploited? Not inherently Yes Best regime General baseline Small distance or small threshold Conceptual recurrence Classical DP Classical DP on a restricted state space Implementation complexity Very low Moderate",
+      "paragraphs": [
+        "Property Wagner–Fischer Ukkonen-style bounded computation Main idea Evaluate every prefix pair Evaluate only potentially useful states General time Θ(mn) Depends on distance / threshold Threshold k exploited? Not inherently Yes Best regime General baseline Small distance or small threshold Conceptual recurrence Classical DP Classical DP on a restricted state space Implementation complexity Very low Moderate",
+        "Ukkonen should therefore be understood as exploiting additional structure rather than replacing the mathematical foundation of Wagner–Fischer."
+      ]
+    },
+    {
+      "heading": "Ukkonen versus Myers bit-vector algorithm",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 6,
+      "word_count": 96,
+      "evidence": "Both methods avoid the cost of ordinary scalar full-matrix dynamic programming, but they do so differently.",
+      "paragraphs": [
+        "Both methods avoid the cost of ordinary scalar full-matrix dynamic programming, but they do so differently.",
+        "Ukkonen reduces the number of states:",
+        "full matrix → narrow relevant band",
+        "The Myers bit-vector algorithm instead accelerates many logical DP updates by packing them into machine-word bit operations:",
+        "many scalar states → parallel bit-vector state",
+        "Property Ukkonen Myers bit-vector Main optimization State-space pruning Word-level parallelism Especially good when Distance / threshold is small Pattern is compatible with efficient bit packing Arbitrary weighted costs Can be generalized under conditions Much less straightforward Machine-word dependence No fundamental dependence Central to performance"
+      ]
+    },
+    {
+      "heading": "Can the techniques be combined?",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 5,
+      "word_count": 47,
+      "evidence": "The high-level principles are not mutually exclusive.",
+      "paragraphs": [
+        "The high-level principles are not mutually exclusive.",
+        "A system can exploit:",
+        "small threshold + bit parallelism + candidate filtering",
+        "provided the implementation and edit model support the combination.",
+        "Modern high-performance string-matching systems frequently combine several layers of optimization rather than relying on one historical algorithm in isolation."
+      ]
+    },
+    {
+      "heading": "Ukkonen versus Landau–Vishkin",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 5,
+      "word_count": 72,
+      "evidence": "Both Ukkonen and Landau–Vishkin exploit small edit/error parameters.",
+      "paragraphs": [
+        "Both Ukkonen and Landau–Vishkin exploit small edit/error parameters.",
+        "Ukkonen is naturally understood through restricted dynamic-programming computation.",
+        "Landau–Vishkin-style techniques reason more explicitly about diagonals and how far a match can extend after a given number of differences, producing important k -dependent approximate-matching algorithms.",
+        "They belong to the same broader research direction:",
+        "When the number of errors is small, algorithmic work should depend on that small parameter rather than on every possible sequence alignment."
+      ]
+    },
+    {
+      "heading": "Ukkonen versus Masek–Paterson",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 5,
+      "word_count": 60,
+      "evidence": "The Masek–Paterson algorithm and Ukkonen improve classical quadratic computation in fundamentally different regimes.",
+      "paragraphs": [
+        "The Masek–Paterson algorithm and Ukkonen improve classical quadratic computation in fundamentally different regimes.",
+        "Masek–Paterson uses block/tabulation techniques to obtain asymptotic improvements for suitable alphabets and cost assumptions.",
+        "Ukkonen instead becomes attractive when the edit distance itself is small.",
+        "Masek–Paterson: exploit repeated finite block structure Ukkonen: exploit small output distance",
+        "This illustrates why there is no single universally fastest edit-distance algorithm."
+      ]
+    },
+    {
+      "heading": "Approximate string matching",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 5,
+      "word_count": 72,
+      "evidence": "Ukkonen's work extends naturally beyond comparing one already-known pair of strings.",
+      "paragraphs": [
+        "Ukkonen's work extends naturally beyond comparing one already-known pair of strings.",
+        "In approximate matching, the task can be:",
+        "pattern P + text T + threshold k find positions where a substring of T has edit distance ≤ k from P",
+        "Dynamic programming can be adapted so that the pattern is compared against text substrings without penalizing arbitrary text preceding a possible occurrence.",
+        "The broader problem is explained in Approximate String Matching ."
+      ]
+    },
+    {
+      "heading": "Pairwise distance and substring search should not be conflated",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 2,
+      "word_count": 65,
+      "evidence": "Problem Output Pairwise edit distance Distance between two complete sequences Thresholded pairwise distance Whether two sequences are within k edits Approximate pattern matching Locations in a text satisfying an error constraint Approximate dictionary search Stored strings lying within a query radius",
+      "paragraphs": [
+        "Problem Output Pairwise edit distance Distance between two complete sequences Thresholded pairwise distance Whether two sequences are within k edits Approximate pattern matching Locations in a text satisfying an error constraint Approximate dictionary search Stored strings lying within a query radius",
+        "The phrase \"Ukkonen algorithm\" appears in discussions of more than one of these settings, so an implementation should state which problem it actually solves."
+      ]
+    },
+    {
+      "heading": "Candidate generation versus pairwise Ukkonen",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 7,
+      "word_count": 65,
+      "evidence": "Even an O(km) pairwise algorithm does not solve the scaling problem if it is applied independently to millions of candidates.",
+      "paragraphs": [
+        "Even an O(km) pairwise algorithm does not solve the scaling problem if it is applied independently to millions of candidates.",
+        "Suppose:",
+        "10,000,000 candidates × small bounded comparison",
+        "The total cost can still be enormous.",
+        "Large retrieval systems therefore often use:",
+        "cheap candidate generation ↓ small candidate set ↓ bounded Ukkonen verification",
+        "Candidate indexing and filtering are covered in Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Ukkonen as an exact verifier",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "One particularly effective architecture is:",
+      "paragraphs": [
+        "One particularly effective architecture is:",
+        "QUERY ↓ LENGTH FILTER ↓ Q-GRAM / PREFIX / INDEX FILTER ↓ CANDIDATES ↓ UKKONEN BOUNDED VERIFICATION ↓ EXACT MATCHES WITH DISTANCE ≤ k",
+        "The filter eliminates most candidates cheaply.",
+        "Ukkonen then performs exact edit-distance verification only on survivors.",
+        "This separates:",
+        "search-space reduction",
+        "from:",
+        "exact distance correctness"
+      ]
+    },
+    {
+      "heading": "Unicode and sequence representation",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 10,
+      "word_count": 53,
+      "evidence": "Like Wagner–Fischer, Ukkonen operates on abstract sequence elements.",
+      "paragraphs": [
+        "Like Wagner–Fischer, Ukkonen operates on abstract sequence elements.",
+        "The algorithm does not itself define whether one element means:",
+        "a byte;",
+        "a UTF-8 code unit;",
+        "a UTF-16 code unit;",
+        "a Unicode code point;",
+        "a grapheme cluster;",
+        "a token;",
+        "a word.",
+        "This choice affects both the numerical distance and the interpretation of threshold k ."
+      ]
+    },
+    {
+      "heading": "Why grapheme awareness matters",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 8,
+      "word_count": 67,
+      "evidence": "Consider two canonically related representations of an accented character:",
+      "paragraphs": [
+        "Consider two canonically related representations of an accented character:",
+        "é versus e + combining acute accent",
+        "At one representation level these may have different sequence lengths.",
+        "The lower bound:",
+        "|m-n|",
+        "and therefore the active Ukkonen band can be affected before meaningful textual comparison even begins.",
+        "Text should therefore be normalized and segmented according to application requirements before thresholded distance is calculated.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Token-level Ukkonen computation",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 9,
+      "word_count": 63,
+      "evidence": "The same threshold principle applies to word or token sequences.",
+      "paragraphs": [
+        "The same threshold principle applies to word or token sequences.",
+        "For example:",
+        "x = [the, quick, brown, fox] y = [the, brown, fox]",
+        "At word level:",
+        "d(x,y) = 1",
+        "because deleting:",
+        "quick",
+        "is one edit.",
+        "If a system is only interested in sequences differing by at most two words, a bounded Ukkonen-style DP can operate over tokens exactly as it operates over characters."
+      ]
+    },
+    {
+      "heading": "Threshold selection",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 7,
+      "word_count": 47,
+      "evidence": "The effectiveness of a bounded algorithm depends strongly on the threshold.",
+      "paragraphs": [
+        "The effectiveness of a bounded algorithm depends strongly on the threshold.",
+        "If:",
+        "k << min(m,n)",
+        "the band is narrow and the algorithm can be dramatically faster than full dynamic programming.",
+        "If:",
+        "k ≈ min(m,n)",
+        "the band expands toward the complete matrix and the advantage can largely disappear."
+      ]
+    },
+    {
+      "heading": "Threshold as a fraction of length",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 12,
+      "word_count": 48,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "m = n = 10,000",
+        "With:",
+        "k = 2",
+        "the active width is about:",
+        "5 cells",
+        "per row.",
+        "With:",
+        "k = 5,000",
+        "the band covers most of the matrix.",
+        "Therefore the relevant performance parameter is not merely k , but the relationship between:",
+        "k and sequence lengths"
+      ]
+    },
+    {
+      "heading": "Short strings and large thresholds",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 8,
+      "word_count": 51,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "query = \"cat\" k = 2",
+        "the distance budget is two-thirds of the query length.",
+        "Many unrelated strings can satisfy such a large relative radius.",
+        "This creates both:",
+        "weak computational pruning;",
+        "weak semantic or lexical precision.",
+        "A threshold useful for long strings can therefore be inappropriate for very short ones."
+      ]
+    },
+    {
+      "heading": "Normalized thresholds",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 7,
+      "word_count": 69,
+      "evidence": "Applications sometimes define a relative requirement such as:",
+      "paragraphs": [
+        "Applications sometimes define a relative requirement such as:",
+        "d(x,y) / max(|x|,|y|) ≤ r",
+        "This can be translated into an integer bound:",
+        "k = floor( r × max(|x|,|y|) )",
+        "and then used for bounded verification.",
+        "However, normalized distances should not automatically be assumed to retain all metric properties of ordinary Levenshtein distance. The normalization policy is part of the mathematical model, not simply an implementation detail.",
+        "See String Metrics ."
+      ]
+    },
+    {
+      "heading": "A practical API design",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 7,
+      "word_count": 50,
+      "evidence": "A bounded implementation should make its contract explicit.",
+      "paragraphs": [
+        "A bounded implementation should make its contract explicit.",
+        "For example:",
+        "bounded_distance(x, y, k)",
+        "can return:",
+        "0..k if exact distance is within threshold k + 1 if distance is greater than threshold",
+        "rather than pretending to return the complete distance in all cases.",
+        "This permits callers to exploit bounded behavior safely."
+      ]
+    },
+    {
+      "heading": "Why returning k + 1 can be useful",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "The application often needs only:",
+      "paragraphs": [
+        "The application often needs only:",
+        "distance ≤ k ?",
+        "A return value:",
+        "k + 1",
+        "can therefore mean:",
+        "\"distance is greater than k; exact value intentionally not computed\"",
+        "This distinction prevents callers from accidentally interpreting the bounded result as a full exact distance."
+      ]
+    },
+    {
+      "heading": "Reference pseudocode with explicit bounded semantics",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 1,
+      "word_count": 173,
+      "evidence": "function ukkonen_threshold(x, y, k): m = length(x) n = length(y) if k < 0: error if abs(m - n) > k: return k + 1 if m == 0: return n if n <= k else k + 1 if n == 0: return m if m <= k else k + 1 INF = k + 1 previous[0..n] = INF current[0..n] = INF for j = 0 to min(n, k): previous[j] = j for i = 1 to m: start = max(0, i-k) end = min(n, i+k) for j = 0 to n: current[j] = INF if start == 0: current[0] = i row_min = INF for j = max(1,start) to end: substitution_cost = 0 if x[i-1] == y[j-1] else 1 delete_cost = previous[j] + 1 insert_cost = current[j-1] + 1 substitute_cost = previous[j-1] + substitution_cost value = min( delete_cost, insert_cost, substitute_cost ) if value > k: value = INF current[j] = value if value < row_min: row_min = value if row_min > k: return k + 1 swap(previous, current)",
+      "paragraphs": [
+        "function ukkonen_threshold(x, y, k): m = length(x) n = length(y) if k < 0: error if abs(m - n) > k: return k + 1 if m == 0: return n if n <= k else k + 1 if n == 0: return m if m <= k else k + 1 INF = k + 1 previous[0..n] = INF current[0..n] = INF for j = 0 to min(n, k): previous[j] = j for i = 1 to m: start = max(0, i-k) end = min(n, i+k) for j = 0 to n: current[j] = INF if start == 0: current[0] = i row_min = INF for j = max(1,start) to end: substitution_cost = 0 if x[i-1] == y[j-1] else 1 delete_cost = previous[j] + 1 insert_cost = current[j-1] + 1 substitute_cost = previous[j-1] + substitution_cost value = min( delete_cost, insert_cost, substitute_cost ) if value > k: value = INF current[j] = value if value < row_min: row_min = value if row_min > k: return k + 1 swap(previous, current) return previous[n]"
+      ]
+    },
+    {
+      "heading": "Important implementation detail: values outside the band",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 7,
+      "word_count": 77,
+      "evidence": "Cells outside the active interval must behave as unreachable.",
+      "paragraphs": [
+        "Cells outside the active interval must behave as unreachable.",
+        "If stale values from a previous row remain in the working array, an insertion or diagonal recurrence may accidentally use them and create an invalid low-cost path.",
+        "Therefore an implementation must either:",
+        "reset relevant boundary cells to INF ;",
+        "clear the complete working row;",
+        "use compact band indexing where inaccessible cells do not exist.",
+        "Incorrect band-boundary handling is one of the most common bugs in thresholded edit-distance implementations."
+      ]
+    },
+    {
+      "heading": "Testing the algorithm",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "A bounded implementation should be tested against a trusted full Wagner–Fischer implementation.",
+      "paragraphs": [
+        "A bounded implementation should be tested against a trusted full Wagner–Fischer implementation.",
+        "For random string pairs:",
+        "full = levenshtein(x,y) bounded = ukkonen_threshold(x,y,k)",
+        "the invariant should be:",
+        "if full <= k: bounded == full else: bounded > k"
+      ]
+    },
+    {
+      "heading": "Identical strings",
+      "level": 3,
+      "id": "ux-section-61",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "x = \"algorithm\" y = \"algorithm\" k = 0 result = 0",
+      "paragraphs": [
+        "x = \"algorithm\" y = \"algorithm\" k = 0 result = 0"
+      ]
+    },
+    {
+      "heading": "Distance exactly at threshold",
+      "level": 3,
+      "id": "ux-section-62",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "x = \"kitten\" y = \"sitting\" k = 3 result = 3",
+      "paragraphs": [
+        "x = \"kitten\" y = \"sitting\" k = 3 result = 3"
+      ]
+    },
+    {
+      "heading": "Distance one above threshold",
+      "level": 3,
+      "id": "ux-section-63",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "x = \"kitten\" y = \"sitting\" k = 2 result > 2",
+      "paragraphs": [
+        "x = \"kitten\" y = \"sitting\" k = 2 result > 2"
+      ]
+    },
+    {
+      "heading": "Length difference alone exceeds threshold",
+      "level": 3,
+      "id": "ux-section-64",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "x = \"abc\" y = \"abcdefgh\" k = 2 result > 2",
+      "paragraphs": [
+        "x = \"abc\" y = \"abcdefgh\" k = 2 result > 2"
+      ]
+    },
+    {
+      "heading": "Empty strings",
+      "level": 3,
+      "id": "ux-section-65",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "x = \"\" y = \"abc\" k = 3 result = 3",
+      "paragraphs": [
+        "x = \"\" y = \"abc\" k = 3 result = 3"
+      ]
+    },
+    {
+      "heading": "Insertion-heavy case",
+      "level": 3,
+      "id": "ux-section-66",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "x = \"abc\" y = \"axbxc\" k = 2 result = 2",
+      "paragraphs": [
+        "x = \"abc\" y = \"axbxc\" k = 2 result = 2"
+      ]
+    },
+    {
+      "heading": "Unicode cases",
+      "level": 3,
+      "id": "ux-section-67",
+      "paragraph_count": 6,
+      "word_count": 13,
+      "evidence": "Test:",
+      "paragraphs": [
+        "Test:",
+        "precomposed versus decomposed characters;",
+        "combining marks;",
+        "emoji sequences;",
+        "grapheme clusters;",
+        "non-Latin scripts."
+      ]
+    },
+    {
+      "heading": "Property-based testing",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 7,
+      "word_count": 46,
+      "evidence": "For standard unit-cost Levenshtein distance, useful properties include:",
+      "paragraphs": [
+        "For standard unit-cost Levenshtein distance, useful properties include:",
+        "d(x,x) = 0",
+        "d(x,y) = d(y,x)",
+        "d(x,y) ≥ ||x|-|y||",
+        "and for every threshold k :",
+        "bounded(x,y,k) <= k iff full_distance(x,y) <= k",
+        "The final equivalence is especially important because it verifies that pruning has not introduced false negatives."
+      ]
+    },
+    {
+      "heading": "Benchmarking Ukkonen correctly",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 2,
+      "word_count": 65,
+      "evidence": "A benchmark should vary the parameters that determine the amount of active state.",
+      "paragraphs": [
+        "A benchmark should vary the parameters that determine the amount of active state.",
+        "Parameter Why it matters m and n Base sequence dimensions Actual distance s Controls output-sensitive behavior Threshold k Controls band width |m-n| Provides immediate lower bound and shifts final diagonal Alphabet size Changes match distributions Error type Insertions/deletions move between diagonals; substitutions do not Unicode representation Changes sequence length and equality behavior"
+      ]
+    },
+    {
+      "heading": "A misleading benchmark",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Testing only:",
+      "paragraphs": [
+        "Testing only:",
+        "random unrelated strings with k approximately equal to string length",
+        "makes Ukkonen look similar to full dynamic programming because the active band becomes large.",
+        "The algorithm is specifically designed to exploit low-distance or low-threshold regimes."
+      ]
+    },
+    {
+      "heading": "A more informative benchmark matrix",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 9,
+      "word_count": 49,
+      "evidence": "lengths: 100 1,000 10,000 100,000 thresholds: 0 1 2 4 8 16 actual distances: 0 1 2 4 8 > threshold",
+      "paragraphs": [
+        "lengths: 100 1,000 10,000 100,000 thresholds: 0 1 2 4 8 16 actual distances: 0 1 2 4 8 > threshold",
+        "Measure:",
+        "number of DP cells evaluated;",
+        "wall-clock latency;",
+        "memory use;",
+        "branch behavior;",
+        "allocation count;",
+        "percentage of comparisons rejected by the length bound;",
+        "percentage terminated before the final row."
+      ]
+    },
+    {
+      "heading": "Worst-case behavior",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 10,
+      "word_count": 61,
+      "evidence": "Ukkonen's advantage depends on small distance.",
+      "paragraphs": [
+        "Ukkonen's advantage depends on small distance.",
+        "Since standard Levenshtein distance can be as large as approximately:",
+        "max(m,n)",
+        "the output-sensitive bound:",
+        "O(s · min(m,n))",
+        "can become:",
+        "O(max(m,n) · min(m,n)) = O(mn)",
+        "in the worst case.",
+        "Thus Ukkonen is not a general subquadratic worst-case solution to edit distance.",
+        "It is an algorithm whose running time improves when a meaningful problem parameter is small."
+      ]
+    },
+    {
+      "heading": "Why this is still extremely valuable",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 7,
+      "word_count": 58,
+      "evidence": "Many real applications intentionally operate in a small-distance regime.",
+      "paragraphs": [
+        "Many real applications intentionally operate in a small-distance regime.",
+        "A spell checker may only care about:",
+        "k = 1 or 2",
+        "A typo-tolerant identifier search may reject everything beyond:",
+        "k = 2",
+        "A record-matching pipeline may generate candidates that are already expected to be lexically close.",
+        "In these settings, worst-case distance is not representative of ordinary workload behavior."
+      ]
+    },
+    {
+      "heading": "Spell checking",
+      "level": 3,
+      "id": "ux-section-75",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "Dictionary terms can be verified against a misspelled word using a small maximum edit radius.",
+      "paragraphs": [
+        "Dictionary terms can be verified against a misspelled word using a small maximum edit radius."
+      ]
+    },
+    {
+      "heading": "Search query correction",
+      "level": 3,
+      "id": "ux-section-76",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "Candidate query terms typically need only a small number of edits from the observed input.",
+      "paragraphs": [
+        "Candidate query terms typically need only a small number of edits from the observed input."
+      ]
+    },
+    {
+      "heading": "Entity resolution",
+      "level": 3,
+      "id": "ux-section-77",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "After blocking or candidate generation, Ukkonen can verify whether names or identifiers satisfy a lexical-distance threshold.",
+      "paragraphs": [
+        "After blocking or candidate generation, Ukkonen can verify whether names or identifiers satisfy a lexical-distance threshold."
+      ]
+    },
+    {
+      "heading": "OCR post-correction",
+      "level": 3,
+      "id": "ux-section-78",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Known dictionary candidates can be compared against noisy recognized text under bounded edit distance.",
+      "paragraphs": [
+        "Known dictionary candidates can be compared against noisy recognized text under bounded edit distance."
+      ]
+    },
+    {
+      "heading": "Genomic verification",
+      "level": 3,
+      "id": "ux-section-79",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "Seed-and-extend or filter-and-verify systems can use bounded edit-distance computation for candidate sequence regions, although biological alignment can require richer gap and scoring models.",
+      "paragraphs": [
+        "Seed-and-extend or filter-and-verify systems can use bounded edit-distance computation for candidate sequence regions, although biological alignment can require richer gap and scoring models."
+      ]
+    },
+    {
+      "heading": "Approximate dictionary lookup",
+      "level": 3,
+      "id": "ux-section-80",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Ukkonen can serve as an exact verifier after tries, q-gram filters, metric indexes, or other candidate-generation structures.",
+      "paragraphs": [
+        "Ukkonen can serve as an exact verifier after tries, q-gram filters, metric indexes, or other candidate-generation structures."
+      ]
+    },
+    {
+      "heading": "When Ukkonen is a strong choice",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 1,
+      "word_count": 62,
+      "evidence": "Condition Why it favors Ukkonen Small threshold Only a narrow matrix band is needed. Strings expected to be similar Actual distance s is small. Only threshold decision is needed Large exact distances need not be computed. Very long strings with tiny k Difference from full quadratic DP becomes large. Verification after filtering Candidates are already likely to lie close to the query.",
+      "paragraphs": [
+        "Condition Why it favors Ukkonen Small threshold Only a narrow matrix band is needed. Strings expected to be similar Actual distance s is small. Only threshold decision is needed Large exact distances need not be computed. Very long strings with tiny k Difference from full quadratic DP becomes large. Verification after filtering Candidates are already likely to lie close to the query."
+      ]
+    },
+    {
+      "heading": "Threshold is large",
+      "level": 3,
+      "id": "ux-section-83",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "The band approaches the full matrix.",
+      "paragraphs": [
+        "The band approaches the full matrix."
+      ]
+    },
+    {
+      "heading": "Pattern is short and bit-parallel methods are available",
+      "level": 3,
+      "id": "ux-section-84",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Myers-style bit vectors can have lower practical constants.",
+      "paragraphs": [
+        "Myers-style bit vectors can have lower practical constants."
+      ]
+    },
+    {
+      "heading": "Millions of unfiltered candidates must be searched",
+      "level": 3,
+      "id": "ux-section-85",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Candidate indexing is required before pairwise verification.",
+      "paragraphs": [
+        "Candidate indexing is required before pairwise verification."
+      ]
+    },
+    {
+      "heading": "Complex biological scoring is required",
+      "level": 3,
+      "id": "ux-section-86",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "A richer sequence-alignment algorithm may be more appropriate.",
+      "paragraphs": [
+        "A richer sequence-alignment algorithm may be more appropriate."
+      ]
+    },
+    {
+      "heading": "Semantic similarity is the real goal",
+      "level": 3,
+      "id": "ux-section-87",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Character edits do not measure meaning.",
+      "paragraphs": [
+        "Character edits do not measure meaning."
+      ]
+    },
+    {
+      "heading": "\"Ukkonen is just Wagner–Fischer with fewer columns\"",
+      "level": 3,
+      "id": "ux-section-89",
+      "paragraph_count": 1,
+      "word_count": 26,
+      "evidence": "A practical banded implementation can look that way, but the research contribution is broader: Ukkonen developed distance-sensitive algorithms, space reductions, threshold testing, and generalized edit-distance analyses.",
+      "paragraphs": [
+        "A practical banded implementation can look that way, but the research contribution is broader: Ukkonen developed distance-sensitive algorithms, space reductions, threshold testing, and generalized edit-distance analyses."
+      ]
+    },
+    {
+      "heading": "\"Ukkonen always runs in linear time\"",
+      "level": 3,
+      "id": "ux-section-90",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "For constant k :",
+        "O(k · min(m,n)) = O(min(m,n))",
+        "is linear in sequence length.",
+        "But if k grows with the input size, the complexity grows with it."
+      ]
+    },
+    {
+      "heading": "\"The band can always be |i-j| ≤ k\"",
+      "level": 3,
+      "id": "ux-section-91",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "That simple band assumes standard unit-cost insertion and deletion. Weighted or zero-cost edits require different reasoning.",
+      "paragraphs": [
+        "That simple band assumes standard unit-cost insertion and deletion. Weighted or zero-cost edits require different reasoning."
+      ]
+    },
+    {
+      "heading": "\"A result greater than k is the exact distance\"",
+      "level": 3,
+      "id": "ux-section-92",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Not necessarily. A bounded implementation may intentionally return only a sentinel indicating:",
+      "paragraphs": [
+        "Not necessarily. A bounded implementation may intentionally return only a sentinel indicating:",
+        "d(x,y) > k"
+      ]
+    },
+    {
+      "heading": "\"Small edit distance means the strings have the same meaning\"",
+      "level": 3,
+      "id": "ux-section-93",
+      "paragraph_count": 3,
+      "word_count": 10,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "cat car",
+        "are one edit apart but semantically different."
+      ]
+    },
+    {
+      "heading": "\"Small edit distance proves two records are the same entity\"",
+      "level": 3,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "No. Lexical similarity is evidence, not identity.",
+      "paragraphs": [
+        "No. Lexical similarity is evidence, not identity."
+      ]
+    },
+    {
+      "heading": "Relationship to modern edit-distance engineering",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 12,
+      "word_count": 72,
+      "evidence": "Modern implementations often combine Ukkonen's structural insight with hardware- and workload-specific optimizations:",
+      "paragraphs": [
+        "Modern implementations often combine Ukkonen's structural insight with hardware- and workload-specific optimizations:",
+        "compact integer types;",
+        "SIMD instructions;",
+        "bit parallelism;",
+        "cache-conscious layouts;",
+        "length filters;",
+        "q-gram filtering;",
+        "vectorized preprocessing;",
+        "batch comparison;",
+        "multi-stage candidate generation.",
+        "The historical algorithm therefore remains relevant not merely as an old theoretical result, but as a general principle for designing modern edit-distance systems:",
+        "Make computation proportional to the region of the edit space that can actually contain an acceptable solution."
+      ]
+    },
+    {
+      "heading": "Relationship to edit-distance complexity",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 4,
+      "word_count": 53,
+      "evidence": "Ukkonen also illustrates an important distinction in algorithm analysis.",
+      "paragraphs": [
+        "Ukkonen also illustrates an important distinction in algorithm analysis.",
+        "The general exact edit-distance problem has difficult worst-case complexity, but parameterized instances can be much easier.",
+        "general input: possibly quadratic work small edit distance s: O(s · min(m,n))",
+        "This distinction is central to Bounded and Parameterized Edit Distance and to modern parameterized algorithm design."
+      ]
+    },
+    {
+      "heading": "The conceptual progression",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 1,
+      "word_count": 42,
+      "evidence": "WAGNER–FISCHER evaluate all prefix pairs ↓ O(mn) UKKONEN INSIGHT only low-cost paths matter ↓ edit paths stay near relevant diagonals ↓ discard impossible states ↓ work depends on distance / threshold ↓ O(s · min(m,n)) or O(k · min(m,n)) for bounded testing",
+      "paragraphs": [
+        "WAGNER–FISCHER evaluate all prefix pairs ↓ O(mn) UKKONEN INSIGHT only low-cost paths matter ↓ edit paths stay near relevant diagonals ↓ discard impossible states ↓ work depends on distance / threshold ↓ O(s · min(m,n)) or O(k · min(m,n)) for bounded testing"
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 1,
+      "word_count": 75,
+      "evidence": "Property Ukkonen algorithm Author Esko Ukkonen Major publication Algorithms for Approximate String Matching, 1985 Core idea Distance-sensitive restriction of the edit-distance state space Classical baseline Wagner–Fischer dynamic programming Actual-distance parameter s = d(x,y) Threshold parameter t or commonly k Distance-sensitive time O(s · min(m,n)) Threshold test time O(t · min(m,n)) Threshold test space O(min(t,m,n)) Worst-case subquadratic? No; when s is large the bound can become quadratic. Best regime Small edit distance or small maximum threshold",
+      "paragraphs": [
+        "Property Ukkonen algorithm Author Esko Ukkonen Major publication Algorithms for Approximate String Matching, 1985 Core idea Distance-sensitive restriction of the edit-distance state space Classical baseline Wagner–Fischer dynamic programming Actual-distance parameter s = d(x,y) Threshold parameter t or commonly k Distance-sensitive time O(s · min(m,n)) Threshold test time O(t · min(m,n)) Threshold test space O(min(t,m,n)) Worst-case subquadratic? No; when s is large the bound can become quadratic. Best regime Small edit distance or small maximum threshold"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 4,
+      "word_count": 235,
+      "evidence": "Ukkonen's algorithm is a foundational example of output-sensitive and parameter-sensitive edit-distance computation. Classical dynamic programming treats the complete m × n matrix as potentially relevant. Ukkonen observes that a transformation with only a small number of edits cannot move arbitrarily far through the matrix's diagonal structure, allowing large parts of the state space to be discarded.",
+      "paragraphs": [
+        "Ukkonen's algorithm is a foundational example of output-sensitive and parameter-sensitive edit-distance computation. Classical dynamic programming treats the complete m × n matrix as potentially relevant. Ukkonen observes that a transformation with only a small number of edits cannot move arbitrarily far through the matrix's diagonal structure, allowing large parts of the state space to be discarded.",
+        "Under standard unit-cost Levenshtein distance, a path with cost at most k remains inside a diagonal band defined by |i-j| ≤ k . This gives a practical bounded algorithm whose work is proportional to the threshold times the shorter sequence length rather than the product of both lengths. Ukkonen's original 1985 work goes beyond this simple implementation and establishes algorithms with time O(s · min(m,n)) , where s is the actual edit distance, together with important space reductions and threshold-decision results.",
+        "The method is especially powerful when the expected number of errors is small: spell correction, typo-tolerant lookup, candidate verification, record matching, OCR correction, and other applications frequently operate precisely in this regime. When the threshold becomes large, the band expands and the advantage over full dynamic programming diminishes.",
+        "The deeper lesson of Ukkonen's work extends beyond Levenshtein distance. A dynamic-programming matrix represents many theoretically possible states, but an application often imposes constraints that make most of those states irrelevant. Identifying and excluding impossible states can turn a general quadratic computation into an efficient parameter-sensitive algorithm without sacrificing exactness."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 8,
+      "word_count": 94,
+      "evidence": "Wagner–Fischer Algorithm — the full dynamic-programming baseline from which Ukkonen's methods develop.",
+      "paragraphs": [
+        "Wagner–Fischer Algorithm — the full dynamic-programming baseline from which Ukkonen's methods develop.",
+        "Myers Bit-Vector Algorithm — a different acceleration strategy based on machine-word parallelism.",
+        "Landau–Vishkin Algorithm — parameter-sensitive approximate matching based on edit diagonals.",
+        "Masek–Paterson Algorithm — block-based theoretical improvements for edit-distance computation.",
+        "Bounded and Parameterized Edit Distance — the broader theory of algorithms parameterized by edit distance.",
+        "Approximate String Matching — locating strings or substrings within an allowed error radius.",
+        "Indexing and Filtering for Edit Distance — reducing the candidate set before bounded verification.",
+        "Levenshtein Performance Engineering — practical implementation and hardware optimization."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 4,
+      "word_count": 91,
+      "evidence": "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI: 10.1016/S0019-9958(85)80046-2. DOI record .",
+      "paragraphs": [
+        "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI: 10.1016/S0019-9958(85)80046-2. DOI record .",
+        "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI: 10.1145/321796.321811. DOI record .",
+        "Gene Myers, “A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming,” Journal of the ACM , 46(3), 395–415, 1999. DOI: 10.1145/316542.316550. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI: 10.1145/375360.375365. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "The historical result",
+          "anchor_id": "ux-section-3",
+          "alias": "approximate string matching",
+          "excerpt": "In his 1985 paper Algorithms for Approximate String Matching , Esko Ukkonen started from the classical tabulation method and developed improved algorithms whose running time depends on the actual edit distance s ."
+        },
+        {
+          "section": "Approximate string matching",
+          "anchor_id": "ux-section-44",
+          "alias": "approximate string matching",
+          "excerpt": "The broader problem is explained in Approximate String Matching ."
+        },
+        {
+          "section": "Key facts",
+          "anchor_id": "ux-section-98",
+          "alias": "approximate string matching",
+          "excerpt": "Property Ukkonen algorithm Author Esko Ukkonen Major publication Algorithms for Approximate String Matching, 1985 Core idea Distance-sensitive restriction of the edit-distance state space Classical baseline Wagner–Fischer dynamic programming Actual-distance parameter s = d(x,y) Threshold parameter t or commonly k Distance-sensitive time O(s · min(m,n)) Threshold test time O(t · min(m,n)) Threshold test space O(min(t,m,n)) Worst-case subquadratic? No; when s is large the bound can become quadratic. Best regime Small edit distance or small maximum threshold"
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Relationship to edit-distance complexity",
+          "anchor_id": "ux-section-96",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "This distinction is central to Bounded and Parameterized Edit Distance and to modern parameterized algorithm design."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-100",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — the broader theory of algorithms parameterized by edit distance."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Transpositions and generalized edit sets",
+          "anchor_id": "ux-section-38",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "does not automatically compute Damerau–Levenshtein distance."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Ukkonen Algorithm",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "The Ukkonen algorithm refers to a family of distance-sensitive techniques developed by Esko Ukkonen for computing edit distance and approximate string matches more efficiently when the true distance or an allowed error threshold is small. Instead of evaluating every cell of the classical dynamic-programming matrix, Ukkonen exploits the geometry of edit paths to restrict computation to states that can still participate in a sufficiently cheap transformation. For standard Levenshtein distance , this leads to algorithms whose work can depend on the distance itself rather than on the full product of the two sequence lengths."
+        },
+        {
+          "section": "Why Ukkonen's algorithm matters",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "The classical Wagner–Fischer algorithm computes edit distance between strings of lengths m and n by filling a dynamic-programming matrix containing approximately:"
+        },
+        {
+          "section": "The historical result",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "In his 1985 paper Algorithms for Approximate String Matching , Esko Ukkonen started from the classical tabulation method and developed improved algorithms whose running time depends on the actual edit distance s ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "The historical result",
+          "anchor_id": "ux-section-3",
+          "alias": "edit operations",
+          "excerpt": "and discusses improved space bounds. In the special case where edit operations have character-independent equal costs, Ukkonen gives an algorithm with:"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Candidate generation versus pairwise Ukkonen",
+          "anchor_id": "ux-section-46",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Candidate indexing and filtering are covered in Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-100",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — reducing the candidate set before bounded verification."
+        }
+      ]
+    },
+    {
+      "target": "/landau-vishkin-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-100",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "Landau–Vishkin Algorithm — parameter-sensitive approximate matching based on edit diagonals."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-performance-engineering",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-100",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "Levenshtein Performance Engineering — practical implementation and hardware optimization."
+        }
+      ]
+    },
+    {
+      "target": "/masek-paterson-algorithm",
+      "evidence": [
+        {
+          "section": "Ukkonen versus Masek–Paterson",
+          "anchor_id": "ux-section-43",
+          "alias": "masek paterson algorithm",
+          "excerpt": "The Masek–Paterson algorithm and Ukkonen improve classical quadratic computation in fundamentally different regimes."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-100",
+          "alias": "masek paterson algorithm",
+          "excerpt": "Masek–Paterson Algorithm — block-based theoretical improvements for edit-distance computation."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Ukkonen versus Myers bit-vector algorithm",
+          "anchor_id": "ux-section-40",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "The Myers bit-vector algorithm instead accelerates many logical DP updates by packing them into machine-word bit operations:"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-100",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm — a different acceleration strategy based on machine-word parallelism."
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Normalized thresholds",
+          "anchor_id": "ux-section-54",
+          "alias": "string metrics",
+          "excerpt": "See String Metrics ."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Why grapheme awareness matters",
+          "anchor_id": "ux-section-49",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "Why Ukkonen's algorithm matters",
+          "anchor_id": "ux-section-2",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "The classical Wagner–Fischer algorithm computes edit distance between strings of lengths m and n by filling a dynamic-programming matrix containing approximately:"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-100",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "Wagner–Fischer Algorithm — the full dynamic-programming baseline from which Ukkonen's methods develop."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted band width",
+          "anchor_id": "ux-section-36",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted edit models are treated in Weighted Levenshtein Distance ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/ukkonen-algorithm#page",
+      "type": "WebPage",
+      "name": "Ukkonen Algorithm",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "type": "TechArticle",
+      "name": "Ukkonen Algorithm",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/ukkonen-algorithm#algorithm",
+      "type": "DefinedTerm",
+      "name": "Ukkonen Algorithm",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/ukkonen-algorithm#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "hasPart",
+      "https://www.levenshtein.net/ukkonen-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#page",
+      "mainEntity",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#page",
+      "isPartOf",
+      "https://www.levenshtein.net/algorithms#collection"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#page",
+      "hasPart",
+      "https://www.levenshtein.net/ukkonen-algorithm#article"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/approximate-string-matching#term"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "isPartOf",
+      "https://www.levenshtein.net/ukkonen-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "citation",
+      "https://doi.org/10.1016/S0019-9958(85)80046-2"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/321796.321811"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/316542.316550"
+    ],
+    [
+      "https://www.levenshtein.net/ukkonen-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ],
+    [
+      "https://doi.org/10.1016/S0019-9958(85)80046-2",
+      "about",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://doi.org/10.1016/S0019-9958(85)80046-2",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://doi.org/10.1016/S0019-9958(85)80046-2",
+      "about",
+      "https://www.levenshtein.net/approximate-string-matching#term"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1016/S0019-9958(85)80046-2",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/316542.316550",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    }
+  ]
+}

@@ -1,0 +1,1059 @@
+{
+  "url": "/levenshtein-distance-limitations",
+  "title": "Levenshtein Distance Limitations: When Edit Distance Fails",
+  "h1": [
+    "Levenshtein Distance Limitations: Where Edit Distance Fails & What to Use Instead"
+  ],
+  "group": "Comparisons",
+  "provisional_mission": "Giới hạn mô hình",
+  "content_sha256": "4bf201225d4dfc52dc7a9d8f2761783dee2da85cf543a0f009c94f3f7fbfe672",
+  "canonical": "https://www.levenshtein.net/levenshtein-distance-limitations",
+  "primary_entity_candidate": "Levenshtein Distance Limitations: Where Edit Distance Fails & What to Use Instead",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Levenshtein Distance Limitations: Where Edit Distance Fails & What to Use Instead",
+      "level": 2,
+      "id": "",
+      "paragraph_count": 5,
+      "word_count": 143,
+      "evidence": "Levenshtein distance is a precise model of sequence difference. Under the classical unit-cost definition, it measures the minimum number of insertions, deletions, and substitutions required to transform one sequence into another.",
+      "paragraphs": [
+        "Levenshtein distance is a precise model of sequence difference. Under the classical unit-cost definition, it measures the minimum number of insertions, deletions, and substitutions required to transform one sequence into another.",
+        "When those operations correctly represent the differences that matter to an application, Levenshtein distance is simple, interpretable, and extremely useful.",
+        "Its limitations appear when the application is asking a different question.",
+        "Levenshtein distance answers: \"What is the minimum edit cost between these represented sequences?\" It does not automatically answer: \"Do these strings mean the same thing?\" \"Do they look the same?\" \"Do they sound the same?\" \"Do they identify the same person or object?\" \"Was this difference caused by one human error?\" \"Are these programs equivalent?\" \"Are these biological sequences homologous?\"",
+        "Most apparent failures of Levenshtein distance are therefore better understood as mismatches between the mathematical model and the real comparison problem."
+      ]
+    },
+    {
+      "heading": "What Levenshtein Distance Actually Models",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 10,
+      "word_count": 85,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "X = x₁x₂...xₘ Y = y₁y₂...yₙ",
+        "Classical unit-cost Levenshtein distance permits:",
+        "insert one sequence element cost 1 delete one sequence element cost 1 substitute one sequence element cost 1 match equal elements cost 0",
+        "The distance is:",
+        "dL(X,Y) = minimum total cost of a valid sequence of these operations transforming X into Y",
+        "This definition is not ambiguous.",
+        "Problems arise when a numerical result such as:",
+        "distance = 3",
+        "is interpreted as something broader than three minimum unit edits under the chosen sequence representation."
+      ]
+    },
+    {
+      "heading": "The Fundamental Limitation Is Model Mismatch",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 5,
+      "word_count": 65,
+      "evidence": "A useful way to express most limitations is:",
+      "paragraphs": [
+        "A useful way to express most limitations is:",
+        "real difference that matters ≠ insert / delete / substitute with uniform unit costs over the chosen sequence representation",
+        "The important question is therefore not whether Levenshtein distance is “good” or “bad.”",
+        "The important question is:",
+        "Does the sequence representation, operation set, cost model, and decision problem correspond to the phenomenon the application actually needs to measure?"
+      ]
+    },
+    {
+      "heading": "A Practical Classification of Levenshtein Limitations",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 1,
+      "word_count": 141,
+      "evidence": "Mismatch What Goes Wrong Typical Response Representation mismatch The wrong sequence units are compared. Change representation or segmentation. Operation-model mismatch A meaningful transformation is missing. Use another edit model. Cost-model mismatch All edits should not have equal cost. Use weighted edit distance. Scale mismatch The same raw distance means different things at different lengths. Use calibrated thresholds or relative scores. Structural mismatch Linear order does not represent the important structure. Use token, tree, graph, or structural comparison. Phonetic mismatch Spelling does not represent pronunciation. Use a phonetic representation. Visual mismatch Character identity does not represent visual resemblance. Use Unicode security or visual analysis. Semantic mismatch S",
+      "paragraphs": [
+        "Mismatch What Goes Wrong Typical Response Representation mismatch The wrong sequence units are compared. Change representation or segmentation. Operation-model mismatch A meaningful transformation is missing. Use another edit model. Cost-model mismatch All edits should not have equal cost. Use weighted edit distance. Scale mismatch The same raw distance means different things at different lengths. Use calibrated thresholds or relative scores. Structural mismatch Linear order does not represent the important structure. Use token, tree, graph, or structural comparison. Phonetic mismatch Spelling does not represent pronunciation. Use a phonetic representation. Visual mismatch Character identity does not represent visual resemblance. Use Unicode security or visual analysis. Semantic mismatch Surface form does not represent meaning. Use semantic representations. Identity mismatch String similarity does not establish real-world identity. Use contextual entity evidence. Retrieval mismatch Pairwise comparison does not scale to the corpus. Index, filter, then verify."
+      ]
+    },
+    {
+      "heading": "1. Representation Mismatch",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 13,
+      "word_count": 66,
+      "evidence": "Levenshtein distance operates on sequences, but it does not decide what one sequence element should be.",
+      "paragraphs": [
+        "Levenshtein distance operates on sequences, but it does not decide what one sequence element should be.",
+        "Possible sequence units include:",
+        "bytes,",
+        "encoding code units,",
+        "Unicode code points,",
+        "extended grapheme clusters,",
+        "words or tokens,",
+        "phonemes,",
+        "events,",
+        "biological symbols,",
+        "syntax-tree nodes.",
+        "The same recurrence can therefore produce different values for the same visible input.",
+        "byte distance ≠ code-unit distance ≠ code-point distance ≠ grapheme distance ≠ token distance"
+      ]
+    },
+    {
+      "heading": "UTF-8 Bytes Are Not Unicode Characters",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "A Unicode code point can occupy multiple bytes in UTF-8.",
+      "paragraphs": [
+        "A Unicode code point can occupy multiple bytes in UTF-8.",
+        "If Levenshtein distance is calculated over raw UTF-8 bytes, one conceptual character change can require several byte-level edits.",
+        "algorithm: correct representation: possibly wrong for the intended task",
+        "Byte-level distance is legitimate when bytes really are the intended sequence elements.",
+        "It should not automatically be interpreted as character-level distance."
+      ]
+    },
+    {
+      "heading": "UTF-16 Code Units Create Another Boundary",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 2,
+      "word_count": 36,
+      "evidence": "Characters outside the Basic Multilingual Plane are represented using surrogate pairs in UTF-16.",
+      "paragraphs": [
+        "Characters outside the Basic Multilingual Plane are represented using surrogate pairs in UTF-16.",
+        "A naive implementation that treats each UTF-16 code unit as one character can therefore divide one Unicode code point into two edit positions."
+      ]
+    },
+    {
+      "heading": "Code Points Are Still Not Always User-Perceived Characters",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 6,
+      "word_count": 70,
+      "evidence": "Iterating over Unicode code points avoids byte and surrogate-pair artifacts, but one user-perceived character can still contain multiple code points.",
+      "paragraphs": [
+        "Iterating over Unicode code points avoids byte and surrogate-pair artifacts, but one user-perceived character can still contain multiple code points.",
+        "e + combining acute accent → é",
+        "Emoji sequences can also contain several code points while behaving as one user-perceived text unit.",
+        "Unicode code point ≠ extended grapheme cluster",
+        "Unicode Standard Annex #29 defines grapheme-cluster boundaries as a practical approximation of user-perceived character boundaries.",
+        "See Unicode & Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Grapheme Clusters Do Not Model Glyph Appearance",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "Moving from code points to grapheme clusters solves a segmentation problem.",
+      "paragraphs": [
+        "Moving from code points to grapheme clusters solves a segmentation problem.",
+        "It does not solve visual similarity.",
+        "grapheme cluster ≠ glyph grapheme distance ≠ visual distance",
+        "Two different Unicode characters can appear very similar, while a single character can look very different under different fonts or rendering systems.",
+        "For identifier-security cases, see Unicode Homoglyph and Confusable Attacks ."
+      ]
+    },
+    {
+      "heading": "Canonical Equivalence Can Create Artificial Differences",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 9,
+      "word_count": 71,
+      "evidence": "Unicode can represent canonically equivalent text using different code-point sequences.",
+      "paragraphs": [
+        "Unicode can represent canonically equivalent text using different code-point sequences.",
+        "é and e + combining acute accent",
+        "A raw code-point comparison can therefore produce a nonzero distance even when the application intends to treat those representations as equivalent.",
+        "Unicode normalization can resolve this particular representation problem.",
+        "ED( NFC(X), NFC(Y) )",
+        "may be more appropriate than:",
+        "ED(X,Y)",
+        "when canonical equivalence should be ignored.",
+        "Unicode Standard Annex #15 defines the Unicode normalization forms."
+      ]
+    },
+    {
+      "heading": "Normalization Is an Application Decision",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 5,
+      "word_count": 42,
+      "evidence": "NFC and NFD address canonical equivalence.",
+      "paragraphs": [
+        "NFC and NFD address canonical equivalence.",
+        "NFKC and NFKD additionally apply compatibility mappings and can remove distinctions that some applications need to preserve.",
+        "normalization ≠ universally harmless preprocessing",
+        "The normalization policy must follow the comparison objective.",
+        "See Text Normalization and Transliteration ."
+      ]
+    },
+    {
+      "heading": "Text Transformations Change the Comparison Space",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 10,
+      "word_count": 69,
+      "evidence": "More generally, let T be any transformation applied before comparison.",
+      "paragraphs": [
+        "More generally, let T be any transformation applied before comparison.",
+        "dT(x,y) = ED( T(x), T(y) )",
+        "The result measures edit distance between transformed representations.",
+        "It does not automatically describe distance between the original strings under all of their original distinctions.",
+        "If:",
+        "x ≠ y but T(x) = T(y)",
+        "then:",
+        "dT(x,y) = 0",
+        "That result can be correct for one application and unacceptable for another.",
+        "See Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "2. Operation-Model Mismatch",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "Classical Levenshtein distance knows only:",
+      "paragraphs": [
+        "Classical Levenshtein distance knows only:",
+        "insertion deletion substitution",
+        "Real errors and transformations can involve other operations."
+      ]
+    },
+    {
+      "heading": "Adjacent Transpositions",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "hte the",
+        "A person may regard this as one typing error: two adjacent characters were swapped.",
+        "Classical Levenshtein distance does not contain transposition as one primitive operation.",
+        "A Damerau-style model explicitly represents this kind of difference.",
+        "See Damerau-Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Block Moves and Token Reordering",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 5,
+      "word_count": 62,
+      "evidence": "Consider two sequences containing nearly the same content in a different order.",
+      "paragraphs": [
+        "Consider two sequences containing nearly the same content in a different order.",
+        "alpha beta gamma gamma alpha beta",
+        "Character-level or token-level Levenshtein distance must represent movement through combinations of insertions and deletions.",
+        "If moving a block is conceptually one operation for the application, ordinary Levenshtein can significantly overstate the meaningful change.",
+        "conceptual operation: MOVE BLOCK Levenshtein representation: delete block + insert block"
+      ]
+    },
+    {
+      "heading": "3. Cost-Model Mismatch",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 8,
+      "word_count": 71,
+      "evidence": "Classical Levenshtein assigns the same unit cost to every insertion, deletion, and substitution.",
+      "paragraphs": [
+        "Classical Levenshtein assigns the same unit cost to every insertion, deletion, and substitution.",
+        "substitute(a,e) = 1 substitute(a,q) = 1 delete(space) = 1 delete(x) = 1",
+        "This uniformity is one reason the metric is simple and reproducible.",
+        "It can also be unrealistic.",
+        "OCR systems, keyboard errors, speech recognition, transliteration, and biological models can have strongly nonuniform error patterns.",
+        "A weighted model can instead define:",
+        "insert_cost(x) delete_cost(x) substitute_cost(x,y)",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Weighted Models Can Lose Metric Properties",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 5,
+      "word_count": 45,
+      "evidence": "Standard Levenshtein distance is symmetric and satisfies triangle inequality.",
+      "paragraphs": [
+        "Standard Levenshtein distance is symmetric and satisfies triangle inequality.",
+        "An arbitrary weighted model may not.",
+        "cost(a → b) ≠ cost(b → a)",
+        "can produce a directional distance.",
+        "This matters not only mathematically but also computationally because some indexing and pruning methods depend on metric properties."
+      ]
+    },
+    {
+      "heading": "4. Raw Distance Does Not Have a Universal Meaning Across Lengths",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 9,
+      "word_count": 63,
+      "evidence": "Consider a distance of two.",
+      "paragraphs": [
+        "Consider a distance of two.",
+        "length = 3 distance = 2",
+        "and:",
+        "length = 100 distance = 2",
+        "These situations represent very different proportions of the sequences.",
+        "A relative score can sometimes be useful:",
+        "d_norm(x,y) = ED(x,y) / max(|x|,|y|)",
+        "but this is an application-level normalization rather than a universal replacement for raw edit distance.",
+        "Thresholds should be calibrated to the data and task."
+      ]
+    },
+    {
+      "heading": "5. Structural Mismatch",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 6,
+      "word_count": 68,
+      "evidence": "Levenshtein distance assumes that the objects being compared are ordered sequences.",
+      "paragraphs": [
+        "Levenshtein distance assumes that the objects being compared are ordered sequences.",
+        "This can be inappropriate when important structure is hierarchical, unordered, graph-like, or block-based.",
+        "Examples include:",
+        "source code → syntax tree documents → sections / paragraphs JSON → tree structure programs → control / data relationships",
+        "Character similarity can provide useful evidence about source text without measuring structural or behavioral equivalence.",
+        "See Source Code and AST Similarity ."
+      ]
+    },
+    {
+      "heading": "6. Phonetic Mismatch",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 5,
+      "word_count": 53,
+      "evidence": "Two names or words can sound similar while having very different spellings.",
+      "paragraphs": [
+        "Two names or words can sound similar while having very different spellings.",
+        "Conversely, strings can be orthographically close while sounding different under a particular language.",
+        "spelling similarity ≠ pronunciation similarity",
+        "When pronunciation is the relevant representation, phonetic encoding or language-specific phonetic comparison may be more appropriate.",
+        "See Phonetic, Dialect and Language Distance ."
+      ]
+    },
+    {
+      "heading": "7. Visual Similarity Is Not Character Similarity",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 7,
+      "word_count": 68,
+      "evidence": "A Unicode identifier can contain code points that look similar to characters from another script.",
+      "paragraphs": [
+        "A Unicode identifier can contain code points that look similar to characters from another script.",
+        "Plain Levenshtein distance compares symbol identity.",
+        "It does not know how those symbols are rendered.",
+        "code-point identity ≠ glyph resemblance",
+        "This distinction is especially important in security-sensitive identifiers, domains, usernames, and package names.",
+        "Unicode Technical Standard #39 provides dedicated mechanisms for Unicode confusable and identifier-security analysis.",
+        "See Unicode Homoglyph and Confusable Attacks ."
+      ]
+    },
+    {
+      "heading": "8. String Similarity Is Not Semantic Similarity",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 9,
+      "word_count": 51,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "car automobile",
+        "These strings can be semantically close while being lexically distant.",
+        "Now consider:",
+        "car cat",
+        "They are lexically close but semantically different.",
+        "surface similarity ≠ meaning similarity",
+        "Levenshtein distance has no representation of concepts, context, sentence meaning, entailment, topic, or semantic relationships.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "9. String Similarity Is Not Entity Identity",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 13,
+      "word_count": 72,
+      "evidence": "Two identical names can refer to different people.",
+      "paragraphs": [
+        "Two identical names can refer to different people.",
+        "Two different names can refer to the same person.",
+        "same string ≠ necessarily same entity different string ≠ necessarily different entity",
+        "Real-world entity resolution can require additional evidence such as:",
+        "address,",
+        "date of birth,",
+        "organization,",
+        "location,",
+        "identifier,",
+        "relationship context.",
+        "Levenshtein distance can be one useful feature in that process.",
+        "It should not be interpreted as identity proof.",
+        "See Entity Resolution and Record Linkage ."
+      ]
+    },
+    {
+      "heading": "Name Matching Shows Several Limitations at Once",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 5,
+      "word_count": 52,
+      "evidence": "Human names can involve:",
+      "paragraphs": [
+        "Human names can involve:",
+        "typing errors transliteration token reordering abbreviations nicknames diacritics multiple scripts phonetic variation shared names",
+        "No single character-distance threshold can represent all of these relationships correctly.",
+        "Levenshtein distance is often useful for candidate generation or as one feature in a larger model.",
+        "See Name, Address and Place Matching ."
+      ]
+    },
+    {
+      "heading": "10. Biological Sequence Similarity Requires a Different Interpretation",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 5,
+      "word_count": 75,
+      "evidence": "Biological sequence analysis can require substitution scores, gap-opening penalties, gap-extension penalties, local alignment, and domain-specific models.",
+      "paragraphs": [
+        "Biological sequence analysis can require substitution scores, gap-opening penalties, gap-extension penalties, local alignment, and domain-specific models.",
+        "A long insertion or deletion is often better represented as one gap event with an extension cost rather than as a series of independent unit edits.",
+        "standard Levenshtein: k-symbol gap → k independent insertions/deletions affine-gap alignment: gap open + gap extension costs",
+        "Sequence resemblance also does not by itself establish biological homology.",
+        "See Sequence Alignment and Gap Models ."
+      ]
+    },
+    {
+      "heading": "11. Security Decisions Need More Than Lexical Similarity",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 5,
+      "word_count": 55,
+      "evidence": "A suspicious package or domain may be close to a trusted identifier under Levenshtein distance.",
+      "paragraphs": [
+        "A suspicious package or domain may be close to a trusted identifier under Levenshtein distance.",
+        "But:",
+        "similar name ≠ malicious different name ≠ safe",
+        "Typosquatting detection can use lexical distance as a candidate signal, but ownership, provenance, popularity, package metadata, Unicode confusables, and behavior can provide independent evidence.",
+        "See Typosquatting and Software Supply-Chain Security ."
+      ]
+    },
+    {
+      "heading": "12. Pairwise Distance Does Not Solve Retrieval at Scale",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 9,
+      "word_count": 99,
+      "evidence": "Levenshtein distance defines how two sequences are compared.",
+      "paragraphs": [
+        "Levenshtein distance defines how two sequences are compared.",
+        "It does not define how to search millions of sequences efficiently.",
+        "A brute-force architecture performs:",
+        "query ↓ compare with item 1 compare with item 2 compare with item 3 ... compare with item N",
+        "Even a fast pairwise implementation can become expensive when N is large.",
+        "A scalable architecture instead often uses:",
+        "query ↓ index / candidate generation ↓ cheap filters ↓ small candidate set ↓ bounded exact edit-distance verification",
+        "This is a system-architecture limitation rather than a flaw in the mathematical distance.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Computational Complexity Is Not the Same as Model Quality",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 8,
+      "word_count": 61,
+      "evidence": "The classical Wagner–Fischer algorithm requires:",
+      "paragraphs": [
+        "The classical Wagner–Fischer algorithm requires:",
+        "O(mn)",
+        "time for unrestricted pairwise comparison.",
+        "But this does not imply that every Levenshtein-based system must evaluate every matrix cell.",
+        "Depending on the workload, exact semantics can be preserved while using:",
+        "length bounds banded dynamic programming bit-vector methods automata q-gram filters metric indexes candidate-generation systems",
+        "Therefore:",
+        "Levenshtein model limitation ≠ implementation limitation ≠ retrieval architecture limitation"
+      ]
+    },
+    {
+      "heading": "Approximate Matching Does Not Mean an Approximate Distance",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 5,
+      "word_count": 46,
+      "evidence": "A system can perform approximate string matching while calculating exact Levenshtein distance for the final candidates.",
+      "paragraphs": [
+        "A system can perform approximate string matching while calculating exact Levenshtein distance for the final candidates.",
+        "candidate generation ↓ exact verification ED(query,candidate) ≤ k",
+        "Conversely, a system can use an approximate candidate generator that may sacrifice recall.",
+        "These are separate decisions.",
+        "See Approximate String Matching ."
+      ]
+    },
+    {
+      "heading": "When Levenshtein Distance Is a Good Model",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 2,
+      "word_count": 85,
+      "evidence": "Levenshtein distance remains a strong choice when the important differences really can be represented as local sequence insertions, deletions, and substitutions with approximately equal significance.",
+      "paragraphs": [
+        "Levenshtein distance remains a strong choice when the important differences really can be represented as local sequence insertions, deletions, and substitutions with approximately equal significance.",
+        "Situation Why Levenshtein Fits Simple typing differences Local character edits are meaningful. OCR evaluation Character or token edit counts can describe recognition errors. ASR evaluation Word-level insertion, deletion and substitution are useful. Lexical fuzzy matching Surface sequence proximity is the intended signal. Candidate generation Close spellings can identify useful candidates. Transparent baseline The model is deterministic and easy to interpret."
+      ]
+    },
+    {
+      "heading": "When to Change the Representation Instead of the Metric",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 3,
+      "word_count": 59,
+      "evidence": "Sometimes Levenshtein distance itself is appropriate but the input representation is not.",
+      "paragraphs": [
+        "Sometimes Levenshtein distance itself is appropriate but the input representation is not.",
+        "Problem Possible Representation Change Canonical Unicode variants Normalize before comparison User-perceived characters Segment into grapheme clusters Word-level errors Compare word tokens Phonetic variation Compare phonetic representations Transliteration Compare explicitly transformed representations",
+        "In these cases the recurrence can remain unchanged while the sequence being supplied to it changes."
+      ]
+    },
+    {
+      "heading": "When to Change the Edit Model",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 2,
+      "word_count": 37,
+      "evidence": "Other problems genuinely require a different operation or cost model.",
+      "paragraphs": [
+        "Other problems genuinely require a different operation or cost model.",
+        "Problem Possible Model Adjacent character swaps Damerau-style distance Unequal typo probabilities Weighted edit distance Long biological gaps Affine-gap sequence alignment Structural code differences AST or structural comparison"
+      ]
+    },
+    {
+      "heading": "When Edit Distance Is the Wrong Family of Model",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 2,
+      "word_count": 58,
+      "evidence": "Some target concepts lie outside surface sequence editing altogether.",
+      "paragraphs": [
+        "Some target concepts lie outside surface sequence editing altogether.",
+        "Target Concept Why Plain Levenshtein Is Insufficient Meaning Edit distance has no semantic representation. Visual glyph resemblance Code-point identity is not appearance. Real-world identity String similarity is only one piece of evidence. Program behavior Source-text similarity does not imply behavioral equivalence. Biological homology Sequence similarity is not biological inference."
+      ]
+    },
+    {
+      "heading": "A Diagnostic Procedure",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 1,
+      "word_count": 90,
+      "evidence": "1. Define the target concept. What are we actually trying to decide? 2. Define the representation. Bytes? Code points? Grapheme clusters? Words? Tokens? Phonemes? Structured objects? 3. Define meaningful transformations. Insertion? Deletion? Substitution? Transposition? Block move? Gap? 4. Define costs. Are all edits equally meaningful? 5. Define invariances. Should case, Unicode normalization, token order, script or punctuation matter? 6. Define the decision problem. Exact distance? Threshold? Ranking? Identity decision? Security alert? 7. Define the scale. One pair? Thousands of candidates? Millions of records? 8. Then choose the metric and architecture.",
+      "paragraphs": [
+        "1. Define the target concept. What are we actually trying to decide? 2. Define the representation. Bytes? Code points? Grapheme clusters? Words? Tokens? Phonemes? Structured objects? 3. Define meaningful transformations. Insertion? Deletion? Substitution? Transposition? Block move? Gap? 4. Define costs. Are all edits equally meaningful? 5. Define invariances. Should case, Unicode normalization, token order, script or punctuation matter? 6. Define the decision problem. Exact distance? Threshold? Ranking? Identity decision? Security alert? 7. Define the scale. One pair? Thousands of candidates? Millions of records? 8. Then choose the metric and architecture."
+      ]
+    },
+    {
+      "heading": "The Most Important Boundaries",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 1,
+      "word_count": 47,
+      "evidence": "mathematically correct distance ≠ appropriate application model byte ≠ Unicode code point code point ≠ grapheme cluster grapheme cluster ≠ glyph string similarity ≠ semantic similarity string similarity ≠ entity identity sequence similarity ≠ biological homology source-code similarity ≠ program equivalence pairwise distance ≠ large-scale retrieval architecture",
+      "paragraphs": [
+        "mathematically correct distance ≠ appropriate application model byte ≠ Unicode code point code point ≠ grapheme cluster grapheme cluster ≠ glyph string similarity ≠ semantic similarity string similarity ≠ entity identity sequence similarity ≠ biological homology source-code similarity ≠ program equivalence pairwise distance ≠ large-scale retrieval architecture"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 6,
+      "word_count": 140,
+      "evidence": "Levenshtein distance is deliberately narrow. It compares two ordered sequences using insertion, deletion, and substitution and returns the minimum transformation cost.",
+      "paragraphs": [
+        "Levenshtein distance is deliberately narrow. It compares two ordered sequences using insertion, deletion, and substitution and returns the minimum transformation cost.",
+        "Its limitations become visible when an application silently asks the metric to represent something else.",
+        "If Unicode text is represented at the wrong level, the fix can be normalization or grapheme segmentation. If adjacent transpositions matter, the operation model should change. If different errors have different significance, weighted costs may be appropriate.",
+        "If token order, hierarchical structure, pronunciation, visual appearance, semantic meaning, biological inference, or real-world identity is the true target, another representation or model is required.",
+        "Large-scale retrieval introduces another distinction: Levenshtein distance can remain the correct final metric while indexing and filtering prevent the system from comparing every possible pair.",
+        "Choose Levenshtein distance only after defining what one sequence element is and what a meaningful difference is."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "Unicode & Grapheme-Safe Levenshtein",
+      "paragraphs": [
+        "Unicode & Grapheme-Safe Levenshtein",
+        "Text Normalization and Transliteration",
+        "Unicode Text Transformations",
+        "Weighted Levenshtein Distance",
+        "Damerau-Levenshtein Distance",
+        "String Similarity vs Semantic Similarity",
+        "Indexing and Filtering for Edit Distance",
+        "Entity Resolution and Record Linkage",
+        "Unicode Homoglyph and Confusable Attacks",
+        "Sequence Alignment and Gap Models"
+      ]
+    },
+    {
+      "heading": "Technical References",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 5,
+      "word_count": 41,
+      "evidence": "Wagner and Fischer — The String-to-String Correction Problem",
+      "paragraphs": [
+        "Wagner and Fischer — The String-to-String Correction Problem",
+        "Damerau — A Technique for Computer Detection and Correction of Spelling Errors",
+        "Unicode Standard Annex #15: Unicode Normalization Forms",
+        "Unicode Standard Annex #29: Unicode Text Segmentation",
+        "Unicode Technical Standard #39: Unicode Security Mechanisms"
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Approximate Matching Does Not Mean an Approximate Distance",
+          "anchor_id": "ux-section-29",
+          "alias": "approximate string matching",
+          "excerpt": "A system can perform approximate string matching while calculating exact Levenshtein distance for the final candidates."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Adjacent Transpositions",
+          "anchor_id": "ux-section-14",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau-Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Damerau-Levenshtein Distance"
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "A Practical Classification of Levenshtein Limitations",
+          "anchor_id": "ux-section-4",
+          "alias": "edit distance",
+          "excerpt": "Mismatch What Goes Wrong Typical Response Representation mismatch The wrong sequence units are compared. Change representation or segmentation. Operation-model mismatch A meaningful transformation is missing. Use another edit model. Cost-model mismatch All edits should not have equal cost. Use weighted edit distance. Scale mismatch The same raw distance means different things at different lengths. Use calibrated thresholds or relative scores. Structural mismatch Linear order does not represent the important structure. Use token, tree, graph, or structural comparison. Phonetic mismatch Spelling does not represent pronunciation. Use a phonetic representation. Visual mismatch Character identity"
+        },
+        {
+          "section": "Text Transformations Change the Comparison Space",
+          "anchor_id": "ux-section-12",
+          "alias": "edit distance",
+          "excerpt": "The result measures edit distance between transformed representations."
+        },
+        {
+          "section": "4. Raw Distance Does Not Have a Universal Meaning Across Lengths",
+          "anchor_id": "ux-section-18",
+          "alias": "edit distance",
+          "excerpt": "but this is an application-level normalization rather than a universal replacement for raw edit distance."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "9. String Similarity Is Not Entity Identity",
+          "anchor_id": "ux-section-23",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "See Entity Resolution and Record Linkage ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "Entity Resolution and Record Linkage"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "12. Pairwise Distance Does Not Solve Retrieval at Scale",
+          "anchor_id": "ux-section-27",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance"
+        }
+      ]
+    },
+    {
+      "target": "/name-address-and-place-matching",
+      "evidence": [
+        {
+          "section": "Name Matching Shows Several Limitations at Once",
+          "anchor_id": "ux-section-24",
+          "alias": "name address and place matching",
+          "excerpt": "See Name, Address and Place Matching ."
+        }
+      ]
+    },
+    {
+      "target": "/phonetic-dialect-and-language-distance",
+      "evidence": [
+        {
+          "section": "6. Phonetic Mismatch",
+          "anchor_id": "ux-section-20",
+          "alias": "phonetic dialect and language distance",
+          "excerpt": "See Phonetic, Dialect and Language Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/sequence-alignment-and-gap-models",
+      "evidence": [
+        {
+          "section": "10. Biological Sequence Similarity Requires a Different Interpretation",
+          "anchor_id": "ux-section-25",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "See Sequence Alignment and Gap Models ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "Sequence Alignment and Gap Models"
+        }
+      ]
+    },
+    {
+      "target": "/source-code-and-ast-similarity",
+      "evidence": [
+        {
+          "section": "5. Structural Mismatch",
+          "anchor_id": "ux-section-19",
+          "alias": "source code and ast similarity",
+          "excerpt": "See Source Code and AST Similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "8. String Similarity Is Not Semantic Similarity",
+          "anchor_id": "ux-section-22",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "String Similarity vs Semantic Similarity"
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "Normalization Is an Application Decision",
+          "anchor_id": "ux-section-11",
+          "alias": "text normalization and transliteration",
+          "excerpt": "See Text Normalization and Transliteration ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "text normalization and transliteration",
+          "excerpt": "Text Normalization and Transliteration"
+        }
+      ]
+    },
+    {
+      "target": "/typosquatting-and-supply-chain-security",
+      "evidence": [
+        {
+          "section": "11. Security Decisions Need More Than Lexical Similarity",
+          "anchor_id": "ux-section-26",
+          "alias": "typosquatting and software supply chain security",
+          "excerpt": "See Typosquatting and Software Supply-Chain Security ."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Code Points Are Still Not Always User-Perceived Characters",
+          "anchor_id": "ux-section-8",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "See Unicode & Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "Unicode & Grapheme-Safe Levenshtein"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-homoglyph-and-confusable-attacks",
+      "evidence": [
+        {
+          "section": "Grapheme Clusters Do Not Model Glyph Appearance",
+          "anchor_id": "ux-section-9",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "For identifier-security cases, see Unicode Homoglyph and Confusable Attacks ."
+        },
+        {
+          "section": "7. Visual Similarity Is Not Character Similarity",
+          "anchor_id": "ux-section-21",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "See Unicode Homoglyph and Confusable Attacks ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "Unicode Homoglyph and Confusable Attacks"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-text-transformations",
+      "evidence": [
+        {
+          "section": "Text Transformations Change the Comparison Space",
+          "anchor_id": "ux-section-12",
+          "alias": "unicode text transformations",
+          "excerpt": "See Unicode Text Transformations ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "unicode text transformations",
+          "excerpt": "Unicode Text Transformations"
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "Computational Complexity Is Not the Same as Model Quality",
+          "anchor_id": "ux-section-28",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "The classical Wagner–Fischer algorithm requires:"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "3. Cost-Model Mismatch",
+          "anchor_id": "ux-section-16",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-37",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/levenshtein-distance-limitations#webpage",
+      "type": "WebPage",
+      "name": "Levenshtein Distance Limitations: Where Edit Distance Fails & What to Use Instead",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/levenshtein-distance-limitations#article"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-distance-limitations#model-mismatch"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-distance-limitations#article",
+      "type": "Article",
+      "name": "Levenshtein Distance Limitations: Where Edit Distance Fails & What to Use Instead",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-distance-limitations#model-mismatch"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-distance-limitations#model-mismatch",
+      "type": "DefinedTerm",
+      "name": "Levenshtein Model Mismatch",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-distance-limitations#sequence-representation",
+      "type": "DefinedTerm",
+      "name": "Sequence Representation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-distance-limitations#operation-model",
+      "type": "DefinedTerm",
+      "name": "Edit Operation Model",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-distance-limitations#cost-model",
+      "type": "DefinedTerm",
+      "name": "Edit Cost Model",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-distance-limitations#semantic-mismatch",
+      "type": "DefinedTerm",
+      "name": "Semantic Mismatch",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-distance-limitations#retrieval-scale",
+      "type": "DefinedTerm",
+      "name": "Edit-Distance Retrieval Scale",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-distance-limitations#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#webpage",
+      "about",
+      "https://www.levenshtein.net/levenshtein-distance-limitations#model-mismatch"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/levenshtein-distance-limitations#article"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-distance-limitations#model-mismatch"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-distance-limitations#sequence-representation"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-distance-limitations#operation-model"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-distance-limitations#cost-model"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-distance-limitations#semantic-mismatch"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-distance-limitations#retrieval-scale"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-distance-limitations#article",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "Wagner and Fischer — The String-to-String Correction Problem"
+    },
+    {
+      "url": "https://doi.org/10.1145/363958.363994",
+      "anchor": "Damerau — A Technique for Computer Detection and Correction of Spelling Errors"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr15/",
+      "anchor": "Unicode Standard Annex #15: Unicode Normalization Forms"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr29/",
+      "anchor": "Unicode Standard Annex #29: Unicode Text Segmentation"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr39/",
+      "anchor": "Unicode Technical Standard #39: Unicode Security Mechanisms"
+    }
+  ]
+}

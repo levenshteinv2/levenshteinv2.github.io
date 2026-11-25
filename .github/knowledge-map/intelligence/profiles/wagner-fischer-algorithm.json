@@ -1,0 +1,2082 @@
+{
+  "url": "/wagner-fischer-algorithm",
+  "title": "Wagner–Fischer Algorithm: Dynamic Programming for Edit Distance",
+  "h1": [
+    "Wagner–Fischer Algorithm: Dynamic Programming for Edit Distance"
+  ],
+  "group": "Algorithms",
+  "provisional_mission": "Quy hoạch động và recurrence",
+  "content_sha256": "2dd32f76c5ebef46f6ad20550f289b8d088169fe9171a651d05bb4a5cbfdb372",
+  "canonical": "https://www.levenshtein.net/wagner-fischer-algorithm",
+  "primary_entity_candidate": "Wagner–Fischer Algorithm: Dynamic Programming for Edit Distance",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Wagner–Fischer Algorithm",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 1,
+      "word_count": 79,
+      "evidence": "The Wagner–Fischer algorithm is the classical dynamic-programming framework for solving the string-to-string correction problem: given two sequences, determine the minimum-cost sequence of insertions, deletions, and substitutions required to transform one into the other. Under unit edit costs, the result is the standard Levenshtein distance . The algorithm is important not merely as an implementation technique, but as a foundational formulation connecting edit distance, optimal substructure, dynamic programming, shortest paths, sequence alignment, spelling correction, approximate matching, and many later algorithms.",
+      "paragraphs": [
+        "The Wagner–Fischer algorithm is the classical dynamic-programming framework for solving the string-to-string correction problem: given two sequences, determine the minimum-cost sequence of insertions, deletions, and substitutions required to transform one into the other. Under unit edit costs, the result is the standard Levenshtein distance . The algorithm is important not merely as an implementation technique, but as a foundational formulation connecting edit distance, optimal substructure, dynamic programming, shortest paths, sequence alignment, spelling correction, approximate matching, and many later algorithms."
+      ]
+    },
+    {
+      "heading": "The string-to-string correction problem",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 6,
+      "word_count": 95,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "A = a₁a₂...aₘ B = b₁b₂...bₙ",
+        "be two finite sequences over an alphabet Σ .",
+        "The objective is to transform A into B using a set of permitted edit operations. In the classical Wagner–Fischer formulation, these operations are:",
+        "Operation Transformation Effect on source length Deletion Remove one source symbol -1 Insertion Insert one target symbol +1 Substitution Replace one source symbol with one target symbol 0 Match Retain an equal symbol 0",
+        "An ordered sequence of these transformations is an edit script . The correction problem asks for a script of minimum total cost."
+      ]
+    },
+    {
+      "heading": "General weighted formulation",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 15,
+      "word_count": 101,
+      "evidence": "Although the algorithm is frequently introduced using unit-cost Levenshtein distance, its dynamic-programming structure is naturally expressed using operation costs.",
+      "paragraphs": [
+        "Although the algorithm is frequently introduced using unit-cost Levenshtein distance, its dynamic-programming structure is naturally expressed using operation costs.",
+        "Let:",
+        "c_del(a)",
+        "be the cost of deleting source symbol a ,",
+        "c_ins(b)",
+        "the cost of inserting target symbol b , and:",
+        "c_sub(a,b)",
+        "the cost of replacing a with b .",
+        "Usually:",
+        "c_sub(a,a) = 0",
+        "so correspondence between identical symbols is a zero-cost match.",
+        "The optimization objective becomes:",
+        "d(A,B) = min Σ cost(operation) over every valid edit script transforming A into B",
+        "Standard Levenshtein distance is the specialization:",
+        "c_del(a) = 1 c_ins(b) = 1 c_sub(a,b) = 0 if a = b 1 otherwise"
+      ]
+    },
+    {
+      "heading": "The central dynamic-programming state",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 12,
+      "word_count": 55,
+      "evidence": "The key insight is to solve many smaller prefix-to-prefix correction problems.",
+      "paragraphs": [
+        "The key insight is to solve many smaller prefix-to-prefix correction problems.",
+        "Define:",
+        "D[i][j]",
+        "as the minimum cost required to transform:",
+        "A[1..i]",
+        "into:",
+        "B[1..j]",
+        "where:",
+        "0 ≤ i ≤ m 0 ≤ j ≤ n",
+        "The desired answer is therefore:",
+        "D[m][n]",
+        "The full problem has been reduced to computing a rectangular family of related prefix problems."
+      ]
+    },
+    {
+      "heading": "Boundary conditions",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "The first row and first column have simple interpretations.",
+      "paragraphs": [
+        "The first row and first column have simple interpretations."
+      ]
+    },
+    {
+      "heading": "Transforming a prefix into the empty sequence",
+      "level": 3,
+      "id": "ux-section-6",
+      "paragraph_count": 9,
+      "word_count": 38,
+      "evidence": "To transform:",
+      "paragraphs": [
+        "To transform:",
+        "A[1..i]",
+        "into the empty sequence, every source symbol must be deleted.",
+        "For general deletion costs:",
+        "D[i][0] = D[i-1][0] + c_del(aᵢ)",
+        "or equivalently:",
+        "D[i][0] = Σ c_del(aₚ) for p = 1..i",
+        "Under unit costs:",
+        "D[i][0] = i"
+      ]
+    },
+    {
+      "heading": "Transforming the empty sequence into a prefix",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 6,
+      "word_count": 17,
+      "evidence": "Similarly:",
+      "paragraphs": [
+        "Similarly:",
+        "D[0][j] = D[0][j-1] + c_ins(bⱼ)",
+        "and under unit costs:",
+        "D[0][j] = j",
+        "Finally:",
+        "D[0][0] = 0"
+      ]
+    },
+    {
+      "heading": "The Wagner–Fischer recurrence",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 5,
+      "word_count": 23,
+      "evidence": "Consider the optimal transformation from:",
+      "paragraphs": [
+        "Consider the optimal transformation from:",
+        "A[1..i]",
+        "to:",
+        "B[1..j]",
+        "The final action of an optimal script must correspond to one of three structural possibilities."
+      ]
+    },
+    {
+      "heading": "Case 1: deletion",
+      "level": 3,
+      "id": "ux-section-9",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "Delete aᵢ after optimally transforming the preceding source prefix into the complete target prefix:",
+      "paragraphs": [
+        "Delete aᵢ after optimally transforming the preceding source prefix into the complete target prefix:",
+        "D[i-1][j] + c_del(aᵢ)"
+      ]
+    },
+    {
+      "heading": "Case 2: insertion",
+      "level": 3,
+      "id": "ux-section-10",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "First transform A[1..i] optimally into B[1..j-1] , then insert bⱼ :",
+      "paragraphs": [
+        "First transform A[1..i] optimally into B[1..j-1] , then insert bⱼ :",
+        "D[i][j-1] + c_ins(bⱼ)"
+      ]
+    },
+    {
+      "heading": "Case 3: substitution or match",
+      "level": 3,
+      "id": "ux-section-11",
+      "paragraph_count": 6,
+      "word_count": 60,
+      "evidence": "Transform the preceding prefixes optimally, then align aᵢ with bⱼ :",
+      "paragraphs": [
+        "Transform the preceding prefixes optimally, then align aᵢ with bⱼ :",
+        "D[i-1][j-1] + c_sub(aᵢ,bⱼ)",
+        "Taking the least expensive alternative gives:",
+        "D[i][j] = min( D[i-1][j] + c_del(aᵢ), D[i][j-1] + c_ins(bⱼ), D[i-1][j-1] + c_sub(aᵢ,bⱼ) )",
+        "For standard unit-cost Levenshtein distance:",
+        "cost = 0 if aᵢ = bⱼ 1 otherwise D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + cost )"
+      ]
+    },
+    {
+      "heading": "Why only three predecessors are necessary",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 4,
+      "word_count": 80,
+      "evidence": "Every valid final edit must affect the last unprocessed symbols in one of three ways:",
+      "paragraphs": [
+        "Every valid final edit must affect the last unprocessed symbols in one of three ways:",
+        "Final action Source consumed Target consumed Previous state Deletion 1 symbol 0 symbols (i-1,j) Insertion 0 symbols 1 symbol (i,j-1) Match / substitution 1 symbol 1 symbol (i-1,j-1)",
+        "No other predecessor is required for the classical insertion-deletion-substitution model.",
+        "This observation is also why adding a new primitive operation, such as adjacent transposition, changes the recurrence. It is not sufficient merely to relabel one existing transition."
+      ]
+    },
+    {
+      "heading": "Optimal substructure",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 8,
+      "word_count": 99,
+      "evidence": "The recurrence depends on an important property: every prefix of an optimal solution must itself contain an optimal solution to the corresponding prefix problem.",
+      "paragraphs": [
+        "The recurrence depends on an important property: every prefix of an optimal solution must itself contain an optimal solution to the corresponding prefix problem.",
+        "Suppose an optimal script transforming A[1..i] into B[1..j] ends by deleting aᵢ .",
+        "Before that final deletion, it must have transformed:",
+        "A[1..i-1]",
+        "into:",
+        "B[1..j]",
+        "If that preceding transformation were not optimal, suppose a cheaper one existed. Replacing the prefix of the script with this cheaper transformation would produce a cheaper complete script, contradicting the assumption that the original complete script was optimal.",
+        "Exactly the same argument applies when the final operation is insertion or substitution."
+      ]
+    },
+    {
+      "heading": "Correctness proof",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "A concise proof can be given by induction on:",
+      "paragraphs": [
+        "A concise proof can be given by induction on:",
+        "i + j"
+      ]
+    },
+    {
+      "heading": "Base cases",
+      "level": 3,
+      "id": "ux-section-15",
+      "paragraph_count": 7,
+      "word_count": 40,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "i = 0",
+        "the only possible transformation is to insert the j target symbols.",
+        "If:",
+        "j = 0",
+        "the only possible transformation is to delete the i source symbols.",
+        "Therefore the initialized first row and first column are optimal."
+      ]
+    },
+    {
+      "heading": "Induction hypothesis",
+      "level": 3,
+      "id": "ux-section-16",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "Assume all states:",
+      "paragraphs": [
+        "Assume all states:",
+        "D[p][q]",
+        "with:",
+        "p + q < i + j",
+        "contain the true minimum edit costs."
+      ]
+    },
+    {
+      "heading": "Induction step",
+      "level": 3,
+      "id": "ux-section-17",
+      "paragraph_count": 15,
+      "word_count": 93,
+      "evidence": "Consider an optimal edit script for state (i,j) .",
+      "paragraphs": [
+        "Consider an optimal edit script for state (i,j) .",
+        "Its final operation must be one of:",
+        "deletion of aᵢ ;",
+        "insertion of bⱼ ;",
+        "substitution or matching of aᵢ with bⱼ .",
+        "Removing this final operation leaves a script solving respectively:",
+        "(i-1,j) (i,j-1) (i-1,j-1)",
+        "By the induction hypothesis, the minimum costs of those subproblems are already stored in the corresponding DP states.",
+        "Therefore the minimum possible complete cost is exactly the minimum of the three recurrence alternatives.",
+        "Hence:",
+        "D[i][j]",
+        "is correct.",
+        "By induction:",
+        "D[m][n]",
+        "is the minimum correction cost between the complete sequences."
+      ]
+    },
+    {
+      "heading": "Worked example: kitten and sitting",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 8,
+      "word_count": 106,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "A = kitten B = sitting",
+        "Using unit-cost insertion, deletion, and substitution, construct the matrix:",
+        "∅ s i t t i n g ┌────────────────────────── ∅ │ 0 1 2 3 4 5 6 7 k │ 1 1 2 3 4 5 6 7 i │ 2 2 1 2 3 4 5 6 t │ 3 3 2 1 2 3 4 5 t │ 4 4 3 2 1 2 3 4 e │ 5 5 4 3 2 2 3 4 n │ 6 6 5 4 3 3 2 3",
+        "The bottom-right value is:",
+        "D[6][7] = 3",
+        "so:",
+        "d(\"kitten\",\"sitting\") = 3"
+      ]
+    },
+    {
+      "heading": "Computing one matrix cell",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 9,
+      "word_count": 66,
+      "evidence": "Consider the cell corresponding to:",
+      "paragraphs": [
+        "Consider the cell corresponding to:",
+        "\"kitt\" and \"sitt\"",
+        "The final characters are both:",
+        "t",
+        "so substitution cost is zero.",
+        "The candidates are:",
+        "delete: D[3][4] + 1 insert: D[4][3] + 1 match: D[3][3] + 0",
+        "The diagonal match is cheapest, so the optimal correction cost propagates without increasing.",
+        "When the current symbols differ, the diagonal transition instead corresponds to substitution with cost 1 under the standard model."
+      ]
+    },
+    {
+      "heading": "An optimal edit script",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 4,
+      "word_count": 48,
+      "evidence": "The matrix proves that the minimum cost is 3. It can also be used to recover one minimum-cost transformation:",
+      "paragraphs": [
+        "The matrix proves that the minimum cost is 3. It can also be used to recover one minimum-cost transformation:",
+        "kitten ↓ substitute k → s sitten ↓ substitute e → i sittin ↓ insert g sitting",
+        "Thus:",
+        "Operation Count Insertions 1 Deletions 0 Substitutions 2 Total cost 3"
+      ]
+    },
+    {
+      "heading": "Backtracking through the matrix",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 7,
+      "word_count": 70,
+      "evidence": "To reconstruct an edit script, start at:",
+      "paragraphs": [
+        "To reconstruct an edit script, start at:",
+        "D[m][n]",
+        "and move toward:",
+        "D[0][0]",
+        "following predecessor states compatible with the current optimal value.",
+        "Backtrace move Forward interpretation (i,j) → (i-1,j) Deletion (i,j) → (i,j-1) Insertion (i,j) → (i-1,j-1) with equal symbols Match (i,j) → (i-1,j-1) with unequal symbols Substitution",
+        "The backtrace generates operations in reverse order, so the resulting operation sequence must normally be reversed before being applied from source to target."
+      ]
+    },
+    {
+      "heading": "Backtracking pseudocode",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 1,
+      "word_count": 105,
+      "evidence": "i = m j = n operations = [] while i > 0 or j > 0: if i > 0 and j > 0 and A[i-1] == B[j-1] and D[i][j] == D[i-1][j-1]: operations.append( MATCH(A[i-1]) ) i = i - 1 j = j - 1 else if i > 0 and j > 0 and D[i][j] == D[i-1][j-1] + substitution_cost(A[i-1], B[j-1]): operations.append( SUBSTITUTE(A[i-1], B[j-1]) ) i = i - 1 j = j - 1 else if i > 0 and D[i][j] == D[i-1][j] + deletion_cost(A[i-1]): operations.append( DELETE(A[i-1]) ) i = i - 1 else: operations.append( INSERT(B[j-1]) ) j = j - 1 reverse(operations)",
+      "paragraphs": [
+        "i = m j = n operations = [] while i > 0 or j > 0: if i > 0 and j > 0 and A[i-1] == B[j-1] and D[i][j] == D[i-1][j-1]: operations.append( MATCH(A[i-1]) ) i = i - 1 j = j - 1 else if i > 0 and j > 0 and D[i][j] == D[i-1][j-1] + substitution_cost(A[i-1], B[j-1]): operations.append( SUBSTITUTE(A[i-1], B[j-1]) ) i = i - 1 j = j - 1 else if i > 0 and D[i][j] == D[i-1][j] + deletion_cost(A[i-1]): operations.append( DELETE(A[i-1]) ) i = i - 1 else: operations.append( INSERT(B[j-1]) ) j = j - 1 reverse(operations)"
+      ]
+    },
+    {
+      "heading": "An optimal edit script may not be unique",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 9,
+      "word_count": 54,
+      "evidence": "A DP cell can have several predecessors that yield the same minimum value.",
+      "paragraphs": [
+        "A DP cell can have several predecessors that yield the same minimum value.",
+        "For example:",
+        "D[i][j] = D[i-1][j] + 1 and D[i][j] = D[i][j-1] + 1",
+        "may both hold.",
+        "Therefore several minimum-cost paths can lead to the same final distance.",
+        "The algorithm determines:",
+        "the minimum cost",
+        "but does not imply:",
+        "a unique minimum-cost script"
+      ]
+    },
+    {
+      "heading": "Tie-breaking",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 5,
+      "word_count": 54,
+      "evidence": "Software that requires deterministic output should specify a tie-breaking convention.",
+      "paragraphs": [
+        "Software that requires deterministic output should specify a tie-breaking convention.",
+        "For example:",
+        "1. prefer match 2. prefer substitution 3. prefer deletion 4. prefer insertion",
+        "Another implementation can choose a different ordering and still return an equally correct optimal edit distance.",
+        "The chosen edit script is therefore partly an implementation convention whenever multiple optima exist."
+      ]
+    },
+    {
+      "heading": "Why tie-breaking matters scientifically",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 10,
+      "word_count": 69,
+      "evidence": "Suppose an application reports error counts:",
+      "paragraphs": [
+        "Suppose an application reports error counts:",
+        "substitutions = 4 deletions = 2 insertions = 1",
+        "If another optimal alignment produces a different decomposition while retaining the same total distance, the reported operation counts can depend on the tie-breaking strategy.",
+        "This matters in applications such as:",
+        "speech-recognition error analysis;",
+        "OCR evaluation;",
+        "linguistic comparison;",
+        "sequence alignment;",
+        "diagnostic diff systems.",
+        "If individual operations have scientific meaning, the alignment policy must be documented."
+      ]
+    },
+    {
+      "heading": "The edit graph interpretation",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 10,
+      "word_count": 72,
+      "evidence": "Wagner–Fischer dynamic programming can be viewed as a shortest-path computation on a directed acyclic graph.",
+      "paragraphs": [
+        "Wagner–Fischer dynamic programming can be viewed as a shortest-path computation on a directed acyclic graph.",
+        "Create a vertex for every pair:",
+        "(i,j)",
+        "representing prefixes of lengths i and j .",
+        "Add edges:",
+        "(i-1,j) → (i,j) deletion (i,j-1) → (i,j) insertion (i-1,j-1) → (i,j) match or substitution",
+        "with the corresponding operation costs.",
+        "The graph is acyclic because every edge increases at least one prefix coordinate.",
+        "The edit distance is:",
+        "shortest_path_cost( (0,0), (m,n) )"
+      ]
+    },
+    {
+      "heading": "Dynamic programming as shortest path in a DAG",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 5,
+      "word_count": 69,
+      "evidence": "The matrix evaluation order is effectively a topological ordering of the edit graph.",
+      "paragraphs": [
+        "The matrix evaluation order is effectively a topological ordering of the edit graph.",
+        "(0,0) ↓ ↘ → • • • ↓ ↘ → • • • ↓ (m,n)",
+        "Each DP state computes the cheapest incoming path from previously solved states.",
+        "This interpretation unifies several ideas:",
+        "edit operation = graph edge edit script = path script cost = path weight edit distance = shortest-path weight optimal alignment = shortest path"
+      ]
+    },
+    {
+      "heading": "Classical time complexity",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 10,
+      "word_count": 35,
+      "evidence": "The DP table contains:",
+      "paragraphs": [
+        "The DP table contains:",
+        "(m + 1)(n + 1)",
+        "states.",
+        "Every interior state requires a constant number of arithmetic operations and comparisons.",
+        "Therefore:",
+        "Time complexity: Θ(mn)",
+        "For equal-length strings:",
+        "m = n",
+        "this becomes:",
+        "Θ(n²)"
+      ]
+    },
+    {
+      "heading": "Full-table space complexity",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 7,
+      "word_count": 30,
+      "evidence": "Storing the entire matrix requires:",
+      "paragraphs": [
+        "Storing the entire matrix requires:",
+        "Space: Θ(mn)",
+        "This is useful when:",
+        "an edit script is required;",
+        "the complete matrix must be visualized;",
+        "multiple backtraces are required;",
+        "alignment analysis is required."
+      ]
+    },
+    {
+      "heading": "Why the distance alone needs much less memory",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 8,
+      "word_count": 47,
+      "evidence": "Observe the recurrence:",
+      "paragraphs": [
+        "Observe the recurrence:",
+        "D[i][j]",
+        "depends only on:",
+        "D[i-1][j] D[i][j-1] D[i-1][j-1]",
+        "When rows are processed from left to right, all required values are contained in:",
+        "the previous row;",
+        "the current row.",
+        "Therefore the full matrix does not need to be retained if only the final distance is required."
+      ]
+    },
+    {
+      "heading": "Two-row optimization",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 7,
+      "word_count": 31,
+      "evidence": "previous = row i-1 current = row i",
+      "paragraphs": [
+        "previous = row i-1 current = row i",
+        "After computing the current row:",
+        "swap(previous, current)",
+        "The space requirement becomes:",
+        "O(n)",
+        "or, by assigning the shorter input to the row dimension:",
+        "O(min(m,n))"
+      ]
+    },
+    {
+      "heading": "Two-row pseudocode",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 1,
+      "word_count": 78,
+      "evidence": "function levenshtein_distance(A, B): if length(A) < length(B): swap(A, B) m = length(A) n = length(B) previous[0..n] current[0..n] for j = 0 to n: previous[j] = j for i = 1 to m: current[0] = i for j = 1 to n: if A[i-1] == B[j-1]: cost = 0 else: cost = 1 deletion = previous[j] + 1 insertion = current[j-1] + 1 substitution = previous[j-1] + cost current[j] = min( deletion, insertion, substitution ) swap(previous, current) return previous[n]",
+      "paragraphs": [
+        "function levenshtein_distance(A, B): if length(A) < length(B): swap(A, B) m = length(A) n = length(B) previous[0..n] current[0..n] for j = 0 to n: previous[j] = j for i = 1 to m: current[0] = i for j = 1 to n: if A[i-1] == B[j-1]: cost = 0 else: cost = 1 deletion = previous[j] + 1 insertion = current[j-1] + 1 substitution = previous[j-1] + cost current[j] = min( deletion, insertion, substitution ) swap(previous, current) return previous[n]"
+      ]
+    },
+    {
+      "heading": "One-row optimization",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 5,
+      "word_count": 73,
+      "evidence": "Memory can be reduced further to a single row if the previous diagonal value is stored separately.",
+      "paragraphs": [
+        "Memory can be reduced further to a single row if the previous diagonal value is stored separately.",
+        "Conceptually:",
+        "row[j] = value from previous DP row before overwrite previous_diagonal = old row[j-1]",
+        "The algorithm updates the array in place while preserving the three values required by the recurrence.",
+        "This reduces allocation and can improve cache behavior, but the implementation is easier to get wrong because overwritten values have different semantic roles during an update."
+      ]
+    },
+    {
+      "heading": "One-row pseudocode",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 1,
+      "word_count": 84,
+      "evidence": "function levenshtein_one_row(A, B): if length(A) < length(B): swap(A, B) m = length(A) n = length(B) row[0..n] for j = 0 to n: row[j] = j for i = 1 to m: previous_diagonal = row[0] row[0] = i for j = 1 to n: old_above = row[j] if A[i-1] == B[j-1]: cost = 0 else: cost = 1 deletion = old_above + 1 insertion = row[j-1] + 1 substitution = previous_diagonal + cost row[j] = min( deletion, insertion, substitution ) previous_diagonal = old_above return row[n]",
+      "paragraphs": [
+        "function levenshtein_one_row(A, B): if length(A) < length(B): swap(A, B) m = length(A) n = length(B) row[0..n] for j = 0 to n: row[j] = j for i = 1 to m: previous_diagonal = row[0] row[0] = i for j = 1 to n: old_above = row[j] if A[i-1] == B[j-1]: cost = 0 else: cost = 1 deletion = old_above + 1 insertion = row[j-1] + 1 substitution = previous_diagonal + cost row[j] = min( deletion, insertion, substitution ) previous_diagonal = old_above return row[n]"
+      ]
+    },
+    {
+      "heading": "Distance computation versus alignment reconstruction",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 3,
+      "word_count": 53,
+      "evidence": "The linear-space optimization creates an important trade-off.",
+      "paragraphs": [
+        "The linear-space optimization creates an important trade-off.",
+        "Requirement Typical memory strategy Distance only One or two rows Simple full traceback Full DP table or explicit parent information Alignment with linear memory Divide-and-conquer reconstruction All optimal alignments Potentially much greater state/output cost",
+        "Discarding old rows removes the information needed for a direct conventional backtrace."
+      ]
+    },
+    {
+      "heading": "Linear-space reconstruction",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 12,
+      "word_count": 90,
+      "evidence": "Hirschberg-style divide-and-conquer techniques provide a way to reconstruct optimal sequence alignments without storing the complete quadratic matrix.",
+      "paragraphs": [
+        "Hirschberg-style divide-and-conquer techniques provide a way to reconstruct optimal sequence alignments without storing the complete quadratic matrix.",
+        "The broad idea is:",
+        "split one sequence near its midpoint;",
+        "compute forward DP costs using linear memory;",
+        "compute corresponding reverse costs;",
+        "identify an optimal crossing point in the other sequence;",
+        "recursively solve the two resulting subproblems.",
+        "This separates:",
+        "quadratic number of DP states computed over time",
+        "from:",
+        "quadratic matrix retained simultaneously in memory",
+        "The technique is particularly useful when an alignment is needed for long sequences but storing an entire matrix is impractical."
+      ]
+    },
+    {
+      "heading": "Cache behavior and memory layout",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 12,
+      "word_count": 71,
+      "evidence": "Asymptotic complexity does not capture all practical performance.",
+      "paragraphs": [
+        "Asymptotic complexity does not capture all practical performance.",
+        "A conventional row-major implementation scans adjacent cells sequentially:",
+        "D[i][1] D[i][2] D[i][3] ... D[i][n]",
+        "This typically has favorable cache locality.",
+        "A full matrix can nevertheless become large very quickly.",
+        "For example, two sequences of length:",
+        "100,000",
+        "would conceptually require approximately:",
+        "10,000,000,000",
+        "interior cells.",
+        "Even using four bytes per cell would require tens of gigabytes of storage.",
+        "The linear-row implementation reduces this memory footprint dramatically."
+      ]
+    },
+    {
+      "heading": "Safe integer width",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "For unit-cost Levenshtein distance:",
+      "paragraphs": [
+        "For unit-cost Levenshtein distance:",
+        "d(A,B) ≤ max(m,n)",
+        "so the maximum DP value is easy to bound.",
+        "Weighted models require more care.",
+        "If operation costs and sequence lengths are large:",
+        "cost × number_of_operations",
+        "can overflow a narrow integer representation.",
+        "A production implementation should establish a formal maximum possible value or use a sufficiently wide numerical type."
+      ]
+    },
+    {
+      "heading": "Levenshtein distance as a specialization",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 7,
+      "word_count": 63,
+      "evidence": "The Wagner–Fischer framework is more general than one particular unit-cost distance.",
+      "paragraphs": [
+        "The Wagner–Fischer framework is more general than one particular unit-cost distance.",
+        "Under:",
+        "insert = 1 delete = 1 substitute(a,b) = 0 if a = b 1 otherwise",
+        "the final value is standard Levenshtein distance.",
+        "Thus:",
+        "Wagner–Fischer = dynamic-programming framework Levenshtein distance = one important distance computed by that framework",
+        "This distinction prevents the common misconception that “Levenshtein algorithm” necessarily denotes one unique implementation."
+      ]
+    },
+    {
+      "heading": "Weighted Wagner–Fischer",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 12,
+      "word_count": 72,
+      "evidence": "A weighted model can use different costs for different symbols:",
+      "paragraphs": [
+        "A weighted model can use different costs for different symbols:",
+        "delete(a) = 0.8 insert(a) = 0.8 substitute(e,i) = 0.2 substitute(e,q) = 1.3",
+        "The same recurrence remains:",
+        "D[i][j] = min( D[i-1][j] + c_del(aᵢ), D[i][j-1] + c_ins(bⱼ), D[i-1][j-1] + c_sub(aᵢ,bⱼ) )",
+        "Only the edge weights have changed.",
+        "This makes Wagner–Fischer applicable to domain-specific error models such as:",
+        "keyboard errors;",
+        "OCR confusion matrices;",
+        "phonetic substitutions;",
+        "transliteration systems;",
+        "domain-specific sequence errors.",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Asymmetric costs",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 10,
+      "word_count": 67,
+      "evidence": "The recurrence does not require insertion and deletion costs to be numerically identical.",
+      "paragraphs": [
+        "The recurrence does not require insertion and deletion costs to be numerically identical.",
+        "An application could define:",
+        "c_ins(a) = 0.5 c_del(a) = 1.0",
+        "or directional substitution costs:",
+        "c_sub(a,b) ≠ c_sub(b,a)",
+        "The dynamic program can still compute a minimum correction cost.",
+        "However, the resulting function may lose symmetry:",
+        "d(A,B) ≠ d(B,A)",
+        "and therefore may no longer be a mathematical metric.",
+        "Algorithmic computability and metric properties are separate questions."
+      ]
+    },
+    {
+      "heading": "When substitution is unnecessary",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 10,
+      "word_count": 66,
+      "evidence": "A substitution from a to b can always be simulated by:",
+      "paragraphs": [
+        "A substitution from a to b can always be simulated by:",
+        "delete a + insert b",
+        "If:",
+        "c_sub(a,b) > c_del(a) + c_ins(b)",
+        "then that direct substitution can never be strictly optimal.",
+        "The delete-plus-insert route is cheaper.",
+        "If:",
+        "c_sub(a,b) = c_del(a) + c_ins(b)",
+        "both routes can tie.",
+        "This demonstrates that edit costs affect not only numerical distance but also the structure and multiplicity of optimal edit scripts."
+      ]
+    },
+    {
+      "heading": "Relationship to longest common subsequence",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 12,
+      "word_count": 103,
+      "evidence": "The Wagner–Fischer framework also exposes a close relationship with the Longest Common Subsequence problem.",
+      "paragraphs": [
+        "The Wagner–Fischer framework also exposes a close relationship with the Longest Common Subsequence problem.",
+        "Suppose:",
+        "insertion cost = 1 deletion cost = 1",
+        "and substitution is either forbidden or effectively costs:",
+        "2",
+        "so replacing one symbol provides no advantage over deletion followed by insertion.",
+        "If:",
+        "L = length of a longest common subsequence",
+        "then:",
+        "insert-delete distance = m + n - 2L",
+        "The common-subsequence symbols are preserved; all remaining source symbols are deleted and all remaining target symbols inserted.",
+        "Under standard Levenshtein substitution cost 1, however, this identity does not generally hold because substitution can be cheaper than one deletion plus one insertion."
+      ]
+    },
+    {
+      "heading": "Relationship to Hamming distance",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 4,
+      "word_count": 54,
+      "evidence": "If the strings have equal length and only substitution is allowed, the correction problem reduces to positional mismatch counting:",
+      "paragraphs": [
+        "If the strings have equal length and only substitution is allowed, the correction problem reduces to positional mismatch counting:",
+        "d(A,B) = number of indices i such that aᵢ ≠ bᵢ",
+        "which is Hamming distance.",
+        "Wagner–Fischer is therefore useful for understanding how adding insertion and deletion changes a fixed-position mismatch problem into an alignment problem."
+      ]
+    },
+    {
+      "heading": "Why insertion and deletion create alignment",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 7,
+      "word_count": 70,
+      "evidence": "With substitutions alone:",
+      "paragraphs": [
+        "With substitutions alone:",
+        "A: a b c d e | | * | | B: a b x d e",
+        "positions remain synchronized.",
+        "With insertion:",
+        "A: a b - c d e | | | | | B: a b x c d e",
+        "the correspondence between subsequent indices shifts.",
+        "Dynamic programming handles this uncertainty by exploring the relevant prefix-alignment states implicitly rather than committing greedily to a single alignment."
+      ]
+    },
+    {
+      "heading": "Why a greedy algorithm is insufficient",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 5,
+      "word_count": 69,
+      "evidence": "A tempting approach is:",
+      "paragraphs": [
+        "A tempting approach is:",
+        "scan from left to right when symbols differ: choose the locally cheapest edit",
+        "This does not generally produce a globally optimal transformation.",
+        "An insertion or deletion can alter the alignment of every subsequent symbol. A locally plausible substitution can therefore be worse than an insertion that realigns a long matching suffix.",
+        "Dynamic programming avoids this failure by preserving optimal values for multiple possible prefix alignments."
+      ]
+    },
+    {
+      "heading": "Transposition is not a Wagner–Fischer primitive",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 10,
+      "word_count": 61,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "ab ba",
+        "Under standard Levenshtein operations, the adjacent swap is normally represented by two substitutions:",
+        "ab ↓ substitute a → b bb ↓ substitute b → a ba",
+        "Cost:",
+        "2",
+        "A Damerau-style distance can instead treat:",
+        "transpose(ab → ba)",
+        "as one primitive edit.",
+        "Adding transposition changes the state dependencies and requires a different or extended recurrence. See Damerau–Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Wagner–Fischer and Optimal String Alignment",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 5,
+      "word_count": 46,
+      "evidence": "A common transposition-aware recurrence introduces an additional condition involving:",
+      "paragraphs": [
+        "A common transposition-aware recurrence introduces an additional condition involving:",
+        "D[i-2][j-2]",
+        "when two adjacent symbols cross-match.",
+        "Such a recurrence is associated with restricted Optimal String Alignment distance, not with classical Wagner–Fischer Levenshtein distance and not automatically with the unrestricted Damerau–Levenshtein metric.",
+        "These models should not be conflated."
+      ]
+    },
+    {
+      "heading": "Thresholded computation",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 11,
+      "word_count": 54,
+      "evidence": "The classical Wagner–Fischer algorithm calculates the complete distance.",
+      "paragraphs": [
+        "The classical Wagner–Fischer algorithm calculates the complete distance.",
+        "Many applications only need:",
+        "d(A,B) ≤ k ?",
+        "for a small threshold k .",
+        "In that setting, computing every matrix state can be unnecessary.",
+        "At a minimum:",
+        "|m - n| > k",
+        "immediately implies:",
+        "d(A,B) > k",
+        "under standard Levenshtein distance.",
+        "No DP matrix is required."
+      ]
+    },
+    {
+      "heading": "Banded computation",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 9,
+      "word_count": 139,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "d(A,B) ≤ k",
+        "then an edit path with at most k unit-cost insertions and deletions cannot move arbitrarily far from the main diagonal.",
+        "This motivates evaluating only cells satisfying approximately:",
+        "|i - j| ≤ k",
+        "rather than the entire matrix.",
+        "target 0 1 2 3 4 5 6 s 0 x x x . . . . o 1 x x x x . . . u 2 x x x x x . . r 3 . x x x x x . c 4 . . x x x x x e 5 . . . x x x x x = potentially relevant . = outside band",
+        "The basic Wagner–Fischer recurrence remains conceptually present, but only a subset of its state space is evaluated.",
+        "Threshold-aware and distance-sensitive techniques are developed further in Ukkonen Algorithm ."
+      ]
+    },
+    {
+      "heading": "Early termination",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 5,
+      "word_count": 55,
+      "evidence": "A bounded implementation can sometimes terminate when no active state can possibly recover to a distance within k .",
+      "paragraphs": [
+        "A bounded implementation can sometimes terminate when no active state can possibly recover to a distance within k .",
+        "However, naive rules such as:",
+        "if one current cell > k: stop",
+        "are incorrect.",
+        "Termination must reason about the relevant row, band, or lower bounds, because another alignment state may still produce an acceptable final distance."
+      ]
+    },
+    {
+      "heading": "Unicode changes the meaning of a symbol",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 8,
+      "word_count": 39,
+      "evidence": "The recurrence is defined over sequence elements. It does not define what those elements should be.",
+      "paragraphs": [
+        "The recurrence is defined over sequence elements. It does not define what those elements should be.",
+        "Software may inadvertently treat them as:",
+        "bytes;",
+        "UTF-8 code units;",
+        "UTF-16 code units;",
+        "Unicode code points;",
+        "grapheme clusters.",
+        "These choices produce different distances."
+      ]
+    },
+    {
+      "heading": "Canonical-equivalence example",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 10,
+      "word_count": 56,
+      "evidence": "The visible text:",
+      "paragraphs": [
+        "The visible text:",
+        "é",
+        "may be represented as:",
+        "U+00E9",
+        "or as:",
+        "U+0065 U+0301",
+        "At code-point level, the sequences are different.",
+        "After appropriate Unicode normalization, they can become canonically equivalent representations.",
+        "Therefore a Wagner–Fischer implementation can be completely correct while answering the wrong application-level question if sequence representation is poorly chosen.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "The algorithm is not limited to characters",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 14,
+      "word_count": 52,
+      "evidence": "Nothing in the recurrence fundamentally requires characters.",
+      "paragraphs": [
+        "Nothing in the recurrence fundamentally requires characters.",
+        "The sequence elements could be:",
+        "words;",
+        "tokens;",
+        "phonemes;",
+        "DNA symbols;",
+        "log events;",
+        "commands;",
+        "categorical observations.",
+        "For example:",
+        "A = [the, quick, brown, fox] B = [the, brown, fox]",
+        "At word level, the transformation can consist of one deletion:",
+        "delete \"quick\"",
+        "The same dynamic-programming recurrence applies."
+      ]
+    },
+    {
+      "heading": "Word Error Rate as an example",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 7,
+      "word_count": 67,
+      "evidence": "Automatic speech recognition commonly aligns reference and hypothesis word sequences using edit operations.",
+      "paragraphs": [
+        "Automatic speech recognition commonly aligns reference and hypothesis word sequences using edit operations.",
+        "If:",
+        "S = substitutions D = deletions I = insertions N = number of reference words",
+        "then:",
+        "WER = (S + D + I) / N",
+        "The underlying alignment computation is closely related to the same dynamic-programming structure, but its elements are words rather than characters.",
+        "See Word Error Rate and ASR Evaluation ."
+      ]
+    },
+    {
+      "heading": "Biological sequence comparison",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 12,
+      "word_count": 88,
+      "evidence": "The same recurrence suggests an alignment interpretation for DNA or other biological sequences.",
+      "paragraphs": [
+        "The same recurrence suggests an alignment interpretation for DNA or other biological sequences.",
+        "However, ordinary Wagner–Fischer with independent unit-cost insertions and deletions is usually too simple to represent biological alignment accurately.",
+        "Biological applications commonly require:",
+        "substitution matrices;",
+        "gap-opening penalties;",
+        "gap-extension penalties;",
+        "local alignment;",
+        "domain-specific scoring models.",
+        "For a gap of length g , an affine model may use:",
+        "gap_cost(g) = gap_open + (g - 1) × gap_extend",
+        "This is not equivalent to treating every deletion as an independent unit-cost Wagner–Fischer transition.",
+        "See Sequence Alignment and Gap Models ."
+      ]
+    },
+    {
+      "heading": "Implementation with explicit operation costs",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 1,
+      "word_count": 75,
+      "evidence": "function wagner_fischer(A, B): m = length(A) n = length(B) create D[0..m][0..n] D[0][0] = 0 for i = 1 to m: D[i][0] = D[i-1][0] + delete_cost(A[i-1]) for j = 1 to n: D[0][j] = D[0][j-1] + insert_cost(B[j-1]) for i = 1 to m: for j = 1 to n: deletion = D[i-1][j] + delete_cost(A[i-1]) insertion = D[i][j-1] + insert_cost(B[j-1]) replacement = D[i-1][j-1] + substitute_cost( A[i-1], B[j-1] ) D[i][j] = min( deletion, insertion, replacement ) return D[m][n]",
+      "paragraphs": [
+        "function wagner_fischer(A, B): m = length(A) n = length(B) create D[0..m][0..n] D[0][0] = 0 for i = 1 to m: D[i][0] = D[i-1][0] + delete_cost(A[i-1]) for j = 1 to n: D[0][j] = D[0][j-1] + insert_cost(B[j-1]) for i = 1 to m: for j = 1 to n: deletion = D[i-1][j] + delete_cost(A[i-1]) insertion = D[i][j-1] + insert_cost(B[j-1]) replacement = D[i-1][j-1] + substitute_cost( A[i-1], B[j-1] ) D[i][j] = min( deletion, insertion, replacement ) return D[m][n]"
+      ]
+    },
+    {
+      "heading": "Useful correctness invariants",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "A robust implementation should be tested against structural properties rather than only a few familiar string pairs.",
+      "paragraphs": [
+        "A robust implementation should be tested against structural properties rather than only a few familiar string pairs."
+      ]
+    },
+    {
+      "heading": "Empty strings",
+      "level": 3,
+      "id": "ux-section-59",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "d(\"\", \"\") = 0",
+      "paragraphs": [
+        "d(\"\", \"\") = 0",
+        "d(\"abc\", \"\") = 3",
+        "d(\"\", \"abc\") = 3",
+        "under unit costs."
+      ]
+    },
+    {
+      "heading": "Identity",
+      "level": 3,
+      "id": "ux-section-60",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(x,x) = 0",
+      "paragraphs": [
+        "d(x,x) = 0"
+      ]
+    },
+    {
+      "heading": "Single substitution",
+      "level": 3,
+      "id": "ux-section-61",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"cat\",\"cut\") = 1",
+      "paragraphs": [
+        "d(\"cat\",\"cut\") = 1"
+      ]
+    },
+    {
+      "heading": "Single insertion",
+      "level": 3,
+      "id": "ux-section-62",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"cat\",\"cart\") = 1",
+      "paragraphs": [
+        "d(\"cat\",\"cart\") = 1"
+      ]
+    },
+    {
+      "heading": "Single deletion",
+      "level": 3,
+      "id": "ux-section-63",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"cart\",\"cat\") = 1",
+      "paragraphs": [
+        "d(\"cart\",\"cat\") = 1"
+      ]
+    },
+    {
+      "heading": "Length lower bound",
+      "level": 3,
+      "id": "ux-section-64",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "d(x,y) ≥ ||x| - |y||",
+      "paragraphs": [
+        "d(x,y) ≥ ||x| - |y||",
+        "for standard Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Symmetry",
+      "level": 3,
+      "id": "ux-section-65",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "d(x,y) = d(y,x)",
+      "paragraphs": [
+        "d(x,y) = d(y,x)",
+        "under symmetric standard costs."
+      ]
+    },
+    {
+      "heading": "Triangle inequality",
+      "level": 3,
+      "id": "ux-section-66",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "d(x,z) ≤ d(x,y) + d(y,z)",
+      "paragraphs": [
+        "d(x,z) ≤ d(x,y) + d(y,z)",
+        "under the standard metric."
+      ]
+    },
+    {
+      "heading": "Testing the recovered edit script",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "When an implementation produces a script, two additional invariants are essential.",
+      "paragraphs": [
+        "When an implementation produces a script, two additional invariants are essential."
+      ]
+    },
+    {
+      "heading": "Replay invariant",
+      "level": 3,
+      "id": "ux-section-68",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "apply(script, source) == target",
+      "paragraphs": [
+        "apply(script, source) == target"
+      ]
+    },
+    {
+      "heading": "Cost invariant",
+      "level": 3,
+      "id": "ux-section-69",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "sum(costs of script operations) == D[m][n]",
+      "paragraphs": [
+        "sum(costs of script operations) == D[m][n]",
+        "Passing the numerical-distance tests alone does not guarantee correct edit-script reconstruction."
+      ]
+    },
+    {
+      "heading": "Incorrect matrix initialization",
+      "level": 3,
+      "id": "ux-section-71",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "The first row and column represent transformations involving the empty sequence. Incorrect initialization corrupts every subsequent DP state.",
+      "paragraphs": [
+        "The first row and column represent transformations involving the empty sequence. Incorrect initialization corrupts every subsequent DP state."
+      ]
+    },
+    {
+      "heading": "Mixing source and target directions",
+      "level": 3,
+      "id": "ux-section-72",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "Insertion and deletion are direction-dependent descriptions.",
+      "paragraphs": [
+        "Insertion and deletion are direction-dependent descriptions.",
+        "cat → cart",
+        "contains an insertion, whereas:",
+        "cart → cat",
+        "contains a deletion."
+      ]
+    },
+    {
+      "heading": "Overwriting values too early",
+      "level": 3,
+      "id": "ux-section-73",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "In one-row implementations, updating:",
+      "paragraphs": [
+        "In one-row implementations, updating:",
+        "row[j]",
+        "before preserving its old value destroys the predecessor needed for subsequent computation."
+      ]
+    },
+    {
+      "heading": "Incorrect Unicode unit",
+      "level": 3,
+      "id": "ux-section-74",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Iterating UTF-8 bytes is not equivalent to iterating Unicode characters or grapheme clusters.",
+      "paragraphs": [
+        "Iterating UTF-8 bytes is not equivalent to iterating Unicode characters or grapheme clusters."
+      ]
+    },
+    {
+      "heading": "Assuming the optimal script is unique",
+      "level": 3,
+      "id": "ux-section-75",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Ties between DP predecessors can produce several optimal scripts.",
+      "paragraphs": [
+        "Ties between DP predecessors can produce several optimal scripts."
+      ]
+    },
+    {
+      "heading": "Confusing OSA with Levenshtein distance",
+      "level": 3,
+      "id": "ux-section-76",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Adding a transposition recurrence changes the distance definition.",
+      "paragraphs": [
+        "Adding a transposition recurrence changes the distance definition."
+      ]
+    },
+    {
+      "heading": "Allocating the full matrix unnecessarily",
+      "level": 3,
+      "id": "ux-section-77",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "If only the final distance is needed, quadratic memory is usually avoidable.",
+      "paragraphs": [
+        "If only the final distance is needed, quadratic memory is usually avoidable."
+      ]
+    },
+    {
+      "heading": "Using full Wagner–Fischer when a small threshold is known",
+      "level": 3,
+      "id": "ux-section-78",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "If only:",
+      "paragraphs": [
+        "If only:",
+        "d ≤ k",
+        "matters and k is small, bounded algorithms can avoid much of the matrix."
+      ]
+    },
+    {
+      "heading": "Performance engineering",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 12,
+      "word_count": 66,
+      "evidence": "For ordinary scalar implementations, practical performance depends on more than asymptotic complexity.",
+      "paragraphs": [
+        "For ordinary scalar implementations, practical performance depends on more than asymptotic complexity.",
+        "Important considerations include:",
+        "avoiding repeated allocation;",
+        "placing the shorter string on the row dimension;",
+        "using contiguous arrays;",
+        "minimizing branch-heavy inner loops;",
+        "choosing an appropriate integer width;",
+        "normalizing text outside the inner loop;",
+        "avoiding repeated Unicode decoding;",
+        "reusing working buffers across calls;",
+        "using threshold-based early rejection where valid.",
+        "See Levenshtein Performance Engineering for implementation-level optimization."
+      ]
+    },
+    {
+      "heading": "When Wagner–Fischer is an excellent choice",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 9,
+      "word_count": 69,
+      "evidence": "The classical algorithm remains highly useful when:",
+      "paragraphs": [
+        "The classical algorithm remains highly useful when:",
+        "the strings are short or moderate in length;",
+        "exact distance is required;",
+        "the edit model is straightforward;",
+        "clarity and correctness are priorities;",
+        "the full alignment or edit script is needed;",
+        "there is no strong prior bound on the distance;",
+        "the number of pairwise comparisons is manageable.",
+        "Its simplicity also makes it an excellent reference implementation against which optimized algorithms can be tested."
+      ]
+    },
+    {
+      "heading": "When another algorithm may be better",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 1,
+      "word_count": 50,
+      "evidence": "Situation Direction to consider Small maximum distance k Ukkonen-style bounded computation Pattern fits in one or several machine words Myers bit-vector algorithm Approximate text matching with small k Landau–Vishkin-style algorithms Dictionary / trie searching Levenshtein automata Large static candidate collection Indexing and filtering Theoretical improvement under specific assumptions Masek–Paterson algorithm",
+      "paragraphs": [
+        "Situation Direction to consider Small maximum distance k Ukkonen-style bounded computation Pattern fits in one or several machine words Myers bit-vector algorithm Approximate text matching with small k Landau–Vishkin-style algorithms Dictionary / trie searching Levenshtein automata Large static candidate collection Indexing and filtering Theoretical improvement under specific assumptions Masek–Paterson algorithm"
+      ]
+    },
+    {
+      "heading": "Wagner–Fischer versus Ukkonen",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 6,
+      "word_count": 77,
+      "evidence": "The classical Wagner–Fischer algorithm treats every matrix state as potentially relevant:",
+      "paragraphs": [
+        "The classical Wagner–Fischer algorithm treats every matrix state as potentially relevant:",
+        "work ≈ m × n",
+        "Ukkonen-style approaches exploit the fact that when the true distance or permitted threshold is small, only a restricted region of the edit graph may matter.",
+        "Conceptually:",
+        "Wagner–Fischer: solve the entire rectangular DP problem Ukkonen-style: exploit distance structure to avoid irrelevant states",
+        "The latter does not make the Wagner–Fischer recurrence conceptually obsolete; it exploits additional information to avoid evaluating all of it."
+      ]
+    },
+    {
+      "heading": "Wagner–Fischer versus Myers bit vectors",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 5,
+      "word_count": 73,
+      "evidence": "The Myers bit-vector method also derives from dynamic-programming structure but represents many state relationships using bits of machine words.",
+      "paragraphs": [
+        "The Myers bit-vector method also derives from dynamic-programming structure but represents many state relationships using bits of machine words.",
+        "Instead of repeatedly performing scalar operations for individual matrix cells:",
+        "cell cell cell cell ...",
+        "bit-parallel computation can update many pattern positions using a small number of machine operations.",
+        "Wagner–Fischer remains easier to understand, generalize, and adapt to arbitrary costs, while Myers can provide much higher performance for suitable unit-cost or restricted edit models."
+      ]
+    },
+    {
+      "heading": "Wagner–Fischer versus Levenshtein automata",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 5,
+      "word_count": 49,
+      "evidence": "Wagner–Fischer answers a pairwise optimization problem:",
+      "paragraphs": [
+        "Wagner–Fischer answers a pairwise optimization problem:",
+        "A + B ↓ minimum edit cost",
+        "A Levenshtein automaton instead represents the set:",
+        "{ x : d(pattern,x) ≤ k }",
+        "This makes automata especially useful when the task is to traverse a dictionary or finite-state lexicon rather than compare one already-known candidate."
+      ]
+    },
+    {
+      "heading": "The algorithm and approximate string matching",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 9,
+      "word_count": 80,
+      "evidence": "The same DP recurrence can be adapted to search a pattern inside a larger text by changing the boundary conditions.",
+      "paragraphs": [
+        "The same DP recurrence can be adapted to search a pattern inside a larger text by changing the boundary conditions.",
+        "For pairwise global distance:",
+        "D[0][j] = j",
+        "because the target prefix must be constructed.",
+        "For substring-style approximate matching, preceding text may need to be ignored without penalty, leading to an initialization such as:",
+        "D[0][j] = 0",
+        "for all text positions.",
+        "The recurrence can remain similar while the interpretation of the problem changes.",
+        "This is discussed in Approximate String Matching ."
+      ]
+    },
+    {
+      "heading": "Theoretical importance",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 7,
+      "word_count": 80,
+      "evidence": "The algorithm is a canonical example of how an apparently exponential search over possible edit scripts can be collapsed into polynomial time by recognizing overlapping subproblems.",
+      "paragraphs": [
+        "The algorithm is a canonical example of how an apparently exponential search over possible edit scripts can be collapsed into polynomial time by recognizing overlapping subproblems.",
+        "A naive conceptual search considers many possible sequences of:",
+        "insert delete substitute insert ...",
+        "The same pair of prefix states can be reached by many different histories.",
+        "Dynamic programming merges all such histories into a single value:",
+        "D[i][j] = best cost discovered for this prefix pair",
+        "This is the source of the algorithm's efficiency."
+      ]
+    },
+    {
+      "heading": "Number of possible alignments versus number of DP states",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 6,
+      "word_count": 58,
+      "evidence": "The number of possible edit paths through an m × n grid can grow combinatorially.",
+      "paragraphs": [
+        "The number of possible edit paths through an m × n grid can grow combinatorially.",
+        "But the number of distinct prefix states is only:",
+        "(m + 1)(n + 1)",
+        "Dynamic programming exploits this enormous difference:",
+        "many possible histories ↓ same prefix state ↓ retain only best cost",
+        "This state-merging principle is more fundamental than the particular recurrence itself."
+      ]
+    },
+    {
+      "heading": "Connection to sequence alignment",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 9,
+      "word_count": 64,
+      "evidence": "Each DP path corresponds naturally to an alignment.",
+      "paragraphs": [
+        "Each DP path corresponds naturally to an alignment.",
+        "source: A C - G T target: A C T G T",
+        "The gap corresponds to an insertion relative to the source.",
+        "The matrix therefore simultaneously represents:",
+        "minimum transformation cost;",
+        "possible edit scripts;",
+        "possible alignments;",
+        "shortest paths through an edit graph.",
+        "The relationship becomes especially important when moving from simple edit distance to richer alignment models."
+      ]
+    },
+    {
+      "heading": "Historical significance",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 3,
+      "word_count": 102,
+      "evidence": "Robert A. Wagner and Michael J. Fischer published The String-to-String Correction Problem in the Journal of the ACM in January 1974. The paper formalized the problem as finding a minimum-cost sequence of single-symbol changes, deletions, and insertions and presented an algorithm whose running time is proportional to the product of the two string lengths.",
+      "paragraphs": [
+        "Robert A. Wagner and Michael J. Fischer published The String-to-String Correction Problem in the Journal of the ACM in January 1974. The paper formalized the problem as finding a minimum-cost sequence of single-symbol changes, deletions, and insertions and presented an algorithm whose running time is proportional to the product of the two string lengths.",
+        "The authors identified automatic spelling correction and longest-common-subsequence computation among the applications of the framework.",
+        "The algorithm became one of the foundational dynamic-programming formulations in string algorithms and remains a reference point for subsequent work on approximate matching, bounded edit distance, sequence comparison, alignment, and optimized Levenshtein computation."
+      ]
+    },
+    {
+      "heading": "Wagner–Fischer and the Levenshtein algorithm",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 7,
+      "word_count": 83,
+      "evidence": "The terminology surrounding these ideas can be confusing.",
+      "paragraphs": [
+        "The terminology surrounding these ideas can be confusing.",
+        "Term Best interpretation Levenshtein distance The mathematical minimum edit distance under insertion, deletion, and substitution. Levenshtein algorithm A broad name commonly used for algorithmic computation of Levenshtein distance. Wagner–Fischer algorithm The classical prefix dynamic-programming formulation for minimum-cost string correction.",
+        "Thus the concepts overlap strongly but should not be treated as identical entities.",
+        "Levenshtein distance answers:",
+        "What is the minimum edit cost?",
+        "Wagner–Fischer answers:",
+        "How can that minimum-cost correction problem be solved systematically with dynamic programming?"
+      ]
+    },
+    {
+      "heading": "Scientific limitations",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "Wagner–Fischer is mathematically exact for the edit model supplied to it, but this does not guarantee that the model represents the application correctly.",
+      "paragraphs": [
+        "Wagner–Fischer is mathematically exact for the edit model supplied to it, but this does not guarantee that the model represents the application correctly."
+      ]
+    },
+    {
+      "heading": "Uniform costs may be unrealistic",
+      "level": 3,
+      "id": "ux-section-92",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "A keyboard typo between adjacent keys may be more probable than a substitution between distant keys.",
+      "paragraphs": [
+        "A keyboard typo between adjacent keys may be more probable than a substitution between distant keys."
+      ]
+    },
+    {
+      "heading": "Transpositions are absent",
+      "level": 3,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Adjacent swaps are not one primitive operation in standard Levenshtein distance.",
+      "paragraphs": [
+        "Adjacent swaps are not one primitive operation in standard Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Unicode units may be wrong",
+      "level": 3,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Code points and grapheme clusters are not equivalent.",
+      "paragraphs": [
+        "Code points and grapheme clusters are not equivalent."
+      ]
+    },
+    {
+      "heading": "Lexical distance is not semantic distance",
+      "level": 3,
+      "id": "ux-section-95",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "car automobile",
+      "paragraphs": [
+        "car automobile",
+        "are semantically related despite substantial character-edit distance."
+      ]
+    },
+    {
+      "heading": "Edit scripts are not causal histories",
+      "level": 3,
+      "id": "ux-section-96",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "An optimal script describes a cheapest mathematical transformation. It does not prove that the observed target was historically generated by those exact edits.",
+      "paragraphs": [
+        "An optimal script describes a cheapest mathematical transformation. It does not prove that the observed target was historically generated by those exact edits."
+      ]
+    },
+    {
+      "heading": "Quadratic time can dominate large workloads",
+      "level": 3,
+      "id": "ux-section-97",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "Applying full Wagner–Fischer independently to millions of candidates can be computationally inappropriate even if every individual comparison is correct.",
+      "paragraphs": [
+        "Applying full Wagner–Fischer independently to millions of candidates can be computationally inappropriate even if every individual comparison is correct."
+      ]
+    },
+    {
+      "heading": "A rigorous implementation checklist",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 12,
+      "word_count": 108,
+      "evidence": "Define the sequence element. Is one element a byte, code point, grapheme, character, token, word, or domain-specific symbol?",
+      "paragraphs": [
+        "Define the sequence element. Is one element a byte, code point, grapheme, character, token, word, or domain-specific symbol?",
+        "Define the operation set. Are insertion, deletion, and substitution sufficient?",
+        "Define operation costs. Are unit costs scientifically justified?",
+        "Determine whether symmetry is required.",
+        "Determine whether only the distance or the actual edit script is required.",
+        "Choose full-table or linear-space storage accordingly.",
+        "Determine whether a small threshold k is known.",
+        "Normalize Unicode before comparison when appropriate.",
+        "Specify tie-breaking if reconstructed alignments must be reproducible.",
+        "Test replay and cost invariants.",
+        "Benchmark on representative string lengths and error distributions.",
+        "Do not use pairwise Wagner–Fischer as a substitute for candidate indexing at large scale."
+      ]
+    },
+    {
+      "heading": "Conceptual summary",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 1,
+      "word_count": 42,
+      "evidence": "INPUT SEQUENCES ↓ PREFIX STATES ↓ THREE POSSIBLE FINAL ACTIONS ┌────────┬──────────┬──────────────┐ │ delete │ insert │ match/subst. │ └────────┴──────────┴──────────────┘ ↓ MINIMUM PREDECESSOR COST ↓ DYNAMIC-PROGRAMMING MATRIX ↓ D[m][n] ↓ MINIMUM EDIT COST optional: D[m][n] ↓ BACKTRACE ↓ OPTIMAL EDIT SCRIPT / ALIGNMENT",
+      "paragraphs": [
+        "INPUT SEQUENCES ↓ PREFIX STATES ↓ THREE POSSIBLE FINAL ACTIONS ┌────────┬──────────┬──────────────┐ │ delete │ insert │ match/subst. │ └────────┴──────────┴──────────────┘ ↓ MINIMUM PREDECESSOR COST ↓ DYNAMIC-PROGRAMMING MATRIX ↓ D[m][n] ↓ MINIMUM EDIT COST optional: D[m][n] ↓ BACKTRACE ↓ OPTIMAL EDIT SCRIPT / ALIGNMENT"
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 1,
+      "word_count": 57,
+      "evidence": "Property Wagner–Fischer Core technique Dynamic programming State Minimum correction cost between two prefixes Classical operations Insertion, deletion, substitution Unit-cost specialization Levenshtein distance Time complexity Θ(mn) Full matrix space Θ(mn) Distance-only space O(min(m,n)) Edit-script reconstruction Backtracking through optimal predecessor states Optimal script unique? Not necessarily Adjacent transposition primitive? No Supports weighted costs? Yes, within the corresponding edit-cost formulation",
+      "paragraphs": [
+        "Property Wagner–Fischer Core technique Dynamic programming State Minimum correction cost between two prefixes Classical operations Insertion, deletion, substitution Unit-cost specialization Levenshtein distance Time complexity Θ(mn) Full matrix space Θ(mn) Distance-only space O(min(m,n)) Edit-script reconstruction Backtracking through optimal predecessor states Optimal script unique? Not necessarily Adjacent transposition primitive? No Supports weighted costs? Yes, within the corresponding edit-cost formulation"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 4,
+      "word_count": 199,
+      "evidence": "The Wagner–Fischer algorithm solves the string-to-string correction problem by decomposing it into optimal correction problems between prefixes. Each dynamic-programming state represents the cheapest transformation between two prefixes, and every state follows from exactly three classical structural possibilities: deletion, insertion, or matching/substitution.",
+      "paragraphs": [
+        "The Wagner–Fischer algorithm solves the string-to-string correction problem by decomposing it into optimal correction problems between prefixes. Each dynamic-programming state represents the cheapest transformation between two prefixes, and every state follows from exactly three classical structural possibilities: deletion, insertion, or matching/substitution.",
+        "This simple recurrence converts a combinatorial space of possible edit scripts into a table containing only (m+1)(n+1) states, producing an exact Θ(mn) -time algorithm. A complete table supports straightforward reconstruction of optimal edit scripts, while one- or two-row implementations reduce distance-only memory to O(min(m,n)) .",
+        "The framework is considerably more general than the common textbook unit-cost example. It can incorporate weighted edits, arbitrary symbolic sequence elements, and many application-specific cost functions. At the same time, the mathematical correctness of the dynamic program does not guarantee that the chosen representation or cost model is scientifically appropriate.",
+        "Wagner–Fischer remains foundational because it exposes the structure on which many later developments build. Bounded algorithms restrict the state space, bit-parallel algorithms encode many states into machine words, automata represent edit neighborhoods as languages, and indexing systems avoid evaluating the pairwise recurrence against every candidate. Understanding Wagner–Fischer therefore provides the conceptual baseline for understanding much of modern edit-distance computation and approximate string matching."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 8,
+      "word_count": 73,
+      "evidence": "Edit Distance — the general minimum-cost sequence-transformation problem.",
+      "paragraphs": [
+        "Edit Distance — the general minimum-cost sequence-transformation problem.",
+        "Edit Operations and Edit Scripts — the transformations represented by Wagner–Fischer paths.",
+        "Ukkonen Algorithm — exploiting small edit distance or bounded thresholds.",
+        "Myers Bit-Vector Algorithm — bit-parallel dynamic programming for approximate matching.",
+        "Masek–Paterson Algorithm — an important theoretical improvement for edit-distance-style computation.",
+        "Landau–Vishkin Algorithm — parameter-sensitive approximate matching.",
+        "Levenshtein Automata — finite-state representations of bounded edit neighborhoods.",
+        "Levenshtein Implementations — implementation strategies across programming environments."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 6,
+      "word_count": 139,
+      "evidence": "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI: 10.1145/321796.321811. DOI record .",
+      "paragraphs": [
+        "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI: 10.1145/321796.321811. DOI record .",
+        "V. I. Levenshtein, “Binary Codes Capable of Correcting Deletions, Insertions, and Reversals,” Doklady Akademii Nauk SSSR , 163(4), 845–848, 1965. Math-Net.Ru record .",
+        "D. S. Hirschberg, “A Linear Space Algorithm for Computing Maximal Common Subsequences,” Communications of the ACM , 18(6), 341–343, 1975. DOI: 10.1145/360825.360861. DOI record .",
+        "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI: 10.1016/S0019-9958(85)80046-2. DOI record .",
+        "Gene Myers, “A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming,” Journal of the ACM , 46(3), 395–415, 1999. DOI: 10.1145/316542.316550. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI: 10.1145/375360.375365. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "The algorithm and approximate string matching",
+          "anchor_id": "ux-section-85",
+          "alias": "approximate string matching",
+          "excerpt": "This is discussed in Approximate String Matching ."
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-101",
+          "alias": "approximate string matching",
+          "excerpt": "Wagner–Fischer remains foundational because it exposes the structure on which many later developments build. Bounded algorithms restrict the state space, bit-parallel algorithms encode many states into machine words, automata represent edit neighborhoods as languages, and indexing systems avoid evaluating the pairwise recurrence against every candidate. Understanding Wagner–Fischer therefore provides the conceptual baseline for understanding much of modern edit-distance computation and approximate string matching."
+        },
+        {
+          "section": "References",
+          "anchor_id": "ux-section-103",
+          "alias": "approximate string matching",
+          "excerpt": "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI: 10.1016/S0019-9958(85)80046-2. DOI record ."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Transposition is not a Wagner–Fischer primitive",
+          "anchor_id": "ux-section-47",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Adding transposition changes the state dependencies and requires a different or extended recurrence. See Damerau–Levenshtein Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Wagner–Fischer Algorithm",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "The Wagner–Fischer algorithm is the classical dynamic-programming framework for solving the string-to-string correction problem: given two sequences, determine the minimum-cost sequence of insertions, deletions, and substitutions required to transform one into the other. Under unit edit costs, the result is the standard Levenshtein distance . The algorithm is important not merely as an implementation technique, but as a foundational formulation connecting edit distance, optimal substructure, dynamic programming, shortest paths, sequence alignment, spelling correction, approximate matching, and many later algorithms."
+        },
+        {
+          "section": "Tie-breaking",
+          "anchor_id": "ux-section-24",
+          "alias": "edit distance",
+          "excerpt": "Another implementation can choose a different ordering and still return an equally correct optimal edit distance."
+        },
+        {
+          "section": "The edit graph interpretation",
+          "anchor_id": "ux-section-26",
+          "alias": "edit distance",
+          "excerpt": "The edit distance is:"
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "The string-to-string correction problem",
+          "anchor_id": "ux-section-2",
+          "alias": "edit operations",
+          "excerpt": "The objective is to transform A into B using a set of permitted edit operations. In the classical Wagner–Fischer formulation, these operations are:"
+        },
+        {
+          "section": "Word Error Rate as an example",
+          "anchor_id": "ux-section-55",
+          "alias": "edit operations",
+          "excerpt": "Automatic speech recognition commonly aligns reference and hypothesis word sequences using edit operations."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-102",
+          "alias": "edit operations",
+          "excerpt": "Edit Operations and Edit Scripts — the transformations represented by Wagner–Fischer paths."
+        }
+      ]
+    },
+    {
+      "target": "/landau-vishkin-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-102",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "Landau–Vishkin Algorithm — parameter-sensitive approximate matching."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "When another algorithm may be better",
+          "anchor_id": "ux-section-81",
+          "alias": "levenshtein automata",
+          "excerpt": "Situation Direction to consider Small maximum distance k Ukkonen-style bounded computation Pattern fits in one or several machine words Myers bit-vector algorithm Approximate text matching with small k Landau–Vishkin-style algorithms Dictionary / trie searching Levenshtein automata Large static candidate collection Indexing and filtering Theoretical improvement under specific assumptions Masek–Paterson algorithm"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-102",
+          "alias": "levenshtein automata",
+          "excerpt": "Levenshtein Automata — finite-state representations of bounded edit neighborhoods."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-implementations",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-102",
+          "alias": "levenshtein implementations",
+          "excerpt": "Levenshtein Implementations — implementation strategies across programming environments."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-performance-engineering",
+      "evidence": [
+        {
+          "section": "Performance engineering",
+          "anchor_id": "ux-section-79",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "See Levenshtein Performance Engineering for implementation-level optimization."
+        }
+      ]
+    },
+    {
+      "target": "/masek-paterson-algorithm",
+      "evidence": [
+        {
+          "section": "When another algorithm may be better",
+          "anchor_id": "ux-section-81",
+          "alias": "masek paterson algorithm",
+          "excerpt": "Situation Direction to consider Small maximum distance k Ukkonen-style bounded computation Pattern fits in one or several machine words Myers bit-vector algorithm Approximate text matching with small k Landau–Vishkin-style algorithms Dictionary / trie searching Levenshtein automata Large static candidate collection Indexing and filtering Theoretical improvement under specific assumptions Masek–Paterson algorithm"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-102",
+          "alias": "masek paterson algorithm",
+          "excerpt": "Masek–Paterson Algorithm — an important theoretical improvement for edit-distance-style computation."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "When another algorithm may be better",
+          "anchor_id": "ux-section-81",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Situation Direction to consider Small maximum distance k Ukkonen-style bounded computation Pattern fits in one or several machine words Myers bit-vector algorithm Approximate text matching with small k Landau–Vishkin-style algorithms Dictionary / trie searching Levenshtein automata Large static candidate collection Indexing and filtering Theoretical improvement under specific assumptions Masek–Paterson algorithm"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-102",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm — bit-parallel dynamic programming for approximate matching."
+        }
+      ]
+    },
+    {
+      "target": "/sequence-alignment-and-gap-models",
+      "evidence": [
+        {
+          "section": "Biological sequence comparison",
+          "anchor_id": "ux-section-56",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "See Sequence Alignment and Gap Models ."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Banded computation",
+          "anchor_id": "ux-section-50",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Threshold-aware and distance-sensitive techniques are developed further in Ukkonen Algorithm ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-102",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm — exploiting small edit distance or bounded thresholds."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Canonical-equivalence example",
+          "anchor_id": "ux-section-53",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted Wagner–Fischer",
+          "anchor_id": "ux-section-40",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/word-error-rate-and-asr-evaluation",
+      "evidence": [
+        {
+          "section": "Word Error Rate as an example",
+          "anchor_id": "ux-section-55",
+          "alias": "word error rate and asr evaluation",
+          "excerpt": "See Word Error Rate and ASR Evaluation ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/wagner-fischer-algorithm#page",
+      "type": "WebPage",
+      "name": "Wagner–Fischer Algorithm",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "type": "TechArticle",
+      "name": "Wagner–Fischer Algorithm",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm",
+      "type": "DefinedTerm",
+      "name": "Wagner–Fischer Algorithm",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/wagner-fischer-algorithm#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "hasPart",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#page",
+      "mainEntity",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#page",
+      "isPartOf",
+      "https://www.levenshtein.net/algorithms#collection"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#page",
+      "hasPart",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-operations#term"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "isPartOf",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/321796.321811"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "citation",
+      "https://www.mathnet.ru/eng/dan31411"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/360825.360861"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "citation",
+      "https://doi.org/10.1016/S0019-9958(85)80046-2"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/316542.316550"
+    ],
+    [
+      "https://www.levenshtein.net/wagner-fischer-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ],
+    [
+      "https://doi.org/10.1145/321796.321811",
+      "about",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://www.mathnet.ru/eng/dan31411",
+      "anchor": "Math-Net.Ru record"
+    },
+    {
+      "url": "https://doi.org/10.1145/360825.360861",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/S0019-9958(85)80046-2",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/316542.316550",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    }
+  ]
+}

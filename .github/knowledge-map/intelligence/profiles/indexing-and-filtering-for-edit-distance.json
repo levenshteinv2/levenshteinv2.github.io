@@ -1,0 +1,1295 @@
+{
+  "url": "/indexing-and-filtering-for-edit-distance",
+  "title": "Indexing and Filtering for Edit Distance: Exact Similarity Search at Scale",
+  "h1": [
+    "Indexing and Filtering for Edit Distance: Exact Similarity Search at Scale"
+  ],
+  "group": "Implementations",
+  "provisional_mission": "Chỉ mục và lọc ứng viên",
+  "content_sha256": "dbedd2324e9a15ca55f2be90b5ec3142bee68e5a6ec801f38c9a651ff8388723",
+  "canonical": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance",
+  "primary_entity_candidate": "Indexing and Filtering for Edit Distance: Exact Similarity Search at Scale",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Indexing and Filtering for Edit Distance: Exact Similarity Search at Scale",
+      "level": 2,
+      "id": "",
+      "paragraph_count": 7,
+      "word_count": 134,
+      "evidence": "Computing Levenshtein distance between two strings is only one part of large-scale approximate string search.",
+      "paragraphs": [
+        "Computing Levenshtein distance between two strings is only one part of large-scale approximate string search.",
+        "When a collection contains millions of terms, records, names, or sequence candidates, the dominant problem is often not how to make one edit-distance calculation slightly faster.",
+        "The larger problem is deciding:",
+        "Which candidates are worth comparing at all?",
+        "large collection ↓ candidate generation ↓ safe filters ↓ small candidate set ↓ bounded edit-distance verification ↓ true matches",
+        "Indexing and filtering methods reduce the number of expensive exact comparisons by exploiting necessary conditions implied by an edit-distance threshold.",
+        "When the goal is an exact result set, candidate generation and filtering must preserve every true match. An approximate candidate generator can also be useful, but once it is allowed to drop true matches, the overall retrieval process is no longer exact."
+      ]
+    },
+    {
+      "heading": "The Search Problem",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 6,
+      "word_count": 62,
+      "evidence": "Given a query q , collection S , and threshold τ , exact edit-distance search asks for:",
+      "paragraphs": [
+        "Given a query q , collection S , and threshold τ , exact edit-distance search asks for:",
+        "{ s ∈ S : ED(q,s) ≤ τ }",
+        "A brute-force system evaluates:",
+        "ED(q, s₁) ED(q, s₂) ED(q, s₃) ... ED(q, sN)",
+        "Even an extremely fast pairwise implementation can become expensive when N is very large.",
+        "Scalable search therefore separates candidate generation from exact verification."
+      ]
+    },
+    {
+      "heading": "Index",
+      "level": 3,
+      "id": "ux-section-4",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "An index organizes the collection so potentially relevant objects can be located without scanning every stored string.",
+      "paragraphs": [
+        "An index organizes the collection so potentially relevant objects can be located without scanning every stored string.",
+        "Examples include:",
+        "length buckets,",
+        "q-gram inverted indexes,",
+        "partition indexes,",
+        "tries,",
+        "deletion-neighborhood indexes,",
+        "metric-space structures."
+      ]
+    },
+    {
+      "heading": "Candidate Generator",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 3,
+      "word_count": 34,
+      "evidence": "A candidate generator produces a subset of the collection that will receive more expensive processing.",
+      "paragraphs": [
+        "A candidate generator produces a subset of the collection that will receive more expensive processing.",
+        "collection S ↓ candidate generator ↓ C(q,τ)",
+        "For an exact architecture, the candidate generator must preserve every true result."
+      ]
+    },
+    {
+      "heading": "Filter",
+      "level": 3,
+      "id": "ux-section-6",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "A filter applies a cheap necessary condition.",
+      "paragraphs": [
+        "A filter applies a cheap necessary condition.",
+        "If LB(x,y) is a valid lower bound:",
+        "LB(x,y) ≤ ED(x,y)",
+        "then:",
+        "LB(x,y) > τ ↓ ED(x,y) > τ ↓ safe rejection"
+      ]
+    },
+    {
+      "heading": "Verifier",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "A verifier evaluates the actual edit-distance condition for candidates that survive the earlier stages.",
+      "paragraphs": [
+        "A verifier evaluates the actual edit-distance condition for candidates that survive the earlier stages.",
+        "Appropriate exact verifiers can include:",
+        "Wagner–Fischer ,",
+        "Ukkonen ,",
+        "Myers Bit-Vector ,",
+        "Landau–Vishkin ."
+      ]
+    },
+    {
+      "heading": "Exact Filtering Means No False Negatives",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 12,
+      "word_count": 78,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "R(q,τ)",
+        "be the true result set and:",
+        "C(q,τ)",
+        "the candidate set.",
+        "For an exact search architecture:",
+        "R(q,τ) ⊆ C(q,τ)",
+        "Candidate generation may return extra strings. Those false positives can be removed by exact verification.",
+        "It must not remove a true result.",
+        "Candidate-stage outcome Compatible with exact search? True match retained Yes Nonmatch retained Yes — verifier can reject it Nonmatch rejected Yes True match rejected No",
+        "The objective is therefore:",
+        "maximum safe pruning for minimum filtering cost"
+      ]
+    },
+    {
+      "heading": "The First Filter: String Length",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 6,
+      "word_count": 47,
+      "evidence": "For standard unit-cost Levenshtein distance:",
+      "paragraphs": [
+        "For standard unit-cost Levenshtein distance:",
+        "ED(x,y) ≥ ||x| - |y||",
+        "because every insertion or deletion changes sequence length by one, while a substitution does not change length.",
+        "Therefore:",
+        "if ||x| - |y|| > τ: reject candidate",
+        "This is an exact lower bound under ordinary unit-cost Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Length Buckets",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 6,
+      "word_count": 63,
+      "evidence": "The same lower bound can become an index.",
+      "paragraphs": [
+        "The same lower bound can become an index.",
+        "length 4 → strings of length 4 length 5 → strings of length 5 length 6 → strings of length 6 ...",
+        "For a query of length m and threshold τ , only buckets in:",
+        "m - τ through m + τ",
+        "need to be considered.",
+        "This reduces the candidate universe before content-based filtering begins."
+      ]
+    },
+    {
+      "heading": "q-Grams",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 6,
+      "word_count": 53,
+      "evidence": "A q-gram is a contiguous substring of length q .",
+      "paragraphs": [
+        "A q-gram is a contiguous substring of length q .",
+        "For:",
+        "levenshtein",
+        "with q = 3 , the contiguous trigrams are:",
+        "lev eve ven ens nsh sht hte tei ein",
+        "One local edit can alter only a bounded number of q-gram occurrences. This creates a useful relationship between q-gram-profile distance and edit distance."
+      ]
+    },
+    {
+      "heading": "q-Gram Profiles",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 16,
+      "word_count": 117,
+      "evidence": "For the classical q-gram lemma used below, q-grams are represented by their occurrence counts, not merely by set membership.",
+      "paragraphs": [
+        "For the classical q-gram lemma used below, q-grams are represented by their occurrence counts, not merely by set membership.",
+        "Define:",
+        "Pq(s)[g]",
+        "as the number of occurrences of q-gram g in string s .",
+        "The q-gram profile distance is the L1 / Manhattan distance:",
+        "Dq(x,y) = Σg |Pq(x)[g] - Pq(y)[g]|",
+        "For ordinary contiguous q-gram profiles and unit-cost Levenshtein distance:",
+        "Dq(x,y) ≤ 2q · ED(x,y)",
+        "Equivalently:",
+        "ED(x,y) ≥ Dq(x,y) / (2q)",
+        "Therefore, if:",
+        "Dq(x,y) > 2qτ",
+        "then necessarily:",
+        "ED(x,y) > τ",
+        "and the candidate can be rejected safely.",
+        "This theorem depends on the q-gram representation and distance just defined. A set-based q-gram score, a weighted q-gram score, a boundary-padded profile, or another feature construction requires its own corresponding bound."
+      ]
+    },
+    {
+      "heading": "Why the 2q Bound Appears",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 5,
+      "word_count": 56,
+      "evidence": "One insertion, deletion, or substitution can destroy only a bounded number of existing q-grams and create only a bounded number of new q-grams.",
+      "paragraphs": [
+        "One insertion, deletion, or substitution can destroy only a bounded number of existing q-grams and create only a bounded number of new q-grams.",
+        "Under the classical profile model, one unit edit can therefore change the L1 q-gram profile distance by at most:",
+        "2q",
+        "Applying the argument across an edit script gives:",
+        "Dq(x,y) ≤ 2q · ED(x,y)"
+      ]
+    },
+    {
+      "heading": "Repeated q-Grams Must Preserve Multiplicity",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 10,
+      "word_count": 48,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "s = \"aaaaa\" q = 2",
+        "The q-gram multiset is:",
+        "aa aa aa aa",
+        "Its profile records:",
+        "P2(s)[\"aa\"] = 4",
+        "Replacing that representation with the set:",
+        "{aa}",
+        "removes occurrence information.",
+        "A filtering theorem derived for q-gram profiles or multisets must be implemented with the same counting semantics."
+      ]
+    },
+    {
+      "heading": "q-Grams on Short Strings",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 13,
+      "word_count": 63,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "|s| < q",
+        "an unpadded contiguous q-gram profile contains no q-grams.",
+        "For two short strings, the profile distance can therefore be:",
+        "Dq(x,y) = 0",
+        "even when:",
+        "x ≠ y",
+        "This does not invalidate the lower-bound inequality. It means the filter has no useful discriminative power for that pair.",
+        "Short strings often require:",
+        "smaller q,",
+        "length-aware handling,",
+        "another filter,",
+        "or direct bounded verification."
+      ]
+    },
+    {
+      "heading": "q-Gram Distance Is a Filter, Not Edit Distance",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 5,
+      "word_count": 53,
+      "evidence": "Two different strings can have the same q-gram profile. Therefore:",
+      "paragraphs": [
+        "Two different strings can have the same q-gram profile. Therefore:",
+        "Dq(x,y) = 0 does not imply x = y",
+        "and:",
+        "small q-gram distance does not imply small exact edit distance without the relevant bound",
+        "The q-gram profile provides a cheap necessary condition, not a replacement for exact edit-distance verification in an exact-search pipeline."
+      ]
+    },
+    {
+      "heading": "q-Gram Inverted Indexes",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 5,
+      "word_count": 66,
+      "evidence": "Instead of scanning every stored string, an inverted index maps grams to strings containing those grams:",
+      "paragraphs": [
+        "Instead of scanning every stored string, an inverted index maps grams to strings containing those grams:",
+        "\"lev\" → string 17 string 104 string 932 \"ens\" → string 17 string 88 string 932",
+        "At query time:",
+        "query ↓ extract q-grams ↓ retrieve posting lists ↓ accumulate candidate evidence ↓ apply safe q-gram / length filters ↓ exact verification",
+        "The index converts local substring evidence into candidate generation."
+      ]
+    },
+    {
+      "heading": "Choosing q Is a Selectivity Trade-Off",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 4,
+      "word_count": 88,
+      "evidence": "Small q values preserve more features under local changes, but produce common grams and long posting lists.",
+      "paragraphs": [
+        "Small q values preserve more features under local changes, but produce common grams and long posting lists.",
+        "Large q values are more selective, but each edit affects more q-grams and short strings may contain very few or no q-grams.",
+        "Smaller q Larger q More features survive local edits Features are usually more selective Longer posting lists Shorter posting lists in many corpora More suitable for short strings Can become ineffective for short strings Higher accidental overlap Each edit can disrupt more q-grams",
+        "There is no universally optimal q."
+      ]
+    },
+    {
+      "heading": "Position-Aware Filtering",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 5,
+      "word_count": 69,
+      "evidence": "Plain q-gram overlap ignores where matching grams occur.",
+      "paragraphs": [
+        "Plain q-gram overlap ignores where matching grams occur.",
+        "If the permitted edit distance is small, insertions and deletions can shift positions only by a bounded amount along a low-cost alignment.",
+        "Position-aware filters therefore combine:",
+        "shared content + compatible position ↓ stronger pruning",
+        "The exact position rule depends on the filtering algorithm. A heuristic position window must not be presented as exact unless completeness has been proved for that window."
+      ]
+    },
+    {
+      "heading": "Prefix Filtering",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 5,
+      "word_count": 79,
+      "evidence": "Probing every feature posting list can itself become expensive.",
+      "paragraphs": [
+        "Probing every feature posting list can itself become expensive.",
+        "Prefix-based filtering methods impose a global feature order and inspect only a selected prefix of features while preserving a theorem that similar objects must share sufficient selected evidence.",
+        "A common strategy places rarer features earlier:",
+        "rare features ↓ short posting lists common features ↓ long posting lists",
+        "The prefix length and ordering rule are part of the filtering proof. Simply choosing several rare q-grams is not automatically an exact filter."
+      ]
+    },
+    {
+      "heading": "Partition-Based Filtering",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 11,
+      "word_count": 81,
+      "evidence": "A different family of exact filters follows from a pigeonhole-style argument.",
+      "paragraphs": [
+        "A different family of exact filters follows from a pigeonhole-style argument.",
+        "For threshold:",
+        "τ",
+        "partition one string into:",
+        "τ + 1",
+        "disjoint segments.",
+        "If:",
+        "ED(x,y) ≤ τ",
+        "then under the corresponding partition argument, at least one segment can be preserved as an exact substring match in a location compatible with an edit script of cost at most τ .",
+        "at most τ edits cannot destroy every one of τ+1 disjoint segments",
+        "This observation allows exact substrings to act as candidate signatures."
+      ]
+    },
+    {
+      "heading": "Partitioning Alone Is Not a Complete Search Algorithm",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 11,
+      "word_count": 69,
+      "evidence": "A naive implementation can still lose true matches.",
+      "paragraphs": [
+        "A naive implementation can still lose true matches.",
+        "For example, an insertion before an unchanged segment can shift that segment's position in the other string.",
+        "Therefore an exact partition algorithm must define:",
+        "which side is partitioned,",
+        "segment lengths,",
+        "which query substrings are probed,",
+        "allowed positional shifts,",
+        "length constraints,",
+        "candidate deduplication,",
+        "final verification.",
+        "Checking only the same segment position in both strings is not generally sufficient under insertion/deletion edit distance."
+      ]
+    },
+    {
+      "heading": "Partition Index Architecture",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 1,
+      "word_count": 34,
+      "evidence": "OFFLINE stored string ↓ partition into segments ↓ segment inverted index QUERY query ↓ select provably sufficient compatible substrings ↓ probe segment index ↓ candidate strings ↓ length / position filters ↓ exact verification",
+      "paragraphs": [
+        "OFFLINE stored string ↓ partition into segments ↓ segment inverted index QUERY query ↓ select provably sufficient compatible substrings ↓ probe segment index ↓ candidate strings ↓ length / position filters ↓ exact verification"
+      ]
+    },
+    {
+      "heading": "Pass-Join",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 7,
+      "word_count": 73,
+      "evidence": "Pass-Join is a partition-based method for edit-distance similarity joins.",
+      "paragraphs": [
+        "Pass-Join is a partition-based method for edit-distance similarity joins.",
+        "Its architecture can be summarized as:",
+        "partition strings ↓ index segments ↓ select query substrings ↓ probe segment indexes ↓ apply additional filters ↓ verify candidates exactly",
+        "Its important contribution is not merely the statement “split into τ+1 pieces.”",
+        "The algorithm uses carefully designed substring-selection, length, and position rules to preserve completeness while limiting index probes.",
+        "This distinction matters:",
+        "pigeonhole observation ≠ complete implementation"
+      ]
+    },
+    {
+      "heading": "Deletion-Neighborhood Indexing",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 7,
+      "word_count": 69,
+      "evidence": "Another exact-candidate strategy for small edit radii uses deletion neighborhoods.",
+      "paragraphs": [
+        "Another exact-candidate strategy for small edit radii uses deletion neighborhoods.",
+        "For example:",
+        "test fest",
+        "deleting the first symbol from each gives:",
+        "est est",
+        "A substitution can therefore be exposed through a shared deletion signature.",
+        "More generally, deletion-neighborhood methods such as FastSS exploit the fact that strings within a bounded edit distance can be made to share an appropriate deletion variant when the neighborhood is generated to the required radius."
+      ]
+    },
+    {
+      "heading": "Deletion-Neighborhood Completeness Has Conditions",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 9,
+      "word_count": 109,
+      "evidence": "The guarantee is not:",
+      "paragraphs": [
+        "The guarantee is not:",
+        "share any deletion substring → ED ≤ τ",
+        "Shared deletion signatures can create false positives.",
+        "The useful direction is:",
+        "ED(x,y) ≤ τ ↓ under the correctly constructed τ-deletion-neighborhood scheme x and y share a candidate signature",
+        "The candidate pair should then be verified against the actual edit-distance threshold.",
+        "A typical architecture is:",
+        "dictionary string ↓ generate deletion signatures up to configured radius ↓ signature index query ↓ generate compatible deletion signatures ↓ index lookup ↓ candidate words ↓ bounded edit-distance verification",
+        "Deletion-neighborhood indexing is especially attractive for short dictionary terms and small edit thresholds. Its index size grows rapidly as string length and radius increase."
+      ]
+    },
+    {
+      "heading": "Tries Share Work Across Prefixes",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 5,
+      "word_count": 59,
+      "evidence": "A dictionary trie stores common prefixes once.",
+      "paragraphs": [
+        "A dictionary trie stores common prefixes once.",
+        "c / \\ a o / \\ t w",
+        "Instead of comparing the query independently with every dictionary term, an edit-distance search can propagate dynamic-programming or automaton state while traversing shared prefixes.",
+        "Many candidate strings therefore reuse the same partial computation.",
+        "This is particularly useful for dictionary-style collections with strong prefix sharing."
+      ]
+    },
+    {
+      "heading": "Levenshtein Automata",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 7,
+      "word_count": 66,
+      "evidence": "For a fixed query and integer threshold, a Levenshtein automaton can represent the language:",
+      "paragraphs": [
+        "For a fixed query and integer threshold, a Levenshtein automaton can represent the language:",
+        "{ s : ED(query,s) ≤ τ }",
+        "under the edit model for which the automaton was constructed.",
+        "Conceptually:",
+        "query + threshold τ ↓ Levenshtein automaton",
+        "Intersecting that automaton with a trie or finite-state lexicon allows search to avoid dictionary paths that can no longer reach an accepting state.",
+        "See Levenshtein Automata ."
+      ]
+    },
+    {
+      "heading": "Metric Indexing",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 12,
+      "word_count": 83,
+      "evidence": "Standard unit-cost Levenshtein distance is a metric and therefore satisfies triangle inequality.",
+      "paragraphs": [
+        "Standard unit-cost Levenshtein distance is a metric and therefore satisfies triangle inequality.",
+        "Let:",
+        "q = query p = pivot x = candidate",
+        "Then the reverse triangle inequality gives:",
+        "|ED(q,p) - ED(x,p)| ≤ ED(q,x)",
+        "If the search radius is τ and:",
+        "|ED(q,p) - ED(x,p)| > τ",
+        "then:",
+        "ED(q,x) > τ",
+        "and the candidate can be excluded without computing its direct distance to the query.",
+        "BK-trees and other metric-space structures exploit this geometry.",
+        "See String Metrics for the metric properties that make this pruning valid."
+      ]
+    },
+    {
+      "heading": "Changing the Distance Function Can Break the Index Proof",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 9,
+      "word_count": 76,
+      "evidence": "An index or filter proved correct for standard Levenshtein distance should not automatically be reused with another similarity function.",
+      "paragraphs": [
+        "An index or filter proved correct for standard Levenshtein distance should not automatically be reused with another similarity function.",
+        "A weighted, normalized, restricted-transposition, or otherwise transformed distance may change:",
+        "symmetry,",
+        "triangle inequality,",
+        "the relevant length bound,",
+        "the q-gram bound,",
+        "the interpretation of one edit unit.",
+        "Some weighted or normalized distances can still be metrics. The point is that the property must be proved for the actual distance being indexed.",
+        "same API shape ≠ same pruning theorem"
+      ]
+    },
+    {
+      "heading": "Similarity Search",
+      "level": 3,
+      "id": "ux-section-32",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "one query q against collection S",
+      "paragraphs": [
+        "one query q against collection S",
+        "Find all:",
+        "s ∈ S such that ED(q,s) ≤ τ"
+      ]
+    },
+    {
+      "heading": "Similarity Join",
+      "level": 3,
+      "id": "ux-section-33",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Given collections R and S , find all pairs:",
+      "paragraphs": [
+        "Given collections R and S , find all pairs:",
+        "(r,s) such that ED(r,s) ≤ τ"
+      ]
+    },
+    {
+      "heading": "Self-Join",
+      "level": 3,
+      "id": "ux-section-34",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Find all qualifying distinct pairs from one collection.",
+      "paragraphs": [
+        "Find all qualifying distinct pairs from one collection.",
+        "A structure optimized for repeated single-query search is not necessarily optimal for an all-pairs similarity join."
+      ]
+    },
+    {
+      "heading": "From Candidate Generation to Application Matching",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 9,
+      "word_count": 157,
+      "evidence": "The index/filter/verifier architecture is not limited to dictionary lookup. It also appears inside larger matching systems.",
+      "paragraphs": [
+        "The index/filter/verifier architecture is not limited to dictionary lookup. It also appears inside larger matching systems.",
+        "In Entity Resolution and Record Linkage , the complete Cartesian product of two large record collections can be prohibitively large.",
+        "A system therefore usually performs candidate generation, blocking, or indexing before expensive pairwise comparison.",
+        "all records ↓ blocking / indexing ↓ candidate pairs ↓ string and field comparison ↓ classification / linkage decision",
+        "The candidate-generation stage and the final matching stage are different problems. A sophisticated similarity or classification model cannot recover a true pair that was removed incorrectly before comparison.",
+        "candidate recall places an upper bound on downstream match recall",
+        "The same separation appears in Fuzzy Search at Scale .",
+        "A large search system can use indexes, q-grams, automata, partition signatures, or other candidate signals to retrieve a manageable subset, then apply exact edit distance or richer ranking only downstream.",
+        "candidate retrieval ≠ exact verification ≠ ranking ≠ application decision"
+      ]
+    },
+    {
+      "heading": "Blocking in Entity Resolution Need Not Be Edit-Distance Exact",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 8,
+      "word_count": 82,
+      "evidence": "There is an important application-level distinction.",
+      "paragraphs": [
+        "There is an important application-level distinction.",
+        "An exact edit-distance search requires:",
+        "R(q,τ) ⊆ C(q,τ)",
+        "with respect to the stated edit-distance threshold.",
+        "Entity-resolution systems, however, may deliberately use approximate or heuristic blocking to trade candidate recall against computational cost.",
+        "That can be a valid engineering decision, but it changes the guarantee.",
+        "exact edit-distance filter → no false negatives relative to ED threshold heuristic blocking → may lose true entity matches",
+        "The two architectures should not be described as having the same completeness guarantee."
+      ]
+    },
+    {
+      "heading": "Exact Search and Approximate Matching Are Different Concepts",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 7,
+      "word_count": 75,
+      "evidence": "An approximate string-matching task can still use an exact search architecture.",
+      "paragraphs": [
+        "An approximate string-matching task can still use an exact search architecture.",
+        "For example:",
+        "find every candidate whose exact Levenshtein distance is ≤ 2",
+        "is an approximate textual matching task, but the returned result set can be complete and exact.",
+        "Approximation can instead occur at another layer, such as approximate nearest-neighbor retrieval, heuristic blocking, or learned candidate generation.",
+        "Once that stage can omit true threshold matches, the overall search is approximate.",
+        "See Approximate String Matching ."
+      ]
+    },
+    {
+      "heading": "Verification Should Exploit the Known Threshold",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 5,
+      "word_count": 48,
+      "evidence": "When the only required answer is:",
+      "paragraphs": [
+        "When the only required answer is:",
+        "ED(q,s) ≤ τ ?",
+        "there is usually no need to compute every state required by an unrestricted full-distance algorithm.",
+        "Banded, threshold-aware, bit-parallel, or other bounded methods can terminate or prune work using the known threshold.",
+        "See Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Threshold Verification and Exact Distance Retrieval Are Different",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 9,
+      "word_count": 43,
+      "evidence": "A boolean verifier answers:",
+      "paragraphs": [
+        "A boolean verifier answers:",
+        "ED(q,s) ≤ τ ?",
+        "A ranking stage may instead need:",
+        "the exact value ED(q,s)",
+        "or even:",
+        "an edit script",
+        "Therefore:",
+        "threshold verification ≠ full downstream scoring requirement",
+        "A system should compute only the information actually needed by later stages."
+      ]
+    },
+    {
+      "heading": "The Representation Contract Must Remain Consistent",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 14,
+      "word_count": 98,
+      "evidence": "Index construction, filtering, candidate generation, and exact verification must agree on what constitutes the sequence or use a separately proved relationship between their representations.",
+      "paragraphs": [
+        "Index construction, filtering, candidate generation, and exact verification must agree on what constitutes the sequence or use a separately proved relationship between their representations.",
+        "A system should not, for example:",
+        "build q-grams from raw UTF-8 bytes but verify distance over Unicode grapheme clusters",
+        "and then assume that a byte-level q-gram theorem still proves completeness for a grapheme-level distance.",
+        "The same issue applies to:",
+        "Unicode normalization,",
+        "case folding,",
+        "transliteration,",
+        "code-point versus code-unit representation,",
+        "grapheme segmentation,",
+        "tokenization.",
+        "The safe rule is:",
+        "filter representation + filter theorem + verification representation must form one proved contract",
+        "See Unicode & Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Preprocessing Is Part of the Indexed Comparison Space",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 7,
+      "word_count": 70,
+      "evidence": "Suppose an index is built after:",
+      "paragraphs": [
+        "Suppose an index is built after:",
+        "NFC normalization + case folding",
+        "but the query is filtered in raw form.",
+        "Even if both stages individually use valid algorithms, they are not operating on the same sequence space.",
+        "A reproducible system should define:",
+        "raw input ↓ preprocessing / normalization ↓ sequence representation ↓ index features ↓ candidate filtering ↓ exact distance",
+        "Changing the preprocessing policy can require rebuilding or reinterpreting the index."
+      ]
+    },
+    {
+      "heading": "A Practical Exact Search Pipeline",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 3,
+      "word_count": 52,
+      "evidence": "QUERY ↓ apply defined preprocessing and sequence representation ↓ length-range selection ↓ index lookup ↓ safe lower-bound filters ↓ position / structural filters ↓ candidate set ↓ bounded exact verification ↓ true threshold matches",
+      "paragraphs": [
+        "QUERY ↓ apply defined preprocessing and sequence representation ↓ length-range selection ↓ index lookup ↓ safe lower-bound filters ↓ position / structural filters ↓ candidate set ↓ bounded exact verification ↓ true threshold matches",
+        "A larger system may add:",
+        "true threshold matches ↓ exact distance / features ↓ application-specific ranking ↓ decision"
+      ]
+    },
+    {
+      "heading": "Choosing an Indexing Strategy",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 12,
+      "word_count": 91,
+      "evidence": "Workload Useful starting point Small collection Length filter + bounded verifier Medium-length strings at small τ q-gram filtering Similarity joins q-gram or partition-based methods Short dictionary terms Trie / Levenshtein automata Short terms and very small radius Deletion-neighborhood indexing can be attractive General metric objects Metric-tree approaches when metric assumptions hold Very large collection Multi-stage index + filter + bounded verification",
+      "paragraphs": [
+        "Workload Useful starting point Small collection Length filter + bounded verifier Medium-length strings at small τ q-gram filtering Similarity joins q-gram or partition-based methods Short dictionary terms Trie / Levenshtein automata Short terms and very small radius Deletion-neighborhood indexing can be attractive General metric objects Metric-tree approaches when metric assumptions hold Very large collection Multi-stage index + filter + bounded verification",
+        "There is no universal best index. Performance depends on:",
+        "string-length distribution,",
+        "alphabet size,",
+        "edit threshold,",
+        "feature frequency,",
+        "collection size,",
+        "query frequency,",
+        "memory budget,",
+        "update frequency,",
+        "preprocessing policy,",
+        "required recall guarantee."
+      ]
+    },
+    {
+      "heading": "Measure Candidate Reduction, Not Only Verification Speed",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 13,
+      "word_count": 73,
+      "evidence": "For indexed edit-distance search, useful performance measurements include:",
+      "paragraphs": [
+        "For indexed edit-distance search, useful performance measurements include:",
+        "index size,",
+        "index construction time,",
+        "posting lists or signatures examined,",
+        "candidate count after each stage,",
+        "candidate recall,",
+        "number of exact verifications,",
+        "query latency,",
+        "throughput,",
+        "memory use.",
+        "A faster verifier can have little effect if candidate generation still presents millions of irrelevant strings.",
+        "Conversely, a strong safe filter can produce major system-level gains even when the final verifier itself is unchanged.",
+        "See Levenshtein Performance Engineering ."
+      ]
+    },
+    {
+      "heading": "Using a Necessary Condition as a Final Similarity Decision",
+      "level": 3,
+      "id": "ux-section-46",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "passes q-gram filter ≠ ED ≤ τ",
+      "paragraphs": [
+        "passes q-gram filter ≠ ED ≤ τ",
+        "A necessary condition can retain false positives."
+      ]
+    },
+    {
+      "heading": "Using Set q-Grams with a Multiset Theorem",
+      "level": 3,
+      "id": "ux-section-47",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "If a bound is derived from q-gram occurrence counts, replacing those counts with binary set membership changes the mathematical object.",
+      "paragraphs": [
+        "If a bound is derived from q-gram occurrence counts, replacing those counts with binary set membership changes the mathematical object."
+      ]
+    },
+    {
+      "heading": "Using q Larger Than the Useful String Length",
+      "level": 3,
+      "id": "ux-section-48",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Strings shorter than q can have empty unpadded q-gram profiles, making the filter uninformative.",
+      "paragraphs": [
+        "Strings shorter than q can have empty unpadded q-gram profiles, making the filter uninformative."
+      ]
+    },
+    {
+      "heading": "Using Naive Partition Position Matching",
+      "level": 3,
+      "id": "ux-section-49",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Insertions and deletions can shift an unchanged segment. Exact partition algorithms must account for allowed positional displacement.",
+      "paragraphs": [
+        "Insertions and deletions can shift an unchanged segment. Exact partition algorithms must account for allowed positional displacement."
+      ]
+    },
+    {
+      "heading": "Assuming Shared Deletion Signature Means a True Match",
+      "level": 3,
+      "id": "ux-section-50",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Deletion signatures generate candidates. Exact distance verification is still needed unless the indexing method proves otherwise.",
+      "paragraphs": [
+        "Deletion signatures generate candidates. Exact distance verification is still needed unless the indexing method proves otherwise."
+      ]
+    },
+    {
+      "heading": "Reusing a Metric Index with a Nonmetric Score",
+      "level": 3,
+      "id": "ux-section-51",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "Triangle-inequality pruning is only valid when the actual indexed distance satisfies the required metric properties.",
+      "paragraphs": [
+        "Triangle-inequality pruning is only valid when the actual indexed distance satisfies the required metric properties."
+      ]
+    },
+    {
+      "heading": "Mixing Sequence Representations",
+      "level": 3,
+      "id": "ux-section-52",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "byte filter + grapheme verifier",
+      "paragraphs": [
+        "byte filter + grapheme verifier",
+        "does not automatically preserve a theorem proved entirely in one representation."
+      ]
+    },
+    {
+      "heading": "Assuming Exact Edit-Distance Candidate Recall Implies Entity-Resolution Recall",
+      "level": 3,
+      "id": "ux-section-53",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "Entity resolution can depend on aliases, semantic attributes, dates, addresses, identifiers, and other evidence that edit distance does not model.",
+      "paragraphs": [
+        "Entity resolution can depend on aliases, semantic attributes, dates, addresses, identifiers, and other evidence that edit distance does not model.",
+        "complete for ED ≤ τ ≠ complete for entity identity"
+      ]
+    },
+    {
+      "heading": "Key Guarantees and Boundaries",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 1,
+      "word_count": 73,
+      "evidence": "exact filter → no false negatives relative to stated threshold candidate generator → may retain false positives q-gram bound → depends on exact q-gram definition partition theorem → requires complete substring-selection logic deletion neighborhood → candidate mechanism, not automatic final proof metric index → depends on metric properties same spelling proximity ≠ same entity same index structure ≠ same proof under a different distance same mathematical filter ≠ same guarantee after representation changes",
+      "paragraphs": [
+        "exact filter → no false negatives relative to stated threshold candidate generator → may retain false positives q-gram bound → depends on exact q-gram definition partition theorem → requires complete substring-selection logic deletion neighborhood → candidate mechanism, not automatic final proof metric index → depends on metric properties same spelling proximity ≠ same entity same index structure ≠ same proof under a different distance same mathematical filter ≠ same guarantee after representation changes"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 13,
+      "word_count": 281,
+      "evidence": "Indexing and filtering transform edit-distance search from a brute-force pairwise-comparison problem into a candidate-selection and verification problem.",
+      "paragraphs": [
+        "Indexing and filtering transform edit-distance search from a brute-force pairwise-comparison problem into a candidate-selection and verification problem.",
+        "Length difference provides the cheapest lower bound. q-Gram profiles provide stronger evidence by exploiting the fact that one unit edit can modify only a bounded number of contiguous q-grams. For the classical q-gram profile, the L1 profile distance satisfies:",
+        "Dq(x,y) ≤ 2q · ED(x,y)",
+        "making:",
+        "Dq(x,y) > 2qτ",
+        "a safe rejection condition under the stated model. The profile definition, multiplicity semantics, sequence representation, and treatment of short strings all matter.",
+        "Partition filters use a different necessary condition: with at most τ edits, not all of τ+1 disjoint segments can be destroyed. Algorithms such as Pass-Join turn that observation into a complete candidate-generation system using careful substring-selection, length, and positional rules.",
+        "Deletion-neighborhood methods provide another way to move work offline for short strings and small thresholds. Shared deletion variants can expose insertion, deletion, and substitution relationships, but candidate pairs still require verification.",
+        "Tries share prefix computation, Levenshtein automata represent bounded edit neighborhoods, and metric indexes exploit triangle inequality. Each structure depends on assumptions about the exact distance function and sequence representation.",
+        "The same candidate-generation principle extends naturally to entity resolution and record linkage and large-scale fuzzy search , but their guarantees are not automatically identical. Exact edit-distance filters preserve all strings inside an edit threshold; entity-resolution blocking may intentionally trade recall against cost.",
+        "At scale, the key question is not merely how fast one Levenshtein calculation can be performed. It is:",
+        "Which comparisons can be provably avoided without losing the results the application promises to return?",
+        "The fastest exact edit-distance computation is often the one a valid filter proves the system never needs to perform."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 12,
+      "word_count": 39,
+      "evidence": "Levenshtein Algorithm & Distance",
+      "paragraphs": [
+        "Levenshtein Algorithm & Distance",
+        "Approximate String Matching",
+        "Fuzzy Search at Scale",
+        "Entity Resolution and Record Linkage",
+        "String Metrics",
+        "Ukkonen Algorithm",
+        "Myers Bit-Vector Algorithm",
+        "Landau–Vishkin Algorithm",
+        "Levenshtein Automata",
+        "Bounded and Parameterized Edit Distance",
+        "Levenshtein Performance Engineering",
+        "Unicode & Grapheme-Safe Levenshtein"
+      ]
+    },
+    {
+      "heading": "Technical References",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 9,
+      "word_count": 172,
+      "evidence": "Esko Ukkonen — Approximate String-Matching with q-Grams and Maximal Matches . DOI record .",
+      "paragraphs": [
+        "Esko Ukkonen — Approximate String-Matching with q-Grams and Maximal Matches . DOI record .",
+        "Gonzalo Navarro — A Guided Tour to Approximate String Matching . DOI record .",
+        "Klaus U. Schulz and Stoyan Mihov — Fast String Correction with Levenshtein Automata . DOI record .",
+        "Walter A. Burkhard and Robert M. Keller — Some Approaches to Best-Match File Searching . DOI record .",
+        "Chuan Xiao, Wei Wang, and Xuemin Lin — Ed-Join: An Efficient Algorithm for Similarity Joins with Edit Distance Constraints . DOI record .",
+        "Jiannan Wang, Guoliang Li, and Jianhua Feng — Trie-Join: Efficient Trie-Based String Similarity Joins with Edit-Distance Constraints . DOI record .",
+        "Guoliang Li, Dong Deng, Jiannan Wang, and Jianhua Feng — Pass-Join: A Partition-Based Method for Similarity Joins . DOI record .",
+        "Thomas Bocek, Ela Hunt, and Burkhard Stiller — Fast Similarity Search in Large Dictionaries , University of Zurich Technical Report ifi-2007.02, 2007.",
+        "Zhenjie Zhang et al. — Bed-Tree: An All-Purpose Index Structure for String Similarity Search Based on Edit Distance . DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Exact Search and Approximate Matching Are Different Concepts",
+          "anchor_id": "ux-section-37",
+          "alias": "approximate string matching",
+          "excerpt": "An approximate string-matching task can still use an exact search architecture."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "approximate string matching",
+          "excerpt": "Approximate String Matching"
+        },
+        {
+          "section": "Technical References",
+          "anchor_id": "ux-section-57",
+          "alias": "approximate string matching",
+          "excerpt": "Esko Ukkonen — Approximate String-Matching with q-Grams and Maximal Matches . DOI record ."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Verification Should Exploit the Known Threshold",
+          "anchor_id": "ux-section-38",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance"
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Indexing and Filtering for Edit Distance: Exact Similarity Search at Scale",
+          "anchor_id": "",
+          "alias": "edit distance",
+          "excerpt": "When a collection contains millions of terms, records, names, or sequence candidates, the dominant problem is often not how to make one edit-distance calculation slightly faster."
+        },
+        {
+          "section": "The Search Problem",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "Given a query q , collection S , and threshold τ , exact edit-distance search asks for:"
+        },
+        {
+          "section": "Verifier",
+          "anchor_id": "ux-section-7",
+          "alias": "edit distance",
+          "excerpt": "A verifier evaluates the actual edit-distance condition for candidates that survive the earlier stages."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "From Candidate Generation to Application Matching",
+          "anchor_id": "ux-section-35",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "In Entity Resolution and Record Linkage , the complete Cartesian product of two large record collections can be prohibitively large."
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-55",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "The same candidate-generation principle extends naturally to entity resolution and record linkage and large-scale fuzzy search , but their guarantees are not automatically identical. Exact edit-distance filters preserve all strings inside an edit threshold; entity-resolution blocking may intentionally trade recall against cost."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "Entity Resolution and Record Linkage"
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-at-scale",
+      "evidence": [
+        {
+          "section": "From Candidate Generation to Application Matching",
+          "anchor_id": "ux-section-35",
+          "alias": "fuzzy search at scale",
+          "excerpt": "The same separation appears in Fuzzy Search at Scale ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "fuzzy search at scale",
+          "excerpt": "Fuzzy Search at Scale"
+        }
+      ]
+    },
+    {
+      "target": "/landau-vishkin-algorithm",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "Landau–Vishkin Algorithm"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "Levenshtein Automata",
+          "anchor_id": "ux-section-28",
+          "alias": "levenshtein automata",
+          "excerpt": "See Levenshtein Automata ."
+        },
+        {
+          "section": "Choosing an Indexing Strategy",
+          "anchor_id": "ux-section-43",
+          "alias": "levenshtein automata",
+          "excerpt": "Workload Useful starting point Small collection Length filter + bounded verifier Medium-length strings at small τ q-gram filtering Similarity joins q-gram or partition-based methods Short dictionary terms Trie / Levenshtein automata Short terms and very small radius Deletion-neighborhood indexing can be attractive General metric objects Metric-tree approaches when metric assumptions hold Very large collection Multi-stage index + filter + bounded verification"
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-55",
+          "alias": "levenshtein automata",
+          "excerpt": "Tries share prefix computation, Levenshtein automata represent bounded edit neighborhoods, and metric indexes exploit triangle inequality. Each structure depends on assumptions about the exact distance function and sequence representation."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-performance-engineering",
+      "evidence": [
+        {
+          "section": "Measure Candidate Reduction, Not Only Verification Speed",
+          "anchor_id": "ux-section-44",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "See Levenshtein Performance Engineering ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "Levenshtein Performance Engineering"
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm"
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Metric Indexing",
+          "anchor_id": "ux-section-29",
+          "alias": "string metrics",
+          "excerpt": "See String Metrics for the metric properties that make this pruning valid."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "string metrics",
+          "excerpt": "String Metrics"
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "The Representation Contract Must Remain Consistent",
+          "anchor_id": "ux-section-40",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "See Unicode & Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-56",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "Unicode & Grapheme-Safe Levenshtein"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#webpage",
+      "type": "WebPage",
+      "name": "Indexing and Filtering for Edit Distance: Exact Similarity Search at Scale",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#edit-distance-indexing"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article",
+      "type": "Article",
+      "name": "Indexing and Filtering for Edit Distance: Exact Similarity Search at Scale",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#edit-distance-indexing"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#edit-distance-indexing",
+      "type": "DefinedTerm",
+      "name": "Edit-Distance Indexing and Filtering",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#q-gram-filtering",
+      "type": "DefinedTerm",
+      "name": "q-Gram Filtering",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#partition-filtering",
+      "type": "DefinedTerm",
+      "name": "Partition-Based Edit-Distance Filtering",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#metric-indexing",
+      "type": "DefinedTerm",
+      "name": "Metric Indexing",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#similarity-join",
+      "type": "DefinedTerm",
+      "name": "Edit-Distance Similarity Join",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#webpage",
+      "about",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#edit-distance-indexing"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#edit-distance-indexing"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#q-gram-filtering"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#partition-filtering"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#metric-indexing"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#similarity-join"
+    ],
+    [
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#article",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1016/0304-3975(92)90143-4",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1007/s10032-002-0082-8",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/362003.362025",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.14778/1453856.1453957",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.14778/1920841.1920992",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.14778/2078331.2078340",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/1807167.1807266",
+      "anchor": "DOI record"
+    }
+  ]
+}

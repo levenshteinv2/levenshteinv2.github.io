@@ -1,0 +1,1331 @@
+{
+  "url": "/unicode-and-grapheme-safe-levenshtein",
+  "title": "Unicode & Grapheme-Safe Levenshtein: Normalization, EGCs & Correct Text Distance",
+  "h1": [
+    "Unicode & Grapheme-Safe Levenshtein: Normalization, EGCs & Correct Text Distance"
+  ],
+  "group": "Implementations",
+  "provisional_mission": "Đơn vị Unicode và grapheme",
+  "content_sha256": "c1c245f10e82f170897c8b8360f2456ed42e990be98aee45b97a4c4858fdfffc",
+  "canonical": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein",
+  "primary_entity_candidate": "Unicode & Grapheme-Safe Levenshtein: Normalization, EGCs & Correct Text Distance",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Unicode & Grapheme-Safe Levenshtein: Normalization, EGCs & Correct Text Distance",
+      "level": 2,
+      "id": "",
+      "paragraph_count": 5,
+      "word_count": 141,
+      "evidence": "Levenshtein distance operates on sequences. The algorithm itself does not define what a “character” is, and that distinction becomes critical when text is represented with Unicode.",
+      "paragraphs": [
+        "Levenshtein distance operates on sequences. The algorithm itself does not define what a “character” is, and that distinction becomes critical when text is represented with Unicode.",
+        "For simple ASCII strings, treating each stored element as one edit-distance unit often produces the expected result. Unicode text is more complicated. One user-perceived character may involve multiple bytes, UTF-16 code units, Unicode code points, combining marks, emoji modifiers, zero-width joiners, or other components.",
+        "A Unicode-aware implementation must therefore define the sequence representation before running the Levenshtein algorithm.",
+        "raw text ↓ Unicode decoding / runtime string model ↓ normalization or transformation policy ↓ sequence segmentation ↓ Levenshtein distance",
+        "For many user-facing text operations, extended grapheme clusters provide a useful best-effort approximation of what a user perceives as individual characters. Other applications may deliberately compare Unicode scalar values, code points, UTF-16 code units, or bytes instead."
+      ]
+    },
+    {
+      "heading": "There Is No Single Unicode Levenshtein Distance",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 8,
+      "word_count": 89,
+      "evidence": "Unicode defines encoding, normalization, text segmentation, character properties, security mechanisms, and many other aspects of text processing.",
+      "paragraphs": [
+        "Unicode defines encoding, normalization, text segmentation, character properties, security mechanisms, and many other aspects of text processing.",
+        "It does not redefine Levenshtein distance as one universal Unicode-specific metric.",
+        "Instead, an application transforms text into a sequence:",
+        "T(text) = [token₁, token₂, ... tokenₙ]",
+        "Standard Levenshtein distance can then operate on those tokens:",
+        "dT(A,B) = ED( T(A), T(B) )",
+        "The choice of T determines what one insertion, deletion, or substitution means.",
+        "Two implementations can therefore use exactly the same Levenshtein recurrence while producing different distances because they compare different sequence units."
+      ]
+    },
+    {
+      "heading": "Representation Layers That Should Not Be Confused",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 2,
+      "word_count": 68,
+      "evidence": "Layer Example Meaning Bytes UTF-8 byte sequence Encoded storage / interchange units Code units UTF-16 units Units of a Unicode encoding form Code points U+0065 Integer positions in the Unicode codespace Unicode scalar values U+0065, U+1F600 Code points excluding surrogate code points Extended grapheme clusters e + ◌́ Best-effort text units approximating user-perceived characters",
+      "paragraphs": [
+        "Layer Example Meaning Bytes UTF-8 byte sequence Encoded storage / interchange units Code units UTF-16 units Units of a Unicode encoding form Code points U+0065 Integer positions in the Unicode codespace Unicode scalar values U+0065, U+1F600 Code points excluding surrogate code points Extended grapheme clusters e + ◌́ Best-effort text units approximating user-perceived characters",
+        "byte distance ≠ UTF-16 code-unit distance ≠ code-point / scalar-value distance ≠ grapheme-cluster distance"
+      ]
+    },
+    {
+      "heading": "Code Points and Unicode Scalar Values Are Not Identical Terms",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 7,
+      "word_count": 79,
+      "evidence": "A Unicode code point is any value in the Unicode codespace:",
+      "paragraphs": [
+        "A Unicode code point is any value in the Unicode codespace:",
+        "U+0000 through U+10FFFF",
+        "That range includes surrogate code points:",
+        "U+D800 through U+DFFF",
+        "Unicode scalar values exclude those surrogate code points.",
+        "Unicode scalar value = Unicode code point except surrogate code points",
+        "This distinction matters when discussing encodings. Well-formed UTF-8 and UTF-16 encode Unicode scalar values. An isolated surrogate is not a valid Unicode scalar value and does not have a well-formed standalone representation in a Unicode encoding form."
+      ]
+    },
+    {
+      "heading": "Bytes Are Not Unicode Characters",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 6,
+      "word_count": 67,
+      "evidence": "UTF-8 assigns each Unicode scalar value to a sequence of one to four bytes.",
+      "paragraphs": [
+        "UTF-8 assigns each Unicode scalar value to a sequence of one to four bytes.",
+        "ASCII-range scalar values use one byte, while many other values require multiple bytes.",
+        "Computing Levenshtein distance directly over UTF-8 bytes therefore answers:",
+        "How many byte-level edits separate these encoded byte sequences?",
+        "That may be appropriate for binary, encoding, or storage-oriented applications.",
+        "It should not automatically be interpreted as the number of textual-character edits."
+      ]
+    },
+    {
+      "heading": "UTF-16 Code Units Are Not Unicode Characters Either",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 9,
+      "word_count": 82,
+      "evidence": "For Unicode scalar values in the Basic Multilingual Plane, UTF-16 normally uses one 16-bit code unit.",
+      "paragraphs": [
+        "For Unicode scalar values in the Basic Multilingual Plane, UTF-16 normally uses one 16-bit code unit.",
+        "Supplementary scalar values:",
+        "U+10000 through U+10FFFF",
+        "are encoded as a surrogate pair:",
+        "high-surrogate code unit + low-surrogate code unit",
+        "Therefore:",
+        "one supplementary scalar value → two UTF-16 code units",
+        "A Levenshtein implementation that indexes UTF-16 strings directly by code unit can split one supplementary character into two edit positions.",
+        "This is especially important in JavaScript and Java, where basic string indexing APIs expose UTF-16 code units."
+      ]
+    },
+    {
+      "heading": "Code-Point / Scalar-Value Distance Is Better for Many Tasks",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 4,
+      "word_count": 49,
+      "evidence": "A properly decoded code-point or scalar-value sequence avoids treating UTF-8 continuation bytes or a valid UTF-16 surrogate pair as independent text units.",
+      "paragraphs": [
+        "A properly decoded code-point or scalar-value sequence avoids treating UTF-8 continuation bytes or a valid UTF-16 surrogate pair as independent text units.",
+        "ED_scalar(A,B) = ED( scalar_values(A), scalar_values(B) )",
+        "This is a well-defined and useful comparison model for many applications.",
+        "However, one user-perceived character can still contain several scalar values."
+      ]
+    },
+    {
+      "heading": "A Visible Character Can Contain Multiple Code Points",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "A familiar example is:",
+      "paragraphs": [
+        "A familiar example is:",
+        "é",
+        "It can be represented as:",
+        "U+00E9 LATIN SMALL LETTER E WITH ACUTE",
+        "or:",
+        "U+0065 LATIN SMALL LETTER E + U+0301 COMBINING ACUTE ACCENT",
+        "These sequences are canonically equivalent, but they contain different numbers of code points."
+      ]
+    },
+    {
+      "heading": "Normalization and Segmentation Solve Different Problems",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "Unicode-aware string comparison usually requires two separate decisions.",
+      "paragraphs": [
+        "Unicode-aware string comparison usually requires two separate decisions.",
+        "Normalization determines which Unicode representation differences the application treats as equivalent.",
+        "Segmentation determines where text-unit boundaries occur.",
+        "NORMALIZATION → representation equivalence SEGMENTATION → sequence boundaries",
+        "Neither mechanism replaces the other."
+      ]
+    },
+    {
+      "heading": "Grapheme Segmentation Does Not Require NFC First",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 7,
+      "word_count": 87,
+      "evidence": "A subtle but important distinction: Unicode default grapheme-cluster rules are designed so that canonical-equivalent text receives equivalent default boundaries.",
+      "paragraphs": [
+        "A subtle but important distinction: Unicode default grapheme-cluster rules are designed so that canonical-equivalent text receives equivalent default boundaries.",
+        "The Unicode segmentation specification is defined with canonical-equivalence behavior in mind, and its default rules can be applied directly to non-NFD text without requiring an application to normalize every string first.",
+        "Therefore:",
+        "normalize first",
+        "is not a universal requirement merely to obtain default grapheme boundaries.",
+        "Normalization becomes important when the application also wants canonically equivalent cluster contents to compare as the same tokens.",
+        "segmentation policy ≠ token-equality policy"
+      ]
+    },
+    {
+      "heading": "Unicode Normalization Forms",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 4,
+      "word_count": 71,
+      "evidence": "Form Operation Equivalence NFD Canonical decomposition Canonical NFC Canonical decomposition followed by canonical composition Canonical NFKD Compatibility decomposition Compatibility NFKC Compatibility decomposition followed by canonical composition Compatibility",
+      "paragraphs": [
+        "Form Operation Equivalence NFD Canonical decomposition Canonical NFC Canonical decomposition followed by canonical composition Canonical NFKD Compatibility decomposition Compatibility NFKC Compatibility decomposition followed by canonical composition Compatibility",
+        "NFC is often useful when an application wants canonically equivalent strings to converge toward a composed representation while preserving compatibility distinctions.",
+        "It remains an application comparison policy, not part of the mathematical definition of Levenshtein distance.",
+        "text ↓ NFC ↓ sequence units ↓ Levenshtein"
+      ]
+    },
+    {
+      "heading": "NFKC Must Be a Deliberate Policy",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 10,
+      "word_count": 66,
+      "evidence": "Compatibility normalization is broader than canonical normalization.",
+      "paragraphs": [
+        "Compatibility normalization is broader than canonical normalization.",
+        "It can deliberately collapse distinctions that Unicode treats as compatibility differences.",
+        "raw A ≠ raw B but NFKC(A) = NFKC(B) therefore ED( NFKC(A), NFKC(B) ) = 0",
+        "This can be useful for:",
+        "search,",
+        "identifier processing,",
+        "loose matching,",
+        "compatibility-oriented comparison.",
+        "It can also erase distinctions required by another application.",
+        "Compatibility normalization should therefore be part of an explicit comparison profile."
+      ]
+    },
+    {
+      "heading": "Identifier Comparison May Require NFKC Case Folding",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 11,
+      "word_count": 46,
+      "evidence": "Case-insensitive Unicode identifier comparison is more specialized than simply:",
+      "paragraphs": [
+        "Case-insensitive Unicode identifier comparison is more specialized than simply:",
+        "lowercase( NFKC(text) )",
+        "Unicode defines the operation:",
+        "NFKC_Casefold",
+        "for compatibility-normalized, caseless identifier processing.",
+        "Security-sensitive identifier systems can additionally require:",
+        "character repertoire restrictions,",
+        "script policies,",
+        "confusable detection,",
+        "mixed-script checks.",
+        "Normalization alone does not provide a complete identifier-security policy."
+      ]
+    },
+    {
+      "heading": "Application-Level Unicode Character Mappings",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 9,
+      "word_count": 70,
+      "evidence": "Applications can also intentionally replace ordinary characters with different Unicode characters to create presentation-like plain-text output.",
+      "paragraphs": [
+        "Applications can also intentionally replace ordinary characters with different Unicode characters to create presentation-like plain-text output.",
+        "For example:",
+        "Hello ↓ 𝐇𝐞𝐥𝐥𝐨",
+        "This differs from selecting another CSS font.",
+        "A CSS font normally changes rendering while preserving the same character sequence.",
+        "Hello ↓ CSS styling Hello",
+        "An application-level Unicode mapping changes the encoded sequence:",
+        "Hello ↓ Unicode character mapping 𝐇𝐞𝐥𝐥𝐨",
+        "From the perspective of Levenshtein distance, the sequence itself has changed."
+      ]
+    },
+    {
+      "heading": "Mathematical Alphanumeric Symbols Have a Specific Purpose",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 12,
+      "word_count": 80,
+      "evidence": "Many characters commonly reused by social-text tools, including:",
+      "paragraphs": [
+        "Many characters commonly reused by social-text tools, including:",
+        "𝐀 𝑨 𝒜 𝔄 𝔸 𝖠",
+        "belong to mathematical alphabets such as the Mathematical Alphanumeric Symbols block.",
+        "These characters were encoded primarily to preserve semantically meaningful distinctions in mathematical and technical notation.",
+        "They were not designed as a general substitute for styling ordinary prose.",
+        "Therefore:",
+        "Hello → 𝐇𝐞𝐥𝐥𝐨",
+        "should be described as:",
+        "application-level reuse of distinct Unicode characters",
+        "rather than:",
+        "ordinary font styling",
+        "See Unicode Text Transformations for the broader transformation model."
+      ]
+    },
+    {
+      "heading": "Compatibility Normalization Can Collapse Some Styled Mappings",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 9,
+      "word_count": 51,
+      "evidence": "Many Mathematical Alphanumeric Symbols have compatibility decompositions to ordinary base letters.",
+      "paragraphs": [
+        "Many Mathematical Alphanumeric Symbols have compatibility decompositions to ordinary base letters.",
+        "For example:",
+        "𝐀 ↓ NFKC A",
+        "Therefore:",
+        "raw Unicode distance",
+        "and:",
+        "distance after NFKC",
+        "can measure substantially different relationships.",
+        "This collapse may be useful for loose search and undesirable in mathematical notation, where the encoded distinction can be semantically important."
+      ]
+    },
+    {
+      "heading": "Normalization Changes the Comparison Domain",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "Let N(x) represent a normalization or preprocessing transformation.",
+      "paragraphs": [
+        "Let N(x) represent a normalization or preprocessing transformation.",
+        "dN(x,y) = ED( N(x), N(y) )",
+        "If:",
+        "x ≠ y",
+        "but:",
+        "N(x) = N(y)",
+        "then:",
+        "dN(x,y) = 0",
+        "This is not necessarily an error. It means that preprocessing has defined those raw differences as irrelevant inside the transformed comparison space."
+      ]
+    },
+    {
+      "heading": "Extended Grapheme Clusters",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 12,
+      "word_count": 88,
+      "evidence": "A user-facing application may wish to compare text using units closer to user-perceived characters.",
+      "paragraphs": [
+        "A user-facing application may wish to compare text using units closer to user-perceived characters.",
+        "Unicode text segmentation defines grapheme-cluster boundaries for this purpose.",
+        "Extended grapheme clusters are a best-effort, programmable approximation of user-perceived characters across human writing systems.",
+        "A grapheme cluster can contain:",
+        "a base character plus combining marks,",
+        "an emoji plus modifiers,",
+        "emoji connected by zero-width joiners,",
+        "regional-indicator pairs used for flags,",
+        "Hangul components,",
+        "certain script-specific conjunct sequences,",
+        "other sequences covered by Unicode grapheme rules.",
+        "One user-perceived text unit therefore does not necessarily equal one code point."
+      ]
+    },
+    {
+      "heading": "Extended Grapheme Clusters Are an Approximation",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 10,
+      "word_count": 51,
+      "evidence": "The phrase:",
+      "paragraphs": [
+        "The phrase:",
+        "grapheme cluster = character the user sees",
+        "is useful shorthand, but it is not universally exact.",
+        "User expectations can depend on:",
+        "language,",
+        "script,",
+        "context,",
+        "editing behavior,",
+        "application-specific segmentation.",
+        "Unicode default extended grapheme clusters are designed to provide a broadly useful common segmentation model, but some environments may require tailoring."
+      ]
+    },
+    {
+      "heading": "Grapheme Clusters Are Not Glyphs",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 8,
+      "word_count": 58,
+      "evidence": "A grapheme cluster is a text-segmentation unit.",
+      "paragraphs": [
+        "A grapheme cluster is a text-segmentation unit.",
+        "A glyph is a visual shape produced by:",
+        "a font,",
+        "a shaping engine,",
+        "a rendering system.",
+        "grapheme cluster ≠ glyph",
+        "One glyph can represent multiple text elements through a ligature, while one grapheme cluster can render using several visual components.",
+        "Grapheme-safe Levenshtein therefore remains a sequence metric, not a visual-rendering metric."
+      ]
+    },
+    {
+      "heading": "The Grapheme-Oriented Levenshtein Model",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 11,
+      "word_count": 67,
+      "evidence": "Let N(x) be a selected normalization policy and let G(x) return extended grapheme clusters.",
+      "paragraphs": [
+        "Let N(x) be a selected normalization policy and let G(x) return extended grapheme clusters.",
+        "G(x) = [g₁,g₂,...,gₙ]",
+        "A grapheme-oriented distance can be defined as:",
+        "dG(A,B) = ED( G(N(A)), G(N(B)) )",
+        "For example, an application can deliberately choose:",
+        "N = NFC",
+        "and compute:",
+        "ED( EGC(NFC(A)), EGC(NFC(B)) )",
+        "This defines one specific comparison model:",
+        "canonical-equivalence-aware + extended-grapheme-tokenized + unit-cost Levenshtein",
+        "It is not the only possible Unicode-aware Levenshtein model."
+      ]
+    },
+    {
+      "heading": "Why Normalize Before Token Equality?",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "Default Unicode grapheme segmentation does not itself require NFC preprocessing.",
+      "paragraphs": [
+        "Default Unicode grapheme segmentation does not itself require NFC preprocessing.",
+        "However, if the application wants canonically equivalent cluster contents to compare equal as tokens, normalization can simplify:",
+        "token equality,",
+        "hashing,",
+        "caching,",
+        "dictionary lookup,",
+        "edit-script interpretation.",
+        "input ↓ canonical normalization ↓ grapheme segmentation ↓ token equality ↓ Levenshtein",
+        "is therefore a useful application pipeline when canonical equivalence should produce zero distance."
+      ]
+    },
+    {
+      "heading": "Worked Example: Precomposed and Decomposed Text",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 8,
+      "word_count": 49,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "A = \"café\" B = \"cafe◌́\"",
+        "The final user-perceived character is represented using different code-point sequences.",
+        "With NFC comparison policy:",
+        "NFC(A) = NFC(B)",
+        "therefore:",
+        "ED( NFC(A), NFC(B) ) = 0",
+        "The zero distance is correct for that comparison space because the application chose to ignore canonical representation differences."
+      ]
+    },
+    {
+      "heading": "Worked Example: Combining-Mark Edit",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 8,
+      "word_count": 44,
+      "evidence": "A = \"a\" B = \"a◌́\"",
+      "paragraphs": [
+        "A = \"a\" B = \"a◌́\"",
+        "At the code-point level:",
+        "a → a + combining acute",
+        "can be represented as one insertion.",
+        "At the extended-grapheme-cluster level:",
+        "[a] → [a◌́]",
+        "is one substitution.",
+        "The numerical distance can therefore be identical while the edit-script semantics differ."
+      ]
+    },
+    {
+      "heading": "Neither Code-Point nor Grapheme Distance Is Universally Correct",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 10,
+      "word_count": 61,
+      "evidence": "The appropriate representation depends on the question being asked.",
+      "paragraphs": [
+        "The appropriate representation depends on the question being asked.",
+        "If an application asks:",
+        "How many Unicode code points differ?",
+        "code-point distance may be appropriate.",
+        "If it asks:",
+        "How many user-facing text units differ?",
+        "extended grapheme clusters may be a stronger starting model.",
+        "If it asks:",
+        "How visually similar do these strings look?",
+        "ordinary Levenshtein distance over either representation is not sufficient."
+      ]
+    },
+    {
+      "heading": "Grapheme-Safe Levenshtein Is Not Visual Similarity",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "Different Unicode characters can look very similar while remaining distinct sequence elements.",
+      "paragraphs": [
+        "Different Unicode characters can look very similar while remaining distinct sequence elements.",
+        "Latin, Greek, Cyrillic, mathematical, and other characters can produce similar glyphs in some fonts while retaining different encoded values.",
+        "sequence similarity ≠ visual similarity",
+        "Standard Levenshtein distance has no intrinsic knowledge of:",
+        "glyph shape,",
+        "font design,",
+        "visual confusability,",
+        "rendered appearance."
+      ]
+    },
+    {
+      "heading": "Unicode Normalization Does Not Solve Confusable Characters",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 5,
+      "word_count": 40,
+      "evidence": "Normalization handles defined canonical and compatibility relationships.",
+      "paragraphs": [
+        "Normalization handles defined canonical and compatibility relationships.",
+        "It is not a general visual-confusable detector.",
+        "Similar-looking characters from unrelated scripts can remain distinct after normalization.",
+        "Security-sensitive applications therefore require additional identifier and confusable policies.",
+        "See Unicode Homoglyph and Confusable Attacks ."
+      ]
+    },
+    {
+      "heading": "Visual Similarity and Sequence Identity Are Different",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 11,
+      "word_count": 57,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "Hello 𝐇𝐞𝐥𝐥𝐨 𝑯𝒆𝒍𝒍𝒐",
+        "A human reader may recognize similar visible wording.",
+        "A raw string-comparison algorithm, however, operates on the encoded sequences supplied to it.",
+        "Visual resemblance therefore does not imply:",
+        "Unicode identity",
+        "or necessarily:",
+        "small raw Levenshtein distance",
+        "This distinction separates:",
+        "Unicode transformation Unicode normalization Unicode security visual rendering edit distance",
+        "into related but different layers."
+      ]
+    },
+    {
+      "heading": "Case Handling Is Another Transformation Policy",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "Case-insensitive comparison should also be defined explicitly.",
+      "paragraphs": [
+        "Case-insensitive comparison should also be defined explicitly.",
+        "For general text:",
+        "case folding",
+        "is different from display-oriented lowercasing or uppercasing.",
+        "For Unicode identifiers:",
+        "NFKC_Casefold",
+        "can be the appropriate defined operation when compatibility-normalized caseless identifier comparison is intended.",
+        "The exact policy should be determined by the application and identifier specification."
+      ]
+    },
+    {
+      "heading": "JavaScript String Storage Model",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "JavaScript String values are sequences of UTF-16 code units.",
+      "paragraphs": [
+        "JavaScript String values are sequences of UTF-16 code units.",
+        "Therefore:",
+        "text.length",
+        "reports the number of UTF-16 code units, not:",
+        "UTF-8 bytes,",
+        "Unicode scalar values,",
+        "extended grapheme clusters.",
+        "A supplementary Unicode character normally occupies two JavaScript string positions."
+      ]
+    },
+    {
+      "heading": "JavaScript Can Also Contain Unpaired Surrogates",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 5,
+      "word_count": 59,
+      "evidence": "ECMAScript String values are not required to contain only well-formed UTF-16.",
+      "paragraphs": [
+        "ECMAScript String values are not required to contain only well-formed UTF-16.",
+        "A JavaScript string can contain an isolated surrogate code unit.",
+        "Therefore a production Unicode comparison pipeline should decide how malformed or unpaired-surrogate data is handled.",
+        "runtime String ↓ well-formedness / decoding policy ↓ Unicode processing",
+        "For ordinary valid text, the application should preferably operate on well-formed Unicode data."
+      ]
+    },
+    {
+      "heading": "JavaScript Spread Syntax Is Not Grapheme Segmentation",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 10,
+      "word_count": 66,
+      "evidence": "JavaScript spread syntax:",
+      "paragraphs": [
+        "JavaScript spread syntax:",
+        "[...text]",
+        "uses the String iterator.",
+        "For well-formed UTF-16 text, a valid surrogate pair is iterated as one code-point sequence element rather than as two independent surrogate halves.",
+        "However, spread syntax can still split:",
+        "base letters from combining marks,",
+        "emoji from modifiers,",
+        "components of ZWJ sequences,",
+        "other multi-code-point grapheme clusters.",
+        "It is therefore useful for a code-point-oriented model, but not for extended grapheme-cluster segmentation."
+      ]
+    },
+    {
+      "heading": "JavaScript Grapheme Implementation",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 11,
+      "word_count": 79,
+      "evidence": "Modern JavaScript provides Unicode normalization through:",
+      "paragraphs": [
+        "Modern JavaScript provides Unicode normalization through:",
+        "String.prototype.normalize()",
+        "and grapheme segmentation through:",
+        "Intl.Segmenter",
+        "in environments that support it.",
+        "function graphemes(text) { const normalized = text.normalize(\"NFC\"); const segmenter = new Intl.Segmenter( undefined, { granularity: \"grapheme\" } ); return Array.from( segmenter.segment(normalized), item => item.segment ); }",
+        "A normal Levenshtein implementation can then compare:",
+        "const a = graphemes(sourceA); const b = graphemes(sourceB); const distance = levenshtein(a,b);",
+        "The Levenshtein recurrence itself does not become Unicode-specific.",
+        "The important change is:",
+        "what counts as one token"
+      ]
+    },
+    {
+      "heading": "Intl.Segmenter Provides a Segmentation Policy, Not Visual Understanding",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 7,
+      "word_count": 40,
+      "evidence": "Grapheme segmentation returns text boundaries.",
+      "paragraphs": [
+        "Grapheme segmentation returns text boundaries.",
+        "It does not tell the application:",
+        "whether two graphemes look alike,",
+        "whether they have the same meaning,",
+        "whether they represent the same entity,",
+        "whether one is a spoof of the other.",
+        "Those are different problems."
+      ]
+    },
+    {
+      "heading": "Unicode Transformations in Application Pipelines",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 8,
+      "word_count": 82,
+      "evidence": "Applications can intentionally transform input before comparison.",
+      "paragraphs": [
+        "Applications can intentionally transform input before comparison.",
+        "source text ↓ Unicode transformation ↓ transformed text ↓ consistent sequence segmentation ↓ Levenshtein comparison",
+        "Both source and transformed result must be interpreted under an explicitly defined sequence model.",
+        "For example:",
+        "sourceTokens = S(source) resultTokens = S(result) distance = ED( sourceTokens, resultTokens )",
+        "This keeps two operations separate:",
+        "Unicode transformation → changes or maps the sequence Levenshtein distance → measures edits between defined sequences",
+        "The broader transformation model is described in Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "Python Implementation Considerations",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 7,
+      "word_count": 55,
+      "evidence": "Python provides Unicode normalization through:",
+      "paragraphs": [
+        "Python provides Unicode normalization through:",
+        "unicodedata.normalize()",
+        "For example:",
+        "import unicodedata normalized = unicodedata.normalize( \"NFC\", text )",
+        "Iterating over a Python str normally exposes Unicode code points as string elements, which can support a code-point-oriented Levenshtein model.",
+        "It does not automatically perform extended grapheme-cluster segmentation.",
+        "A grapheme-oriented implementation requires a segmentation implementation following Unicode text-segmentation rules."
+      ]
+    },
+    {
+      "heading": "Programming Languages Expose Different Default String Models",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 3,
+      "word_count": 75,
+      "evidence": "Environment Important default behavior JavaScript String indexing / length are UTF-16 code-unit based Java String indexing is fundamentally UTF-16 code-unit based Python str iteration is code-point oriented Rust char represents a Unicode scalar value; UTF-8 strings require explicit iteration choices Go Strings are bytes; range/Unicode APIs can decode UTF-8 into runes",
+      "paragraphs": [
+        "Environment Important default behavior JavaScript String indexing / length are UTF-16 code-unit based Java String indexing is fundamentally UTF-16 code-unit based Python str iteration is code-point oriented Rust char represents a Unicode scalar value; UTF-8 strings require explicit iteration choices Go Strings are bytes; range/Unicode APIs can decode UTF-8 into runes",
+        "These implementation differences belong to the sequence contract, not to different definitions of the Levenshtein recurrence.",
+        "See Levenshtein Implementations: Correctness, Memory & Performance ."
+      ]
+    },
+    {
+      "heading": "Use Maintained Unicode Implementations",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "Unicode normalization and text segmentation contain many rules and versioned data tables.",
+      "paragraphs": [
+        "Unicode normalization and text segmentation contain many rules and versioned data tables.",
+        "For production systems, a maintained Unicode implementation is generally safer than recreating:",
+        "normalization,",
+        "grapheme boundaries,",
+        "case folding,",
+        "character properties,",
+        "identifier processing",
+        "from ad-hoc rules."
+      ]
+    },
+    {
+      "heading": "Normalization and Reverse Mapping",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 8,
+      "word_count": 81,
+      "evidence": "Normalization can:",
+      "paragraphs": [
+        "Normalization can:",
+        "compose characters,",
+        "decompose characters,",
+        "reorder combining marks.",
+        "Positions in normalized text therefore do not always map directly to byte, code-unit, or code-point positions in the original input.",
+        "Applications that must display edit operations against original text should preserve enough provenance to recover that relationship.",
+        "raw input ↓ preprocessing with provenance ↓ comparison tokens ↓ Levenshtein alignment ↓ token-level edits ↓ map edits back to original text",
+        "Applications that need only a numerical distance may not require this additional mapping."
+      ]
+    },
+    {
+      "heading": "Unicode Version Is Part of a Reproducible Processing Profile",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 11,
+      "word_count": 66,
+      "evidence": "A reproducible Unicode-aware distance system should document:",
+      "paragraphs": [
+        "A reproducible Unicode-aware distance system should document:",
+        "Unicode version,",
+        "normalization form,",
+        "grapheme segmentation profile,",
+        "case-folding / identifier policy,",
+        "sequence unit,",
+        "edit-cost model.",
+        "For example:",
+        "Unicode: 18.0 normalization: NFC sequence unit: extended grapheme cluster segmentation: Unicode default EGC rules edit model: unit-cost Levenshtein",
+        "Normalization has strong stability guarantees, while Unicode properties, emoji repertoires, and segmentation rules can evolve.",
+        "Recording the processing profile makes results easier to reproduce."
+      ]
+    },
+    {
+      "heading": "Test Against the Unicode Version You Claim to Support",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "A Unicode-aware implementation should not rely only on hand-written examples.",
+      "paragraphs": [
+        "A Unicode-aware implementation should not rely only on hand-written examples.",
+        "Where possible, test normalization and segmentation against the conformance data associated with the supported Unicode version.",
+        "A serious test suite should also contain application-level regression cases."
+      ]
+    },
+    {
+      "heading": "Testing a Unicode Levenshtein Implementation",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 21,
+      "word_count": 61,
+      "evidence": "Useful test categories include:",
+      "paragraphs": [
+        "Useful test categories include:",
+        "ASCII text,",
+        "precomposed and decomposed Latin characters,",
+        "combining-mark sequences,",
+        "supplementary-plane characters,",
+        "paired and unpaired UTF-16 surrogate cases where relevant,",
+        "emoji with modifiers,",
+        "emoji ZWJ sequences,",
+        "regional-indicator flags,",
+        "Hangul sequences,",
+        "Indic text,",
+        "long combining sequences,",
+        "Mathematical Alphanumeric Symbols,",
+        "compatibility-heavy text,",
+        "canonically equivalent representations.",
+        "Tests should verify:",
+        "tokenization,",
+        "numerical distance,",
+        "edit-script interpretation,",
+        "normalization policy,",
+        "behavior across runtime edge cases."
+      ]
+    },
+    {
+      "heading": "Grapheme Clusters Have No Small Universal Maximum Size",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 8,
+      "word_count": 54,
+      "evidence": "An implementation should not assume:",
+      "paragraphs": [
+        "An implementation should not assume:",
+        "one grapheme cluster ≤ small fixed number of code points",
+        "Unicode grapheme clusters can contain long sequences.",
+        "Applications that enforce storage or security limits should therefore consider separate limits such as:",
+        "UTF-8 byte length,",
+        "code-point count,",
+        "grapheme-cluster count.",
+        "A user-facing character limit and a storage-size limit are different constraints."
+      ]
+    },
+    {
+      "heading": "Streaming and Chunking Require Care",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 4,
+      "word_count": 44,
+      "evidence": "Normalization and grapheme segmentation can depend on neighboring text.",
+      "paragraphs": [
+        "Normalization and grapheme segmentation can depend on neighboring text.",
+        "Therefore arbitrary transport or buffer boundaries must not automatically be treated as safe normalization or grapheme-cluster boundaries.",
+        "network chunk ≠ Unicode text boundary",
+        "Streaming implementations must preserve enough state across chunks to process boundaries correctly."
+      ]
+    },
+    {
+      "heading": "Benchmark the Complete Pipeline",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 4,
+      "word_count": 48,
+      "evidence": "Benchmarking only the dynamic-programming kernel can hide the actual cost of Unicode-aware text processing.",
+      "paragraphs": [
+        "Benchmarking only the dynamic-programming kernel can hide the actual cost of Unicode-aware text processing.",
+        "End-to-end latency can include:",
+        "decode + validate + normalize + segment + allocate / intern tokens + Levenshtein computation",
+        "Byte, code-unit, scalar-value, and grapheme-level implementations should be measured separately because they solve different problems."
+      ]
+    },
+    {
+      "heading": "Choosing the Right Representation",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 1,
+      "word_count": 76,
+      "evidence": "Application Useful Comparison Unit Typical Policy Binary data Bytes No Unicode normalization Encoding analysis Bytes / code units Preserve encoding representation Unicode algorithm research Code points / scalar values Explicitly defined User-facing text comparison Extended grapheme clusters Often canonical-equivalence aware Name matching Graphemes or domain-specific tokens Domain-specific transformations Search Application dependent May use compatibility/case/transliteration views Identifiers Profile-defined Unicode representation Follow identifier normalization/security rules Transformed Unicode text Scalar values or graphemes Preserve or normalize according to purpose",
+      "paragraphs": [
+        "Application Useful Comparison Unit Typical Policy Binary data Bytes No Unicode normalization Encoding analysis Bytes / code units Preserve encoding representation Unicode algorithm research Code points / scalar values Explicitly defined User-facing text comparison Extended grapheme clusters Often canonical-equivalence aware Name matching Graphemes or domain-specific tokens Domain-specific transformations Search Application dependent May use compatibility/case/transliteration views Identifiers Profile-defined Unicode representation Follow identifier normalization/security rules Transformed Unicode text Scalar values or graphemes Preserve or normalize according to purpose"
+      ]
+    },
+    {
+      "heading": "Common Implementation Mistakes",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 11,
+      "word_count": 90,
+      "evidence": "assuming one byte equals one character;",
+      "paragraphs": [
+        "assuming one byte equals one character;",
+        "treating UTF-16 code units as Unicode scalar values;",
+        "using code-point iteration when grapheme segmentation is required;",
+        "calling all code points “characters” without defining the sequence model;",
+        "assuming grapheme segmentation requires NFC preprocessing;",
+        "normalizing compatibility distinctions without defining the policy;",
+        "using Mathematical Alphanumeric Symbols as though they were ordinary font styles;",
+        "treating Levenshtein distance as a visual-similarity metric;",
+        "assuming every grapheme cluster has a small fixed size;",
+        "mixing different sequence representations between the two inputs;",
+        "ignoring malformed UTF-16 behavior in runtimes that permit isolated surrogates."
+      ]
+    },
+    {
+      "heading": "A Practical Unicode-Safe Processing Model",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 11,
+      "word_count": 96,
+      "evidence": "Decode or validate the input representation correctly.",
+      "paragraphs": [
+        "Decode or validate the input representation correctly.",
+        "Define the application's equivalence policy.",
+        "Apply any selected normalization, folding, or transformation.",
+        "Choose the sequence unit: bytes, code units, scalar values/code points, or grapheme clusters.",
+        "Tokenize both strings using the same policy.",
+        "Run Levenshtein distance over those tokens.",
+        "Interpret the result only within that representation model.",
+        "Preserve provenance when edits must map back to raw input.",
+        "Record the Unicode / segmentation version when reproducibility matters.",
+        "The key point is that Unicode-safe Levenshtein is not a different recurrence.",
+        "It is a carefully defined text-processing pipeline around the ordinary edit-distance algorithm."
+      ]
+    },
+    {
+      "heading": "Relationship to Text Normalization",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 3,
+      "word_count": 49,
+      "evidence": "The representation chain can be understood as:",
+      "paragraphs": [
+        "The representation chain can be understood as:",
+        "Levenshtein / edit distance ↓ runtime string representation ↓ Unicode scalar values / code points ↓ normalization policy ↓ grapheme segmentation ↓ comparison tokens",
+        "For a deeper treatment of normalization, case folding, transliteration, and compatibility mappings, see Text Normalization and Transliteration ."
+      ]
+    },
+    {
+      "heading": "Relationship to Unicode Text Transformations",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 13,
+      "word_count": 92,
+      "evidence": "Unicode-aware Levenshtein and Unicode text transformation address different layers of the processing pipeline.",
+      "paragraphs": [
+        "Unicode-aware Levenshtein and Unicode text transformation address different layers of the processing pipeline.",
+        "A transformation determines which sequence is presented to the comparison system.",
+        "Levenshtein then measures edit cost between the resulting sequences.",
+        "raw text ↓ representation ↓ normalization / transformation ↓ sequence segmentation ↓ Levenshtein distance",
+        "The transformation itself is not Levenshtein distance.",
+        "Levenshtein distance does not define how Unicode text should be:",
+        "normalized,",
+        "transliterated,",
+        "case folded,",
+        "segmented,",
+        "mapped to alternative characters.",
+        "Keeping these layers separate makes the resulting distance easier to interpret and reproduce.",
+        "Continue with Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "Core Semantic Chain",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 4,
+      "word_count": 63,
+      "evidence": "Levenshtein distance ↓ sequence representation ↓ Unicode scalar values / code points ↓ canonical / compatibility policy ↓ extended grapheme clusters ↓ Unicode text transformations ↓ application-specific transformed text",
+      "paragraphs": [
+        "Levenshtein distance ↓ sequence representation ↓ Unicode scalar values / code points ↓ canonical / compatibility policy ↓ extended grapheme clusters ↓ Unicode text transformations ↓ application-specific transformed text",
+        "This chain does not imply that Unicode transformations are themselves edit-distance operations.",
+        "It means:",
+        "representation defines what is compared transformation defines which sequence exists segmentation defines the tokens Levenshtein measures edits between those tokens"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 8,
+      "word_count": 182,
+      "evidence": "Correct Levenshtein distance over Unicode text begins by defining the sequence being compared.",
+      "paragraphs": [
+        "Correct Levenshtein distance over Unicode text begins by defining the sequence being compared.",
+        "Bytes, UTF-16 code units, Unicode code points, Unicode scalar values, and extended grapheme clusters are different concepts and can produce different edit distances.",
+        "A Unicode code point is not identical to a Unicode scalar value: surrogate code points are valid code-point values but are excluded from the scalar-value set. Well-formed UTF-8 and UTF-16 encode scalar values.",
+        "Normalization establishes an equivalence policy. Segmentation establishes text-unit boundaries. Default Unicode grapheme segmentation does not require NFC preprocessing, although normalization can be valuable when canonically equivalent grapheme contents should compare equal.",
+        "Extended grapheme clusters provide a broadly useful approximation of user-perceived characters, but they are not glyphs and are not perfect for every language, script, or application.",
+        "Application-level Unicode mappings can also change the sequence itself. Social-text reuse of Mathematical Alphanumeric Symbols should be distinguished from their normative mathematical purpose and from ordinary font styling.",
+        "Levenshtein distance remains the same mathematical recurrence. What changes is the sequence given to it.",
+        "Define the representation. Define the transformation. Define the tokens. Then compute the distance."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 8,
+      "word_count": 29,
+      "evidence": "Levenshtein Algorithm & Distance",
+      "paragraphs": [
+        "Levenshtein Algorithm & Distance",
+        "Levenshtein Implementations: Correctness, Memory & Performance",
+        "Text Normalization and Transliteration",
+        "Unicode Text Transformations",
+        "Unicode Homoglyph and Confusable Attacks",
+        "Edit Operations",
+        "String Metrics",
+        "Levenshtein Distance Limitations"
+      ]
+    },
+    {
+      "heading": "Technical References",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "Unicode Standard Annex #15: Unicode Normalization Forms",
+      "paragraphs": [
+        "Unicode Standard Annex #15: Unicode Normalization Forms",
+        "Unicode Standard Annex #29: Unicode Text Segmentation",
+        "Unicode Standard Annex #31: Unicode Identifiers and Syntax",
+        "Unicode Technical Standard #39: Unicode Security Mechanisms",
+        "The Unicode Standard — Conformance and Unicode Encoding Forms",
+        "The Unicode Standard — Letterlike Symbols and Mathematical Alphanumeric Symbols",
+        "MDN: String.prototype.normalize()",
+        "MDN: Intl.Segmenter"
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Unicode & Grapheme-Safe Levenshtein: Normalization, EGCs & Correct Text Distance",
+          "anchor_id": "",
+          "alias": "edit distance",
+          "excerpt": "For simple ASCII strings, treating each stored element as one edit-distance unit often produces the expected result. Unicode text is more complicated. One user-perceived character may involve multiple bytes, UTF-16 code units, Unicode code points, combining marks, emoji modifiers, zero-width joiners, or other components."
+        },
+        {
+          "section": "Visual Similarity and Sequence Identity Are Different",
+          "anchor_id": "ux-section-28",
+          "alias": "edit distance",
+          "excerpt": "Unicode transformation Unicode normalization Unicode security visual rendering edit distance"
+        },
+        {
+          "section": "A Practical Unicode-Safe Processing Model",
+          "anchor_id": "ux-section-48",
+          "alias": "edit distance",
+          "excerpt": "It is a carefully defined text-processing pipeline around the ordinary edit-distance algorithm."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Normalization and Reverse Mapping",
+          "anchor_id": "ux-section-39",
+          "alias": "edit operations",
+          "excerpt": "Applications that must display edit operations against original text should preserve enough provenance to recover that relationship."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-53",
+          "alias": "edit operations",
+          "excerpt": "Edit Operations"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-distance-limitations",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-53",
+          "alias": "levenshtein distance limitations",
+          "excerpt": "Levenshtein Distance Limitations"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-implementations",
+      "evidence": [
+        {
+          "section": "Programming Languages Expose Different Default String Models",
+          "anchor_id": "ux-section-37",
+          "alias": "levenshtein implementations",
+          "excerpt": "See Levenshtein Implementations: Correctness, Memory & Performance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-53",
+          "alias": "levenshtein implementations",
+          "excerpt": "Levenshtein Implementations: Correctness, Memory & Performance"
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-53",
+          "alias": "string metrics",
+          "excerpt": "String Metrics"
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "Relationship to Text Normalization",
+          "anchor_id": "ux-section-49",
+          "alias": "text normalization and transliteration",
+          "excerpt": "For a deeper treatment of normalization, case folding, transliteration, and compatibility mappings, see Text Normalization and Transliteration ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-53",
+          "alias": "text normalization and transliteration",
+          "excerpt": "Text Normalization and Transliteration"
+        }
+      ]
+    },
+    {
+      "target": "/text-tools",
+      "evidence": [
+        {
+          "section": "Mathematical Alphanumeric Symbols Have a Specific Purpose",
+          "anchor_id": "ux-section-15",
+          "alias": "text tools",
+          "excerpt": "Many characters commonly reused by social-text tools, including:"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-homoglyph-and-confusable-attacks",
+      "evidence": [
+        {
+          "section": "Unicode Normalization Does Not Solve Confusable Characters",
+          "anchor_id": "ux-section-27",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "See Unicode Homoglyph and Confusable Attacks ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-53",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "Unicode Homoglyph and Confusable Attacks"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-text-transformations",
+      "evidence": [
+        {
+          "section": "Mathematical Alphanumeric Symbols Have a Specific Purpose",
+          "anchor_id": "ux-section-15",
+          "alias": "unicode text transformations",
+          "excerpt": "See Unicode Text Transformations for the broader transformation model."
+        },
+        {
+          "section": "Unicode Transformations in Application Pipelines",
+          "anchor_id": "ux-section-35",
+          "alias": "unicode text transformations",
+          "excerpt": "The broader transformation model is described in Unicode Text Transformations ."
+        },
+        {
+          "section": "Relationship to Unicode Text Transformations",
+          "anchor_id": "ux-section-50",
+          "alias": "unicode text transformations",
+          "excerpt": "Continue with Unicode Text Transformations ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#webpage",
+      "type": "WebPage",
+      "name": "Unicode & Grapheme-Safe Levenshtein: Normalization, EGCs & Correct Text Distance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-text-processing"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#grapheme-clusters"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article",
+      "type": "Article",
+      "name": "Unicode & Grapheme-Safe Levenshtein: Normalization, EGCs & Correct Text Distance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-text-processing"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#grapheme-clusters"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-normalization"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-text-processing",
+      "type": "DefinedTerm",
+      "name": "Unicode Text Processing",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#grapheme-clusters",
+      "type": "DefinedTerm",
+      "name": "Extended Grapheme Clusters",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-normalization",
+      "type": "DefinedTerm",
+      "name": "Unicode Normalization",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-text-segmentation",
+      "type": "DefinedTerm",
+      "name": "Unicode Text Segmentation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#utf-8",
+      "type": "DefinedTerm",
+      "name": "UTF-8",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#utf-16",
+      "type": "DefinedTerm",
+      "name": "UTF-16",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#webpage",
+      "about",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-text-processing"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#webpage",
+      "about",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#grapheme-clusters"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article",
+      "about",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-text-processing"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article",
+      "about",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#grapheme-clusters"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article",
+      "about",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-normalization"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#unicode-text-segmentation"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#utf-8"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#utf-16"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#article",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://www.unicode.org/reports/tr15/",
+      "anchor": "Unicode Standard Annex #15: Unicode Normalization Forms"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr29/",
+      "anchor": "Unicode Standard Annex #29: Unicode Text Segmentation"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr31/",
+      "anchor": "Unicode Standard Annex #31: Unicode Identifiers and Syntax"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr39/",
+      "anchor": "Unicode Technical Standard #39: Unicode Security Mechanisms"
+    },
+    {
+      "url": "https://www.unicode.org/versions/latest/core-spec/chapter-3/",
+      "anchor": "The Unicode Standard — Conformance and Unicode Encoding Forms"
+    },
+    {
+      "url": "https://www.unicode.org/versions/latest/core-spec/chapter-22/",
+      "anchor": "The Unicode Standard — Letterlike Symbols and Mathematical Alphanumeric Symbols"
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize",
+      "anchor": "MDN: String.prototype.normalize()"
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter",
+      "anchor": "MDN: Intl.Segmenter"
+    }
+  ]
+}

@@ -1,0 +1,3502 @@
+{
+  "url": "/levenshtein-vs-damerau-and-hamming",
+  "title": "Levenshtein vs Damerau-Levenshtein and Hamming Distance: Definitions, Algorithms, Metrics, and Tradeoffs",
+  "h1": [
+    "Levenshtein vs Damerau-Levenshtein and Hamming Distance: Definitions, Algorithms, Metrics, and Tradeoffs"
+  ],
+  "group": "Comparisons",
+  "provisional_mission": "So sánh các phép sửa",
+  "content_sha256": "5fe8b89bb83016fdab962a5800645a986bde1f9e37776063bb9505842fadb9e5",
+  "canonical": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming",
+  "primary_entity_candidate": "Levenshtein vs Damerau-Levenshtein and Hamming Distance: Definitions, Algorithms, Metrics, and Tradeoffs",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Levenshtein vs Damerau-Levenshtein and Hamming Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 13,
+      "word_count": 210,
+      "evidence": "Levenshtein distance, Damerau-Levenshtein distance, and Hamming distance are often grouped together as string-distance measures, but they encode fundamentally different models of how one sequence can differ from another.",
+      "paragraphs": [
+        "Levenshtein distance, Damerau-Levenshtein distance, and Hamming distance are often grouped together as string-distance measures, but they encode fundamentally different models of how one sequence can differ from another.",
+        "The distinction is not merely algorithmic.",
+        "Each distance makes a claim about which transformations are primitive:",
+        "Hamming: substitution only Levenshtein: insertion deletion substitution Damerau-Levenshtein: insertion deletion substitution adjacent transposition.",
+        "This seemingly small difference changes the geometry of the string space, the interpretation of thresholds, the treatment of human typing errors, the relationship to synchronization errors, and even which indexing strategies can safely exploit metric properties.",
+        "There is also a fourth distance that is frequently mislabeled as Damerau-Levenshtein:",
+        "Optimal String Alignment (OSA) also called: restricted Damerau-Levenshtein.",
+        "OSA allows adjacent transpositions but restricts how substrings can be edited. It can therefore return a different result from the true unrestricted Damerau-Levenshtein distance, and unlike true Damerau-Levenshtein under the standard unit-cost model, OSA does not satisfy the triangle inequality.",
+        "The most important distinction is therefore not:",
+        "Which algorithm is better?",
+        "but:",
+        "Which error model matches the transformations that can actually occur?",
+        "This article develops all four models from first principles, compares their mathematics and algorithms, derives their relationships, examines their role in spelling correction and coding theory, and shows where superficially similar implementations measure different objects."
+      ]
+    },
+    {
+      "heading": "1. The four models at a glance",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 1,
+      "word_count": 42,
+      "evidence": "Distance Insertion Deletion Substitution Adjacent transposition Unequal lengths Hamming No No Yes No Not in the standard definition Levenshtein Yes Yes Yes No primitive operation Yes Optimal String Alignment Yes Yes Yes Yes, restricted Yes True Damerau-Levenshtein Yes Yes Yes Yes Yes",
+      "paragraphs": [
+        "Distance Insertion Deletion Substitution Adjacent transposition Unequal lengths Hamming No No Yes No Not in the standard definition Levenshtein Yes Yes Yes No primitive operation Yes Optimal String Alignment Yes Yes Yes Yes, restricted Yes True Damerau-Levenshtein Yes Yes Yes Yes Yes"
+      ]
+    },
+    {
+      "heading": "2. Hamming distance",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "For two sequences of equal length:",
+      "paragraphs": [
+        "For two sequences of equal length:",
+        "X = x1 x2 ... xn Y = y1 y2 ... yn,",
+        "the Hamming distance is:",
+        "dH(X,Y) = Σ [xi != yi].",
+        "It simply counts positions at which corresponding symbols differ."
+      ]
+    },
+    {
+      "heading": "3. Hamming distance assumes fixed coordinates",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "The first position in X is compared with the first position in Y , the second with the second, and so on.",
+      "paragraphs": [
+        "The first position in X is compared with the first position in Y , the second with the second, and so on.",
+        "There is no alignment search."
+      ]
+    },
+    {
+      "heading": "4. Worked Hamming example",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 3,
+      "word_count": 13,
+      "evidence": "X = 1011101 Y = 1011111",
+      "paragraphs": [
+        "X = 1011101 Y = 1011111",
+        "Only one position differs.",
+        "dH(X,Y) = 1."
+      ]
+    },
+    {
+      "heading": "5. Another example",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "karolin kerstin",
+      "paragraphs": [
+        "karolin kerstin",
+        "Positionwise comparison gives:",
+        "k = k a != e r = r o != s l != t i = i n = n",
+        "Therefore:",
+        "dH(\"karolin\",\"kerstin\") = 3."
+      ]
+    },
+    {
+      "heading": "6. Hamming distance requires equal length",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "In its standard form:",
+      "paragraphs": [
+        "In its standard form:",
+        "dH(X,Y)",
+        "is defined only when:",
+        "|X| = |Y|.",
+        "This is not a minor implementation inconvenience. It expresses the underlying model."
+      ]
+    },
+    {
+      "heading": "7. Why equal length matters",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "Hamming distance assumes symbol positions remain synchronized.",
+      "paragraphs": [
+        "Hamming distance assumes symbol positions remain synchronized.",
+        "The only permitted error is:",
+        "symbol at coordinate i changes value."
+      ]
+    },
+    {
+      "heading": "8. One insertion breaks coordinate correspondence",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "X: A B C D E Y: X A B C D E.",
+        "The second sequence contains one insertion.",
+        "Levenshtein distance is:",
+        "1.",
+        "Standard Hamming distance is not defined because the lengths differ."
+      ]
+    },
+    {
+      "heading": "9. Artificially padding does not turn Hamming into edit distance",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "If an implementation pads one sequence and compares positions, the result depends on the arbitrary padding/alignment policy.",
+      "paragraphs": [
+        "If an implementation pads one sequence and compares positions, the result depends on the arbitrary padding/alignment policy.",
+        "That is no longer the standard Hamming-distance problem."
+      ]
+    },
+    {
+      "heading": "10. Hamming distance is fundamentally a mismatch metric",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 4,
+      "word_count": 23,
+      "evidence": "It answers:",
+      "paragraphs": [
+        "It answers:",
+        "How many fixed coordinates contain different symbols?",
+        "It does not answer:",
+        "How should two sequences be aligned after insertions or deletions?"
+      ]
+    },
+    {
+      "heading": "11. Hamming's coding-theory origin",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Richard Hamming's 1950 paper Error Detecting and Error Correcting Codes established the geometric role of differing coordinates in error-correcting codes.",
+      "paragraphs": [
+        "Richard Hamming's 1950 paper Error Detecting and Error Correcting Codes established the geometric role of differing coordinates in error-correcting codes.",
+        "See Hamming, 1950 ."
+      ]
+    },
+    {
+      "heading": "12. Hamming geometry fits substitution channels",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "If a transmitted codeword has fixed length and noise can flip symbols without inserting or deleting coordinates, Hamming distance is the natural geometry.",
+      "paragraphs": [
+        "If a transmitted codeword has fixed length and noise can flip symbols without inserting or deleting coordinates, Hamming distance is the natural geometry."
+      ]
+    },
+    {
+      "heading": "13. A deletion is not a Hamming substitution",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "X = ABCDEFG Y = ABDEFG.",
+        "The missing:",
+        "C",
+        "shifts every subsequent position.",
+        "This is a synchronization error, not merely one wrong coordinate."
+      ]
+    },
+    {
+      "heading": "14. Deletion is also not erasure",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "An erasure typically preserves a symbol position while marking its value as unknown.",
+      "paragraphs": [
+        "An erasure typically preserves a symbol position while marking its value as unknown.",
+        "A deletion removes the symbol and shifts synchronization.",
+        "erasure: A B ? D E deletion: A B D E.",
+        "This distinction is fundamental in coding theory ."
+      ]
+    },
+    {
+      "heading": "15. Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Levenshtein distance permits:",
+      "paragraphs": [
+        "Levenshtein distance permits:",
+        "insert one symbol delete one symbol substitute one symbol.",
+        "Each operation has unit cost in the classic definition."
+      ]
+    },
+    {
+      "heading": "16. Formal definition",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "For strings:",
+      "paragraphs": [
+        "For strings:",
+        "X = x1...xm Y = y1...yn,",
+        "define:",
+        "D(i,0) = i D(0,j) = j.",
+        "Then:",
+        "D(i,j) = min( D(i-1,j) + 1, D(i,j-1) + 1, D(i-1,j-1) + [xi != yj] ).",
+        "The answer is:",
+        "dL(X,Y) = D(m,n)."
+      ]
+    },
+    {
+      "heading": "17. Interpretation of the three recurrence branches",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "D(i-1,j) + 1 = delete xi D(i,j-1) + 1 = insert yj D(i-1,j-1) + mismatch = match or substitute.",
+      "paragraphs": [
+        "D(i-1,j) + 1 = delete xi D(i,j-1) + 1 = insert yj D(i-1,j-1) + mismatch = match or substitute."
+      ]
+    },
+    {
+      "heading": "18. Classic example",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 5,
+      "word_count": 15,
+      "evidence": "kitten -> sitting",
+      "paragraphs": [
+        "kitten -> sitting",
+        "One optimal transformation is:",
+        "kitten sitten sittin sitting.",
+        "Therefore:",
+        "dL = 3."
+      ]
+    },
+    {
+      "heading": "19. Levenshtein handles synchronization shifts",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 7,
+      "word_count": 15,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "ABCDE BCDE.",
+        "Deleting the initial:",
+        "A",
+        "realigns every later symbol.",
+        "Therefore:",
+        "dL = 1."
+      ]
+    },
+    {
+      "heading": "20. Hamming cannot model that operation directly",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "The problem is not that Hamming is less sophisticated.",
+      "paragraphs": [
+        "The problem is not that Hamming is less sophisticated.",
+        "Its error model simply excludes insertion and deletion."
+      ]
+    },
+    {
+      "heading": "21. Levenshtein's historical coding context",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "Vladimir Levenshtein's foundational work studied codes capable of correcting insertions, deletions, and binary symbol changes.",
+      "paragraphs": [
+        "Vladimir Levenshtein's foundational work studied codes capable of correcting insertions, deletions, and binary symbol changes.",
+        "The English translation appeared in Soviet Physics Doklady in 1966.",
+        "See the bibliographic record for Levenshtein's paper ."
+      ]
+    },
+    {
+      "heading": "22. Historical terminology warning",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "The word “reversals” in the English title of Levenshtein's binary-code paper should not be interpreted as the adjacent-character transposition operation later associated with Damerau-Levenshtein string distance.",
+      "paragraphs": [
+        "The word “reversals” in the English title of Levenshtein's binary-code paper should not be interpreted as the adjacent-character transposition operation later associated with Damerau-Levenshtein string distance.",
+        "These are different concepts."
+      ]
+    },
+    {
+      "heading": "23. Wagner-Fischer dynamic programming",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "Wagner and Fischer gave the classical dynamic-programming solution to the insertion/deletion/substitution string-correction problem.",
+      "paragraphs": [
+        "Wagner and Fischer gave the classical dynamic-programming solution to the insertion/deletion/substitution string-correction problem.",
+        "See The String-to-String Correction Problem ."
+      ]
+    },
+    {
+      "heading": "24. Standard complexity",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "For lengths:",
+      "paragraphs": [
+        "For lengths:",
+        "m and n,",
+        "the conventional full dynamic-programming algorithm requires:",
+        "O(mn)",
+        "time."
+      ]
+    },
+    {
+      "heading": "25. Score-only memory",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "If only the distance value is needed, previous rows can be discarded, reducing auxiliary memory to:",
+      "paragraphs": [
+        "If only the distance value is needed, previous rows can be discarded, reducing auxiliary memory to:",
+        "O(min(m,n))."
+      ]
+    },
+    {
+      "heading": "26. Alignment recovery needs more information",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "If the actual edit script is required, an implementation must preserve or reconstruct enough state for traceback.",
+      "paragraphs": [
+        "If the actual edit script is required, an implementation must preserve or reconstruct enough state for traceback."
+      ]
+    },
+    {
+      "heading": "27. Levenshtein does not include transposition",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 6,
+      "word_count": 9,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "form from.",
+        "The middle characters:",
+        "or",
+        "become:",
+        "ro."
+      ]
+    },
+    {
+      "heading": "28. Standard Levenshtein result",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 4,
+      "word_count": 13,
+      "evidence": "One solution is:",
+      "paragraphs": [
+        "One solution is:",
+        "o -> r r -> o.",
+        "Therefore:",
+        "dL(\"form\",\"from\") = 2."
+      ]
+    },
+    {
+      "heading": "29. Human interpretation may differ",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 4,
+      "word_count": 18,
+      "evidence": "A typist may conceptualize:",
+      "paragraphs": [
+        "A typist may conceptualize:",
+        "or -> ro",
+        "as one adjacent key-order mistake.",
+        "This motivates Damerau's additional primitive operation."
+      ]
+    },
+    {
+      "heading": "30. Damerau's four error classes",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 6,
+      "word_count": 27,
+      "evidence": "Fred Damerau's 1964 spelling-correction work explicitly considered:",
+      "paragraphs": [
+        "Fred Damerau's 1964 spelling-correction work explicitly considered:",
+        "wrong letter;",
+        "missing letter;",
+        "extra letter;",
+        "single transposition.",
+        "See A technique for computer detection and correction of spelling errors ."
+      ]
+    },
+    {
+      "heading": "31. Adjacent transposition",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "A transposition operation swaps neighboring symbols:",
+      "paragraphs": [
+        "A transposition operation swaps neighboring symbols:",
+        "... a b ... -> ... b a ...",
+        "with cost:",
+        "1",
+        "under the standard unit-cost Damerau model."
+      ]
+    },
+    {
+      "heading": "32. Damerau-Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "The true Damerau-Levenshtein distance permits:",
+      "paragraphs": [
+        "The true Damerau-Levenshtein distance permits:",
+        "insertion deletion substitution adjacent transposition."
+      ]
+    },
+    {
+      "heading": "33. Immediate consequence",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "dDL(\"form\",\"from\") = 1.",
+      "paragraphs": [
+        "dDL(\"form\",\"from\") = 1."
+      ]
+    },
+    {
+      "heading": "34. Damerau-Levenshtein cannot exceed Levenshtein",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "Every valid Levenshtein edit sequence is also valid under Damerau-Levenshtein.",
+      "paragraphs": [
+        "Every valid Levenshtein edit sequence is also valid under Damerau-Levenshtein.",
+        "Damerau-Levenshtein merely adds another possible operation.",
+        "Therefore:",
+        "dDL(X,Y) <= dL(X,Y)."
+      ]
+    },
+    {
+      "heading": "35. Equality is common",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "If no beneficial adjacent transposition exists:",
+      "paragraphs": [
+        "If no beneficial adjacent transposition exists:",
+        "dDL(X,Y) = dL(X,Y).",
+        "For example:",
+        "kitten vs sitting",
+        "does not gain from a transposition under the usual optimal path."
+      ]
+    },
+    {
+      "heading": "36. Strict inequality occurs when a transposition helps",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "form / from Levenshtein: 2 Damerau-Levenshtein: 1.",
+      "paragraphs": [
+        "form / from Levenshtein: 2 Damerau-Levenshtein: 1."
+      ]
+    },
+    {
+      "heading": "37. Damerau transposition is adjacent",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 4,
+      "word_count": 14,
+      "evidence": "This point is often misstated.",
+      "paragraphs": [
+        "This point is often misstated.",
+        "The primitive is:",
+        "AB -> BA",
+        "for neighboring symbols."
+      ]
+    },
+    {
+      "heading": "38. Arbitrarily distant character swapping is not one standard Damerau edit",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Moving a symbol across several positions generally requires several adjacent transpositions or another combination of edits.",
+      "paragraphs": [
+        "Moving a symbol across several positions generally requires several adjacent transpositions or another combination of edits."
+      ]
+    },
+    {
+      "heading": "39. Adjacent transposition preserves string length",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Like substitution, transposition changes symbol arrangement but not the number of symbols.",
+      "paragraphs": [
+        "Like substitution, transposition changes symbol arrangement but not the number of symbols."
+      ]
+    },
+    {
+      "heading": "40. Insertions and deletions remain necessary",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Damerau-Levenshtein is not merely Hamming plus swaps.",
+      "paragraphs": [
+        "Damerau-Levenshtein is not merely Hamming plus swaps.",
+        "It retains the synchronization capabilities of Levenshtein."
+      ]
+    },
+    {
+      "heading": "41. The most important implementation trap",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 5,
+      "word_count": 17,
+      "evidence": "Many libraries expose something named:",
+      "paragraphs": [
+        "Many libraries expose something named:",
+        "Damerau-Levenshtein",
+        "but actually compute:",
+        "Optimal String Alignment (OSA).",
+        "These are not equivalent."
+      ]
+    },
+    {
+      "heading": "42. Optimal String Alignment distance",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "OSA uses the same three Levenshtein edits plus a simple adjacent-transposition recurrence.",
+      "paragraphs": [
+        "OSA uses the same three Levenshtein edits plus a simple adjacent-transposition recurrence."
+      ]
+    },
+    {
+      "heading": "43. OSA recurrence",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "Start with the Levenshtein recurrence.",
+      "paragraphs": [
+        "Start with the Levenshtein recurrence.",
+        "If:",
+        "i > 1 j > 1 xi = y(j-1) x(i-1) = yj,",
+        "also consider:",
+        "D(i,j) = min( D(i,j), D(i-2,j-2) + 1 )."
+      ]
+    },
+    {
+      "heading": "44. Why the recurrence is attractive",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "It is only a small modification of Wagner-Fischer dynamic programming.",
+      "paragraphs": [
+        "It is only a small modification of Wagner-Fischer dynamic programming.",
+        "For simple adjacent swaps such as:",
+        "form from,",
+        "it produces the intuitive answer:",
+        "1."
+      ]
+    },
+    {
+      "heading": "45. But OSA imposes a restriction",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "Under the restricted model, a substring cannot participate in multiple edits in the way permitted by full Damerau-Levenshtein.",
+      "paragraphs": [
+        "Under the restricted model, a substring cannot participate in multiple edits in the way permitted by full Damerau-Levenshtein."
+      ]
+    },
+    {
+      "heading": "46. Canonical counterexample",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 4,
+      "word_count": 4,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "CA",
+        "and:",
+        "ABC."
+      ]
+    },
+    {
+      "heading": "47. True Damerau-Levenshtein transformation",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "CA -> AC transpose adjacent C,A AC -> ABC insert B.",
+      "paragraphs": [
+        "CA -> AC transpose adjacent C,A AC -> ABC insert B.",
+        "Therefore:",
+        "dDL(\"CA\",\"ABC\") = 2."
+      ]
+    },
+    {
+      "heading": "48. OSA cannot use that same two-step interpretation",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "The restricted model does not permit the needed repeated editing interaction after the transposition.",
+      "paragraphs": [
+        "The restricted model does not permit the needed repeated editing interaction after the transposition.",
+        "It returns:",
+        "dOSA(\"CA\",\"ABC\") = 3."
+      ]
+    },
+    {
+      "heading": "49. Levenshtein also returns three",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "Without a transposition primitive:",
+      "paragraphs": [
+        "Without a transposition primitive:",
+        "dL(\"CA\",\"ABC\") = 3."
+      ]
+    },
+    {
+      "heading": "50. This one example separates three important concepts",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "Distance CA → ABC Levenshtein 3 Optimal String Alignment 3 True Damerau-Levenshtein 2 Hamming Undefined in standard form",
+      "paragraphs": [
+        "Distance CA → ABC Levenshtein 3 Optimal String Alignment 3 True Damerau-Levenshtein 2 Hamming Undefined in standard form"
+      ]
+    },
+    {
+      "heading": "51. Why “restricted Damerau-Levenshtein” is a useful name",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "It makes explicit that OSA is not merely a faster implementation of the same mathematical distance.",
+      "paragraphs": [
+        "It makes explicit that OSA is not merely a faster implementation of the same mathematical distance.",
+        "It defines a different distance function."
+      ]
+    },
+    {
+      "heading": "52. Lowrance-Wagner extension",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 2,
+      "word_count": 31,
+      "evidence": "Lowrance and Wagner formally extended the string-correction problem to include interchange of adjacent characters and showed quadratic-time solvability under suitable edit-cost restrictions.",
+      "paragraphs": [
+        "Lowrance and Wagner formally extended the string-correction problem to include interchange of adjacent characters and showed quadratic-time solvability under suitable edit-cost restrictions.",
+        "See An Extension of the String-to-String Correction Problem ."
+      ]
+    },
+    {
+      "heading": "53. True Damerau-Levenshtein requires more state",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 3,
+      "word_count": 11,
+      "evidence": "The simple:",
+      "paragraphs": [
+        "The simple:",
+        "D(i-2,j-2)+1",
+        "OSA recurrence is insufficient for unrestricted transposition interactions."
+      ]
+    },
+    {
+      "heading": "54. Last-occurrence information",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "A common full Damerau-Levenshtein implementation tracks previous positions of symbols so it can correctly account for earlier transposition opportunities.",
+      "paragraphs": [
+        "A common full Damerau-Levenshtein implementation tracks previous positions of symbols so it can correctly account for earlier transposition opportunities."
+      ]
+    },
+    {
+      "heading": "55. Conceptual unrestricted recurrence",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "Beyond:",
+      "paragraphs": [
+        "Beyond:",
+        "insert delete substitute,",
+        "the algorithm considers a transposition involving previous occurrences of:",
+        "current source character and current target character."
+      ]
+    },
+    {
+      "heading": "56. Standard full-Damerau pseudocode",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 2,
+      "word_count": 122,
+      "evidence": "function damerau_levenshtein(A, B): m = length(A) n = length(B) INF = m + n create matrix H of size (m+2) x (n+2) H[0][0] = INF for i = 0..m: H[i+1][0] = INF H[i+1][1] = i for j = 0..n: H[0][j+1] = INF H[1][j+1] = j last_seen = map every symbol to 0 for i = 1..m: last_match_col = 0 for j = 1..n: i1 = last_seen[B[j]] j1 = last_match_col cost = 1 if A[i] == B[j]: cost = 0 last_match_col = j H[i+1][j+1] = min( H[i][j] + cost, H[i+1][j] + 1, H[i][j+1] + 1, H[i1][j1] + (i-i1-1) \\+ 1 + (j-j1-1) ) last_seen[A[i]] = i return H[m+1][n+1]",
+      "paragraphs": [
+        "function damerau_levenshtein(A, B): m = length(A) n = length(B) INF = m + n create matrix H of size (m+2) x (n+2) H[0][0] = INF for i = 0..m: H[i+1][0] = INF H[i+1][1] = i for j = 0..n: H[0][j+1] = INF H[1][j+1] = j last_seen = map every symbol to 0 for i = 1..m: last_match_col = 0 for j = 1..n: i1 = last_seen[B[j]] j1 = last_match_col cost = 1 if A[i] == B[j]: cost = 0 last_match_col = j H[i+1][j+1] = min( H[i][j] + cost, H[i+1][j] + 1, H[i][j+1] + 1, H[i1][j1] + (i-i1-1) \\+ 1 + (j-j1-1) ) last_seen[A[i]] = i return H[m+1][n+1]",
+        "Indexing conventions vary by implementation, but the important conceptual difference is the additional previous-occurrence state."
+      ]
+    },
+    {
+      "heading": "57. Do not copy pseudocode blindly across indexing conventions",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 5,
+      "word_count": 20,
+      "evidence": "Implementations may use:",
+      "paragraphs": [
+        "Implementations may use:",
+        "zero-based strings;",
+        "one-based mathematical notation;",
+        "sentinel rows and columns.",
+        "An off-by-one error can silently corrupt transposition handling."
+      ]
+    },
+    {
+      "heading": "58. OSA is easier to implement",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "For many practical typo systems, this simplicity is attractive.",
+      "paragraphs": [
+        "For many practical typo systems, this simplicity is attractive.",
+        "But implementation convenience does not make the result equivalent to full Damerau-Levenshtein."
+      ]
+    },
+    {
+      "heading": "59. Metric properties matter",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "Classic unit-cost Levenshtein distance is a metric.",
+      "paragraphs": [
+        "Classic unit-cost Levenshtein distance is a metric.",
+        "Standard Hamming distance on equal-length strings is also a metric.",
+        "True unit-cost Damerau-Levenshtein is a metric.",
+        "OSA is not."
+      ]
+    },
+    {
+      "heading": "60. Metric axioms",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "A metric satisfies:",
+      "paragraphs": [
+        "A metric satisfies:",
+        "non-negativity identity of indiscernibles symmetry triangle inequality."
+      ]
+    },
+    {
+      "heading": "61. Triangle inequality",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "For a metric:",
+      "paragraphs": [
+        "For a metric:",
+        "d(A,C) <= d(A,B) + d(B,C)."
+      ]
+    },
+    {
+      "heading": "62. OSA violates triangle inequality",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "A = ba B = ab C = acb.",
+        "OSA gives:",
+        "dOSA(ba,ab) = 1 dOSA(ab,acb) = 1 but dOSA(ba,acb) = 3.",
+        "Therefore:",
+        "3 > 1 + 1."
+      ]
+    },
+    {
+      "heading": "63. Why this matters operationally",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "Metric search structures can use triangle inequality to eliminate candidates without computing every exact distance.",
+      "paragraphs": [
+        "Metric search structures can use triangle inequality to eliminate candidates without computing every exact distance.",
+        "If the distance violates triangle inequality, such pruning may be invalid."
+      ]
+    },
+    {
+      "heading": "64. A function can still be useful without being a metric",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "OSA can be entirely appropriate as a practical typo score.",
+      "paragraphs": [
+        "OSA can be entirely appropriate as a practical typo score.",
+        "The correct statement is:",
+        "OSA distance is useful but it is not a metric."
+      ]
+    },
+    {
+      "heading": "65. Do not call every string dissimilarity a metric",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "The word metric has a mathematical meaning.",
+      "paragraphs": [
+        "The word metric has a mathematical meaning.",
+        "This is particularly important once weighted costs are introduced."
+      ]
+    },
+    {
+      "heading": "66. Relationship among the four distances",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "For equal-length strings under unit costs:",
+      "paragraphs": [
+        "For equal-length strings under unit costs:",
+        "dDL(X,Y) <= dOSA(X,Y) <= dL(X,Y) <= dH(X,Y)."
+      ]
+    },
+    {
+      "heading": "67. Why true Damerau-Levenshtein ≤ OSA",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "Every edit path allowed by OSA can be realized within the unrestricted Damerau model.",
+      "paragraphs": [
+        "Every edit path allowed by OSA can be realized within the unrestricted Damerau model.",
+        "The unrestricted model may additionally exploit edit interactions forbidden by OSA."
+      ]
+    },
+    {
+      "heading": "68. Why OSA ≤ Levenshtein",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "OSA retains every ordinary Levenshtein operation and adds a restricted adjacent transposition.",
+      "paragraphs": [
+        "OSA retains every ordinary Levenshtein operation and adds a restricted adjacent transposition.",
+        "It can always ignore that extra operation."
+      ]
+    },
+    {
+      "heading": "69. Why Levenshtein ≤ Hamming for equal lengths",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 4,
+      "word_count": 30,
+      "evidence": "For equal-length strings, replacing every mismatching coordinate is always a valid Levenshtein edit script.",
+      "paragraphs": [
+        "For equal-length strings, replacing every mismatching coordinate is always a valid Levenshtein edit script.",
+        "That script costs exactly:",
+        "dH(X,Y).",
+        "Levenshtein may discover an even cheaper path using insertions and deletions."
+      ]
+    },
+    {
+      "heading": "70. Strict Levenshtein-Hamming inequality example",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 6,
+      "word_count": 23,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "X = abc Y = bca.",
+        "Hamming compares positions:",
+        "a != b b != c c != a",
+        "so:",
+        "dH = 3."
+      ]
+    },
+    {
+      "heading": "71. Levenshtein sees a shift",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 3,
+      "word_count": 14,
+      "evidence": "abc -> bc delete a bc -> bca insert a.",
+      "paragraphs": [
+        "abc -> bc delete a bc -> bca insert a.",
+        "Therefore:",
+        "dL = 2."
+      ]
+    },
+    {
+      "heading": "72. Hamming and Levenshtein can also agree",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "abcdef abcxef,",
+        "only one aligned symbol differs.",
+        "dH = 1 dL = 1 dOSA = 1 dDL = 1."
+      ]
+    },
+    {
+      "heading": "73. Distances agree when the richer operations provide no shorter path",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "This is important when deciding whether the extra complexity of a richer model matters empirically.",
+      "paragraphs": [
+        "This is important when deciding whether the extra complexity of a richer model matters empirically."
+      ]
+    },
+    {
+      "heading": "74. Length-difference lower bound",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "For Levenshtein, OSA, and Damerau-Levenshtein:",
+      "paragraphs": [
+        "For Levenshtein, OSA, and Damerau-Levenshtein:",
+        "d(X,Y) >= ||X|-|Y||."
+      ]
+    },
+    {
+      "heading": "75. Why",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Only insertions and deletions change length.",
+      "paragraphs": [
+        "Only insertions and deletions change length.",
+        "If one string is five symbols longer, at least five length-changing operations are necessary."
+      ]
+    },
+    {
+      "heading": "76. Upper bound for Levenshtein",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "Under unit costs:",
+      "paragraphs": [
+        "Under unit costs:",
+        "dL(X,Y) <= max(|X|,|Y|).",
+        "One can substitute across the common-length prefix and insert or delete the remainder."
+      ]
+    },
+    {
+      "heading": "77. Damerau distances inherit that upper bound",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Because both Damerau variants contain all ordinary Levenshtein operations:",
+      "paragraphs": [
+        "Because both Damerau variants contain all ordinary Levenshtein operations:",
+        "dDL <= dL dOSA <= dL."
+      ]
+    },
+    {
+      "heading": "78. Hamming bound",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "For equal-length strings of length n :",
+      "paragraphs": [
+        "For equal-length strings of length n :",
+        "0 <= dH(X,Y) <= n."
+      ]
+    },
+    {
+      "heading": "79. Hamming is computationally simpler",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 7,
+      "word_count": 24,
+      "evidence": "For equal-length strings, calculate:",
+      "paragraphs": [
+        "For equal-length strings, calculate:",
+        "for i in 1..n: if X[i] != Y[i]: count += 1.",
+        "Time:",
+        "O(n).",
+        "Extra memory:",
+        "O(1)",
+        "apart from input storage."
+      ]
+    },
+    {
+      "heading": "80. Hamming requires no dynamic programming",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "There is no uncertainty about correspondence between coordinates.",
+      "paragraphs": [
+        "There is no uncertainty about correspondence between coordinates."
+      ]
+    },
+    {
+      "heading": "81. This is the source of its efficiency",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "Hamming's simpler model creates a simpler algorithm.",
+      "paragraphs": [
+        "Hamming's simpler model creates a simpler algorithm.",
+        "It is not merely an optimized special implementation of general edit distance."
+      ]
+    },
+    {
+      "heading": "82. When Hamming is exactly the right model",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 6,
+      "word_count": 21,
+      "evidence": "Use Hamming when:",
+      "paragraphs": [
+        "Use Hamming when:",
+        "sequence lengths are fixed;",
+        "coordinates already correspond;",
+        "insertions cannot occur;",
+        "deletions cannot occur;",
+        "only substitutions or mismatches matter."
+      ]
+    },
+    {
+      "heading": "83. Examples",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 5,
+      "word_count": 26,
+      "evidence": "fixed-length binary codewords;",
+      "paragraphs": [
+        "fixed-length binary codewords;",
+        "equal-length bit vectors;",
+        "aligned fixed-position categorical records;",
+        "some biological mismatch-only models;",
+        "comparing hash-like or fixed-format symbol vectors when every coordinate has defined correspondence."
+      ]
+    },
+    {
+      "heading": "84. When Levenshtein is better",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "Use Levenshtein when:",
+      "paragraphs": [
+        "Use Levenshtein when:",
+        "symbols can be inserted;",
+        "symbols can be deleted;",
+        "lengths vary;",
+        "alignment after a shift matters;",
+        "adjacent transposition is not a distinct primitive or does not need special treatment."
+      ]
+    },
+    {
+      "heading": "85. When Damerau-Levenshtein is better",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "Prefer a transposition-aware model when adjacent reversal of two symbols is a meaningful single error.",
+      "paragraphs": [
+        "Prefer a transposition-aware model when adjacent reversal of two symbols is a meaningful single error.",
+        "This is common in:",
+        "keyboard typing;",
+        "short-name entry;",
+        "spell correction;",
+        "interactive search queries."
+      ]
+    },
+    {
+      "heading": "86. When OSA may be enough",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 6,
+      "word_count": 25,
+      "evidence": "OSA can be attractive when:",
+      "paragraphs": [
+        "OSA can be attractive when:",
+        "strings are short;",
+        "simple adjacent transpositions dominate;",
+        "overlapping edit interactions are uncommon;",
+        "implementation simplicity matters;",
+        "metric indexing is not required."
+      ]
+    },
+    {
+      "heading": "87. When true Damerau-Levenshtein is preferable",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Use the unrestricted distance when the mathematical definition itself matters and sequences can require interacting transposition/edit operations.",
+      "paragraphs": [
+        "Use the unrestricted distance when the mathematical definition itself matters and sequences can require interacting transposition/edit operations."
+      ]
+    },
+    {
+      "heading": "88. Do not choose OSA merely because the library labels it “Damerau”",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Verify documentation and test known distinguishing examples.",
+      "paragraphs": [
+        "Verify documentation and test known distinguishing examples."
+      ]
+    },
+    {
+      "heading": "89. Minimal implementation test",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 8,
+      "word_count": 24,
+      "evidence": "Evaluate:",
+      "paragraphs": [
+        "Evaluate:",
+        "distance(\"CA\",\"ABC\").",
+        "If the library returns:",
+        "2",
+        "it may be implementing true Damerau-Levenshtein.",
+        "If it returns:",
+        "3,",
+        "it is consistent with OSA/restricted Damerau behavior."
+      ]
+    },
+    {
+      "heading": "90. One test cannot prove full implementation correctness",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "It only distinguishes this well-known behavioral case.",
+      "paragraphs": [
+        "It only distinguishes this well-known behavioral case.",
+        "A complete validation suite is still necessary."
+      ]
+    },
+    {
+      "heading": "91. Another useful transposition test",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 3,
+      "word_count": 14,
+      "evidence": "form from.",
+      "paragraphs": [
+        "form from.",
+        "Expected:",
+        "Method Distance Hamming 2 Levenshtein 2 OSA 1 True Damerau-Levenshtein 1"
+      ]
+    },
+    {
+      "heading": "92. This test does not distinguish OSA from full Damerau",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Both recognize the simple adjacent swap.",
+      "paragraphs": [
+        "Both recognize the simple adjacent swap."
+      ]
+    },
+    {
+      "heading": "93. Testing must target defining differences",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "This principle applies to algorithm validation generally:",
+      "paragraphs": [
+        "This principle applies to algorithm validation generally:",
+        "test cases should distinguish competing specifications."
+      ]
+    },
+    {
+      "heading": "94. Distance matrix for representative examples",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 48,
+      "evidence": "Pair Hamming Levenshtein OSA True Damerau-Levenshtein abc / abc 0 0 0 0 abc / axc 1 1 1 1 form / from 2 2 1 1 abc / bca 3 2 2 2 CA / ABC Undefined 3 3 2 kitten / sitting Undefined 3 3 3",
+      "paragraphs": [
+        "Pair Hamming Levenshtein OSA True Damerau-Levenshtein abc / abc 0 0 0 0 abc / axc 1 1 1 1 form / from 2 2 1 1 abc / bca 3 2 2 2 CA / ABC Undefined 3 3 2 kitten / sitting Undefined 3 3 3"
+      ]
+    },
+    {
+      "heading": "95. Hamming and Levenshtein measure different error channels",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "This is especially important in coding theory.",
+      "paragraphs": [
+        "This is especially important in coding theory.",
+        "Hamming: substitution channel Levenshtein: synchronization-aware insertion/deletion/substitution model."
+      ]
+    },
+    {
+      "heading": "96. A substitution preserves coordinate synchronization",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "ABCDE ABXDE.",
+      "paragraphs": [
+        "ABCDE ABXDE.",
+        "After the error, every later coordinate remains aligned."
+      ]
+    },
+    {
+      "heading": "97. A deletion destroys downstream positional synchronization",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "ABCDE ABDE.",
+      "paragraphs": [
+        "ABCDE ABDE.",
+        "Everything after the missing C shifts."
+      ]
+    },
+    {
+      "heading": "98. An insertion has the same synchronization effect",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "ABCDE ABXCDE.",
+      "paragraphs": [
+        "ABCDE ABXCDE.",
+        "Downstream symbols shift by one position."
+      ]
+    },
+    {
+      "heading": "99. This explains the different coding geometries",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "Hamming balls are organized around fixed coordinates.",
+      "paragraphs": [
+        "Hamming balls are organized around fixed coordinates.",
+        "Insertion/deletion balls are organized around variable-length sequences and subsequence/supersequence relationships."
+      ]
+    },
+    {
+      "heading": "100. Minimum Hamming distance",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "For a code C :",
+      "paragraphs": [
+        "For a code C :",
+        "d_min = min dH(x,y) for distinct x,y ∈ C."
+      ]
+    },
+    {
+      "heading": "101. Unique substitution-error correction",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "In the standard Hamming metric, a code with:",
+      "paragraphs": [
+        "In the standard Hamming metric, a code with:",
+        "d_min >= 2t + 1",
+        "can uniquely correct up to:",
+        "t",
+        "substitution errors under nearest-codeword decoding."
+      ]
+    },
+    {
+      "heading": "102. The same generic metric-ball theorem applies to metric edit spaces",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 2,
+      "word_count": 33,
+      "evidence": "If a genuine metric is used, pairwise balls of radius t are disjoint when minimum distance exceeds 2t .",
+      "paragraphs": [
+        "If a genuine metric is used, pairwise balls of radius t are disjoint when minimum distance exceeds 2t .",
+        "But the operational interpretation of those balls differs greatly between Hamming and edit metrics."
+      ]
+    },
+    {
+      "heading": "103. Deletion-only coding has additional structure",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 24,
+      "evidence": "For fixed-length codewords, deletion correction is often characterized using common deletion descendants or longest common subsequences rather than blindly applying a Hamming-style coordinate model.",
+      "paragraphs": [
+        "For fixed-length codewords, deletion correction is often characterized using common deletion descendants or longest common subsequences rather than blindly applying a Hamming-style coordinate model."
+      ]
+    },
+    {
+      "heading": "104. Pure insertion/deletion distance",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "If substitution is not primitive:",
+      "paragraphs": [
+        "If substitution is not primitive:",
+        "dID(X,Y) = |X| + |Y| - 2 LCS(X,Y).",
+        "This is not full unit-substitution Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "105. Hamming and pure indel geometry are fundamentally different",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "Hamming asks about mismatching coordinates.",
+      "paragraphs": [
+        "Hamming asks about mismatching coordinates.",
+        "Indel distance asks how much ordered subsequence structure can be preserved."
+      ]
+    },
+    {
+      "heading": "106. Do not call every coding-theory distance “Levenshtein distance” without defining operations",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 6,
+      "word_count": 18,
+      "evidence": "Different papers use:",
+      "paragraphs": [
+        "Different papers use:",
+        "substitution-only distance;",
+        "pure insertion/deletion distance;",
+        "full insertion/deletion/substitution distance;",
+        "channel-specific variants.",
+        "Always inspect the operation model."
+      ]
+    },
+    {
+      "heading": "107. Hamming is not “Levenshtein without dynamic programming”",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "The correct relationship is:",
+      "paragraphs": [
+        "The correct relationship is:",
+        "Hamming: restricted error model Levenshtein: richer error model."
+      ]
+    },
+    {
+      "heading": "108. Likewise Damerau is not merely “more accurate Levenshtein”",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "It adds an assumption:",
+      "paragraphs": [
+        "It adds an assumption:",
+        "adjacent transposition is a meaningful primitive edit.",
+        "That assumption can be correct or incorrect depending on the application."
+      ]
+    },
+    {
+      "heading": "109. Typing error example",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "Suppose the intended word is:",
+      "paragraphs": [
+        "Suppose the intended word is:",
+        "trial",
+        "and the observed input is:",
+        "trail.",
+        "An adjacent transposition explains the change naturally."
+      ]
+    },
+    {
+      "heading": "110. Levenshtein interpretation",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Without transposition, two symbol substitutions can perform the change.",
+      "paragraphs": [
+        "Without transposition, two symbol substitutions can perform the change."
+      ]
+    },
+    {
+      "heading": "111. Damerau interpretation",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "One adjacent swap captures the apparent typing event.",
+      "paragraphs": [
+        "One adjacent swap captures the apparent typing event."
+      ]
+    },
+    {
+      "heading": "112. This does not prove a transposition physically occurred",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "Distance gives the cheapest transformation under a model.",
+      "paragraphs": [
+        "Distance gives the cheapest transformation under a model.",
+        "It does not reconstruct the user's actual keystroke history."
+      ]
+    },
+    {
+      "heading": "113. Endpoint distance versus physical history",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "minimum edit script != observed error process.",
+      "paragraphs": [
+        "minimum edit script != observed error process.",
+        "The same distinction applies to all edit distances."
+      ]
+    },
+    {
+      "heading": "114. Multiple optimal scripts may exist",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "Repeated characters can create several minimum-cost alignments.",
+      "paragraphs": [
+        "Repeated characters can create several minimum-cost alignments.",
+        "The scalar distance can be unique while the explanation is not."
+      ]
+    },
+    {
+      "heading": "115. Damerau does not solve every typing-error problem",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 8,
+      "word_count": 19,
+      "evidence": "Real typing errors can include:",
+      "paragraphs": [
+        "Real typing errors can include:",
+        "key adjacency;",
+        "repeated keys;",
+        "phonetic spelling;",
+        "missing spaces;",
+        "merged words;",
+        "split words;",
+        "autocorrect substitutions."
+      ]
+    },
+    {
+      "heading": "116. Weighted models may be more realistic",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "If keyboard substitutions have unequal probabilities:",
+      "paragraphs": [
+        "If keyboard substitutions have unequal probabilities:",
+        "cost(g -> h) < cost(g -> q)",
+        "may better represent physical keyboard geometry.",
+        "See weighted Levenshtein distance ."
+      ]
+    },
+    {
+      "heading": "117. Transposition cost can also be weighted",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "A generalized Damerau model can assign:",
+      "paragraphs": [
+        "A generalized Damerau model can assign:",
+        "c_transpose(a,b)",
+        "instead of always:",
+        "1."
+      ]
+    },
+    {
+      "heading": "118. Weighted costs complicate metric properties",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "If costs are arbitrary, symmetry or triangle inequality may fail.",
+      "paragraphs": [
+        "If costs are arbitrary, symmetry or triangle inequality may fail.",
+        "Do not assume a weighted Damerau or weighted Levenshtein function remains a metric."
+      ]
+    },
+    {
+      "heading": "119. Cost-model assumptions should be explicit",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "Document:",
+      "paragraphs": [
+        "Document:",
+        "insertion cost deletion cost substitution cost transposition cost."
+      ]
+    },
+    {
+      "heading": "120. Hamming can also be weighted",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "A generalized positional mismatch score might use:",
+      "paragraphs": [
+        "A generalized positional mismatch score might use:",
+        "Σ w_i [xi != yi].",
+        "This can be useful when coordinates have different importance."
+      ]
+    },
+    {
+      "heading": "121. Weighted Hamming is a different model",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "It should not be confused with the standard unit-coordinate Hamming distance.",
+      "paragraphs": [
+        "It should not be confused with the standard unit-coordinate Hamming distance."
+      ]
+    },
+    {
+      "heading": "122. Position-specific risk example",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "In a structured identifier:",
+      "paragraphs": [
+        "In a structured identifier:",
+        "COUNTRY-CODE / ACCOUNT / CHECKSUM",
+        "one mismatch in a checksum may deserve different treatment from a mismatch in a descriptive field."
+      ]
+    },
+    {
+      "heading": "123. One distance over a concatenated record can lose field semantics",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "This is one of the broader limitations discussed in Levenshtein distance limitations .",
+      "paragraphs": [
+        "This is one of the broader limitations discussed in Levenshtein distance limitations ."
+      ]
+    },
+    {
+      "heading": "124. Normalization affects all four distances",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 7,
+      "word_count": 18,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "ABC abc.",
+        "Without case folding:",
+        "three mismatches",
+        "may be observed.",
+        "After application-appropriate case normalization:",
+        "distance = 0."
+      ]
+    },
+    {
+      "heading": "125. Preprocessing is part of the comparison definition",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 6,
+      "word_count": 10,
+      "evidence": "Always specify whether strings were:",
+      "paragraphs": [
+        "Always specify whether strings were:",
+        "case-folded;",
+        "Unicode-normalized;",
+        "accent-folded;",
+        "tokenized;",
+        "punctuation-normalized."
+      ]
+    },
+    {
+      "heading": "126. Unicode code points versus grapheme clusters",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 4,
+      "word_count": 23,
+      "evidence": "All four algorithms operate on sequences of symbols.",
+      "paragraphs": [
+        "All four algorithms operate on sequences of symbols.",
+        "Those symbols need not be bytes or code points.",
+        "They can be:",
+        "extended grapheme clusters."
+      ]
+    },
+    {
+      "heading": "127. The distance model and sequence unit are independent choices",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 5,
+      "word_count": 17,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "Damerau-Levenshtein over Unicode code points",
+        "and:",
+        "Damerau-Levenshtein over grapheme clusters",
+        "are different practical comparison systems."
+      ]
+    },
+    {
+      "heading": "128. Hamming over grapheme clusters still requires equal cluster counts",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Changing the symbol representation does not remove Hamming's fixed-length assumption.",
+      "paragraphs": [
+        "Changing the symbol representation does not remove Hamming's fixed-length assumption."
+      ]
+    },
+    {
+      "heading": "129. Transposition at code-point level may not equal user-visible transposition",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "A visible character containing several combining code points can make code-point swaps meaningless from a user-interface perspective.",
+      "paragraphs": [
+        "A visible character containing several combining code points can make code-point swaps meaningless from a user-interface perspective."
+      ]
+    },
+    {
+      "heading": "130. Choose the unit before choosing the distance",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "A robust decision process is:",
+      "paragraphs": [
+        "A robust decision process is:",
+        "1. define sequence units 2. normalize appropriately 3. define allowed errors 4. choose distance 5. choose threshold 6. design retrieval architecture."
+      ]
+    },
+    {
+      "heading": "131. Threshold interpretation",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 3,
+      "word_count": 14,
+      "evidence": "Suppose a fuzzy system accepts:",
+      "paragraphs": [
+        "Suppose a fuzzy system accepts:",
+        "distance <= 1.",
+        "The meaning differs dramatically across metrics."
+      ]
+    },
+    {
+      "heading": "132. Hamming radius one",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 2,
+      "word_count": 6,
+      "evidence": "Means:",
+      "paragraphs": [
+        "Means:",
+        "at most one coordinate substitution."
+      ]
+    },
+    {
+      "heading": "133. Levenshtein radius one",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "Means one of:",
+      "paragraphs": [
+        "Means one of:",
+        "one insertion one deletion one substitution."
+      ]
+    },
+    {
+      "heading": "134. Damerau radius one",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 2,
+      "word_count": 4,
+      "evidence": "Adds:",
+      "paragraphs": [
+        "Adds:",
+        "one adjacent transposition."
+      ]
+    },
+    {
+      "heading": "135. The candidate neighborhood therefore grows",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "For the same numerical threshold:",
+      "paragraphs": [
+        "For the same numerical threshold:",
+        "DL radius k",
+        "generally contains at least everything contained in:",
+        "Levenshtein radius k,",
+        "plus strings reachable through useful transpositions."
+      ]
+    },
+    {
+      "heading": "136. Same threshold does not mean same selectivity",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 4,
+      "word_count": 22,
+      "evidence": "This matters when switching metrics in production.",
+      "paragraphs": [
+        "This matters when switching metrics in production.",
+        "Replacing Levenshtein with Damerau-Levenshtein while keeping:",
+        "k = 2",
+        "can change recall and false-positive rates."
+      ]
+    },
+    {
+      "heading": "137. Recalibrate thresholds after changing metric",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 5,
+      "word_count": 9,
+      "evidence": "Measure:",
+      "paragraphs": [
+        "Measure:",
+        "candidate counts;",
+        "true-match recall;",
+        "false positives;",
+        "ranking quality."
+      ]
+    },
+    {
+      "heading": "138. Normalized distance complicates comparison further",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "A system may define:",
+      "paragraphs": [
+        "A system may define:",
+        "similarity = 1 - distance / max(lengths).",
+        "This is a normalization convention, not part of the original Hamming, Levenshtein, or Damerau definitions."
+      ]
+    },
+    {
+      "heading": "139. Normalization can hide different edit geometries",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 3,
+      "word_count": 11,
+      "evidence": "Two metrics can both output:",
+      "paragraphs": [
+        "Two metrics can both output:",
+        "0.90",
+        "while accepting fundamentally different transformations."
+      ]
+    },
+    {
+      "heading": "140. Always retain the raw distance name",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "Instead of reporting only:",
+      "paragraphs": [
+        "Instead of reporting only:",
+        "similarity = 0.90",
+        "report:",
+        "metric = true Damerau-Levenshtein raw distance = 1 lengths = 10,10 normalization = 1 - d/max(m,n)."
+      ]
+    },
+    {
+      "heading": "141. Hamming search can be extremely efficient",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Fixed-length representations support specialized indexing and bitwise operations.",
+      "paragraphs": [
+        "Fixed-length representations support specialized indexing and bitwise operations."
+      ]
+    },
+    {
+      "heading": "142. Binary Hamming distance",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 4,
+      "word_count": 21,
+      "evidence": "For binary strings stored as machine words:",
+      "paragraphs": [
+        "For binary strings stored as machine words:",
+        "X XOR Y",
+        "marks differing bits.",
+        "A population-count instruction gives the Hamming distance efficiently."
+      ]
+    },
+    {
+      "heading": "143. This optimization reflects the fixed-coordinate model",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "There is no equivalent one-XOR solution to insertion/deletion alignment.",
+      "paragraphs": [
+        "There is no equivalent one-XOR solution to insertion/deletion alignment."
+      ]
+    },
+    {
+      "heading": "144. Levenshtein requires alignment state",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "An insertion near the beginning changes correspondence for every later symbol.",
+      "paragraphs": [
+        "An insertion near the beginning changes correspondence for every later symbol.",
+        "Dynamic programming resolves where synchronization should be restored."
+      ]
+    },
+    {
+      "heading": "145. Damerau requires even richer state",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "True unrestricted adjacent-transposition handling must account for earlier character occurrences and transposition interactions.",
+      "paragraphs": [
+        "True unrestricted adjacent-transposition handling must account for earlier character occurrences and transposition interactions."
+      ]
+    },
+    {
+      "heading": "146. Pairwise complexity summary",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 1,
+      "word_count": 43,
+      "evidence": "Distance Typical unit-cost pairwise complexity Core reason Hamming O(n) Fixed coordinate comparison Levenshtein O(mn) standard DP Alignment over insert/delete/substitute OSA O(mn) standard DP Levenshtein DP plus local transposition state True Damerau-Levenshtein O(mn) algorithms under standard unit-cost formulation Full transposition interactions plus last-occurrence state",
+      "paragraphs": [
+        "Distance Typical unit-cost pairwise complexity Core reason Hamming O(n) Fixed coordinate comparison Levenshtein O(mn) standard DP Alignment over insert/delete/substitute OSA O(mn) standard DP Levenshtein DP plus local transposition state True Damerau-Levenshtein O(mn) algorithms under standard unit-cost formulation Full transposition interactions plus last-occurrence state"
+      ]
+    },
+    {
+      "heading": "147. Big-O does not tell the whole performance story",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 4,
+      "word_count": 13,
+      "evidence": "Constant factors differ.",
+      "paragraphs": [
+        "Constant factors differ.",
+        "Memory layouts differ.",
+        "Vectorization opportunities differ.",
+        "Thresholds change practical work."
+      ]
+    },
+    {
+      "heading": "148. Bounded Levenshtein can be much cheaper than full DP",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 4,
+      "word_count": 28,
+      "evidence": "If the application only asks:",
+      "paragraphs": [
+        "If the application only asks:",
+        "dL(X,Y) <= k?",
+        "and k is small, computation can often be restricted to a diagonal band.",
+        "See bounded and parameterized edit distance ."
+      ]
+    },
+    {
+      "heading": "149. The same general optimization idea can apply to related edit models",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "However transposition-aware recurrence/state can make implementation more involved.",
+      "paragraphs": [
+        "However transposition-aware recurrence/state can make implementation more involved."
+      ]
+    },
+    {
+      "heading": "150. Pairwise speed is not search scalability",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "Even an optimized distance function should not necessarily be run against every element of a database containing millions of strings.",
+      "paragraphs": [
+        "Even an optimized distance function should not necessarily be run against every element of a database containing millions of strings."
+      ]
+    },
+    {
+      "heading": "151. Metric properties affect indexing choices",
+      "level": 2,
+      "id": "ux-section-152",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "Standard Hamming, Levenshtein, and true unit-cost Damerau-Levenshtein support metric-space reasoning.",
+      "paragraphs": [
+        "Standard Hamming, Levenshtein, and true unit-cost Damerau-Levenshtein support metric-space reasoning.",
+        "OSA cannot safely assume triangle inequality."
+      ]
+    },
+    {
+      "heading": "152. This can make the “simpler” OSA algorithm less convenient for some indexes",
+      "level": 2,
+      "id": "ux-section-153",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Computational simplicity of one pairwise comparison and global search architecture are different optimization problems.",
+      "paragraphs": [
+        "Computational simplicity of one pairwise comparison and global search architecture are different optimization problems."
+      ]
+    },
+    {
+      "heading": "153. Approximate search versus exact distance",
+      "level": 2,
+      "id": "ux-section-154",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "A search engine may use:",
+      "paragraphs": [
+        "A search engine may use:",
+        "cheap candidate retrieval",
+        "followed by:",
+        "exact Damerau-Levenshtein verification.",
+        "The final metric remains exact even if candidate generation is heuristic."
+      ]
+    },
+    {
+      "heading": "154. Metric choice should follow the error process",
+      "level": 2,
+      "id": "ux-section-155",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "Consider four applications.",
+      "paragraphs": [
+        "Consider four applications."
+      ]
+    },
+    {
+      "heading": "155. Application A: bit corruption",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 5,
+      "word_count": 12,
+      "evidence": "101101 -> 101001.",
+      "paragraphs": [
+        "101101 -> 101001.",
+        "Fixed length.",
+        "No insertion or deletion.",
+        "Natural choice:",
+        "Hamming."
+      ]
+    },
+    {
+      "heading": "156. Application B: OCR dropped character",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 4,
+      "word_count": 9,
+      "evidence": "algorithm -> algorthm.",
+      "paragraphs": [
+        "algorithm -> algorthm.",
+        "A character disappeared.",
+        "Natural baseline:",
+        "Levenshtein."
+      ]
+    },
+    {
+      "heading": "157. Application C: adjacent typing swap",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 3,
+      "word_count": 14,
+      "evidence": "distance -> distacne.",
+      "paragraphs": [
+        "distance -> distacne.",
+        "If this swap should be one primitive error:",
+        "Damerau-Levenshtein or OSA."
+      ]
+    },
+    {
+      "heading": "158. Application D: person names",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 8,
+      "word_count": 30,
+      "evidence": "The correct answer may be none of the three alone.",
+      "paragraphs": [
+        "The correct answer may be none of the three alone.",
+        "Name matching can depend on:",
+        "transposition;",
+        "prefix similarity;",
+        "phonetics;",
+        "token order;",
+        "aliases.",
+        "See Levenshtein vs Jaro-Winkler and phonetic matching ."
+      ]
+    },
+    {
+      "heading": "159. Hamming is not suitable merely because two names happen to have equal length",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "Equal length is necessary for standard Hamming distance, but not sufficient to make fixed-coordinate substitution the right error model.",
+      "paragraphs": [
+        "Equal length is necessary for standard Hamming distance, but not sufficient to make fixed-coordinate substitution the right error model."
+      ]
+    },
+    {
+      "heading": "160. Example",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "MARIA AMRIA.",
+      "paragraphs": [
+        "MARIA AMRIA.",
+        "A reordering can produce high Hamming distance even though a different edit model may find a smaller structural change."
+      ]
+    },
+    {
+      "heading": "161. Levenshtein can exploit shifts even for equal-length strings",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 3,
+      "word_count": 9,
+      "evidence": "This is why:",
+      "paragraphs": [
+        "This is why:",
+        "dL <= dH",
+        "for equal-length strings."
+      ]
+    },
+    {
+      "heading": "162. Hamming's simplicity can be a benefit, not a weakness",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "If coordinates genuinely correspond, allowing insertions and deletions may create undesirable alignments.",
+      "paragraphs": [
+        "If coordinates genuinely correspond, allowing insertions and deletions may create undesirable alignments."
+      ]
+    },
+    {
+      "heading": "163. Example: fixed-form code",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "ABCD-1234",
+        "contains fixed semantic fields at each coordinate.",
+        "An insertion/delete alignment may pair symbols across field boundaries unless the representation protects those boundaries."
+      ]
+    },
+    {
+      "heading": "164. Richer metric can sometimes be worse",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 4,
+      "word_count": 12,
+      "evidence": "More allowed operations mean:",
+      "paragraphs": [
+        "More allowed operations mean:",
+        "more invariance.",
+        "More invariance can increase:",
+        "false similarity."
+      ]
+    },
+    {
+      "heading": "165. Damerau likewise creates additional equivalences",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "If adjacent order is semantically important rather than a plausible typo, treating transposition cheaply can reduce discrimination.",
+      "paragraphs": [
+        "If adjacent order is semantically important rather than a plausible typo, treating transposition cheaply can reduce discrimination."
+      ]
+    },
+    {
+      "heading": "166. Example: ordered codes",
+      "level": 2,
+      "id": "ux-section-167",
+      "paragraph_count": 7,
+      "word_count": 20,
+      "evidence": "AB",
+      "paragraphs": [
+        "AB",
+        "and:",
+        "BA",
+        "may represent entirely different commands.",
+        "Damerau says:",
+        "distance 1.",
+        "That may be mathematically correct but operationally undesirable."
+      ]
+    },
+    {
+      "heading": "167. Do not confuse edit plausibility with semantic importance",
+      "level": 2,
+      "id": "ux-section-168",
+      "paragraph_count": 4,
+      "word_count": 10,
+      "evidence": "A modification can be:",
+      "paragraphs": [
+        "A modification can be:",
+        "easy to perform",
+        "but:",
+        "highly consequential."
+      ]
+    },
+    {
+      "heading": "168. Security example",
+      "level": 2,
+      "id": "ux-section-169",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "One transposed character in a package or hostname may redirect the user to a different entity.",
+      "paragraphs": [
+        "One transposed character in a package or hostname may redirect the user to a different entity.",
+        "Distance does not imply trust."
+      ]
+    },
+    {
+      "heading": "169. String similarity remains separate from entity identity",
+      "level": 2,
+      "id": "ux-section-170",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "small distance != same entity.",
+      "paragraphs": [
+        "small distance != same entity.",
+        "This boundary remains true for Hamming, Levenshtein, and Damerau-Levenshtein."
+      ]
+    },
+    {
+      "heading": "170. Zero distance is also not proof of real-world identity",
+      "level": 2,
+      "id": "ux-section-171",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "Two people can share exactly the same name.",
+      "paragraphs": [
+        "Two people can share exactly the same name.",
+        "Two software packages can theoretically appear in different namespace contexts with the same textual component."
+      ]
+    },
+    {
+      "heading": "171. Distance measures sequence geometry, not provenance",
+      "level": 2,
+      "id": "ux-section-172",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Metadata and contextual evidence are required for identity decisions.",
+      "paragraphs": [
+        "Metadata and contextual evidence are required for identity decisions."
+      ]
+    },
+    {
+      "heading": "172. Semantic similarity is another separate problem",
+      "level": 2,
+      "id": "ux-section-173",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "car automobile.",
+        "All three string distances regard them as lexically distant.",
+        "Semantically they can be close.",
+        "See string similarity vs semantic similarity ."
+      ]
+    },
+    {
+      "heading": "173. Transposition awareness does not add semantics",
+      "level": 2,
+      "id": "ux-section-174",
+      "paragraph_count": 8,
+      "word_count": 17,
+      "evidence": "Damerau-Levenshtein knows:",
+      "paragraphs": [
+        "Damerau-Levenshtein knows:",
+        "AB -> BA",
+        "can cost one.",
+        "It does not know:",
+        "synonyms;",
+        "phonetics;",
+        "grammar;",
+        "world knowledge."
+      ]
+    },
+    {
+      "heading": "174. Hamming also remains purely symbolic",
+      "level": 2,
+      "id": "ux-section-175",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "It does not know whether one mismatch is more meaningful than another.",
+      "paragraphs": [
+        "It does not know whether one mismatch is more meaningful than another."
+      ]
+    },
+    {
+      "heading": "175. Biological comparison",
+      "level": 2,
+      "id": "ux-section-176",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Hamming distance can be useful when biological sequences are already aligned and only substitutions are of interest.",
+      "paragraphs": [
+        "Hamming distance can be useful when biological sequences are already aligned and only substitutions are of interest."
+      ]
+    },
+    {
+      "heading": "176. Insertions and deletions require alignment",
+      "level": 2,
+      "id": "ux-section-177",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Once indels are possible, fixed-coordinate Hamming comparison becomes inappropriate unless an external alignment has already established correspondence.",
+      "paragraphs": [
+        "Once indels are possible, fixed-coordinate Hamming comparison becomes inappropriate unless an external alignment has already established correspondence."
+      ]
+    },
+    {
+      "heading": "177. Ordinary Levenshtein can model indels",
+      "level": 2,
+      "id": "ux-section-178",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "But unit costs may still be biologically crude.",
+      "paragraphs": [
+        "But unit costs may still be biologically crude."
+      ]
+    },
+    {
+      "heading": "178. Biological sequence alignment uses richer scoring",
+      "level": 2,
+      "id": "ux-section-179",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "Substitution matrices and gap-open/gap-extension models can better represent biological assumptions.",
+      "paragraphs": [
+        "Substitution matrices and gap-open/gap-extension models can better represent biological assumptions.",
+        "See Levenshtein distance vs sequence alignment ."
+      ]
+    },
+    {
+      "heading": "179. “Aligned Hamming distance” and “alignment algorithm” are separate stages",
+      "level": 2,
+      "id": "ux-section-180",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "If a multiple sequence alignment has already determined positions, Hamming-like mismatch counts can summarize divergence within those aligned coordinates.",
+      "paragraphs": [
+        "If a multiple sequence alignment has already determined positions, Hamming-like mismatch counts can summarize divergence within those aligned coordinates.",
+        "That does not mean Hamming itself created the alignment."
+      ]
+    },
+    {
+      "heading": "180. Software testing example",
+      "level": 2,
+      "id": "ux-section-181",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "Suppose two event vectors have fixed slots:",
+      "paragraphs": [
+        "Suppose two event vectors have fixed slots:",
+        "[ compile_status, unit_test_status, integration_status, deployment_status ].",
+        "Hamming comparison may be meaningful."
+      ]
+    },
+    {
+      "heading": "181. Sequence logs are different",
+      "level": 2,
+      "id": "ux-section-182",
+      "paragraph_count": 5,
+      "word_count": 21,
+      "evidence": "If events can appear or disappear:",
+      "paragraphs": [
+        "If events can appear or disappear:",
+        "START AUTH QUERY CLOSE",
+        "versus:",
+        "START AUTH CACHE QUERY CLOSE,",
+        "Levenshtein-like alignment is more natural."
+      ]
+    },
+    {
+      "heading": "182. Event reordering creates another question",
+      "level": 2,
+      "id": "ux-section-183",
+      "paragraph_count": 9,
+      "word_count": 25,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "CACHE QUERY",
+        "becomes:",
+        "QUERY CACHE,",
+        "should this be:",
+        "one transposition;",
+        "two event changes;",
+        "a major causal difference?",
+        "The correct choice depends on event semantics."
+      ]
+    },
+    {
+      "heading": "183. Distance should follow domain operations",
+      "level": 2,
+      "id": "ux-section-184",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "This is the deeper lesson shared by all four models.",
+      "paragraphs": [
+        "This is the deeper lesson shared by all four models."
+      ]
+    },
+    {
+      "heading": "184. Common failure mode: “Damerau-Levenshtein means Levenshtein plus one if-statement”",
+      "level": 2,
+      "id": "ux-section-185",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "That simple recurrence generally describes OSA, not the unrestricted distance.",
+      "paragraphs": [
+        "That simple recurrence generally describes OSA, not the unrestricted distance."
+      ]
+    },
+    {
+      "heading": "185. Common failure mode: OSA and true Damerau always agree",
+      "level": 2,
+      "id": "ux-section-186",
+      "paragraph_count": 3,
+      "word_count": 8,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "CA / ABC",
+        "is a standard counterexample."
+      ]
+    },
+    {
+      "heading": "186. Common failure mode: OSA is a metric",
+      "level": 2,
+      "id": "ux-section-187",
+      "paragraph_count": 2,
+      "word_count": 5,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "Triangle inequality can fail."
+      ]
+    },
+    {
+      "heading": "187. Common failure mode: true unit-cost Damerau-Levenshtein is not a metric",
+      "level": 2,
+      "id": "ux-section-188",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "False under its standard unrestricted unit-cost formulation.",
+      "paragraphs": [
+        "False under its standard unrestricted unit-cost formulation.",
+        "It is a genuine metric."
+      ]
+    },
+    {
+      "heading": "188. Common failure mode: Hamming can compare different-length strings by definition",
+      "level": 2,
+      "id": "ux-section-189",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Not in the standard definition.",
+      "paragraphs": [
+        "Not in the standard definition."
+      ]
+    },
+    {
+      "heading": "189. Common failure mode: padding is harmless",
+      "level": 2,
+      "id": "ux-section-190",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Padding introduces an alignment convention that changes the mathematical problem.",
+      "paragraphs": [
+        "Padding introduces an alignment convention that changes the mathematical problem."
+      ]
+    },
+    {
+      "heading": "190. Common failure mode: Hamming distance is always greater than Levenshtein",
+      "level": 2,
+      "id": "ux-section-191",
+      "paragraph_count": 3,
+      "word_count": 13,
+      "evidence": "The formal comparison:",
+      "paragraphs": [
+        "The formal comparison:",
+        "dL <= dH",
+        "requires equal-length inputs where Hamming is defined."
+      ]
+    },
+    {
+      "heading": "191. Common failure mode: Levenshtein and Hamming must agree on equal-length strings",
+      "level": 2,
+      "id": "ux-section-192",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "abc / bca",
+        "shows:",
+        "dH = 3 dL = 2."
+      ]
+    },
+    {
+      "heading": "192. Common failure mode: Levenshtein cannot use insertions/deletions when lengths are equal",
+      "level": 2,
+      "id": "ux-section-193",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "It can.",
+      "paragraphs": [
+        "It can.",
+        "An optimal path may delete one symbol and insert another elsewhere even when total lengths are identical."
+      ]
+    },
+    {
+      "heading": "193. Common failure mode: transposition is two edits in every edit metric",
+      "level": 2,
+      "id": "ux-section-194",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Only if transposition is not a primitive operation.",
+      "paragraphs": [
+        "Only if transposition is not a primitive operation."
+      ]
+    },
+    {
+      "heading": "194. Common failure mode: every character swap is one Damerau edit",
+      "level": 2,
+      "id": "ux-section-195",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Standard Damerau transposition is adjacent.",
+      "paragraphs": [
+        "Standard Damerau transposition is adjacent."
+      ]
+    },
+    {
+      "heading": "195. Common failure mode: Damerau distance reconstructs the actual typo",
+      "level": 2,
+      "id": "ux-section-196",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "It returns a minimum-cost transformation, not historical proof of the user's keystrokes.",
+      "paragraphs": [
+        "It returns a minimum-cost transformation, not historical proof of the user's keystrokes."
+      ]
+    },
+    {
+      "heading": "196. Common failure mode: one transposition always means the word is likely a typo",
+      "level": 2,
+      "id": "ux-section-197",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Two legitimate words can differ by a transposition.",
+      "paragraphs": [
+        "Two legitimate words can differ by a transposition.",
+        "Distance does not infer intention."
+      ]
+    },
+    {
+      "heading": "197. Common failure mode: Hamming is obsolete because Levenshtein is more general",
+      "level": 2,
+      "id": "ux-section-198",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "When fixed coordinates are the actual model, Hamming is simpler, faster, and conceptually more precise."
+      ]
+    },
+    {
+      "heading": "198. Common failure mode: the richest edit model is always best",
+      "level": 2,
+      "id": "ux-section-199",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Extra operations can incorrectly collapse distinctions that matter.",
+      "paragraphs": [
+        "Extra operations can incorrectly collapse distinctions that matter."
+      ]
+    },
+    {
+      "heading": "199. Common failure mode: O(mn) makes edit distance unsuitable for every large system",
+      "level": 2,
+      "id": "ux-section-200",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Thresholding, bit parallelism, filtering, indexing, and candidate retrieval can drastically reduce practical work.",
+      "paragraphs": [
+        "Thresholding, bit parallelism, filtering, indexing, and candidate retrieval can drastically reduce practical work."
+      ]
+    },
+    {
+      "heading": "200. Common failure mode: pairwise algorithm complexity equals search complexity",
+      "level": 2,
+      "id": "ux-section-201",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Searching a corpus requires a retrieval architecture in addition to a distance function.",
+      "paragraphs": [
+        "Searching a corpus requires a retrieval architecture in addition to a distance function."
+      ]
+    },
+    {
+      "heading": "201. Common failure mode: normalized values can be compared across metrics directly",
+      "level": 2,
+      "id": "ux-section-202",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Different metrics produce different neighborhoods even when normalized to the same numeric range.",
+      "paragraphs": [
+        "Different metrics produce different neighborhoods even when normalized to the same numeric range."
+      ]
+    },
+    {
+      "heading": "202. Common failure mode: a threshold of one has the same meaning for Hamming and Damerau",
+      "level": 2,
+      "id": "ux-section-203",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "Hamming radius one permits one substitution.",
+      "paragraphs": [
+        "Hamming radius one permits one substitution.",
+        "Damerau radius one additionally permits insertions, deletions, and adjacent transpositions."
+      ]
+    },
+    {
+      "heading": "203. Common failure mode: weighted Damerau automatically remains a metric",
+      "level": 2,
+      "id": "ux-section-204",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Metric properties depend on the cost constraints.",
+      "paragraphs": [
+        "Metric properties depend on the cost constraints."
+      ]
+    },
+    {
+      "heading": "204. Common failure mode: equal distance implies equal error probability",
+      "level": 2,
+      "id": "ux-section-205",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Unit distance counts operations but does not model how frequently those operations occur.",
+      "paragraphs": [
+        "Unit distance counts operations but does not model how frequently those operations occur."
+      ]
+    },
+    {
+      "heading": "205. Common failure mode: lower distance means closer semantics",
+      "level": 2,
+      "id": "ux-section-206",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "None of these three families is inherently semantic.",
+      "paragraphs": [
+        "None of these three families is inherently semantic."
+      ]
+    },
+    {
+      "heading": "206. Common failure mode: lower distance means same entity",
+      "level": 2,
+      "id": "ux-section-207",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "String similarity is not entity identity.",
+      "paragraphs": [
+        "String similarity is not entity identity."
+      ]
+    },
+    {
+      "heading": "207. Common failure mode: distance zero proves provenance",
+      "level": 2,
+      "id": "ux-section-208",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Identical strings can have independent origins.",
+      "paragraphs": [
+        "Identical strings can have independent origins."
+      ]
+    },
+    {
+      "heading": "208. Common failure mode: Hamming models deletions as many substitutions",
+      "level": 2,
+      "id": "ux-section-209",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "That interpretation loses the actual synchronization-error structure.",
+      "paragraphs": [
+        "That interpretation loses the actual synchronization-error structure."
+      ]
+    },
+    {
+      "heading": "209. Common failure mode: deletion and erasure are equivalent",
+      "level": 2,
+      "id": "ux-section-210",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "An erasure preserves the coordinate.",
+      "paragraphs": [
+        "An erasure preserves the coordinate.",
+        "A deletion removes it."
+      ]
+    },
+    {
+      "heading": "210. Common failure mode: Levenshtein insertion/deletion model and Hamming mismatch model have the same code geometry",
+      "level": 2,
+      "id": "ux-section-211",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "They do not.",
+      "paragraphs": [
+        "They do not."
+      ]
+    },
+    {
+      "heading": "211. Implementation checklist",
+      "level": 2,
+      "id": "ux-section-212",
+      "paragraph_count": 1,
+      "word_count": 88,
+      "evidence": "Question Why it matters What are the sequence units? Bytes, code points, graphemes, tokens produce different distances Are lengths guaranteed equal? Required for standard Hamming Can insertions/deletions occur? If yes, Hamming is usually inappropriate Are adjacent transpositions primitive? Determines whether Damerau model is needed OSA or unrestricted Damerau? They are different functions Are costs unit or weighted? Changes semantics and possibly metric properties Is only the score required? Affects memory strategy Is search bounded by k? Enables pruning/banded computation Is corpus retrieval required? Requires indexing/filtering beyond pairwise DP",
+      "paragraphs": [
+        "Question Why it matters What are the sequence units? Bytes, code points, graphemes, tokens produce different distances Are lengths guaranteed equal? Required for standard Hamming Can insertions/deletions occur? If yes, Hamming is usually inappropriate Are adjacent transpositions primitive? Determines whether Damerau model is needed OSA or unrestricted Damerau? They are different functions Are costs unit or weighted? Changes semantics and possibly metric properties Is only the score required? Affects memory strategy Is search bounded by k? Enables pruning/banded computation Is corpus retrieval required? Requires indexing/filtering beyond pairwise DP"
+      ]
+    },
+    {
+      "heading": "212. Reference Hamming pseudocode",
+      "level": 2,
+      "id": "ux-section-213",
+      "paragraph_count": 1,
+      "word_count": 29,
+      "evidence": "function hamming(A, B): if length(A) != length(B): error \"Hamming distance requires equal lengths\" d = 0 for i in 1..length(A): if A[i] != B[i]: d += 1 return d",
+      "paragraphs": [
+        "function hamming(A, B): if length(A) != length(B): error \"Hamming distance requires equal lengths\" d = 0 for i in 1..length(A): if A[i] != B[i]: d += 1 return d"
+      ]
+    },
+    {
+      "heading": "213. Reference Levenshtein pseudocode",
+      "level": 2,
+      "id": "ux-section-214",
+      "paragraph_count": 1,
+      "word_count": 44,
+      "evidence": "function levenshtein(A, B): previous = [0,1,...,length(B)] for i in 1..length(A): current[0] = i for j in 1..length(B): cost = 0 if A[i] == B[j] else 1 current[j] = min( previous[j] + 1, current[j-1] + 1, previous[j-1] + cost ) previous = current return previous[length(B)]",
+      "paragraphs": [
+        "function levenshtein(A, B): previous = [0,1,...,length(B)] for i in 1..length(A): current[0] = i for j in 1..length(B): cost = 0 if A[i] == B[j] else 1 current[j] = min( previous[j] + 1, current[j-1] + 1, previous[j-1] + cost ) previous = current return previous[length(B)]"
+      ]
+    },
+    {
+      "heading": "214. Reference OSA pseudocode",
+      "level": 2,
+      "id": "ux-section-215",
+      "paragraph_count": 1,
+      "word_count": 65,
+      "evidence": "function optimal_string_alignment(A, B): initialize D as ordinary Levenshtein matrix for i in 1..length(A): for j in 1..length(B): cost = 0 if A[i] == B[j] else 1 D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + cost ) if i > 1 and j > 1 and A[i] == B[j-1] and A[i-1] == B[j]: D[i][j] = min( D[i][j], D[i-2][j-2] + 1 ) return D[m][n]",
+      "paragraphs": [
+        "function optimal_string_alignment(A, B): initialize D as ordinary Levenshtein matrix for i in 1..length(A): for j in 1..length(B): cost = 0 if A[i] == B[j] else 1 D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + cost ) if i > 1 and j > 1 and A[i] == B[j-1] and A[i-1] == B[j]: D[i][j] = min( D[i][j], D[i-2][j-2] + 1 ) return D[m][n]"
+      ]
+    },
+    {
+      "heading": "215. The OSA pseudocode looks deceptively definitive",
+      "level": 2,
+      "id": "ux-section-216",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "Because it is simple and intuitive, it is frequently presented as “the Damerau-Levenshtein algorithm.”",
+      "paragraphs": [
+        "Because it is simple and intuitive, it is frequently presented as “the Damerau-Levenshtein algorithm.”",
+        "That naming is technically incomplete."
+      ]
+    },
+    {
+      "heading": "216. Reference validation suite",
+      "level": 2,
+      "id": "ux-section-217",
+      "paragraph_count": 1,
+      "word_count": 31,
+      "evidence": "equal: abc / abc substitution: abc / axc insertion: abc / abxc deletion: abc / ac simple transposition: form / from OSA/full distinction: CA / ABC Hamming/Levenshtein distinction: abc / bca.",
+      "paragraphs": [
+        "equal: abc / abc substitution: abc / axc insertion: abc / abxc deletion: abc / ac simple transposition: form / from OSA/full distinction: CA / ABC Hamming/Levenshtein distinction: abc / bca."
+      ]
+    },
+    {
+      "heading": "217. Add repeated-symbol cases",
+      "level": 2,
+      "id": "ux-section-218",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "aab aba aaaa aaa abab baba.",
+        "Repeated characters expose alignment and tie-breaking behavior."
+      ]
+    },
+    {
+      "heading": "218. Add empty-string cases",
+      "level": 2,
+      "id": "ux-section-219",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "\"\" / \"\" \"\" / abc abc / \"\".",
+      "paragraphs": [
+        "\"\" / \"\" \"\" / abc abc / \"\".",
+        "Expected Levenshtein/Damerau values:",
+        "0 3 3."
+      ]
+    },
+    {
+      "heading": "219. Hamming empty-string behavior",
+      "level": 2,
+      "id": "ux-section-220",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "Two empty strings have equal length and Hamming distance:",
+      "paragraphs": [
+        "Two empty strings have equal length and Hamming distance:",
+        "0.",
+        "An empty string and nonempty string remain outside the standard Hamming domain."
+      ]
+    },
+    {
+      "heading": "220. Symmetry testing",
+      "level": 2,
+      "id": "ux-section-221",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "For standard unit-cost metric forms verify:",
+      "paragraphs": [
+        "For standard unit-cost metric forms verify:",
+        "d(A,B) = d(B,A)."
+      ]
+    },
+    {
+      "heading": "221. Triangle testing",
+      "level": 2,
+      "id": "ux-section-222",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "For implementations claiming a metric, test random triples:",
+      "paragraphs": [
+        "For implementations claiming a metric, test random triples:",
+        "d(A,C) <= d(A,B)+d(B,C).",
+        "OSA should not be advertised as satisfying this property."
+      ]
+    },
+    {
+      "heading": "222. Unicode testing",
+      "level": 2,
+      "id": "ux-section-223",
+      "paragraph_count": 6,
+      "word_count": 15,
+      "evidence": "Test:",
+      "paragraphs": [
+        "Test:",
+        "precomposed characters;",
+        "combining sequences;",
+        "emoji;",
+        "supplementary-plane characters.",
+        "The algorithm's sequence representation must be explicit."
+      ]
+    },
+    {
+      "heading": "223. Do not confuse Unicode normalization with distance choice",
+      "level": 2,
+      "id": "ux-section-224",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "NFC normalization can be appropriate before any of:",
+      "paragraphs": [
+        "NFC normalization can be appropriate before any of:",
+        "Hamming Levenshtein OSA Damerau-Levenshtein.",
+        "It solves a representation issue rather than selecting an error model."
+      ]
+    },
+    {
+      "heading": "224. Benchmark by error type",
+      "level": 2,
+      "id": "ux-section-225",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Create separate evaluation groups for:",
+      "paragraphs": [
+        "Create separate evaluation groups for:",
+        "substitution insertion deletion adjacent transposition multiple interacting edits."
+      ]
+    },
+    {
+      "heading": "225. Hamming should dominate the simplicity dimension on mismatch-only data",
+      "level": 2,
+      "id": "ux-section-226",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "If every sample has fixed coordinates and only substitutions occur, richer alignment algorithms add unnecessary work.",
+      "paragraphs": [
+        "If every sample has fixed coordinates and only substitutions occur, richer alignment algorithms add unnecessary work."
+      ]
+    },
+    {
+      "heading": "226. Levenshtein should improve recall on indel errors",
+      "level": 2,
+      "id": "ux-section-227",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "If genuine insertions/deletions are present, Hamming's model cannot naturally express them.",
+      "paragraphs": [
+        "If genuine insertions/deletions are present, Hamming's model cannot naturally express them."
+      ]
+    },
+    {
+      "heading": "227. Damerau should improve handling of transposition examples",
+      "level": 2,
+      "id": "ux-section-228",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "But the actual gain depends on how frequent and important those errors are in the target data.",
+      "paragraphs": [
+        "But the actual gain depends on how frequent and important those errors are in the target data."
+      ]
+    },
+    {
+      "heading": "228. OSA and full Damerau may perform identically on many ordinary datasets",
+      "level": 2,
+      "id": "ux-section-229",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Their differences appear only when edit interactions exercise the restricted condition.",
+      "paragraphs": [
+        "Their differences appear only when edit interactions exercise the restricted condition."
+      ]
+    },
+    {
+      "heading": "229. This does not make the distinction theoretical trivia",
+      "level": 2,
+      "id": "ux-section-230",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "If the API promises a specific mathematical distance, returning another distance is a correctness issue even when most examples coincide.",
+      "paragraphs": [
+        "If the API promises a specific mathematical distance, returning another distance is a correctness issue even when most examples coincide."
+      ]
+    },
+    {
+      "heading": "230. Benchmark runtime separately from correctness",
+      "level": 2,
+      "id": "ux-section-231",
+      "paragraph_count": 6,
+      "word_count": 8,
+      "evidence": "Measure:",
+      "paragraphs": [
+        "Measure:",
+        "distance correctness;",
+        "throughput;",
+        "latency;",
+        "memory;",
+        "candidate-retrieval cost."
+      ]
+    },
+    {
+      "heading": "231. Metric selection decision tree",
+      "level": 2,
+      "id": "ux-section-232",
+      "paragraph_count": 1,
+      "word_count": 114,
+      "evidence": "START | v Are sequence coordinates fixed? | +-- YES --------------------------+ | | | Can insertion/deletion occur? | | | +-----+-----+ | | | | NO YES | | | | v v | HAMMING LEVENSHTEIN | | | v | Is adjacent transposition | a meaningful primitive? | | | +-----+-----+ | | | | NO YES | | | | v v | LEVENSHTEIN DAMERAU FAMILY | | | v | Do you require | unrestricted edits/ | true metric semantics? | | | +-----+-----+ | | | | YES NO | | | | v v | TRUE DL OSA | +-- NO --> Hamming usually inappropriate; choose an alignment-capable model.",
+      "paragraphs": [
+        "START | v Are sequence coordinates fixed? | +-- YES --------------------------+ | | | Can insertion/deletion occur? | | | +-----+-----+ | | | | NO YES | | | | v v | HAMMING LEVENSHTEIN | | | v | Is adjacent transposition | a meaningful primitive? | | | +-----+-----+ | | | | NO YES | | | | v v | LEVENSHTEIN DAMERAU FAMILY | | | v | Do you require | unrestricted edits/ | true metric semantics? | | | +-----+-----+ | | | | YES NO | | | | v v | TRUE DL OSA | +-- NO --> Hamming usually inappropriate; choose an alignment-capable model."
+      ]
+    },
+    {
+      "heading": "232. Compact recommendation table",
+      "level": 2,
+      "id": "ux-section-233",
+      "paragraph_count": 1,
+      "word_count": 71,
+      "evidence": "Data model Recommended starting point Fixed-length bit vectors with substitutions Hamming Ordinary spelling differences with insert/delete/substitute Levenshtein Typing errors with adjacent transpositions Damerau-Levenshtein or OSA Need genuine metric + unrestricted adjacent transposition interactions True Damerau-Levenshtein Need simple transposition-aware typo heuristic OSA may be sufficient Unequal-length strings Not standard Hamming Biological alignment with gap/substitution scoring Sequence alignment rather than these unit-cost models alone Semantic similarity Semantic representation, not these lexical distances alone",
+      "paragraphs": [
+        "Data model Recommended starting point Fixed-length bit vectors with substitutions Hamming Ordinary spelling differences with insert/delete/substitute Levenshtein Typing errors with adjacent transpositions Damerau-Levenshtein or OSA Need genuine metric + unrestricted adjacent transposition interactions True Damerau-Levenshtein Need simple transposition-aware typo heuristic OSA may be sufficient Unequal-length strings Not standard Hamming Biological alignment with gap/substitution scoring Sequence alignment rather than these unit-cost models alone Semantic similarity Semantic representation, not these lexical distances alone"
+      ]
+    },
+    {
+      "heading": "233. Conceptual hierarchy",
+      "level": 2,
+      "id": "ux-section-234",
+      "paragraph_count": 1,
+      "word_count": 47,
+      "evidence": "HAMMING fixed positions substitutions only | | add insertion/deletion alignment v LEVENSHTEIN insert/delete/substitute | | add adjacent transposition v TRANSPOSTION-AWARE EDITING | +----------------------+ | | v v OSA TRUE DAMERAU- restricted LEVENSHTEIN edit interactions unrestricted | | +----------+-----------+ | v weighted/contextual edit models | v domain-specific models.",
+      "paragraphs": [
+        "HAMMING fixed positions substitutions only | | add insertion/deletion alignment v LEVENSHTEIN insert/delete/substitute | | add adjacent transposition v TRANSPOSTION-AWARE EDITING | +----------------------+ | | v v OSA TRUE DAMERAU- restricted LEVENSHTEIN edit interactions unrestricted | | +----------+-----------+ | v weighted/contextual edit models | v domain-specific models."
+      ]
+    },
+    {
+      "heading": "234. Final interpretation",
+      "level": 2,
+      "id": "ux-section-235",
+      "paragraph_count": 22,
+      "word_count": 474,
+      "evidence": "Hamming, Levenshtein, and Damerau-Levenshtein are not competing scores that should be ranked from primitive to advanced. They describe different geometries.",
+      "paragraphs": [
+        "Hamming, Levenshtein, and Damerau-Levenshtein are not competing scores that should be ranked from primitive to advanced. They describe different geometries.",
+        "Hamming distance assumes coordinate synchronization. Two sequences must have equal length, and the distance is simply the number of coordinates containing different symbols. This makes it ideal for fixed-length substitution channels and explains both its central role in classical error-correcting codes and its linear-time computational simplicity.",
+        "Levenshtein distance removes the fixed-coordinate assumption. Insertions and deletions allow alignment to shift, so one missing or extra symbol does not force every downstream position to count as a mismatch. This makes Levenshtein appropriate for synchronization-aware textual comparison, approximate string matching, and many typo-tolerant applications.",
+        "Damerau-Levenshtein extends this model again by recognizing an adjacent transposition as one primitive edit. For a pair such as:",
+        "form from,",
+        "the difference between Levenshtein distance two and Damerau-Levenshtein distance one is not an implementation detail. It represents two competing models of the error process:",
+        "two symbol substitutions",
+        "versus:",
+        "one adjacent swap.",
+        "The distinction becomes subtler with Optimal String Alignment. The simple transposition recurrence commonly added to a Levenshtein matrix computes a restricted distance. OSA correctly recognizes many ordinary transpositions, but it does not permit all interacting edit sequences allowed by true Damerau-Levenshtein. The classic:",
+        "CA -> ABC",
+        "example exposes the difference:",
+        "Levenshtein = 3 OSA = 3 true Damerau-Levenshtein = 2.",
+        "That restriction also has mathematical consequences. OSA can violate triangle inequality, whereas standard Hamming, Levenshtein, and unrestricted unit-cost Damerau-Levenshtein are genuine metrics.",
+        "For equal-length strings, the relationship can be summarized as:",
+        "dDL <= dOSA <= dL <= dH.",
+        "This inequality is useful but should not be interpreted as saying the leftmost metric is always “better.” A smaller distance arises because the model allows more transformations. Additional invariance is beneficial only when those transformations correspond to real, irrelevant, or plausible variation.",
+        "The core distinctions are:",
+        "Hamming distance != Levenshtein distance Levenshtein distance != Damerau-Levenshtein distance Optimal String Alignment != true Damerau-Levenshtein substitution != insertion/deletion deletion != erasure adjacent transposition != arbitrary character swap Levenshtein transposition cost != one primitive edit equal string length != Hamming automatically appropriate Hamming fixed coordinates != sequence alignment OSA != metric true unit-cost Damerau-Levenshtein = metric weighted edit distance != automatically metric minimum edit sequence != actual physical error history small lexical distance != semantic similarity small lexical distance != same real-world entity pairwise distance != large-scale retrieval.",
+        "The practical selection rule is simple:",
+        "Use Hamming when positions are fixed. Use Levenshtein when insertions and deletions must realign the sequence. Use a Damerau model when adjacent transposition is itself a primitive error. Use true Damerau-Levenshtein when the unrestricted mathematical distance matters. Use OSA only when its restricted model is knowingly acceptable.",
+        "The deeper principle is the same one that governs the entire Levenshtein comparison framework : define the error model first, and only then choose the distance."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-236",
+      "paragraph_count": 6,
+      "word_count": 132,
+      "evidence": "Hamming, R. W. Error Detecting and Error Correcting Codes. Bell System Technical Journal 29(2), 147-160, 1950. https://doi.org/10.1002/j.1538-7305.1950.tb00463.x .",
+      "paragraphs": [
+        "Hamming, R. W. Error Detecting and Error Correcting Codes. Bell System Technical Journal 29(2), 147-160, 1950. https://doi.org/10.1002/j.1538-7305.1950.tb00463.x .",
+        "Levenshtein, V. I. Binary Codes Capable of Correcting Deletions, Insertions and Reversals. Soviet Physics Doklady 10(8), 707-710, 1966; English translation of the 1965 Russian publication. ADS bibliographic record .",
+        "Damerau, F. J. A technique for computer detection and correction of spelling errors. Communications of the ACM 7(3), 171-176, 1964. https://doi.org/10.1145/363958.363994 .",
+        "Wagner, R. A., and Fischer, M. J. The String-to-String Correction Problem. Journal of the ACM 21(1), 168-173, 1974. https://doi.org/10.1145/321796.321811 .",
+        "Lowrance, R., and Wagner, R. A. An Extension of the String-to-String Correction Problem. Journal of the ACM 22(2), 177-183, 1975. https://doi.org/10.1145/321879.321880 .",
+        "van der Loo, M. P. J. The stringdist Package for Approximate String Matching. The R Journal 6(1), 111-122, 2014. https://doi.org/10.32614/RJ-2014-011 ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "234. Final interpretation",
+          "anchor_id": "ux-section-235",
+          "alias": "approximate string matching",
+          "excerpt": "Levenshtein distance removes the fixed-coordinate assumption. Insertions and deletions allow alignment to shift, so one missing or extra symbol does not force every downstream position to count as a mismatch. This makes Levenshtein appropriate for synchronization-aware textual comparison, approximate string matching, and many typo-tolerant applications."
+        },
+        {
+          "section": "Selected technical references",
+          "anchor_id": "ux-section-236",
+          "alias": "approximate string matching",
+          "excerpt": "van der Loo, M. P. J. The stringdist Package for Approximate String Matching. The R Journal 6(1), 111-122, 2014. https://doi.org/10.32614/RJ-2014-011 ."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "148. Bounded Levenshtein can be much cheaper than full DP",
+          "anchor_id": "ux-section-149",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See bounded and parameterized edit distance ."
+        }
+      ]
+    },
+    {
+      "target": "/coding-theory",
+      "evidence": [
+        {
+          "section": "Levenshtein vs Damerau-Levenshtein and Hamming Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "coding theory",
+          "excerpt": "This article develops all four models from first principles, compares their mathematics and algorithms, derives their relationships, examines their role in spelling correction and coding theory, and shows where superficially similar implementations measure different objects."
+        },
+        {
+          "section": "14. Deletion is also not erasure",
+          "anchor_id": "ux-section-15",
+          "alias": "coding theory",
+          "excerpt": "This distinction is fundamental in coding theory ."
+        },
+        {
+          "section": "95. Hamming and Levenshtein measure different error channels",
+          "anchor_id": "ux-section-96",
+          "alias": "coding theory",
+          "excerpt": "This is especially important in coding theory."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Levenshtein vs Damerau-Levenshtein and Hamming Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Levenshtein distance, Damerau-Levenshtein distance, and Hamming distance are often grouped together as string-distance measures, but they encode fundamentally different models of how one sequence can differ from another."
+        },
+        {
+          "section": "32. Damerau-Levenshtein distance",
+          "anchor_id": "ux-section-33",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "The true Damerau-Levenshtein distance permits:"
+        },
+        {
+          "section": "234. Final interpretation",
+          "anchor_id": "ux-section-235",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "the difference between Levenshtein distance two and Damerau-Levenshtein distance one is not an implementation detail. It represents two competing models of the error process:"
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "81. This is the source of its efficiency",
+          "anchor_id": "ux-section-82",
+          "alias": "edit distance",
+          "excerpt": "It is not merely an optimized special implementation of general edit distance."
+        },
+        {
+          "section": "148. Bounded Levenshtein can be much cheaper than full DP",
+          "anchor_id": "ux-section-149",
+          "alias": "edit distance",
+          "excerpt": "See bounded and parameterized edit distance ."
+        },
+        {
+          "section": "234. Final interpretation",
+          "anchor_id": "ux-section-235",
+          "alias": "edit distance",
+          "excerpt": "Hamming distance != Levenshtein distance Levenshtein distance != Damerau-Levenshtein distance Optimal String Alignment != true Damerau-Levenshtein substitution != insertion/deletion deletion != erasure adjacent transposition != arbitrary character swap Levenshtein transposition cost != one primitive edit equal string length != Hamming automatically appropriate Hamming fixed coordinates != sequence alignment OSA != metric true unit-cost Damerau-Levenshtein = metric weighted edit distance != automatically metric minimum edit sequence != actual physical error history small lexical distance != semantic similarity small lexical distance != same real-world entity pairwise distance != large-scale r"
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "87. When true Damerau-Levenshtein is preferable",
+          "anchor_id": "ux-section-88",
+          "alias": "edit operations",
+          "excerpt": "Use the unrestricted distance when the mathematical definition itself matters and sequences can require interacting transposition/edit operations."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-distance-limitations",
+      "evidence": [
+        {
+          "section": "123. One distance over a concatenated record can lose field semantics",
+          "anchor_id": "ux-section-124",
+          "alias": "levenshtein distance limitations",
+          "excerpt": "This is one of the broader limitations discussed in Levenshtein distance limitations ."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-jaro-winkler-and-phonetic-matching",
+      "evidence": [
+        {
+          "section": "158. Application D: person names",
+          "anchor_id": "ux-section-159",
+          "alias": "levenshtein vs jaro winkler and phonetic matching",
+          "excerpt": "See Levenshtein vs Jaro-Winkler and phonetic matching ."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-sequence-alignment",
+      "evidence": [
+        {
+          "section": "178. Biological sequence alignment uses richer scoring",
+          "anchor_id": "ux-section-179",
+          "alias": "levenshtein distance vs sequence alignment",
+          "excerpt": "See Levenshtein distance vs sequence alignment ."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "172. Semantic similarity is another separate problem",
+          "anchor_id": "ux-section-173",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See string similarity vs semantic similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/vladimir-levenshtein",
+      "evidence": [
+        {
+          "section": "21. Levenshtein's historical coding context",
+          "anchor_id": "ux-section-22",
+          "alias": "vladimir levenshtein",
+          "excerpt": "Vladimir Levenshtein's foundational work studied codes capable of correcting insertions, deletions, and binary symbol changes."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "116. Weighted models may be more realistic",
+          "anchor_id": "ux-section-117",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See weighted Levenshtein distance ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#page",
+      "type": "WebPage",
+      "name": "Levenshtein vs Damerau-Levenshtein and Hamming Distance: Definitions, Algorithms, Metrics, and Tradeoffs",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#damerau-levenshtein"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#hamming-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "type": "TechArticle",
+      "name": "Levenshtein vs Damerau-Levenshtein and Hamming Distance: Definitions, Algorithms, Metrics, and Tradeoffs",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#damerau-levenshtein"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#optimal-string-alignment"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#hamming-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#concept",
+      "type": "DefinedTerm",
+      "name": "Levenshtein, Damerau-Levenshtein, and Hamming Distance Comparison",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#hamming-distance",
+      "type": "DefinedTerm",
+      "name": "Hamming Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#damerau-levenshtein",
+      "type": "DefinedTerm",
+      "name": "Damerau-Levenshtein Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#optimal-string-alignment",
+      "type": "DefinedTerm",
+      "name": "Optimal String Alignment Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#adjacent-transposition",
+      "type": "DefinedTerm",
+      "name": "Adjacent Transposition",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#metric-property",
+      "type": "DefinedTerm",
+      "name": "Metric Property",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#synchronization-error",
+      "type": "DefinedTerm",
+      "name": "Synchronization Error",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#fixed-coordinate-model",
+      "type": "DefinedTerm",
+      "name": "Fixed-Coordinate Sequence Comparison",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#damerau-levenshtein"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#hamming-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#page",
+      "mainEntity",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#page",
+      "isPartOf",
+      "https://www.levenshtein.net/comparisons#collection"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#damerau-levenshtein"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#optimal-string-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#hamming-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#adjacent-transposition"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#metric-property"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#synchronization-error"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#fixed-coordinate-model"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "isPartOf",
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#page"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "citation",
+      "https://doi.org/10.1002/j.1538-7305.1950.tb00463.x"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "citation",
+      "https://ui.adsabs.harvard.edu/abs/1966SPhD...10..707L/abstract"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "citation",
+      "https://doi.org/10.1145/363958.363994"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "citation",
+      "https://doi.org/10.1145/321796.321811"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "citation",
+      "https://doi.org/10.1145/321879.321880"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#article",
+      "citation",
+      "https://doi.org/10.32614/RJ-2014-011"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-vs-damerau-and-hamming#hamming-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Hamming_distance"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1002/j.1538-7305.1950.tb00463.x",
+      "anchor": "https://doi.org/10.1002/j.1538-7305.1950.tb00463.x"
+    },
+    {
+      "url": "https://ui.adsabs.harvard.edu/abs/1966SPhD...10..707L/abstract",
+      "anchor": "ADS bibliographic record"
+    },
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "https://doi.org/10.1145/321796.321811"
+    },
+    {
+      "url": "https://doi.org/10.1145/363958.363994",
+      "anchor": "https://doi.org/10.1145/363958.363994"
+    },
+    {
+      "url": "https://doi.org/10.1145/321879.321880",
+      "anchor": "https://doi.org/10.1145/321879.321880"
+    },
+    {
+      "url": "https://doi.org/10.32614/RJ-2014-011",
+      "anchor": "https://doi.org/10.32614/RJ-2014-011"
+    }
+  ]
+}

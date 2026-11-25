@@ -1,0 +1,2960 @@
+{
+  "url": "/approximate-edit-distance-algorithms",
+  "title": "Approximate Edit Distance Algorithms: Theory, Bounds & Complexity",
+  "h1": [
+    "Approximate Edit Distance Algorithms: Theory, Bounds & Complexity"
+  ],
+  "group": "Theory",
+  "provisional_mission": "Xấp xỉ giá trị khoảng cách, không phải tìm chuỗi gần đúng",
+  "content_sha256": "af85ff68562562f6d4e61993c6fc3c1e4fac2b7a492e534789a3cde4f059fbcc",
+  "canonical": "https://www.levenshtein.net/approximate-edit-distance-algorithms",
+  "primary_entity_candidate": "Approximate Edit Distance Algorithms: Theory, Bounds & Complexity",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Approximate Edit Distance Algorithms",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 8,
+      "word_count": 229,
+      "evidence": "Approximate edit distance algorithms trade exactness for computational efficiency. Instead of always computing the exact minimum number of insertions, deletions, and substitutions needed to transform one sequence into another, they return an estimate, solve a promised gap problem, or determine the distance within a specified approximation guarantee.",
+      "paragraphs": [
+        "Approximate edit distance algorithms trade exactness for computational efficiency. Instead of always computing the exact minimum number of insertions, deletions, and substitutions needed to transform one sequence into another, they return an estimate, solve a promised gap problem, or determine the distance within a specified approximation guarantee.",
+        "This trade-off is theoretically important because general exact Levenshtein distance remains a near-quadratic problem in the worst case. Classical dynamic programming uses O(mn) time for strings of lengths m and n , while fine-grained lower bounds provide strong conditional evidence against a general exact algorithm running in O(n^(2-δ)) time for any fixed δ > 0 .",
+        "Approximation changes this landscape dramatically. Over the past two decades, research progressed from polynomial-factor approximations and weak sublinear tests to subpolynomial and polylogarithmic approximation in near-linear time, then to constant-factor approximation in truly subquadratic time, constant-factor approximation in near-linear time, and finally to randomized (1+ε) -approximation schemes running substantially faster than quadratic time.",
+        "The modern complexity picture is therefore not:",
+        "edit distance = quadratic",
+        "but rather:",
+        "EXACT GENERAL EDIT DISTANCE │ └── near quadratic in worst case APPROXIMATE EDIT DISTANCE │ ├── weak / gap approximation ├── polynomial-factor approximation ├── subpolynomial approximation ├── polylogarithmic approximation ├── constant-factor approximation └── (1+ε)-approximation │ └── progressively different time / accuracy trade-offs",
+        "Understanding these distinctions is essential because the phrase approximate edit distance refers to several mathematically different computational problems."
+      ]
+    },
+    {
+      "heading": "Notation",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 12,
+      "word_count": 70,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "x = x₁x₂...xₘ y = y₁y₂...yₙ",
+        "be strings over alphabet:",
+        "Σ",
+        "and let:",
+        "ED(x,y)",
+        "denote their standard unit-cost edit distance.",
+        "When the two strings have comparable lengths, it is convenient to write:",
+        "N = max(m,n)",
+        "or, in papers that define input size as total length:",
+        "N = m+n",
+        "These conventions differ between publications. Complexity statements should therefore be interpreted using the definition of N used by the cited result."
+      ]
+    },
+    {
+      "heading": "Exact versus approximate computation",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "An exact algorithm must return:",
+      "paragraphs": [
+        "An exact algorithm must return:",
+        "D = ED(x,y)",
+        "with no error.",
+        "An approximation algorithm is permitted to return another value:",
+        "D_hat",
+        "provided it satisfies a specified relationship with:",
+        "ED(x,y)",
+        "The nature of that relationship determines the approximation model."
+      ]
+    },
+    {
+      "heading": "Multiplicative approximation",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 5,
+      "word_count": 23,
+      "evidence": "One common convention is a noncontracting α -approximation:",
+      "paragraphs": [
+        "One common convention is a noncontracting α -approximation:",
+        "ED(x,y) ≤ D_hat ≤ α · ED(x,y)",
+        "where:",
+        "α ≥ 1",
+        "is the approximation factor."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 6,
+      "word_count": 21,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "ED(x,y) = 100",
+        "and the algorithm guarantees:",
+        "α = 2",
+        "Then a valid output satisfies:",
+        "100 ≤ D_hat ≤ 200"
+      ]
+    },
+    {
+      "heading": "Two-sided multiplicative approximation",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 9,
+      "word_count": 54,
+      "evidence": "Some literature instead expresses approximation as:",
+      "paragraphs": [
+        "Some literature instead expresses approximation as:",
+        "ED(x,y)/α ≤ D_hat ≤ α · ED(x,y)",
+        "or uses another equivalent convention.",
+        "Consequently, the phrase:",
+        "α-approximation",
+        "is incomplete unless the paper's convention is known.",
+        "Throughout this article, when a one-sided estimate is illustrated, the intended convention is:",
+        "ED ≤ estimate ≤ α · ED",
+        "unless explicitly stated otherwise."
+      ]
+    },
+    {
+      "heading": "Additive approximation",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "An additive approximation permits an absolute error:",
+      "paragraphs": [
+        "An additive approximation permits an absolute error:",
+        "|D_hat - ED(x,y)| ≤ Δ",
+        "or a one-sided guarantee such as:",
+        "ED(x,y) ≤ D_hat ≤ C · ED(x,y) + Δ"
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-8",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "ED = 1,000,000",
+        "and:",
+        "Δ = 1,000",
+        "then a 1,000-unit additive error is relatively small.",
+        "But if:",
+        "ED = 5",
+        "the same additive error gives almost no useful relative information."
+      ]
+    },
+    {
+      "heading": "Additive guarantees naturally favor far pairs",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 11,
+      "word_count": 52,
+      "evidence": "Suppose an algorithm returns:",
+      "paragraphs": [
+        "Suppose an algorithm returns:",
+        "D_hat ≤ C( ED(x,y) + A(N) )",
+        "If:",
+        "ED(x,y) ≫ A(N)",
+        "then:",
+        "D_hat = O( ED(x,y) )",
+        "and the additive guarantee effectively becomes a constant-factor multiplicative approximation.",
+        "If:",
+        "ED(x,y) ≪ A(N)",
+        "the additive term dominates.",
+        "This distinction played an important role in the progression toward near-linear constant-factor algorithms."
+      ]
+    },
+    {
+      "heading": "Relative approximation: (1+ε)",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 9,
+      "word_count": 30,
+      "evidence": "A much stronger guarantee is:",
+      "paragraphs": [
+        "A much stronger guarantee is:",
+        "ED(x,y) ≤ D_hat ≤ (1+ε)ED(x,y)",
+        "for:",
+        "ε > 0",
+        "For example:",
+        "ε = 0.01",
+        "corresponds to at most approximately:",
+        "1%",
+        "multiplicative overestimation under this convention."
+      ]
+    },
+    {
+      "heading": "Why (1+ε) is fundamentally stronger than a constant factor",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 13,
+      "word_count": 41,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "2-approximation",
+        "with:",
+        "1.01-approximation",
+        "when:",
+        "ED = 100,000",
+        "A factor-2 estimate may be as large as:",
+        "200,000",
+        "whereas a:",
+        "(1+0.01)",
+        "estimate is bounded by approximately:",
+        "101,000",
+        "The latter is close to the exact numerical value even though it remains technically approximate."
+      ]
+    },
+    {
+      "heading": "Approximation schemes",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "An approximation scheme provides an algorithm parameterized by:",
+      "paragraphs": [
+        "An approximation scheme provides an algorithm parameterized by:",
+        "ε",
+        "such that for every fixed:",
+        "ε > 0",
+        "the algorithm achieves:",
+        "(1+ε)",
+        "or the corresponding optimization guarantee.",
+        "The running time usually deteriorates as:",
+        "ε → 0",
+        "because increasingly accurate approximation approaches exact computation."
+      ]
+    },
+    {
+      "heading": "The zero-distance issue",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 9,
+      "word_count": 43,
+      "evidence": "Multiplicative approximation has an important boundary condition.",
+      "paragraphs": [
+        "Multiplicative approximation has an important boundary condition.",
+        "If:",
+        "ED(x,y) = 0",
+        "then:",
+        "α · ED(x,y) = 0",
+        "so any finite multiplicative approximation must return:",
+        "D_hat = 0",
+        "exactly.",
+        "Thus a multiplicative approximation algorithm must, directly or indirectly, distinguish identical strings from nonidentical strings."
+      ]
+    },
+    {
+      "heading": "Small distances are the hardest regime for relative approximation",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 10,
+      "word_count": 50,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "ED = 1",
+        "A:",
+        "(1+0.1)",
+        "approximation must return a value in an extremely narrow numerical range.",
+        "By contrast, if:",
+        "ED = Θ(N)",
+        "the same multiplicative tolerance corresponds to an additive uncertainty of:",
+        "Θ(εN)",
+        "This is one reason algorithms for far input pairs appeared before fully general near-linear constant-factor algorithms."
+      ]
+    },
+    {
+      "heading": "Gap edit distance",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 13,
+      "word_count": 45,
+      "evidence": "Many approximation algorithms work through a promise problem.",
+      "paragraphs": [
+        "Many approximation algorithms work through a promise problem.",
+        "Given:",
+        "k and K",
+        "with:",
+        "k < K",
+        "the algorithm must distinguish:",
+        "CLOSE: ED(x,y) ≤ k",
+        "from:",
+        "FAR: ED(x,y) > K",
+        "There is no requirement when:",
+        "k < ED(x,y) ≤ K",
+        "This is called a:",
+        "gap problem"
+      ]
+    },
+    {
+      "heading": "Why a gap problem can be easier",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 10,
+      "word_count": 52,
+      "evidence": "An exact algorithm must distinguish:",
+      "paragraphs": [
+        "An exact algorithm must distinguish:",
+        "ED = 100",
+        "from:",
+        "ED = 101",
+        "A gap algorithm might only need to distinguish:",
+        "ED ≤ 100",
+        "from:",
+        "ED ≥ 10,000",
+        "The uncertain intermediate region is deliberately ignored.",
+        "This freedom allows aggressive sampling, sketching, recursive decomposition, and other methods that would not preserve exact one-unit distinctions."
+      ]
+    },
+    {
+      "heading": "From gap decision to approximation",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 9,
+      "word_count": 62,
+      "evidence": "Suppose we possess a family of gap testers for geometrically increasing thresholds:",
+      "paragraphs": [
+        "Suppose we possess a family of gap testers for geometrically increasing thresholds:",
+        "1 2 4 8 16 32 ...",
+        "By locating the scale at which:",
+        "CLOSE",
+        "changes to:",
+        "FAR",
+        "or vice versa depending on the tester convention, one can often obtain an approximation to the distance.",
+        "This general pattern appears repeatedly in approximation algorithms:",
+        "gap decision ↓ multiscale search ↓ numerical approximation"
+      ]
+    },
+    {
+      "heading": "Weak approximation",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "A weak approximation may distinguish only widely separated distance regimes.",
+      "paragraphs": [
+        "A weak approximation may distinguish only widely separated distance regimes.",
+        "For example:",
+        "ED(x,y) = O(N^α)",
+        "versus:",
+        "ED(x,y) = Ω(N)",
+        "for some:",
+        "α < 1",
+        "Such a result can require sublinear input access because it is not trying to recover a precise numerical distance."
+      ]
+    },
+    {
+      "heading": "The 2003 sublinear milestone",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 10,
+      "word_count": 72,
+      "evidence": "Batu, Ergün, Kilian, Magen, Raskhodnikova, Rubinfeld, and Sami showed that edit distance can be weakly tested in sublinear time under a large promise gap.",
+      "paragraphs": [
+        "Batu, Ergün, Kilian, Magen, Raskhodnikova, Rubinfeld, and Sami showed that edit distance can be weakly tested in sublinear time under a large promise gap.",
+        "For fixed:",
+        "α < 1",
+        "their algorithm distinguishes, with high probability, strings whose edit distance is:",
+        "O(N^α)",
+        "from strings whose edit distance is:",
+        "Ω(N)",
+        "using sublinear time.",
+        "Their work demonstrated an important point:",
+        "It is possible to learn coarse information about edit distance without reading every input position."
+      ]
+    },
+    {
+      "heading": "Sublinear algorithms change the input-access model",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 8,
+      "word_count": 62,
+      "evidence": "A classical explicit-input algorithm normally spends:",
+      "paragraphs": [
+        "A classical explicit-input algorithm normally spends:",
+        "Ω(N)",
+        "time merely reading two length- N strings.",
+        "A sublinear query algorithm instead assumes random access and examines only selected input positions.",
+        "Its complexity is therefore measured partly by:",
+        "query complexity",
+        "rather than by a mandatory full scan.",
+        "Such results cannot be compared directly with a standard RAM algorithm that receives and scans the complete input."
+      ]
+    },
+    {
+      "heading": "Why Hamming-style sampling is insufficient",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 16,
+      "word_count": 71,
+      "evidence": "For Hamming distance, position:",
+      "paragraphs": [
+        "For Hamming distance, position:",
+        "i",
+        "in one string is compared directly with position:",
+        "i",
+        "in the other.",
+        "Randomly sampling positions therefore provides direct information about mismatch density.",
+        "Edit distance is harder because one insertion can shift all subsequent positions:",
+        "x: abcdefgh y: xabcdefgh",
+        "After the initial insertion:",
+        "x[1]",
+        "corresponds to:",
+        "y[2]",
+        "rather than:",
+        "y[1]",
+        "A naive position-by-position sample would interpret almost the entire suffix as mismatching even though:",
+        "ED(x,y) = 1"
+      ]
+    },
+    {
+      "heading": "Alignment uncertainty is the core difficulty",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 8,
+      "word_count": 53,
+      "evidence": "An optimal edit alignment is a monotone path through the edit-distance matrix.",
+      "paragraphs": [
+        "An optimal edit alignment is a monotone path through the edit-distance matrix.",
+        "Insertions and deletions move the path away from the main diagonal.",
+        "Approximation algorithms must estimate:",
+        "where corresponding substrings of x and y are aligned",
+        "without explicitly evaluating every:",
+        "(i,j)",
+        "matrix state.",
+        "This is the central structural challenge behind fast edit-distance approximation."
+      ]
+    },
+    {
+      "heading": "Edit distance as a shortest-path problem",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 12,
+      "word_count": 53,
+      "evidence": "The standard edit graph contains vertices:",
+      "paragraphs": [
+        "The standard edit graph contains vertices:",
+        "(i,j)",
+        "representing consumed prefixes:",
+        "x[1..i] y[1..j]",
+        "with edges for:",
+        "insertion;",
+        "deletion;",
+        "match;",
+        "substitution.",
+        "The exact distance is the shortest path:",
+        "(0,0) → (m,n)",
+        "Approximation algorithms can be interpreted as replacing the full grid with a much smaller surrogate graph whose path cost approximates the original shortest path."
+      ]
+    },
+    {
+      "heading": "A general approximation blueprint",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 2,
+      "word_count": 51,
+      "evidence": "FULL EDIT MATRIX ↓ partition into blocks / windows ↓ identify plausible correspondences ↓ approximate local edit costs ↓ build sparse compatibility graph ↓ compute approximate global alignment ↓ return approximate ED",
+      "paragraphs": [
+        "FULL EDIT MATRIX ↓ partition into blocks / windows ↓ identify plausible correspondences ↓ approximate local edit costs ↓ build sparse compatibility graph ↓ compute approximate global alignment ↓ return approximate ED",
+        "Not every algorithm follows exactly this template, but window decomposition and approximate alignment are recurring ideas in modern work."
+      ]
+    },
+    {
+      "heading": "Window decomposition",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 11,
+      "word_count": 32,
+      "evidence": "Divide:",
+      "paragraphs": [
+        "Divide:",
+        "x",
+        "into windows:",
+        "x₁ x₂ ... x_r",
+        "and:",
+        "y",
+        "into:",
+        "y₁ y₂ ... y_s",
+        "Instead of comparing every character pair, estimate distances between selected window pairs:",
+        "ED(x_i,y_j)",
+        "and combine those estimates."
+      ]
+    },
+    {
+      "heading": "Why windows help",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 13,
+      "word_count": 49,
+      "evidence": "Suppose the strings have length:",
+      "paragraphs": [
+        "Suppose the strings have length:",
+        "N",
+        "and windows have length:",
+        "B",
+        "Then there are only approximately:",
+        "N/B",
+        "windows per string.",
+        "The coarse alignment grid contains roughly:",
+        "(N/B)²",
+        "window pairs rather than:",
+        "N²",
+        "character pairs.",
+        "The challenge becomes computing or sampling enough useful window distances without examining all of them."
+      ]
+    },
+    {
+      "heading": "Alignment-compatible window pairs",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "Most possible:",
+      "paragraphs": [
+        "Most possible:",
+        "(x_i,y_j)",
+        "pairs are irrelevant to an optimal alignment.",
+        "A fast algorithm attempts to identify a sparse subset:",
+        "C ⊂ { (i,j) }",
+        "such that enough good window correspondences survive to reconstruct an approximate global alignment."
+      ]
+    },
+    {
+      "heading": "Local accuracy versus global accuracy",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 4,
+      "word_count": 48,
+      "evidence": "Approximate local distances need not all be highly accurate.",
+      "paragraphs": [
+        "Approximate local distances need not all be highly accurate.",
+        "What matters is that their aggregate error along the chosen global path remains controlled.",
+        "This leads to a recurring theoretical principle:",
+        "do not approximate every local quantity equally well allocate effort where local error affects the global optimum most"
+      ]
+    },
+    {
+      "heading": "Precision sampling",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 10,
+      "word_count": 69,
+      "evidence": "This principle is related to precision-sampling techniques that allocate different precision levels to different components of a sum.",
+      "paragraphs": [
+        "This principle is related to precision-sampling techniques that allocate different precision levels to different components of a sum.",
+        "If a global distance behaves schematically like:",
+        "D ≈ Σ_i c_i",
+        "then estimating every:",
+        "c_i",
+        "to identical relative precision can be wasteful.",
+        "Randomized precision allocation allows:",
+        "many low-impact components to be estimated coarsely;",
+        "a few important components to receive higher precision.",
+        "Such ideas appear in the lineage of near-linear edit-distance approximation."
+      ]
+    },
+    {
+      "heading": "Recursive decomposition",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 4,
+      "word_count": 39,
+      "evidence": "Another recurring technique is recursive partitioning:",
+      "paragraphs": [
+        "Another recurring technique is recursive partitioning:",
+        "string ↓ large blocks ↓ smaller blocks ↓ still smaller blocks ↓ base cases",
+        "A coarse alignment estimate guides which subproblems deserve refinement.",
+        "This avoids treating every portion of the dynamic-programming grid symmetrically."
+      ]
+    },
+    {
+      "heading": "Approximation via metric embeddings",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 10,
+      "word_count": 44,
+      "evidence": "Another powerful strategy is to map edit distance into a metric that supports faster algorithms.",
+      "paragraphs": [
+        "Another powerful strategy is to map edit distance into a metric that supports faster algorithms.",
+        "Suppose:",
+        "f : (strings, ED) → (X,d_X)",
+        "satisfies:",
+        "ED(x,y) ≤ d_X( f(x), f(y) ) ≤ D · ED(x,y)",
+        "Then:",
+        "d_X( f(x), f(y) )",
+        "provides a:",
+        "D-approximation",
+        "to edit distance."
+      ]
+    },
+    {
+      "heading": "Embedding distortion",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 9,
+      "word_count": 37,
+      "evidence": "The smallest such:",
+      "paragraphs": [
+        "The smallest such:",
+        "D",
+        "is the distortion of the embedding.",
+        "Low distortion means the embedding approximately preserves edit-distance geometry.",
+        "If the target metric is algorithmically easier, the embedding can support:",
+        "distance approximation;",
+        "nearest-neighbor search;",
+        "sketching;",
+        "communication protocols."
+      ]
+    },
+    {
+      "heading": "Why ℓ1 is attractive",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 12,
+      "word_count": 33,
+      "evidence": "The:",
+      "paragraphs": [
+        "The:",
+        "ℓ₁",
+        "distance between vectors:",
+        "u,v ∈ R^d",
+        "is:",
+        "||u-v||₁ = Σ_i |u_i-v_i|",
+        "Algorithms for:",
+        "sketching;",
+        "nearest neighbors;",
+        "random projections;",
+        "sampling",
+        "are much better understood in vector spaces than directly in edit-distance geometry."
+      ]
+    },
+    {
+      "heading": "Ostrovsky–Rabani embedding",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "A major milestone by Rafail Ostrovsky and Yuval Rabani showed that edit distance over binary strings can be embedded into:",
+      "paragraphs": [
+        "A major milestone by Rafail Ostrovsky and Yuval Rabani showed that edit distance over binary strings can be embedded into:",
+        "ℓ₁",
+        "with distortion:",
+        "2^O( sqrt( log N · log log N ) )",
+        "which is:",
+        "N^o(1)",
+        "a subpolynomial distortion."
+      ]
+    },
+    {
+      "heading": "Subpolynomial versus polylogarithmic approximation",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 13,
+      "word_count": 39,
+      "evidence": "A function:",
+      "paragraphs": [
+        "A function:",
+        "N^o(1)",
+        "grows more slowly than:",
+        "N^ε",
+        "for every fixed:",
+        "ε > 0",
+        "but it may still grow faster than any fixed power of:",
+        "log N",
+        "Thus:",
+        "polylogarithmic",
+        "is asymptotically stronger than merely:",
+        "subpolynomial",
+        "as an approximation guarantee."
+      ]
+    },
+    {
+      "heading": "Embedding quality is not enough",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 5,
+      "word_count": 53,
+      "evidence": "An embedding is useful for fast pairwise approximation only if:",
+      "paragraphs": [
+        "An embedding is useful for fast pairwise approximation only if:",
+        "f(x) and f(y)",
+        "can themselves be computed sufficiently quickly.",
+        "A low-distortion embedding requiring quadratic time to construct does not immediately give a near-linear pairwise approximation algorithm.",
+        "This distinction motivated algorithms that approximate edit distance directly rather than simply evaluating a general metric embedding."
+      ]
+    },
+    {
+      "heading": "Bar-Yossef et al. 2004",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "Bar-Yossef, Jayram, Krauthgamer, and Kumar developed gap and sketching methods for edit distance and obtained a quasi-linear-time approximation with factor:",
+      "paragraphs": [
+        "Bar-Yossef, Jayram, Krauthgamer, and Kumar developed gap and sketching methods for edit distance and obtained a quasi-linear-time approximation with factor:",
+        "N^(3/7)",
+        "for general strings.",
+        "For strings satisfying their non-repetitiveness assumptions, the approximation could be strengthened to:",
+        "N^(1/3)"
+      ]
+    },
+    {
+      "heading": "Why repetitiveness matters",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "aaaaaaaaaaaaaaaaaaaa",
+        "or:",
+        "abababababababababab",
+        "Many substrings look identical or nearly identical.",
+        "Finding the correct correspondence becomes ambiguous:",
+        "which occurrence in x should align with which occurrence in y?",
+        "Highly repetitive strings therefore create an alignment-identification problem that is absent in simpler Hamming-style metrics."
+      ]
+    },
+    {
+      "heading": "Andoni–Onak near-linear subpolynomial approximation",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 6,
+      "word_count": 33,
+      "evidence": "Andoni and Onak achieved a major improvement by computing a:",
+      "paragraphs": [
+        "Andoni and Onak achieved a major improvement by computing a:",
+        "2^~O( sqrt(log N) )",
+        "approximation in:",
+        "N^(1+o(1))",
+        "time.",
+        "This was the first near-linear-time algorithm with a subpolynomial approximation factor for general edit distance."
+      ]
+    },
+    {
+      "heading": "What the soft-O exponent means",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "The expression:",
+      "paragraphs": [
+        "The expression:",
+        "2^~O( sqrt(log N) )",
+        "suppresses polylogarithmic factors inside the exponent.",
+        "The exact form is less important conceptually than the asymptotic statement:",
+        "approximation factor = N^o(1)",
+        "while running time remains close to:",
+        "N"
+      ]
+    },
+    {
+      "heading": "Andoni–Krauthgamer–Onak: polylogarithmic approximation",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "The next major improvement reduced the approximation factor from subpolynomial to polylogarithmic.",
+      "paragraphs": [
+        "The next major improvement reduced the approximation factor from subpolynomial to polylogarithmic.",
+        "For every fixed:",
+        "ε > 0",
+        "Andoni, Krauthgamer, and Onak gave an algorithm running in:",
+        "N^(1+ε)",
+        "time with approximation factor:",
+        "(log N)^O(1/ε)"
+      ]
+    },
+    {
+      "heading": "Why this result was a qualitative improvement",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 8,
+      "word_count": 34,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "N^o(1)",
+        "with:",
+        "(log N)^C",
+        "for a constant:",
+        "C",
+        "Polylogarithmic growth is much slower.",
+        "The result moved near-linear edit-distance approximation into an approximation regime that is often considered structurally much closer to constant-factor algorithms."
+      ]
+    },
+    {
+      "heading": "The asymmetric query model",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "The Andoni–Krauthgamer–Onak work also studied an asymmetric model in which:",
+      "paragraphs": [
+        "The Andoni–Krauthgamer–Onak work also studied an asymmetric model in which:",
+        "one input may be accessed freely",
+        "while queries to:",
+        "the other input",
+        "are counted.",
+        "This helps isolate how much information from one string is actually necessary to approximate the distance.",
+        "Their lower-bound analysis also emphasized the difficulty caused by repetitive strings."
+      ]
+    },
+    {
+      "heading": "The long-standing constant-factor question",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 5,
+      "word_count": 51,
+      "evidence": "After polylogarithmic approximation became possible in near-linear time, a major open question remained:",
+      "paragraphs": [
+        "After polylogarithmic approximation became possible in near-linear time, a major open question remained:",
+        "Can edit distance be approximated within a constant factor in strongly subquadratic time?",
+        "That would require simultaneously improving:",
+        "the approximation factor from growing with N to O(1) ;",
+        "the running time below N^(2-δ) for a fixed δ>0 ."
+      ]
+    },
+    {
+      "heading": "2018: first constant-factor truly subquadratic algorithm",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 7,
+      "word_count": 30,
+      "evidence": "Chakraborty, Das, Goldenberg, Koucký, and Saks resolved this milestone.",
+      "paragraphs": [
+        "Chakraborty, Das, Goldenberg, Koucký, and Saks resolved this milestone.",
+        "They obtained a randomized constant-factor approximation running in:",
+        "Õ( N^(2-2/7) )",
+        "which is:",
+        "Õ( N^(12/7) )",
+        "or approximately:",
+        "Õ( N^1.714... )"
+      ]
+    },
+    {
+      "heading": "Why 12/7 matters",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 7,
+      "word_count": 24,
+      "evidence": "The exponent:",
+      "paragraphs": [
+        "The exponent:",
+        "12/7 < 2",
+        "by a fixed polynomial amount.",
+        "Therefore the algorithm is:",
+        "truly or strongly subquadratic",
+        "rather than merely:",
+        "N² / polylog(N)"
+      ]
+    },
+    {
+      "heading": "Exact and approximate complexity separate",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "Under standard fine-grained assumptions, exact edit distance does not admit:",
+      "paragraphs": [
+        "Under standard fine-grained assumptions, exact edit distance does not admit:",
+        "O( N^(2-δ) )",
+        "time for fixed:",
+        "δ > 0",
+        "Yet a constant-factor approximation does.",
+        "This demonstrates that:",
+        "requiring the exact optimum is computationally consequential",
+        "rather than approximation merely improving constant factors."
+      ]
+    },
+    {
+      "heading": "2020: far input pairs in near-linear time",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 8,
+      "word_count": 44,
+      "evidence": "Two independent lines of work by:",
+      "paragraphs": [
+        "Two independent lines of work by:",
+        "Koucký and Saks;",
+        "Brakensiek and Rubinstein",
+        "obtained near-linear-time algorithms that give constant-factor information when the edit distance is sufficiently large.",
+        "Their guarantees contain additive terms that become negligible when:",
+        "ED(x,y)",
+        "is close enough to the scale of:",
+        "N"
+      ]
+    },
+    {
+      "heading": "A representative far-pair guarantee",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 11,
+      "word_count": 58,
+      "evidence": "Koucký and Saks obtain, for suitable constants depending on a chosen parameter, an upper estimate:",
+      "paragraphs": [
+        "Koucký and Saks obtain, for suitable constants depending on a chosen parameter, an upper estimate:",
+        "U ≤ R( ED(x,y) + N^(1-ζ) )",
+        "in approximately:",
+        "N^(1+1/T)",
+        "time.",
+        "When:",
+        "ED(x,y) ≥ N^(1-ζ)",
+        "the additive term is at most the same asymptotic scale as the true distance.",
+        "Hence:",
+        "U = O( ED(x,y) )",
+        "giving a constant-factor approximation for sufficiently far pairs."
+      ]
+    },
+    {
+      "heading": "Why far pairs were easier than near pairs",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 10,
+      "word_count": 35,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "ED = Θ(N)",
+        "An additive uncertainty:",
+        "N^0.9",
+        "is lower order.",
+        "But if:",
+        "ED = 10",
+        "the same additive term overwhelms the answer.",
+        "The remaining challenge was therefore:",
+        "near-linear constant-factor approximation for all distance scales"
+      ]
+    },
+    {
+      "heading": "Andoni–Nosatzki: constant factor in near-linear time",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 10,
+      "word_count": 35,
+      "evidence": "Andoni and Nosatzki achieved this objective.",
+      "paragraphs": [
+        "Andoni and Nosatzki achieved this objective.",
+        "For every fixed:",
+        "ε > 0",
+        "they gave a constant-factor approximation running in:",
+        "N^(1+ε)",
+        "time for arbitrary input strings.",
+        "This removed the requirement that:",
+        "ED(x,y)",
+        "be near-linear in:",
+        "N"
+      ]
+    },
+    {
+      "heading": "A different algorithmic viewpoint: smoothing",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 5,
+      "word_count": 70,
+      "evidence": "The Andoni–Nosatzki approach differs from purely recursive substring decomposition.",
+      "paragraphs": [
+        "The Andoni–Nosatzki approach differs from purely recursive substring decomposition.",
+        "At a high level, it constructs increasingly coarse approximate distance information for substrings at multiple scales:",
+        "small substrings ↓ distance information ↓ larger substrings ↓ smoothed distance oracle ↓ still larger substrings ↓ global approximation",
+        "The goal is not to recover every local edit alignment precisely.",
+        "Instead, enough average-distance information is maintained to estimate the global distance within a constant factor."
+      ]
+    },
+    {
+      "heading": "Substring distance oracles",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 8,
+      "word_count": 50,
+      "evidence": "Conceptually, consider substrings of length:",
+      "paragraphs": [
+        "Conceptually, consider substrings of length:",
+        "N^(iε)",
+        "for levels:",
+        "i = 0,1,...,1/ε",
+        "The algorithm progressively builds approximate information about edit distances among substrings at one scale and uses that information to reason about the next scale.",
+        "This multiscale structure is one reason the final running time becomes:",
+        "N^(1+ε)",
+        "rather than quadratic."
+      ]
+    },
+    {
+      "heading": "Constant factor is not a PTAS",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 11,
+      "word_count": 35,
+      "evidence": "The Andoni–Nosatzki result guarantees:",
+      "paragraphs": [
+        "The Andoni–Nosatzki result guarantees:",
+        "O(1)",
+        "approximation factor.",
+        "It does not allow an arbitrary user-selected:",
+        "1+ε",
+        "factor while preserving the same near-linear running-time statement.",
+        "Thus:",
+        "constant factor",
+        "and:",
+        "(1+ε)-approximation scheme",
+        "belong to very different accuracy regimes."
+      ]
+    },
+    {
+      "heading": "The next frontier: near-exact approximation",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "Once constant-factor approximation became near-linear, a natural theoretical question was:",
+      "paragraphs": [
+        "Once constant-factor approximation became near-linear, a natural theoretical question was:",
+        "How close to exact can an approximation become while still beating the near-quadratic exact-computation barrier?",
+        "A:",
+        "(1+ε)",
+        "algorithm provides the strongest standard multiplicative approximation short of exact computation."
+      ]
+    },
+    {
+      "heading": "2026: a quasi-strongly subquadratic approximation scheme",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 9,
+      "word_count": 41,
+      "evidence": "Xiao Mao and Aviad Rubinstein obtained a randomized approximation scheme for edit distance.",
+      "paragraphs": [
+        "Xiao Mao and Aviad Rubinstein obtained a randomized approximation scheme for edit distance.",
+        "For every constant:",
+        "ε > 0",
+        "their algorithm computes a:",
+        "(1+ε)",
+        "approximation in:",
+        "N² / 2^(log^(Ω(1)) N)",
+        "time for two strings whose total length is at most:",
+        "N"
+      ]
+    },
+    {
+      "heading": "Interpreting the 2026 running time",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 14,
+      "word_count": 50,
+      "evidence": "The denominator:",
+      "paragraphs": [
+        "The denominator:",
+        "2^(log^(Ω(1)) N)",
+        "grows faster than any fixed polylogarithmic factor for the relevant exponent regime.",
+        "Therefore the improvement over:",
+        "N²",
+        "is substantially larger than simply:",
+        "N²/log^c N",
+        "for a fixed:",
+        "c",
+        "yet the result is not stated as a fixed-polynomial:",
+        "N^(2-δ)",
+        "bound.",
+        "The paper calls this regime:",
+        "quasi-strongly subquadratic"
+      ]
+    },
+    {
+      "heading": "Why the 2026 result is theoretically striking",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "Exact edit distance appears unable to obtain comparable improvements without major complexity-theoretic consequences.",
+      "paragraphs": [
+        "Exact edit distance appears unable to obtain comparable improvements without major complexity-theoretic consequences.",
+        "Yet allowing an arbitrarily small multiplicative error:",
+        "1+ε",
+        "permits a much larger asymptotic speedup.",
+        "The result gives a particularly clean separation:",
+        "EXACT: must distinguish d from d+1 NEAR-EXACT APPROXIMATION: only needs a value inside [d,(1+ε)d]"
+      ]
+    },
+    {
+      "heading": "Approximation does not merely \"skip a few DP cells\"",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 10,
+      "word_count": 43,
+      "evidence": "The history of the problem shows that fast approximation required entirely different representations of the computation:",
+      "paragraphs": [
+        "The history of the problem shows that fast approximation required entirely different representations of the computation:",
+        "gap decision;",
+        "sampling;",
+        "sketching;",
+        "metric embeddings;",
+        "recursive decomposition;",
+        "window alignment;",
+        "multiscale distance oracles;",
+        "randomized structural simplification.",
+        "These are conceptually different from merely optimizing the classical Wagner–Fischer loop."
+      ]
+    },
+    {
+      "heading": "A historical complexity progression",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 1,
+      "word_count": 87,
+      "evidence": "EXACT DYNAMIC PROGRAMMING │ └── O(N²) │ │ 2003 │ sublinear weak gap testing │ 2004 │ N^(3/7)-approximation in quasi-linear time │ 2005–2007 │ low-distortion ℓ1 embedding 2^O(sqrt(log N log log N)) │ 2009 │ subpolynomial approximation in near-linear time │ 2010 │ polylog approximation in N^(1+ε) time │ 2018 │ constant-factor approximation in Õ(N^(12/7)) │ 2020 │ constant factor for far pairs in near-linear time │ 2020 │ constant factor for all pairs in N^(1+ε) │ 2026 │ randomized (1+ε) approximation in N² / 2^(log^(Ω(1)) N)",
+      "paragraphs": [
+        "EXACT DYNAMIC PROGRAMMING │ └── O(N²) │ │ 2003 │ sublinear weak gap testing │ 2004 │ N^(3/7)-approximation in quasi-linear time │ 2005–2007 │ low-distortion ℓ1 embedding 2^O(sqrt(log N log log N)) │ 2009 │ subpolynomial approximation in near-linear time │ 2010 │ polylog approximation in N^(1+ε) time │ 2018 │ constant-factor approximation in Õ(N^(12/7)) │ 2020 │ constant factor for far pairs in near-linear time │ 2020 │ constant factor for all pairs in N^(1+ε) │ 2026 │ randomized (1+ε) approximation in N² / 2^(log^(Ω(1)) N)"
+      ]
+    },
+    {
+      "heading": "Representative milestone table",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 1,
+      "word_count": 140,
+      "evidence": "Work Approximation Representative time Main significance Batu et al. 2003 Weak gap distinction Sublinear for the promised regimes Shows coarse ED information can be obtained without full input scan Bar-Yossef et al. 2004 N^(3/7) Quasi-linear Early general fast numerical approximation Ostrovsky–Rabani 2007 2^O(sqrt(log N log log N)) distortion Embedding result Subpolynomial embedding of edit metric into ℓ₁ Andoni–Onak 2^~O(sqrt(log N)) N^(1+o(1)) Near-linear subpolynomial approximation Andoni–Krauthgamer–Onak 2010 (log N)^O(1/ε) N^(1+ε) Near-linear polylogarithmic approximation Chakraborty et al. 2018 Constant factor Õ(N^(12/7)) First constant-factor truly subquadratic algorithm Koucký–Saks 2020 Constant factor on sufficiently far pairs Near linear Additive-to-multiplicative transition for ",
+      "paragraphs": [
+        "Work Approximation Representative time Main significance Batu et al. 2003 Weak gap distinction Sublinear for the promised regimes Shows coarse ED information can be obtained without full input scan Bar-Yossef et al. 2004 N^(3/7) Quasi-linear Early general fast numerical approximation Ostrovsky–Rabani 2007 2^O(sqrt(log N log log N)) distortion Embedding result Subpolynomial embedding of edit metric into ℓ₁ Andoni–Onak 2^~O(sqrt(log N)) N^(1+o(1)) Near-linear subpolynomial approximation Andoni–Krauthgamer–Onak 2010 (log N)^O(1/ε) N^(1+ε) Near-linear polylogarithmic approximation Chakraborty et al. 2018 Constant factor Õ(N^(12/7)) First constant-factor truly subquadratic algorithm Koucký–Saks 2020 Constant factor on sufficiently far pairs Near linear Additive-to-multiplicative transition for large ED Brakensiek–Rubinstein 2020 Constant factor for near-linear-distance regime Near linear Independent progress on far-pair regime Andoni–Nosatzki 2020 Constant factor N^(1+ε) Near-linear constant factor for arbitrary strings Mao–Rubinstein 2026 (1+ε) N² / 2^(log^(Ω(1)) N) Near-exact randomized approximation with super-polylogarithmic speedup over quadratic DP"
+      ]
+    },
+    {
+      "heading": "Why approximation factors cannot be compared without running time",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "Suppose algorithm A has:",
+      "paragraphs": [
+        "Suppose algorithm A has:",
+        "factor: 2 time: N^1.9",
+        "and algorithm B has:",
+        "factor: log N time: N^1.01",
+        "Neither universally dominates the other.",
+        "The correct comparison is two-dimensional:",
+        "accuracy × running time",
+        "and sometimes also:",
+        "memory randomness preprocessing query model"
+      ]
+    },
+    {
+      "heading": "The approximation frontier",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "Conceptually, imagine a plane:",
+      "paragraphs": [
+        "Conceptually, imagine a plane:",
+        "better accuracy ↑ │ exact │ ● │ │ 1+ε │ ● │ │ constant │ ● ● │ │ polylog │ ● │ │ weak approximation │● └────────────────────────→ faster time",
+        "Algorithm research attempts to move toward:",
+        "upper right: higher accuracy and lower runtime",
+        "but complexity lower bounds limit which regions are believed reachable."
+      ]
+    },
+    {
+      "heading": "Exact lower bounds are relevant to approximation",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 12,
+      "word_count": 52,
+      "evidence": "Backurs and Indyk showed that, assuming the Strong Exponential Time Hypothesis:",
+      "paragraphs": [
+        "Backurs and Indyk showed that, assuming the Strong Exponential Time Hypothesis:",
+        "exact edit distance",
+        "does not admit:",
+        "O( N^(2-δ) )",
+        "time for any fixed:",
+        "δ > 0",
+        "This does not directly lower-bound constant-factor approximation.",
+        "Instead, the existence of strongly subquadratic approximation algorithms demonstrates exactly why:",
+        "exact",
+        "and:",
+        "approximate",
+        "must be analyzed separately."
+      ]
+    },
+    {
+      "heading": "Polylog shaving for exact edit distance",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 5,
+      "word_count": 60,
+      "evidence": "Fine-grained work by Abboud, Hansen, Vassilevska Williams, and Williams links large enough polylogarithmic improvements for exact edit distance to major consequences in circuit complexity.",
+      "paragraphs": [
+        "Fine-grained work by Abboud, Hansen, Vassilevska Williams, and Williams links large enough polylogarithmic improvements for exact edit distance to major consequences in circuit complexity.",
+        "Thus even seemingly mild speedups of:",
+        "N² / log^c N",
+        "can be theoretically significant in the exact regime.",
+        "The 2026 approximation scheme surpasses this kind of improvement because approximation relaxes the requirement of exact value recovery."
+      ]
+    },
+    {
+      "heading": "Why approximation can circumvent exact hardness",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 9,
+      "word_count": 55,
+      "evidence": "A fine-grained reduction for exact distance may encode information into a tiny difference such as:",
+      "paragraphs": [
+        "A fine-grained reduction for exact distance may encode information into a tiny difference such as:",
+        "distance = D",
+        "versus:",
+        "distance = D+1",
+        "An exact algorithm must preserve that distinction.",
+        "A multiplicative approximation with:",
+        "εD ≫ 1",
+        "may legally map both values into overlapping output ranges.",
+        "This can destroy the fine-grained information carried by the reduction."
+      ]
+    },
+    {
+      "heading": "Approximation and bounded exact algorithms solve different regimes",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "Approximation is not always the best way to accelerate edit distance.",
+      "paragraphs": [
+        "Approximation is not always the best way to accelerate edit distance.",
+        "If the true distance is expected to be very small:",
+        "k ≪ N",
+        "exact bounded and parameterized edit-distance algorithms can achieve:",
+        "O( N+k² )",
+        "in the classical unit-cost regime."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-68",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "N = 10,000,000 k = 5",
+        "Then:",
+        "N+k² ≈ N",
+        "so an exact bounded algorithm can already be essentially linear.",
+        "Using a coarse approximation in this regime may sacrifice accuracy without producing any asymptotic advantage."
+      ]
+    },
+    {
+      "heading": "Approximation is most attractive when the exact distance is not tiny",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 2,
+      "word_count": 38,
+      "evidence": "The algorithm-selection picture is roughly:",
+      "paragraphs": [
+        "The algorithm-selection picture is roughly:",
+        "very small distance │ └── exact parameterized methods often excellent medium / unknown distance │ └── approximation may save substantial computation large distance │ └── coarse/additive estimates can already give strong relative accuracy"
+      ]
+    },
+    {
+      "heading": "Gap algorithms versus bounded algorithms",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "These should not be confused.",
+      "paragraphs": [
+        "These should not be confused."
+      ]
+    },
+    {
+      "heading": "Exact bounded decision",
+      "level": 3,
+      "id": "ux-section-71",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "YES: ED ≤ k NO: ED > k",
+      "paragraphs": [
+        "YES: ED ≤ k NO: ED > k",
+        "Every possible distance receives a prescribed answer."
+      ]
+    },
+    {
+      "heading": "Gap decision",
+      "level": 3,
+      "id": "ux-section-72",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "YES: ED ≤ k NO: ED > αk don't care: k < ED ≤ αk",
+      "paragraphs": [
+        "YES: ED ≤ k NO: ED > αk don't care: k < ED ≤ αk",
+        "The second problem is strictly weaker and can admit faster algorithms."
+      ]
+    },
+    {
+      "heading": "Randomized approximation",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "Many state-of-the-art approximation algorithms are randomized.",
+      "paragraphs": [
+        "Many state-of-the-art approximation algorithms are randomized.",
+        "A typical guarantee is:",
+        "with probability at least 1 - 1/poly(N)",
+        "the output satisfies the desired approximation bound.",
+        "This is often abbreviated:",
+        "with high probability"
+      ]
+    },
+    {
+      "heading": "Monte Carlo algorithm",
+      "level": 3,
+      "id": "ux-section-75",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Has a deterministic or bounded running-time guarantee but may return an incorrect result with small probability.",
+      "paragraphs": [
+        "Has a deterministic or bounded running-time guarantee but may return an incorrect result with small probability."
+      ]
+    },
+    {
+      "heading": "Las Vegas algorithm",
+      "level": 3,
+      "id": "ux-section-76",
+      "paragraph_count": 8,
+      "word_count": 34,
+      "evidence": "Always returns a correct result but has randomized running time.",
+      "paragraphs": [
+        "Always returns a correct result but has randomized running time.",
+        "Approximate edit-distance papers must be read carefully because:",
+        "randomized approximation guarantee",
+        "can refer to:",
+        "success probability;",
+        "expected approximation quality;",
+        "expected running time;",
+        "high-probability bounds."
+      ]
+    },
+    {
+      "heading": "Amplifying success probability",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 11,
+      "word_count": 55,
+      "evidence": "Suppose one randomized estimate succeeds with probability:",
+      "paragraphs": [
+        "Suppose one randomized estimate succeeds with probability:",
+        "2/3",
+        "Independent repetitions can reduce failure probability.",
+        "For example:",
+        "run algorithm r times ↓ combine results appropriately",
+        "often reduces failure to:",
+        "exp(-Ω(r))",
+        "at the cost of an:",
+        "O(r)",
+        "runtime factor.",
+        "The exact aggregation method depends on whether the estimator is one-sided, unbiased, or only satisfies a probability interval."
+      ]
+    },
+    {
+      "heading": "Approximation and metric embeddings are related but distinct",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 11,
+      "word_count": 46,
+      "evidence": "An embedding gives a reusable representation:",
+      "paragraphs": [
+        "An embedding gives a reusable representation:",
+        "x → f(x)",
+        "that can potentially support comparisons with many other strings.",
+        "A direct pairwise approximation algorithm may instead process:",
+        "(x,y)",
+        "jointly and produce one estimate.",
+        "Therefore:",
+        "fast pairwise approximation",
+        "does not automatically imply:",
+        "fast reusable embedding",
+        "and vice versa."
+      ]
+    },
+    {
+      "heading": "Approximation and sketching",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "A sketch is a compact representation:",
+      "paragraphs": [
+        "A sketch is a compact representation:",
+        "sk(x)",
+        "constructed independently from:",
+        "x",
+        "such that:",
+        "sk(x) and sk(y)",
+        "allow information about:",
+        "ED(x,y)",
+        "to be recovered or approximated.",
+        "This is stronger than a pairwise algorithm in one respect because the two summaries are computed separately."
+      ]
+    },
+    {
+      "heading": "Why independent sketches matter",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 8,
+      "word_count": 40,
+      "evidence": "Suppose a distributed system has:",
+      "paragraphs": [
+        "Suppose a distributed system has:",
+        "machine A: string x machine B: string y",
+        "If each machine computes a compact sketch locally, only:",
+        "sk(x) and sk(y)",
+        "need to be communicated.",
+        "Thus sketch size determines:",
+        "communication complexity",
+        "as well as storage requirements."
+      ]
+    },
+    {
+      "heading": "Approximation and nearest-neighbor search",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 12,
+      "word_count": 56,
+      "evidence": "Given:",
+      "paragraphs": [
+        "Given:",
+        "query q database S",
+        "nearest-neighbor search asks for:",
+        "argmin_(x∈S) ED(q,x)",
+        "An approximate distance algorithm can reduce the cost of verifying a candidate, but it does not by itself avoid evaluating every:",
+        "x ∈ S",
+        "A scalable search system also needs:",
+        "indexing;",
+        "candidate generation;",
+        "filtering;",
+        "approximate nearest-neighbor structure.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Distance approximation versus search approximation",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 12,
+      "word_count": 43,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "ED(q,a) = 100 ED(q,b) = 105",
+        "A factor-2 distance approximation may legally estimate:",
+        "a: 180 b: 110",
+        "and rank:",
+        "b",
+        "ahead of:",
+        "a",
+        "even though:",
+        "a",
+        "is the true nearest item.",
+        "Therefore a pairwise approximation guarantee does not automatically preserve exact ranking."
+      ]
+    },
+    {
+      "heading": "Approximate nearest-neighbor guarantees",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 6,
+      "word_count": 39,
+      "evidence": "An approximate nearest-neighbor structure instead promises something like:",
+      "paragraphs": [
+        "An approximate nearest-neighbor structure instead promises something like:",
+        "ED(q,x_returned) ≤ c · min_(x∈S) ED(q,x)",
+        "This is a guarantee on:",
+        "the returned database item",
+        "rather than on every individual pairwise distance estimate.",
+        "The two approximation problems should not be conflated."
+      ]
+    },
+    {
+      "heading": "Approximation and fuzzy search",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 3,
+      "word_count": 46,
+      "evidence": "A practical fuzzy-search pipeline may use:",
+      "paragraphs": [
+        "A practical fuzzy-search pipeline may use:",
+        "QUERY ↓ NORMALIZATION ↓ INDEX / FILTER ↓ CANDIDATE SET ↓ FAST APPROXIMATE ED ↓ TOP CANDIDATES ↓ OPTIONAL EXACT ED ↓ FINAL RANKING",
+        "Approximation can therefore act as an intermediate filter even if the final result requires exact distance."
+      ]
+    },
+    {
+      "heading": "Approximate-then-exact verification",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 12,
+      "word_count": 56,
+      "evidence": "Suppose an approximation gives a lower and upper interval:",
+      "paragraphs": [
+        "Suppose an approximation gives a lower and upper interval:",
+        "L(x,y) ≤ ED(x,y) ≤ U(x,y)",
+        "For threshold:",
+        "k",
+        "we can decide immediately when:",
+        "L > k",
+        "or:",
+        "U ≤ k",
+        "Only ambiguous cases:",
+        "L ≤ k < U",
+        "need exact verification.",
+        "This hybrid architecture can preserve exact final semantics while using approximate computation to eliminate easy cases."
+      ]
+    },
+    {
+      "heading": "One-sided upper approximations are especially useful for feasible alignments",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "If an algorithm explicitly constructs an edit script of cost:",
+      "paragraphs": [
+        "If an algorithm explicitly constructs an edit script of cost:",
+        "C",
+        "then:",
+        "ED(x,y) ≤ C",
+        "automatically because the optimum cannot exceed the cost of a valid transformation.",
+        "Thus many approximation algorithms naturally produce:",
+        "upper bounds",
+        "on edit distance."
+      ]
+    },
+    {
+      "heading": "Lower bounds require different certificates",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 9,
+      "word_count": 35,
+      "evidence": "To prove:",
+      "paragraphs": [
+        "To prove:",
+        "ED(x,y) ≥ L",
+        "one needs structural reasoning such as:",
+        "length imbalance;",
+        "q-gram discrepancy;",
+        "embedding contraction guarantees;",
+        "dual or combinatorial certificates;",
+        "gap-test guarantees.",
+        "A valid alignment alone cannot certify that no cheaper alignment exists."
+      ]
+    },
+    {
+      "heading": "Approximation of normalized edit distance",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 12,
+      "word_count": 50,
+      "evidence": "Suppose an application uses:",
+      "paragraphs": [
+        "Suppose an application uses:",
+        "NED(x,y) = ED(x,y) / max(|x|,|y|)",
+        "If the denominator is known exactly and:",
+        "D_hat",
+        "is an:",
+        "α-approximation",
+        "to:",
+        "ED",
+        "then:",
+        "D_hat / max(|x|,|y|)",
+        "has the same multiplicative approximation factor for this simple post-normalized score.",
+        "But this observation applies only when normalization is performed after ordinary edit distance."
+      ]
+    },
+    {
+      "heading": "Path-normalized edit distance is a different problem",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "If the optimization objective itself is:",
+      "paragraphs": [
+        "If the optimization objective itself is:",
+        "min_alignment cost(alignment) / length(alignment)",
+        "then the denominator varies with the alignment.",
+        "The problem is no longer simply:",
+        "approximate ED then divide by length",
+        "and requires separate algorithmic analysis."
+      ]
+    },
+    {
+      "heading": "Weighted edit distance",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "For weighted Levenshtein distance , operations have costs such as:",
+      "paragraphs": [
+        "For weighted Levenshtein distance , operations have costs such as:",
+        "insert(a) delete(a) substitute(a,b)",
+        "rather than a uniform unit cost.",
+        "An approximation algorithm designed for unit-cost edit distance does not automatically preserve its guarantees under arbitrary weights."
+      ]
+    },
+    {
+      "heading": "Why arbitrary weights complicate approximation",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 14,
+      "word_count": 46,
+      "evidence": "A unit-cost algorithm can reason about:",
+      "paragraphs": [
+        "A unit-cost algorithm can reason about:",
+        "number of edits",
+        "and:",
+        "distance",
+        "interchangeably.",
+        "With weighted costs:",
+        "10 cheap edits",
+        "may cost less than:",
+        "1 expensive edit",
+        "Consequently:",
+        "sampling rates may need to depend on costs;",
+        "window error budgets change;",
+        "band geometry may change;",
+        "metric assumptions can fail."
+      ]
+    },
+    {
+      "heading": "Metricity matters to embedding arguments",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 6,
+      "word_count": 33,
+      "evidence": "Classical unit-cost Levenshtein distance is a metric.",
+      "paragraphs": [
+        "Classical unit-cost Levenshtein distance is a metric.",
+        "Arbitrary weighted edit distance may not satisfy:",
+        "symmetry",
+        "or:",
+        "triangle inequality",
+        "Metric embeddings and metric nearest-neighbor techniques cannot be transferred automatically to a nonmetric weighted score."
+      ]
+    },
+    {
+      "heading": "Damerau–Levenshtein approximation",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "Adding adjacent transposition changes the primitive edit set.",
+      "paragraphs": [
+        "Adding adjacent transposition changes the primitive edit set.",
+        "An approximation guarantee proved for:",
+        "insert delete substitute",
+        "does not automatically hold for:",
+        "insert delete substitute transpose",
+        "See Damerau–Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Edit distance approximation is representation-dependent",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 12,
+      "word_count": 37,
+      "evidence": "The algorithm operates on whatever sequence units it receives.",
+      "paragraphs": [
+        "The algorithm operates on whatever sequence units it receives.",
+        "Possible units include:",
+        "bytes;",
+        "Unicode code points;",
+        "grapheme clusters;",
+        "words;",
+        "tokens;",
+        "phonemes;",
+        "biological symbols.",
+        "An:",
+        "α-approximation",
+        "to byte-level edit distance need not approximate grapheme-level edit distance at all."
+      ]
+    },
+    {
+      "heading": "Approximation factor does not repair a wrong sequence representation",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "Suppose two canonically equivalent Unicode strings differ only because one uses:",
+      "paragraphs": [
+        "Suppose two canonically equivalent Unicode strings differ only because one uses:",
+        "U+00E9",
+        "and the other:",
+        "U+0065 U+0301",
+        "If the application intended canonical equivalence, a perfectly exact code-point-level algorithm can still be modeling the wrong distance.",
+        "Approximation quality is meaningful only after the underlying representation has been defined correctly."
+      ]
+    },
+    {
+      "heading": "Approximation does not create semantic similarity",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 9,
+      "word_count": 53,
+      "evidence": "Approximate edit distance remains an approximation to a lexical sequence metric.",
+      "paragraphs": [
+        "Approximate edit distance remains an approximation to a lexical sequence metric.",
+        "For example:",
+        "car cat",
+        "have small edit distance despite different meanings.",
+        "Meanwhile:",
+        "car automobile",
+        "are semantically related but lexically distant.",
+        "A highly accurate approximation to edit distance is still not an approximation to semantic similarity.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Error propagation through a pipeline",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 11,
+      "word_count": 47,
+      "evidence": "Suppose a downstream score is:",
+      "paragraphs": [
+        "Suppose a downstream score is:",
+        "S(x,y) = exp( -λ ED(x,y) )",
+        "and we replace:",
+        "ED",
+        "with approximation:",
+        "D_hat",
+        "A multiplicative error in distance becomes a nonlinear error in similarity:",
+        "exp(-λD_hat)",
+        "The approximation guarantee on:",
+        "ED",
+        "must therefore be propagated through the downstream transformation before interpreting ranking quality."
+      ]
+    },
+    {
+      "heading": "Threshold sensitivity",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 12,
+      "word_count": 58,
+      "evidence": "Suppose the production rule is:",
+      "paragraphs": [
+        "Suppose the production rule is:",
+        "accept if ED ≤ 10",
+        "and an approximation only guarantees:",
+        "ED ≤ D_hat ≤ 2ED",
+        "If:",
+        "D_hat = 12",
+        "then the true distance could be:",
+        "6 through 12",
+        "depending on the precise guarantee.",
+        "The approximation alone cannot safely determine whether:",
+        "ED ≤ 10",
+        "unless an accompanying lower or upper bound resolves the threshold."
+      ]
+    },
+    {
+      "heading": "Approximation is dangerous near hard decision boundaries",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 10,
+      "word_count": 32,
+      "evidence": "Use care when one distance unit changes:",
+      "paragraphs": [
+        "Use care when one distance unit changes:",
+        "fraud decisions;",
+        "identity linkage;",
+        "data deduplication;",
+        "access control;",
+        "scientific classification.",
+        "In such systems, approximation is often better used for:",
+        "candidate pruning",
+        "followed by:",
+        "exact verification"
+      ]
+    },
+    {
+      "heading": "Approximation is ideal for ranking when fine order is unnecessary",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 10,
+      "word_count": 32,
+      "evidence": "If an application only needs to separate:",
+      "paragraphs": [
+        "If an application only needs to separate:",
+        "very close",
+        "from:",
+        "very far",
+        "pairs, a coarse approximation can be more than sufficient.",
+        "Examples include:",
+        "candidate generation;",
+        "rough clustering;",
+        "filter ordering;",
+        "large-scale exploratory search."
+      ]
+    },
+    {
+      "heading": "Approximation quality should be evaluated empirically as well as theoretically",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "A worst-case guarantee of:",
+      "paragraphs": [
+        "A worst-case guarantee of:",
+        "factor 10",
+        "does not mean real predictions are typically off by:",
+        "10×",
+        "The worst case may be rare.",
+        "Conversely, an algorithm with excellent mean error can still contain pathological cases near critical thresholds.",
+        "A benchmark should therefore report both:",
+        "theoretical guarantee;",
+        "empirical error distribution."
+      ]
+    },
+    {
+      "heading": "Useful approximation benchmark statistics",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 7,
+      "word_count": 15,
+      "evidence": "For test pairs:",
+      "paragraphs": [
+        "For test pairs:",
+        "(x_i,y_i)",
+        "compute exact reference distances:",
+        "d_i",
+        "and approximate outputs:",
+        "a_i",
+        "Then measure:"
+      ]
+    },
+    {
+      "heading": "Absolute error",
+      "level": 3,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 1,
+      "evidence": "|a_i-d_i|",
+      "paragraphs": [
+        "|a_i-d_i|"
+      ]
+    },
+    {
+      "heading": "Relative error",
+      "level": 3,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "|a_i-d_i| / max(1,d_i)",
+      "paragraphs": [
+        "|a_i-d_i| / max(1,d_i)"
+      ]
+    },
+    {
+      "heading": "Approximation ratio",
+      "level": 3,
+      "id": "ux-section-105",
+      "paragraph_count": 3,
+      "word_count": 7,
+      "evidence": "a_i / d_i",
+      "paragraphs": [
+        "a_i / d_i",
+        "when:",
+        "d_i > 0"
+      ]
+    },
+    {
+      "heading": "Threshold classification error",
+      "level": 3,
+      "id": "ux-section-106",
+      "paragraph_count": 5,
+      "word_count": 9,
+      "evidence": "For operational threshold:",
+      "paragraphs": [
+        "For operational threshold:",
+        "k",
+        "measure:",
+        "false acceptances;",
+        "false rejections."
+      ]
+    },
+    {
+      "heading": "Ranking quality",
+      "level": 3,
+      "id": "ux-section-107",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "Measure how approximate scores alter:",
+      "paragraphs": [
+        "Measure how approximate scores alter:",
+        "top-k recall;",
+        "rank correlation;",
+        "nearest-neighbor recall."
+      ]
+    },
+    {
+      "heading": "Benchmark by distance regime",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Do not aggregate all string pairs into one mean.",
+      "paragraphs": [
+        "Do not aggregate all string pairs into one mean.",
+        "Separate:",
+        "ED = 0 ED = 1–2 ED = 3–10 ED = small fraction of N ED = Θ(N)",
+        "Many approximation algorithms behave very differently across these regimes."
+      ]
+    },
+    {
+      "heading": "Benchmark repetitive inputs separately",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 4,
+      "word_count": 25,
+      "evidence": "Use families such as:",
+      "paragraphs": [
+        "Use families such as:",
+        "aaaaaaaaaaaaaaaa abababababababab abcabcabcabcabcabc",
+        "as well as high-entropy strings.",
+        "Repetitiveness has historically played a central role in the difficulty of edit-distance approximation."
+      ]
+    },
+    {
+      "heading": "Benchmark adversarial shifts",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "x = abcdefghij y = xabcdefghij",
+        "or long versions of this construction.",
+        "A single insertion creates a large positional shift while preserving tiny edit distance.",
+        "Algorithms based on naive positional sampling should fail dramatically on such inputs."
+      ]
+    },
+    {
+      "heading": "Benchmark long exact blocks separated by edits",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "AAAAAAAA... X BBBBBBBB... Y CCCCCCCC...",
+      "paragraphs": [
+        "AAAAAAAA... X BBBBBBBB... Y CCCCCCCC...",
+        "These instances test whether an algorithm can exploit long aligned regions without paying for every character pair."
+      ]
+    },
+    {
+      "heading": "Approximation implementation checklist",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 12,
+      "word_count": 64,
+      "evidence": "Define the exact distance being approximated.",
+      "paragraphs": [
+        "Define the exact distance being approximated.",
+        "Specify multiplicative, additive, or gap guarantee.",
+        "Specify one-sided versus two-sided error.",
+        "Specify probability of failure.",
+        "Specify input-size convention.",
+        "Specify computational model.",
+        "Include preprocessing in runtime when relevant.",
+        "Define Unicode/token representation before comparison.",
+        "Do not transfer unit-cost guarantees to arbitrary weights without proof.",
+        "Test near-zero distance separately.",
+        "Test repetitive and shifted inputs.",
+        "Use exact differential testing on manageable inputs."
+      ]
+    },
+    {
+      "heading": "Common misconception: approximation means rounding the exact answer",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 5,
+      "word_count": 33,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "An approximation algorithm is valuable only when it avoids much of the work needed to compute the exact answer.",
+        "Computing:",
+        "ED exactly then rounding it",
+        "does not improve the asymptotic distance-computation cost."
+      ]
+    },
+    {
+      "heading": "Common misconception: approximate edit distance is the same as approximate string matching",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 7,
+      "word_count": 42,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Approximate edit distance asks:",
+        "approximately compute ED(x,y)",
+        "for a given pair.",
+        "Approximate string matching asks:",
+        "find substrings / records whose distance from a pattern is sufficiently small",
+        "The latter contains an indexing or search problem in addition to pairwise distance computation."
+      ]
+    },
+    {
+      "heading": "Common misconception: constant factor means near exact",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "An unspecified constant factor might theoretically be:",
+        "2 10 100 or another constant",
+        "depending on the theorem.",
+        "The important complexity-theoretic property is that it does not grow with:",
+        "N",
+        "but that alone does not imply tight numerical accuracy."
+      ]
+    },
+    {
+      "heading": "Common misconception: polylog approximation is constant factor",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 5,
+      "word_count": 15,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "(log N)^c",
+        "continues to grow as:",
+        "N → ∞",
+        "even though growth is slow."
+      ]
+    },
+    {
+      "heading": "Common misconception: N^(1+ε) means linear",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 10,
+      "word_count": 39,
+      "evidence": "Not formally.",
+      "paragraphs": [
+        "Not formally.",
+        "For every fixed:",
+        "ε > 0",
+        "N^(1+ε)",
+        "is superlinear.",
+        "The phrase:",
+        "near-linear",
+        "is used because:",
+        "ε",
+        "may be chosen as an arbitrarily small fixed constant in the theorem, although constants and approximation quality may depend on it."
+      ]
+    },
+    {
+      "heading": "Common misconception: N² / polylog N is truly subquadratic",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 7,
+      "word_count": 23,
+      "evidence": "Not in the standard fixed-exponent sense.",
+      "paragraphs": [
+        "Not in the standard fixed-exponent sense.",
+        "Truly subquadratic means:",
+        "O( N^(2-δ) )",
+        "for some fixed:",
+        "δ > 0",
+        "whereas:",
+        "N²/log^c N = N^(2-o(1))"
+      ]
+    },
+    {
+      "heading": "Common misconception: the 2026 scheme computes exact distance",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "It computes a randomized:",
+        "(1+ε)",
+        "approximation for every fixed:",
+        "ε > 0",
+        "It is extremely accurate for small ε , but it is still an approximation algorithm."
+      ]
+    },
+    {
+      "heading": "Common misconception: ε can simply be zero",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 8,
+      "word_count": 25,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "The theorem requires:",
+        "ε > 0",
+        "Setting:",
+        "ε = 0",
+        "would request:",
+        "1-approximation = exact distance",
+        "and would cross back into the exact-computation problem."
+      ]
+    },
+    {
+      "heading": "Common misconception: near-linear constant-factor approximation makes exact bounded algorithms obsolete",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "If:",
+        "d ≪ √N",
+        "an exact bounded algorithm can already run in approximately:",
+        "O(N)",
+        "time.",
+        "In that regime there may be little reason to sacrifice exactness."
+      ]
+    },
+    {
+      "heading": "Common misconception: approximation preserves exact nearest-neighbor ranking",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Pairwise approximation intervals can overlap, causing close candidates to be reordered.",
+        "Approximate nearest-neighbor guarantees must be stated separately."
+      ]
+    },
+    {
+      "heading": "Common misconception: approximate lexical distance approximates meaning",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "The target function remains edit distance.",
+        "A perfect:",
+        "(1+ε)",
+        "approximation to edit distance is still a lexical sequence score, not a semantic model."
+      ]
+    },
+    {
+      "heading": "How to choose between exact and approximate algorithms",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 1,
+      "word_count": 79,
+      "evidence": "Requirement Strong starting point Need exact result, short strings Wagner–Fischer / optimized exact implementation Need exact result, very small distance Bounded / parameterized exact algorithm Need exact result, short pattern Bit-vector exact algorithm Only coarse close-vs-far distinction needed Gap / testing algorithm Massive strings, rough ranking acceptable Fast multiplicative approximation Near-linear time desired Modern constant-factor approximation Accuracy close to exact but subquadratic improvement desired Modern (1+ε) approximation scheme Hard threshold must be exact Approximate filter followed by exact verification",
+      "paragraphs": [
+        "Requirement Strong starting point Need exact result, short strings Wagner–Fischer / optimized exact implementation Need exact result, very small distance Bounded / parameterized exact algorithm Need exact result, short pattern Bit-vector exact algorithm Only coarse close-vs-far distinction needed Gap / testing algorithm Massive strings, rough ranking acceptable Fast multiplicative approximation Near-linear time desired Modern constant-factor approximation Accuracy close to exact but subquadratic improvement desired Modern (1+ε) approximation scheme Hard threshold must be exact Approximate filter followed by exact verification"
+      ]
+    },
+    {
+      "heading": "A practical hybrid strategy",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 2,
+      "word_count": 50,
+      "evidence": "INPUT PAIR ↓ cheap exact lower bounds ↓ obviously outside threshold? ├── yes → reject │ └── no ↓ fast approximate ED ↓ confidently far? ├── yes → reject │ └── no ↓ exact bounded verifier ↓ exact final result",
+      "paragraphs": [
+        "INPUT PAIR ↓ cheap exact lower bounds ↓ obviously outside threshold? ├── yes → reject │ └── no ↓ fast approximate ED ↓ confidently far? ├── yes → reject │ └── no ↓ exact bounded verifier ↓ exact final result",
+        "This architecture lets approximation reduce workload without changing final correctness."
+      ]
+    },
+    {
+      "heading": "The exact–approximate complexity separation",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 10,
+      "word_count": 79,
+      "evidence": "The deepest theoretical lesson from modern edit-distance approximation is that accuracy itself behaves like a computational resource.",
+      "paragraphs": [
+        "The deepest theoretical lesson from modern edit-distance approximation is that accuracy itself behaves like a computational resource.",
+        "At one extreme:",
+        "exact distance",
+        "requires distinguishing every neighboring integer value.",
+        "At the other:",
+        "coarse approximation",
+        "can collapse large ranges of distances into one valid answer.",
+        "Between those extremes lies a hierarchy:",
+        "exact ↓ 1+ε ↓ constant factor ↓ polylog ↓ subpolynomial ↓ polynomial factor ↓ weak gap testing",
+        "As allowed error increases, new algorithmic techniques and lower running-time regimes become possible."
+      ]
+    },
+    {
+      "heading": "Research frontier: can near-exact approximation become truly subquadratic?",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 13,
+      "word_count": 47,
+      "evidence": "The 2026 result achieves:",
+      "paragraphs": [
+        "The 2026 result achieves:",
+        "N² / 2^(log^(Ω(1)) N)",
+        "for:",
+        "(1+ε)",
+        "approximation.",
+        "A natural question is whether one can reach:",
+        "N^(2-δ)",
+        "for a fixed:",
+        "δ > 0",
+        "while retaining arbitrarily accurate:",
+        "1+ε",
+        "approximation under comparable assumptions.",
+        "This sits directly at the frontier between fine-grained complexity and approximation algorithms."
+      ]
+    },
+    {
+      "heading": "Research frontier: near-linear PTAS?",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 10,
+      "word_count": 35,
+      "evidence": "Another extreme question is whether:",
+      "paragraphs": [
+        "Another extreme question is whether:",
+        "(1+ε)-approximate ED",
+        "could ever approach:",
+        "N^(1+o(1))",
+        "time for arbitrary strings.",
+        "The gap between:",
+        "near-linear constant factor",
+        "and:",
+        "near-quadratic but strongly improved 1+ε approximation",
+        "remains a major algorithmic landscape to understand."
+      ]
+    },
+    {
+      "heading": "Research frontier: deterministic versus randomized approximation",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 3,
+      "word_count": 37,
+      "evidence": "Many of the strongest approximation results use randomness.",
+      "paragraphs": [
+        "Many of the strongest approximation results use randomness.",
+        "A natural question is whether comparable guarantees can be achieved deterministically without major complexity consequences.",
+        "The 2026 work emphasizes that derandomization questions can themselves intersect with deep circuit-complexity barriers."
+      ]
+    },
+    {
+      "heading": "Research frontier: weighted approximation",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "Real applications frequently require:",
+      "paragraphs": [
+        "Real applications frequently require:",
+        "nonuniform substitutions;",
+        "asymmetric costs;",
+        "domain-specific insertions;",
+        "context-dependent transformations.",
+        "Extending the strongest approximation/time trade-offs from unit-cost edit distance to such models remains substantially more difficult."
+      ]
+    },
+    {
+      "heading": "Research frontier: structured and repetitive inputs",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 5,
+      "word_count": 46,
+      "evidence": "Repetition historically appears as a source of approximation difficulty.",
+      "paragraphs": [
+        "Repetition historically appears as a source of approximation difficulty.",
+        "But repetition can also create compression opportunities.",
+        "This creates an interesting duality:",
+        "repetition can obscure alignment but repetition can enable compact representation",
+        "Understanding when one effect dominates the other is important for compressed and structured edit-distance algorithms."
+      ]
+    },
+    {
+      "heading": "Research frontier: approximation for dynamic strings",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "If strings change through:",
+      "paragraphs": [
+        "If strings change through:",
+        "insertions;",
+        "deletions;",
+        "substitutions",
+        "one would like to update an approximate distance faster than recomputing it from scratch.",
+        "This creates another trade-off among:",
+        "approximation factor update time query time space",
+        "See Dynamic, Online and Streaming Edit Distance ."
+      ]
+    },
+    {
+      "heading": "A conceptual taxonomy",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 1,
+      "word_count": 130,
+      "evidence": "APPROXIMATE EDIT DISTANCE │ ├── Promise / gap algorithms │ │ │ ├── k vs K │ └── weak close-vs-far tests │ ├── Numerical approximation │ │ │ ├── additive │ ├── multiplicative │ │ ├── polynomial factor │ │ ├── subpolynomial │ │ ├── polylogarithmic │ │ ├── constant factor │ │ └── 1+ε │ │ │ └── mixed additive + multiplicative │ ├── Representation methods │ │ │ ├── metric embeddings │ ├── sketches │ └── distance oracles │ ├── Algorithmic methods │ │ │ ├── random sampling │ ├── recursive partitioning │ ├── window decomposition │ ├── multiscale alignment │ ├── precision sampling │ └── smoothing │ └── Application modes │ ├── pairwise estimation ├── candidate filtering ├── approximate search ├── distributed sketching └── approximate nearest neighbor",
+      "paragraphs": [
+        "APPROXIMATE EDIT DISTANCE │ ├── Promise / gap algorithms │ │ │ ├── k vs K │ └── weak close-vs-far tests │ ├── Numerical approximation │ │ │ ├── additive │ ├── multiplicative │ │ ├── polynomial factor │ │ ├── subpolynomial │ │ ├── polylogarithmic │ │ ├── constant factor │ │ └── 1+ε │ │ │ └── mixed additive + multiplicative │ ├── Representation methods │ │ │ ├── metric embeddings │ ├── sketches │ └── distance oracles │ ├── Algorithmic methods │ │ │ ├── random sampling │ ├── recursive partitioning │ ├── window decomposition │ ├── multiscale alignment │ ├── precision sampling │ └── smoothing │ └── Application modes │ ├── pairwise estimation ├── candidate filtering ├── approximate search ├── distributed sketching └── approximate nearest neighbor"
+      ]
+    },
+    {
+      "heading": "Key mathematical distinctions",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 1,
+      "word_count": 61,
+      "evidence": "Concept Guarantee Exact distance D = ED Multiplicative approximation Typically ED ≤ D ≤ αED Additive approximation |D-ED| ≤ Δ or related one-sided form (1+ε) -approximation ED ≤ D ≤ (1+ε)ED Gap decision Distinguish ED≤k from ED>K Bounded exact distance Exact when ED≤k , otherwise report >k Approximate nearest neighbor Approximate the minimum over a database, not necessarily every pairwise distance",
+      "paragraphs": [
+        "Concept Guarantee Exact distance D = ED Multiplicative approximation Typically ED ≤ D ≤ αED Additive approximation |D-ED| ≤ Δ or related one-sided form (1+ε) -approximation ED ≤ D ≤ (1+ε)ED Gap decision Distinguish ED≤k from ED>K Bounded exact distance Exact when ED≤k , otherwise report >k Approximate nearest neighbor Approximate the minimum over a database, not necessarily every pairwise distance"
+      ]
+    },
+    {
+      "heading": "Key complexity distinctions",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 1,
+      "word_count": 42,
+      "evidence": "Term Typical meaning Linear O(N) Near-linear N^(1+o(1)) , N polylog N , or N^(1+ε) depending on context Quadratic O(N²) Mildly subquadratic For example N²/polylog N Truly / strongly subquadratic O(N^(2-δ)) for fixed δ>0 Quasi-strongly subquadratic Used for improvements such as N²/2^(log^(Ω(1)) N)",
+      "paragraphs": [
+        "Term Typical meaning Linear O(N) Near-linear N^(1+o(1)) , N polylog N , or N^(1+ε) depending on context Quadratic O(N²) Mildly subquadratic For example N²/polylog N Truly / strongly subquadratic O(N^(2-δ)) for fixed δ>0 Quasi-strongly subquadratic Used for improvements such as N²/2^(log^(Ω(1)) N)"
+      ]
+    },
+    {
+      "heading": "What approximation does and does not preserve",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 1,
+      "word_count": 47,
+      "evidence": "Property Preserved automatically? Approximate numerical ED Yes, by the stated guarantee Exact edit script No Exact nearest-neighbor ranking No Threshold classification Only when approximation bounds separate the threshold Metricity of returned estimator Not necessarily Semantic similarity No Correctness under arbitrary edit weights No, unless theorem covers them",
+      "paragraphs": [
+        "Property Preserved automatically? Approximate numerical ED Yes, by the stated guarantee Exact edit script No Exact nearest-neighbor ranking No Threshold classification Only when approximation bounds separate the threshold Metricity of returned estimator Not necessarily Semantic similarity No Correctness under arbitrary edit weights No, unless theorem covers them"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 8,
+      "word_count": 428,
+      "evidence": "Approximate edit-distance algorithms relax the requirement of recovering the exact Levenshtein distance in exchange for lower computational cost. The relaxation can take several forms: multiplicative approximation, additive approximation, a mixed guarantee, a gap decision problem, or a near-exact (1+ε) approximation scheme. These formulations must be distinguished because they provide very different amounts of information.",
+      "paragraphs": [
+        "Approximate edit-distance algorithms relax the requirement of recovering the exact Levenshtein distance in exchange for lower computational cost. The relaxation can take several forms: multiplicative approximation, additive approximation, a mixed guarantee, a gap decision problem, or a near-exact (1+ε) approximation scheme. These formulations must be distinguished because they provide very different amounts of information.",
+        "The fundamental difficulty of edit-distance approximation comes from alignment uncertainty. Insertions and deletions shift the correspondence between positions, so techniques that work naturally for Hamming distance cannot simply sample matching coordinates. Fast algorithms instead reason about substrings, windows, alignment paths, metric embeddings, recursive decompositions, sketches, and multiscale distance structures.",
+        "Early work showed that coarse gap information could be recovered in sublinear time. Bar-Yossef and collaborators then obtained polynomial-factor quasi-linear approximation. Ostrovsky and Rabani developed a subpolynomial-distortion embedding of edit distance into ℓ₁ , while Andoni and Onak obtained a directly computable subpolynomial approximation in near-linear time. Andoni, Krauthgamer, and Onak subsequently reduced the factor to polylogarithmic while retaining N^(1+ε) time.",
+        "A major transition occurred in 2018 when Chakraborty, Das, Goldenberg, Koucký, and Saks produced the first constant-factor approximation in truly subquadratic time, Õ(N^(12/7)) . Work in 2020 first obtained near-linear constant-factor guarantees for sufficiently far input pairs and then, through Andoni and Nosatzki, a constant-factor approximation for arbitrary strings in N^(1+ε) time for every fixed ε>0 .",
+        "The 2026 approximation scheme of Mao and Rubinstein moves the frontier much closer to exact computation. For every constant ε>0 , it computes a randomized (1+ε) -approximation in N² / 2^(log^(Ω(1)) N) time. This produces a super-polylogarithmic improvement over the quadratic dynamic-programming baseline while preserving arbitrarily small multiplicative error.",
+        "That result exposes a fundamental exact–approximate complexity separation. Fine-grained evidence strongly constrains improvements to general exact edit distance, yet even a very small multiplicative relaxation opens a different computational regime. Approximation therefore changes not merely constants but the asymptotic structure of the problem.",
+        "Approximation is not universally preferable, however. When the true distance is very small, exact bounded algorithms can already run in approximately O(N+k²) time and may be essentially linear. When an application has a hard acceptance threshold, approximate estimates may be unsafe near the decision boundary and are better used as filters before exact verification. In indexed search, reducing candidate count can matter more than approximating one pairwise distance.",
+        "The correct algorithm therefore depends on the required accuracy, distance regime, computational model, randomness tolerance, sequence representation, and downstream use of the score. Approximate edit distance is best understood not as one algorithm but as a hierarchy of relaxations connecting coarse property testing to near-exact sequence comparison."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 8,
+      "word_count": 102,
+      "evidence": "Edit Distance Complexity — exact upper bounds, SETH, fine-grained lower bounds, and the exact quadratic barrier.",
+      "paragraphs": [
+        "Edit Distance Complexity — exact upper bounds, SETH, fine-grained lower bounds, and the exact quadratic barrier.",
+        "Bounded and Parameterized Edit Distance — why exact computation can be near linear when the true distance is small.",
+        "Ukkonen Algorithm — threshold-sensitive dynamic programming.",
+        "Landau–Vishkin Algorithm — farthest-reaching diagonals and low-error exact computation.",
+        "Weighted Levenshtein Distance — why arbitrary edit weights alter algorithmic assumptions.",
+        "Indexing and Filtering for Edit Distance — scalable candidate generation before distance verification.",
+        "Dynamic, Online and Streaming Edit Distance — sequence comparison under updates and limited memory.",
+        "Edit Distance Research Frontiers — open questions around exactness, approximation, dynamic computation, and complexity."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 12,
+      "word_count": 330,
+      "evidence": "Tuğkan Batu, Funda Ergün, Joe Kilian, Avner Magen, Sofya Raskhodnikova, Ronitt Rubinfeld, and Rahul Sami, “A Sublinear Algorithm for Weakly Approximating Edit Distance,” Proceedings of STOC 2003 , 316–324. DOI record .",
+      "paragraphs": [
+        "Tuğkan Batu, Funda Ergün, Joe Kilian, Avner Magen, Sofya Raskhodnikova, Ronitt Rubinfeld, and Rahul Sami, “A Sublinear Algorithm for Weakly Approximating Edit Distance,” Proceedings of STOC 2003 , 316–324. DOI record .",
+        "Ziv Bar-Yossef, T. S. Jayram, Robert Krauthgamer, and Ravi Kumar, “Approximating Edit Distance Efficiently,” FOCS 2004 , 550–559. DOI record .",
+        "Rafail Ostrovsky and Yuval Rabani, “Low Distortion Embeddings for Edit Distance,” Journal of the ACM , 54(5), Article 23, 2007. DOI record .",
+        "Alexandr Andoni and Krzysztof Onak, “Approximating Edit Distance in Near-Linear Time,” SIAM Journal on Computing , 41(6), 1635–1648, 2012. DOI record .",
+        "Alexandr Andoni, Robert Krauthgamer, and Krzysztof Onak, “Polylogarithmic Approximation for Edit Distance and the Asymmetric Query Complexity,” FOCS 2010 . DOI record .",
+        "Diptarka Chakraborty, Debarati Das, Elazar Goldenberg, Michal Koucký, and Michael Saks, “Approximating Edit Distance Within Constant Factor in Truly Sub-Quadratic Time,” Journal of the ACM , 67(6), Article 36, 2020; preliminary version FOCS 2018. DOI record .",
+        "Joshua Brakensiek and Aviad Rubinstein, “Constant-Factor Approximation of Near-Linear Edit Distance in Near-Linear Time,” Proceedings of STOC 2020 , 685–698. DOI record .",
+        "Michal Koucký and Michael Saks, “Constant Factor Approximations to Edit Distance on Far Input Pairs in Nearly Linear Time,” Proceedings of STOC 2020 , 699–712. DOI record .",
+        "Alexandr Andoni and Negev Shekel Nosatzki, “Edit Distance in Near-Linear Time: It's a Constant Factor,” FOCS 2020 , 990–1001. DOI record .",
+        "Arturs Backurs and Piotr Indyk, “Edit Distance Cannot Be Computed in Strongly Subquadratic Time (Unless SETH Is False),” SIAM Journal on Computing , 47(3), 1087–1097, 2018. DOI record .",
+        "Amir Abboud, Thomas Dueholm Hansen, Virginia Vassilevska Williams, and Ryan Williams, “Simulating Branching Programs with Edit Distance and Friends: Or: A Polylog Shaved Is a Lower Bound Made,” Proceedings of STOC 2016 , 375–388. DOI record .",
+        "Xiao Mao and Aviad Rubinstein, “Approximation Schemes for Edit Distance and LCS in Quasi-Strongly Subquadratic Time,” Proceedings of the 58th Annual ACM Symposium on Theory of Computing , 744–754, 2026. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Common misconception: approximate edit distance is the same as approximate string matching",
+          "anchor_id": "ux-section-114",
+          "alias": "approximate string matching",
+          "excerpt": "Approximate string matching asks:"
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Approximation and bounded exact algorithms solve different regimes",
+          "anchor_id": "ux-section-67",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "exact bounded and parameterized edit-distance algorithms can achieve:"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-138",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — why exact computation can be near linear when the true distance is small."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Damerau–Levenshtein approximation",
+          "anchor_id": "ux-section-93",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau–Levenshtein Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/dynamic-online-and-streaming-edit-distance",
+      "evidence": [
+        {
+          "section": "Research frontier: approximation for dynamic strings",
+          "anchor_id": "ux-section-132",
+          "alias": "dynamic online and streaming edit distance",
+          "excerpt": "See Dynamic, Online and Streaming Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-138",
+          "alias": "dynamic online and streaming edit distance",
+          "excerpt": "Dynamic, Online and Streaming Edit Distance — sequence comparison under updates and limited memory."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-138",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — exact upper bounds, SETH, fine-grained lower bounds, and the exact quadratic barrier."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-research-frontiers",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-138",
+          "alias": "edit distance research frontiers",
+          "excerpt": "Edit Distance Research Frontiers — open questions around exactness, approximation, dynamic computation, and complexity."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Approximate Edit Distance Algorithms",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Approximate edit distance algorithms trade exactness for computational efficiency. Instead of always computing the exact minimum number of insertions, deletions, and substitutions needed to transform one sequence into another, they return an estimate, solve a promised gap problem, or determine the distance within a specified approximation guarantee."
+        },
+        {
+          "section": "Notation",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "denote their standard unit-cost edit distance."
+        },
+        {
+          "section": "The 2003 sublinear milestone",
+          "anchor_id": "ux-section-19",
+          "alias": "edit distance",
+          "excerpt": "Batu, Ergün, Kilian, Magen, Raskhodnikova, Rubinfeld, and Sami showed that edit distance can be weakly tested in sublinear time under a large promise gap."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Approximation and nearest-neighbor search",
+          "anchor_id": "ux-section-81",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-138",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — scalable candidate generation before distance verification."
+        }
+      ]
+    },
+    {
+      "target": "/landau-vishkin-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-138",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "Landau–Vishkin Algorithm — farthest-reaching diagonals and low-error exact computation."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Approximation does not create semantic similarity",
+          "anchor_id": "ux-section-96",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-138",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm — threshold-sensitive dynamic programming."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted edit distance",
+          "anchor_id": "ux-section-90",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "For weighted Levenshtein distance , operations have costs such as:"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-138",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — why arbitrary edit weights alter algorithmic assumptions."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/approximate-edit-distance-algorithms#page",
+      "type": "WebPage",
+      "name": "Approximate Edit Distance Algorithms",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "type": "TechArticle",
+      "name": "Approximate Edit Distance Algorithms",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept",
+      "type": "DefinedTerm",
+      "name": "Approximate Edit Distance Algorithms",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/approximate-edit-distance-algorithms#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "hasPart",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#page"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#page",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#page",
+      "mainEntity",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#page",
+      "isPartOf",
+      "https://www.levenshtein.net/theory#collection"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#page",
+      "hasPart",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "mentions",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-research-frontiers#concept"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "isPartOf",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#page"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1145/780542.780590"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1109/FOCS.2004.14"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1145/1284320.1284322"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1137/090767182"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1109/FOCS.2010.43"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1145/3422823"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1145/3357713.3384282"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1145/3357713.3384307"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1109/FOCS46700.2020.00096"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1137/15M1053128"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1145/2897518.2897653"
+    ],
+    [
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#article",
+      "citation",
+      "https://doi.org/10.1145/3798129.3800789"
+    ],
+    [
+      "https://doi.org/10.1145/780542.780590",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1109/FOCS.2004.14",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1145/1284320.1284322",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1137/090767182",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1109/FOCS.2010.43",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3422823",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3357713.3384282",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3357713.3384307",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1109/FOCS46700.2020.00096",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1137/15M1053128",
+      "about",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://doi.org/10.1145/2897518.2897653",
+      "about",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3798129.3800789",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3798129.3800789",
+      "about",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1145/780542.780590",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/FOCS.2004.14",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/1284320.1284322",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/090767182",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/FOCS.2010.43",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3422823",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3357713.3384282",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3357713.3384307",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/FOCS46700.2020.00096",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/15M1053128",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/2897518.2897653",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3798129.3800789",
+      "anchor": "DOI record"
+    }
+  ]
+}

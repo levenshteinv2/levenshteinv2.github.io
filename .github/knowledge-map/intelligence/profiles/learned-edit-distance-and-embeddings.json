@@ -1,0 +1,3485 @@
+{
+  "url": "/learned-edit-distance-and-embeddings",
+  "title": "Learned Edit Distance & Embeddings: Metric Learning, Neural Models & Theory",
+  "h1": [
+    "Learned Edit Distance & Embeddings: Metric Learning, Neural Models & Theory"
+  ],
+  "group": "Theory",
+  "provisional_mission": "Metric learning và embedding",
+  "content_sha256": "3eb6049df9ac4233e4e0a0bbd41564d04516973fd9bc8f1917d13d3c624816ff",
+  "canonical": "https://www.levenshtein.net/learned-edit-distance-and-embeddings",
+  "primary_entity_candidate": "Learned Edit Distance & Embeddings: Metric Learning, Neural Models & Theory",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Learned Edit Distance and Embeddings",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 9,
+      "word_count": 316,
+      "evidence": "Classical edit distance defines similarity through a fixed mathematical rule: specify a set of edit operations, assign each operation a cost, and find the minimum-cost sequence of edits transforming one sequence into another. In standard Levenshtein distance , insertion, deletion, and substitution each cost one.",
+      "paragraphs": [
+        "Classical edit distance defines similarity through a fixed mathematical rule: specify a set of edit operations, assign each operation a cost, and find the minimum-cost sequence of edits transforming one sequence into another. In standard Levenshtein distance , insertion, deletion, and substitution each cost one.",
+        "Learned edit distance asks a fundamentally different question:",
+        "Can some part of the distance model itself be learned from data?",
+        "There is no single answer because several mathematically distinct ideas are commonly grouped under this name.",
+        "One approach keeps dynamic programming but learns the costs of individual edit operations. Another replaces the discrete minimum in edit-distance computation with a differentiable relaxation so that alignment parameters can be optimized by gradient descent. A third learns a fixed-dimensional representation of each sequence so that a simple geometric distance between embeddings approximates edit distance. A fourth abandons edit distance as the target altogether and learns a task-specific similarity score from labeled examples.",
+        "These four objectives should never be treated as interchangeable:",
+        "1. LEARN THE EDIT MODEL sequence ↓ learned operation costs ↓ edit dynamic programming ↓ learned edit distance 2. DIFFERENTIABLE EDIT COMPUTATION sequence pair ↓ soft / differentiable alignment ↓ gradient ↓ learn model parameters 3. LEARN AN EMBEDDING OF EDIT DISTANCE sequence ↓ neural encoder ↓ vector ↓ simple geometric distance ≈ predefined edit distance 4. LEARN TASK SIMILARITY sequence pair ↓ machine-learning model ↓ similarity for a task not necessarily edit distance at all",
+        "The distinction matters scientifically. A learned Euclidean embedding can be extremely effective for approximate nearest-neighbor search while providing no edit script. A learned weighted edit distance can preserve explicit alignments while remaining computationally expensive. A semantic language-model embedding may produce excellent semantic similarity yet be a poor approximation of Levenshtein distance.",
+        "This article develops these models from a common theoretical framework and explains their mathematical guarantees, limitations, training objectives, metric properties, computational trade-offs, and modern research frontier."
+      ]
+    },
+    {
+      "heading": "The classical starting point",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 23,
+      "word_count": 96,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "x = x₁x₂...xₘ y = y₁y₂...yₙ",
+        "and define an alphabet:",
+        "Σ",
+        "with an additional empty symbol:",
+        "ε",
+        "representing insertion or deletion.",
+        "A general weighted edit model can assign a cost:",
+        "c(a,b)",
+        "to transforming:",
+        "a → b",
+        "where:",
+        "a,b ∈ Σ ∪ {ε}",
+        "and:",
+        "(a,b) ≠ (ε,ε)",
+        "Then:",
+        "ED_c(x,y) = min over edit scripts π Σ_(e∈π) c(e)",
+        "Standard Levenshtein distance is the special case:",
+        "c(a,a) = 0 c(a,b) = 1 for a ≠ b",
+        "including:",
+        "c(a,ε) = 1 c(ε,b) = 1",
+        "for deletion and insertion.",
+        "The weighted formulation is developed separately in Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "What exactly can be learned?",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 1,
+      "word_count": 61,
+      "evidence": "Learned component Fixed component Typical output Edit operation costs Edit operations and DP structure Learned weighted edit distance Edit probabilities Stochastic transducer structure Probability or probabilistic edit score Soft alignment parameters Differentiable DP recurrence Differentiable surrogate distance Sequence encoder Target edit-distance labels Embedding approximating ED Embedding geometry Training examples Euclidean, hyperbolic, or other representation Pairwise similarity model Task labels Task-specific score",
+      "paragraphs": [
+        "Learned component Fixed component Typical output Edit operation costs Edit operations and DP structure Learned weighted edit distance Edit probabilities Stochastic transducer structure Probability or probabilistic edit score Soft alignment parameters Differentiable DP recurrence Differentiable surrogate distance Sequence encoder Target edit-distance labels Embedding approximating ED Embedding geometry Training examples Euclidean, hyperbolic, or other representation Pairwise similarity model Task labels Task-specific score"
+      ]
+    },
+    {
+      "heading": "The first historical direction: learning edit costs",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 6,
+      "word_count": 47,
+      "evidence": "Suppose the alphabet is:",
+      "paragraphs": [
+        "Suppose the alphabet is:",
+        "Σ = { a, b, c, ... }",
+        "A simple weighted model might learn:",
+        "c(a,b) = 0.3 c(a,q) = 1.4 c(a,ε) = 0.8 c(ε,a) = 0.9",
+        "instead of assigning every nonidentity operation cost one.",
+        "This allows the edit model to represent domain regularities."
+      ]
+    },
+    {
+      "heading": "Keyboard example",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "c(i,o) < c(i,z)",
+      "paragraphs": [
+        "c(i,o) < c(i,z)",
+        "might be appropriate if adjacent-key errors are more common."
+      ]
+    },
+    {
+      "heading": "Phonetic example",
+      "level": 3,
+      "id": "ux-section-6",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "c(p,b) < c(p,s)",
+      "paragraphs": [
+        "c(p,b) < c(p,s)",
+        "might reflect phonological similarity."
+      ]
+    },
+    {
+      "heading": "Transliteration example",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "A particular source symbol may commonly correspond to several target symbols with different probabilities.",
+      "paragraphs": [
+        "A particular source symbol may commonly correspond to several target symbols with different probabilities.",
+        "A learned edit model can discover such relationships from aligned or unaligned training examples."
+      ]
+    },
+    {
+      "heading": "Ristad and Yianilos: learning string-edit distance",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 13,
+      "word_count": 86,
+      "evidence": "A foundational result was the stochastic edit-distance model of Eric Ristad and Peter Yianilos.",
+      "paragraphs": [
+        "A foundational result was the stochastic edit-distance model of Eric Ristad and Peter Yianilos.",
+        "Instead of treating edits merely as costs, the model treats them as events generated by a stochastic transducer.",
+        "For an edit path:",
+        "π = e₁,e₂,...,e_r",
+        "a memoryless model can assign probability approximately of the form:",
+        "P(π) = Π_t P(e_t)",
+        "subject to proper termination and normalization.",
+        "A pair:",
+        "(x,y)",
+        "may be generated by many edit paths.",
+        "Therefore:",
+        "P(x,y) = Σ_π P(π)",
+        "where the sum ranges over edit paths consistent with the observed pair."
+      ]
+    },
+    {
+      "heading": "Why learning is possible without known alignments",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 7,
+      "word_count": 61,
+      "evidence": "Suppose the training data contains:",
+      "paragraphs": [
+        "Suppose the training data contains:",
+        "(\"color\", \"colour\") (\"center\", \"centre\") (\"night\", \"nite\")",
+        "but does not tell us which characters correspond.",
+        "The alignment is latent.",
+        "Expectation-maximization can alternate conceptually between:",
+        "E STEP estimate expected usage of each edit operation under current parameters ↓ M STEP update edit probabilities to better explain the training corpus",
+        "Thus alignment and edit parameters can be learned jointly."
+      ]
+    },
+    {
+      "heading": "Minimum-cost alignment versus probability of all alignments",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "This distinction is fundamental.",
+      "paragraphs": [
+        "This distinction is fundamental.",
+        "Ordinary edit distance computes:",
+        "min_π C(π)",
+        "A probabilistic transducer may compute:",
+        "Σ_π P(π)",
+        "or equivalently:",
+        "-log Σ_π P(π)",
+        "after transformation into log space.",
+        "The former considers only the cheapest alignment.",
+        "The latter aggregates evidence from all possible alignments."
+      ]
+    },
+    {
+      "heading": "A probabilistic edit score is not automatically a metric",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 11,
+      "word_count": 58,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "P(y|x)",
+        "need not equal:",
+        "P(x|y)",
+        "Therefore:",
+        "-log P(y|x)",
+        "can be asymmetric.",
+        "It may also fail triangle inequality.",
+        "Calling such a quantity an \"edit distance\" is conventional in parts of the literature, but mathematically it may be more precise to call it:",
+        "a probabilistic edit score or a learned edit dissimilarity",
+        "unless metric properties have been established."
+      ]
+    },
+    {
+      "heading": "Learning operation costs directly",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 14,
+      "word_count": 55,
+      "evidence": "Another approach optimizes a cost matrix:",
+      "paragraphs": [
+        "Another approach optimizes a cost matrix:",
+        "C ∈ R_+^((|Σ|+1)×(|Σ|+1))",
+        "using supervised labels.",
+        "Suppose the training set contains:",
+        "( x_i, y_i, label_i )",
+        "where:",
+        "label_i = +1",
+        "means the strings should be considered similar and:",
+        "label_i = -1",
+        "means dissimilar.",
+        "The learning objective can encourage:",
+        "ED_C(x_i,y_i) small for positive pairs",
+        "and:",
+        "ED_C(x_i,y_i) large for negative pairs"
+      ]
+    },
+    {
+      "heading": "Good Edit Similarity Learning",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 5,
+      "word_count": 78,
+      "evidence": "Bellet, Habrard, and Sebban developed a supervised framework known as Good Edit Similarity Learning, or GESL.",
+      "paragraphs": [
+        "Bellet, Habrard, and Sebban developed a supervised framework known as Good Edit Similarity Learning, or GESL.",
+        "The goal is not merely to fit arbitrary costs but to learn an edit-based similarity whose downstream classification behavior can be analyzed through generalization guarantees.",
+        "This is an important conceptual transition:",
+        "learn parameters that explain edit events ↓ learn parameters that optimize predictive behavior",
+        "The learned object is still structurally connected to edit operations, but the training criterion comes from machine learning."
+      ]
+    },
+    {
+      "heading": "Metricity of learned edit costs",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 10,
+      "word_count": 62,
+      "evidence": "A learned cost matrix does not automatically define a metric.",
+      "paragraphs": [
+        "A learned cost matrix does not automatically define a metric.",
+        "For a strong sufficient construction, think of:",
+        "Σ ∪ {ε}",
+        "as a metric space under elementary cost:",
+        "c(a,b)",
+        "with:",
+        "c(a,a) = 0 c(a,b) > 0 for a ≠ b c(a,b) = c(b,a) c(a,b) ≤ c(a,z) + c(z,b)",
+        "for all relevant symbols including:",
+        "ε",
+        "Then the shortest-path edit construction inherits suitable metric behavior."
+      ]
+    },
+    {
+      "heading": "Why arbitrary learned costs can violate symmetry",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 9,
+      "word_count": 40,
+      "evidence": "Suppose training discovers:",
+      "paragraphs": [
+        "Suppose training discovers:",
+        "c(a,ε) = 0.2 c(ε,a) = 1.0",
+        "Then deleting:",
+        "a",
+        "is cheaper than inserting:",
+        "a",
+        "and generally:",
+        "ED_C(x,y) ≠ ED_C(y,x)",
+        "The score may be perfectly appropriate for a directional transformation model, but it is not a symmetric metric."
+      ]
+    },
+    {
+      "heading": "Triangle inequality can also fail",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 8,
+      "word_count": 77,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "c(a,c) = 10 c(a,b) = 1 c(b,c) = 1",
+        "Then direct substitution:",
+        "a → c",
+        "is dominated by:",
+        "a → b → c",
+        "If the edit implementation already allows sequences of substitutions through intermediate symbols only by actually creating those intermediate strings, the effective shortest-path distance may repair some inconsistencies. Nevertheless, the intended elementary cost interpretation has become redundant and potentially confusing.",
+        "A principled learned cost system should therefore explicitly decide whether metric constraints are required."
+      ]
+    },
+    {
+      "heading": "A metric-preserving parameterization",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 12,
+      "word_count": 78,
+      "evidence": "One useful design is to learn one vector for every symbol, including the empty symbol:",
+      "paragraphs": [
+        "One useful design is to learn one vector for every symbol, including the empty symbol:",
+        "φ(a) ∈ R^d φ(ε) ∈ R^d",
+        "and define:",
+        "c(a,b) = ||φ(a)-φ(b)||₂",
+        "Then:",
+        "costs are nonnegative;",
+        "costs are symmetric;",
+        "triangle inequality holds at the elementary-symbol level.",
+        "If distinct symbols receive distinct points, identity of indiscernibles is also preserved.",
+        "By contrast:",
+        "||φ(a)-φ(b)||₂²",
+        "does not generally satisfy triangle inequality and should not be described as a metric cost merely because it is derived from Euclidean vectors."
+      ]
+    },
+    {
+      "heading": "Learning edit costs preserves alignment interpretability",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 5,
+      "word_count": 54,
+      "evidence": "One major advantage of cost learning is that inference still produces an edit path:",
+      "paragraphs": [
+        "One major advantage of cost learning is that inference still produces an edit path:",
+        "x ↓ delete ↓ substitute ↓ insert y",
+        "The system can therefore explain:",
+        "which symbols changed which operation was selected how much each operation cost",
+        "This interpretability is often lost when the entire sequence is compressed into one learned vector."
+      ]
+    },
+    {
+      "heading": "The differentiability problem",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 13,
+      "word_count": 75,
+      "evidence": "Standard dynamic programming contains a discrete minimum:",
+      "paragraphs": [
+        "Standard dynamic programming contains a discrete minimum:",
+        "D[i][j] = min( D[i-1][j] + c_del, D[i][j-1] + c_ins, D[i-1][j-1] + c_sub )",
+        "The selected predecessor changes abruptly as the parameters change.",
+        "For example:",
+        "min(a,b)",
+        "switches from:",
+        "a",
+        "to:",
+        "b",
+        "at:",
+        "a = b",
+        "The function is continuous but not differentiable at the tie.",
+        "More importantly for learning, the optimal alignment is a discrete latent structure. Small parameter changes can cause the entire best edit script to switch."
+      ]
+    },
+    {
+      "heading": "Soft minimum",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 11,
+      "word_count": 36,
+      "evidence": "A common differentiable relaxation replaces:",
+      "paragraphs": [
+        "A common differentiable relaxation replaces:",
+        "min( z₁,...,z_r )",
+        "with:",
+        "softmin_τ( z₁,...,z_r ) = -τ log Σ_i exp( -z_i/τ )",
+        "where:",
+        "τ > 0",
+        "is a temperature parameter.",
+        "As:",
+        "τ → 0+",
+        "we have:",
+        "softmin_τ(z) → min(z)"
+      ]
+    },
+    {
+      "heading": "Soft edit recurrence",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 3,
+      "word_count": 34,
+      "evidence": "A differentiable recurrence can therefore use:",
+      "paragraphs": [
+        "A differentiable recurrence can therefore use:",
+        "S[i][j] = softmin_τ( S[i-1][j] + c_del, S[i][j-1] + c_ins, S[i-1][j-1] + c_sub )",
+        "The complete computation remains dynamic programming, but gradients can now propagate through competing alignment choices."
+      ]
+    },
+    {
+      "heading": "Hard alignment versus soft alignment",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 2,
+      "word_count": 54,
+      "evidence": "HARD MIN candidate A = 4 candidate B = 4.1 candidate C = 10 result: A receives everything SOFT MIN candidate A = 4 candidate B = 4.1 candidate C = 10 result: A receives high weight B receives almost-high weight C receives tiny weight",
+      "paragraphs": [
+        "HARD MIN candidate A = 4 candidate B = 4.1 candidate C = 10 result: A receives everything SOFT MIN candidate A = 4 candidate B = 4.1 candidate C = 10 result: A receives high weight B receives almost-high weight C receives tiny weight",
+        "The gradient therefore reflects uncertainty among nearly optimal alignments."
+      ]
+    },
+    {
+      "heading": "A statistical-mechanical interpretation",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 11,
+      "word_count": 49,
+      "evidence": "Let an edit path:",
+      "paragraphs": [
+        "Let an edit path:",
+        "π",
+        "have parameterized cost:",
+        "C_θ(π)",
+        "Define a partition function:",
+        "Z_θ(x,y) = Σ_π exp( -C_θ(π)/τ )",
+        "Then define soft distance:",
+        "S_θ(x,y) = -τ log Z_θ(x,y)",
+        "This is a soft minimum over all edit paths.",
+        "The corresponding path distribution is:",
+        "p_θ(π|x,y) = exp( -C_θ(π)/τ ) / Z_θ(x,y)"
+      ]
+    },
+    {
+      "heading": "The gradient has an interpretable form",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "Differentiating gives:",
+      "paragraphs": [
+        "Differentiating gives:",
+        "∂S_θ / ∂θ = E_( π ~ p_θ ) [ ∂C_θ(π) / ∂θ ]",
+        "In words:",
+        "The gradient is an expectation over possible edit paths weighted according to their soft alignment probability.",
+        "This connects:",
+        "dynamic programming;",
+        "probabilistic alignment;",
+        "soft optimization;",
+        "gradient-based learning."
+      ]
+    },
+    {
+      "heading": "A semiring view",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 3,
+      "word_count": 70,
+      "evidence": "The same alignment graph can support several computations depending on which algebra is used.",
+      "paragraphs": [
+        "The same alignment graph can support several computations depending on which algebra is used.",
+        "Computation Path aggregation Interpretation Exact edit distance min / + Cheapest path Viterbi alignment max / × or log equivalent Most probable path Probabilistic transducer Σ / × Probability summed over paths Soft edit distance log-sum-exp Temperature-weighted aggregate over paths",
+        "This algebraic view explains why many seemingly different edit models share almost the same dynamic-programming topology."
+      ]
+    },
+    {
+      "heading": "Soft edit distance is not automatically a metric",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 11,
+      "word_count": 70,
+      "evidence": "Replacing a hard minimum by log-sum-exp changes the mathematical object.",
+      "paragraphs": [
+        "Replacing a hard minimum by log-sum-exp changes the mathematical object.",
+        "A naive soft minimum can be smaller than the true minimum because:",
+        "-τ log( exp(-a/τ) + exp(-b/τ) ) < min(a,b)",
+        "when both alternatives contribute.",
+        "Repeated aggregation over many paths can therefore create values with properties very different from classical edit distance.",
+        "A differentiable surrogate should not be called a metric unless:",
+        "nonnegativity;",
+        "identity;",
+        "symmetry;",
+        "triangle inequality",
+        "have actually been established."
+      ]
+    },
+    {
+      "heading": "Soft Edit Distance",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 5,
+      "word_count": 50,
+      "evidence": "Ofitserov, Tsvetkov, and Nazarov proposed a smooth edit-distance formulation specifically intended for differentiable optimization over symbolic sequences.",
+      "paragraphs": [
+        "Ofitserov, Tsvetkov, and Nazarov proposed a smooth edit-distance formulation specifically intended for differentiable optimization over symbolic sequences.",
+        "Its motivation is precisely that ordinary discrete edit distance is difficult to place directly inside gradient-based optimization.",
+        "This class of approaches is useful when:",
+        "edit-like structural bias + end-to-end differentiability",
+        "are both desired."
+      ]
+    },
+    {
+      "heading": "Neural String Edit Distance",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 11,
+      "word_count": 91,
+      "evidence": "Libovický and Fraser later connected learnable edit distance with neural contextual sequence representations.",
+      "paragraphs": [
+        "Libovický and Fraser later connected learnable edit distance with neural contextual sequence representations.",
+        "Their Neural String Edit Distance framework modifies the earlier expectation-maximization approach into a differentiable loss that can be integrated into a neural model.",
+        "This creates an important middle ground:",
+        "fully symbolic edit model ↕ neural contextual representations",
+        "rather than replacing alignment entirely with a single opaque vector similarity.",
+        "Their experiments study tasks including:",
+        "cognate detection;",
+        "transliteration;",
+        "grapheme-to-phoneme conversion.",
+        "The work also illustrates a recurring trade-off:",
+        "more contextual neural representation ↓ higher predictive flexibility ↓ less transparent edit interpretation"
+      ]
+    },
+    {
+      "heading": "Learned edit distance versus edit-distance embedding",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 13,
+      "word_count": 53,
+      "evidence": "Now consider a completely different approach.",
+      "paragraphs": [
+        "Now consider a completely different approach.",
+        "Keep:",
+        "ED(x,y)",
+        "fixed.",
+        "Instead, learn an encoder:",
+        "f_θ : Σ* → R^d",
+        "such that:",
+        "ρ( f_θ(x), f_θ(y) ) ≈ ED(x,y)",
+        "where:",
+        "ρ",
+        "is a simple geometric distance such as Euclidean distance.",
+        "The edit distance has not been learned.",
+        "The representation of the edit-distance metric has been learned."
+      ]
+    },
+    {
+      "heading": "Why embeddings are attractive",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 11,
+      "word_count": 95,
+      "evidence": "Direct pairwise edit distance requires sequence alignment.",
+      "paragraphs": [
+        "Direct pairwise edit distance requires sequence alignment.",
+        "For two length- n strings, general exact computation is still associated with near-quadratic worst-case behavior; see Edit Distance Complexity .",
+        "After embedding:",
+        "x → z_x ∈ R^d y → z_y ∈ R^d",
+        "a Euclidean comparison requires only:",
+        "O(d)",
+        "arithmetic operations once both embeddings are available.",
+        "More importantly, database embeddings can be precomputed:",
+        "DATABASE s₁ → z₁ s₂ → z₂ s₃ → z₃ ... s_N → z_N",
+        "Then a query requires:",
+        "query ↓ encoder ↓ z_q ↓ vector index ↓ candidate embeddings ↓ optional exact ED ↓ final results"
+      ]
+    },
+    {
+      "heading": "Theoretical metric embeddings",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 16,
+      "word_count": 83,
+      "evidence": "Long before neural embeddings became common, theoretical computer science studied whether the entire edit-distance metric could be embedded into better-understood metric spaces.",
+      "paragraphs": [
+        "Long before neural embeddings became common, theoretical computer science studied whether the entire edit-distance metric could be embedded into better-understood metric spaces.",
+        "Let:",
+        "( X, d_X )",
+        "be the original metric space and:",
+        "( Y, d_Y )",
+        "the target space.",
+        "An embedding:",
+        "f : X → Y",
+        "has distortion at most:",
+        "D",
+        "if there exists a scale:",
+        "s > 0",
+        "such that for every:",
+        "x,y ∈ X",
+        "we have:",
+        "s · d_X(x,y) ≤ d_Y( f(x), f(y) ) ≤ D · s · d_X(x,y)"
+      ]
+    },
+    {
+      "heading": "Distortion one",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 4,
+      "word_count": 22,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "D = 1",
+        "all distances are preserved exactly up to a global scaling factor.",
+        "This is an isometric representation after rescaling."
+      ]
+    },
+    {
+      "heading": "Large distortion",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "D = 100",
+        "some pairs may be stretched or contracted by a factor one hundred relative to others.",
+        "Such an embedding may still support coarse similarity search but provides much weaker numerical distance fidelity."
+      ]
+    },
+    {
+      "heading": "Why ℓ1 and ℓ2 are attractive targets",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "Vector norm spaces support mature algorithms for:",
+      "paragraphs": [
+        "Vector norm spaces support mature algorithms for:",
+        "nearest-neighbor search;",
+        "clustering;",
+        "sketching;",
+        "dimension reduction;",
+        "linear algebra;",
+        "distributed computation.",
+        "If edit distance could be represented with low distortion in such spaces, algorithms developed for vector geometry could be reused."
+      ]
+    },
+    {
+      "heading": "Ostrovsky–Rabani embedding",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 8,
+      "word_count": 46,
+      "evidence": "A major theoretical result by Ostrovsky and Rabani showed that edit distance on fixed-length binary strings can be embedded into:",
+      "paragraphs": [
+        "A major theoretical result by Ostrovsky and Rabani showed that edit distance on fixed-length binary strings can be embedded into:",
+        "ℓ₁",
+        "with subpolynomial distortion:",
+        "2^O( sqrt( log n · log log n ) )",
+        "The construction also has algorithmic consequences for:",
+        "sketching;",
+        "communication complexity;",
+        "nearest-neighbor search."
+      ]
+    },
+    {
+      "heading": "Why this is not a constant-distortion embedding",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 9,
+      "word_count": 33,
+      "evidence": "The function:",
+      "paragraphs": [
+        "The function:",
+        "2^O( sqrt( log n log log n ) )",
+        "is:",
+        "n^o(1)",
+        "so it grows more slowly than:",
+        "n^ε",
+        "for every fixed:",
+        "ε > 0",
+        "but it still grows with input length."
+      ]
+    },
+    {
+      "heading": "A lower bound for ℓ1 embeddings",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 8,
+      "word_count": 35,
+      "evidence": "Krauthgamer and Rabani later proved that embedding edit distance on:",
+      "paragraphs": [
+        "Krauthgamer and Rabani later proved that embedding edit distance on:",
+        "{0,1}^n",
+        "into:",
+        "ℓ₁",
+        "requires distortion:",
+        "Ω(log n)",
+        "in the worst case.",
+        "Therefore a global constant-distortion embedding of the full edit metric into ℓ₁ is impossible."
+      ]
+    },
+    {
+      "heading": "This lower bound does not forbid useful learned embeddings",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 8,
+      "word_count": 100,
+      "evidence": "This is one of the most important distinctions in the entire topic.",
+      "paragraphs": [
+        "This is one of the most important distinctions in the entire topic.",
+        "The theorem concerns a worst-case embedding of the entire metric space:",
+        "all relevant strings and all pairs",
+        "A learned model may only need to represent:",
+        "a finite dataset or a particular probability distribution or a biological sequence family or strings up to a limited length",
+        "It can therefore achieve extremely small empirical error on that distribution without contradicting the lower bound.",
+        "The claims are different:",
+        "GLOBAL METRIC EMBEDDING for every possible pair: provable distortion D LEARNED DATA-DEPENDENT EMBEDDING for examples drawn from P: small observed or expected error"
+      ]
+    },
+    {
+      "heading": "Worst-case distortion versus expected distortion",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 7,
+      "word_count": 46,
+      "evidence": "A learned encoder may minimize:",
+      "paragraphs": [
+        "A learned encoder may minimize:",
+        "E_( x,y ~ P ) [ error( d_embed(x,y), ED(x,y) ) ]",
+        "This provides information about average behavior under:",
+        "P",
+        "not about the worst pair in:",
+        "Σ* × Σ*",
+        "A handful of catastrophic out-of-distribution pairs can coexist with excellent average test error."
+      ]
+    },
+    {
+      "heading": "Edit distance to Hamming-space embeddings",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 9,
+      "word_count": 68,
+      "evidence": "Another theoretical direction maps edit distance to Hamming distance.",
+      "paragraphs": [
+        "Another theoretical direction maps edit distance to Hamming distance.",
+        "The randomized embedding of Chakraborty, Goldenberg, and Koucký is particularly important in the low-distance regime.",
+        "When:",
+        "ED(x,y) = k",
+        "its construction creates Hamming-space representations whose Hamming distance remains on a scale ranging from linear in k to:",
+        "O(k²)",
+        "with the stated probabilistic guarantees.",
+        "The construction is also streaming-friendly.",
+        "This became an important nonlearned baseline for later edit-distance embedding systems."
+      ]
+    },
+    {
+      "heading": "Why Hamming embedding helps",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "Hamming distance:",
+      "paragraphs": [
+        "Hamming distance:",
+        "HD(u,v) = number of coordinates where u_i ≠ v_i",
+        "is much easier to manipulate algorithmically than edit distance because positions are already aligned.",
+        "The embedding attempts to convert:",
+        "alignment uncertainty",
+        "into:",
+        "coordinate disagreement"
+      ]
+    },
+    {
+      "heading": "Learned Euclidean edit-distance embeddings",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 6,
+      "word_count": 50,
+      "evidence": "A neural encoder replaces a hand-designed embedding with:",
+      "paragraphs": [
+        "A neural encoder replaces a hand-designed embedding with:",
+        "f_θ(x)",
+        "whose parameters are optimized from examples.",
+        "A common architecture is Siamese:",
+        "same encoder ┌──────────────┐ x ─────────►│ fθ │────► z_x └──────────────┘ same encoder ┌──────────────┐ y ─────────►│ fθ │────► z_y └──────────────┘ ↓ ρ(z_x,z_y)",
+        "Sharing parameters automatically enforces representation consistency between the two inputs."
+      ]
+    },
+    {
+      "heading": "Distance regression objective",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "Suppose exact edit-distance labels are available:",
+      "paragraphs": [
+        "Suppose exact edit-distance labels are available:",
+        "d_i = ED(x_i,y_i)",
+        "A direct loss is:",
+        "L_reg = Σ_i ( ρ( fθ(x_i), fθ(y_i) ) - d_i )²",
+        "This trains actual numerical distance approximation."
+      ]
+    },
+    {
+      "heading": "Relative-error objective",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "Large distances can dominate ordinary squared error.",
+      "paragraphs": [
+        "Large distances can dominate ordinary squared error.",
+        "One alternative is:",
+        "L_rel = Σ_i ( d_hat_i - d_i )² / max( 1, d_i² )",
+        "or another stable relative-error function.",
+        "This increases the importance of small distances."
+      ]
+    },
+    {
+      "heading": "Log-distance regression",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "Another option is:",
+      "paragraphs": [
+        "Another option is:",
+        "L_log = ( log( 1+d_hat ) - log( 1+d ) )²",
+        "This compresses the dynamic range while retaining exact handling of:",
+        "d = 0"
+      ]
+    },
+    {
+      "heading": "Triplet loss",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 6,
+      "word_count": 26,
+      "evidence": "Given:",
+      "paragraphs": [
+        "Given:",
+        "anchor a positive p negative n",
+        "where:",
+        "ED(a,p) < ED(a,n)",
+        "a triplet loss can enforce:",
+        "L_triplet = max( 0, ρ(z_a,z_p) - ρ(z_a,z_n) + margin )"
+      ]
+    },
+    {
+      "heading": "Triplet learning does not calibrate edit distance",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 11,
+      "word_count": 59,
+      "evidence": "This is frequently misunderstood.",
+      "paragraphs": [
+        "This is frequently misunderstood.",
+        "Triplet loss can teach:",
+        "p should be closer than n",
+        "without teaching:",
+        "ρ(z_a,z_p) = ED(a,p)",
+        "For example:",
+        "true ED: 1, 10, 100",
+        "could be embedded as:",
+        "0.001, 0.002, 0.003",
+        "and still satisfy the correct ranking.",
+        "A model trained only with ranking loss should therefore not be advertised as a numerical edit-distance estimator without additional calibration."
+      ]
+    },
+    {
+      "heading": "Contrastive threshold learning",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 13,
+      "word_count": 62,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "positive if ED(x,y) ≤ k",
+        "and:",
+        "negative if ED(x,y) > k",
+        "A contrastive objective can learn:",
+        "same edit-distance neighborhood",
+        "very effectively.",
+        "But it may know almost nothing about the difference between:",
+        "ED = 20",
+        "and:",
+        "ED = 200",
+        "if both are simply labeled negative.",
+        "This is a learned analogue of a gap or threshold problem rather than full numerical distance approximation."
+      ]
+    },
+    {
+      "heading": "CNN-ED",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 8,
+      "word_count": 70,
+      "evidence": "Dai, Yan, Zhou, Wang, Yang, and Cheng proposed CNN-ED, a convolutional embedding model for edit distance.",
+      "paragraphs": [
+        "Dai, Yan, Zhou, Wang, Yang, and Cheng proposed CNN-ED, a convolutional embedding model for edit distance.",
+        "The system maps strings to fixed-dimensional Euclidean vectors and trains with a combination of:",
+        "triplet-style ordering information;",
+        "distance approximation error.",
+        "The intended use is fast approximate string similarity search.",
+        "This hybrid objective is important because:",
+        "distance regression supports numerical fidelity while triplet learning supports retrieval ordering",
+        "The two goals are related but not identical."
+      ]
+    },
+    {
+      "heading": "Why convolution may help with edit structure",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 5,
+      "word_count": 51,
+      "evidence": "Local convolutional features can capture patterns such as:",
+      "paragraphs": [
+        "Local convolutional features can capture patterns such as:",
+        "character n-grams local replacements short insertions short deletions",
+        "while deeper layers aggregate them into wider context.",
+        "However, a fixed convolutional receptive field does not by itself solve global alignment.",
+        "The network must learn from data how local perturbations influence a global vector representation."
+      ]
+    },
+    {
+      "heading": "Euclidean geometry is a modeling assumption",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 4,
+      "word_count": 34,
+      "evidence": "An embedding system typically assumes:",
+      "paragraphs": [
+        "An embedding system typically assumes:",
+        "edit-distance geometry can be represented well by the chosen latent geometry on the target distribution",
+        "Euclidean geometry is convenient, not guaranteed to be optimal.",
+        "This motivates other target spaces."
+      ]
+    },
+    {
+      "heading": "Hyperbolic embeddings",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "Hyperbolic space has exponential volume growth with radius and can represent tree-like or hierarchical structures more naturally than low-dimensional Euclidean space.",
+      "paragraphs": [
+        "Hyperbolic space has exponential volume growth with radius and can represent tree-like or hierarchical structures more naturally than low-dimensional Euclidean space.",
+        "A hyperbolic embedding uses:",
+        "fθ(x) ∈ H^d",
+        "with distance:",
+        "d_H( fθ(x), fθ(y) )",
+        "rather than Euclidean norm."
+      ]
+    },
+    {
+      "heading": "NeuroSEED",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 7,
+      "word_count": 64,
+      "evidence": "Corso, Ying, Pándy, Veličković, Leskovec, and Liò introduced Neural Distance Embeddings for biological sequences, or NeuroSEED.",
+      "paragraphs": [
+        "Corso, Ying, Pándy, Veličković, Leskovec, and Liò introduced Neural Distance Embeddings for biological sequences, or NeuroSEED.",
+        "The framework learns geometric embeddings intended to reflect sequence distances and studies multiple target geometries, including hyperbolic space.",
+        "On the biological datasets studied in the work, hyperbolic geometry reduced embedding error relative to competing geometries and supported downstream tasks including:",
+        "sequence-distance approximation;",
+        "closest-sequence retrieval;",
+        "hierarchical clustering;",
+        "multiple-sequence-alignment workflows."
+      ]
+    },
+    {
+      "heading": "This does not prove edit distance is globally hyperbolic",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 10,
+      "word_count": 61,
+      "evidence": "An empirical result such as:",
+      "paragraphs": [
+        "An empirical result such as:",
+        "hyperbolic latent space works better for these biological datasets",
+        "does not imply:",
+        "the complete Levenshtein metric space admits a globally superior low-distortion hyperbolic embedding",
+        "The hierarchy may come from:",
+        "evolutionary relationships;",
+        "the data distribution;",
+        "the sampling process;",
+        "the downstream task.",
+        "The geometry of a dataset and the geometry of the complete edit metric are different objects."
+      ]
+    },
+    {
+      "heading": "Pulling a metric back through an embedding",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 17,
+      "word_count": 57,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "f : Σ* → R^d",
+        "and define:",
+        "d_f(x,y) = || f(x)-f(y) ||₂",
+        "Then:",
+        "d_f(x,y) ≥ 0 ;",
+        "d_f(x,y)=d_f(y,x) ;",
+        "triangle inequality holds.",
+        "However, if:",
+        "f(x) = f(y)",
+        "for two distinct strings, then:",
+        "d_f(x,y) = 0",
+        "despite:",
+        "x ≠ y",
+        "Therefore the pullback is generally a:",
+        "pseudometric",
+        "unless the encoder is injective over the domain of interest."
+      ]
+    },
+    {
+      "heading": "Cosine distance requires care",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 7,
+      "word_count": 64,
+      "evidence": "A common score is:",
+      "paragraphs": [
+        "A common score is:",
+        "1 - cos( z_x, z_y )",
+        "Although widely called \"cosine distance,\" this quantity does not satisfy triangle inequality in general.",
+        "By contrast, for normalized nonzero vectors the angular distance:",
+        "arccos( cos( z_x, z_y ) )",
+        "has proper metric behavior on the unit sphere.",
+        "The choice between Euclidean, cosine, angular, hyperbolic, or another distance therefore has mathematical consequences beyond retrieval quality."
+      ]
+    },
+    {
+      "heading": "A pairwise neural model is not an embedding",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 10,
+      "word_count": 49,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "dθ(x,y) = NeuralNetwork( x, y )",
+        "where both strings are processed jointly.",
+        "This can model cross-attention between all positions and may estimate edit distance accurately.",
+        "But there is no independent representation:",
+        "f(x)",
+        "that can be stored before:",
+        "y",
+        "is known.",
+        "Therefore it cannot directly support ordinary vector indexing."
+      ]
+    },
+    {
+      "heading": "Bi-encoder versus cross-encoder",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 1,
+      "word_count": 42,
+      "evidence": "Property Bi-encoder embedding Pairwise / cross-encoder Encode database once Yes No Vector ANN indexing Yes Not directly Pairwise interaction during encoding No Yes Potential accuracy Constrained by fixed representation Often more flexible Pairwise inference cost at database scale Low after indexing High",
+      "paragraphs": [
+        "Property Bi-encoder embedding Pairwise / cross-encoder Encode database once Yes No Vector ANN indexing Yes Not directly Pairwise interaction during encoding No Yes Potential accuracy Constrained by fixed representation Often more flexible Pairwise inference cost at database scale Low after indexing High"
+      ]
+    },
+    {
+      "heading": "The indexing advantage",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 9,
+      "word_count": 43,
+      "evidence": "Suppose a database contains:",
+      "paragraphs": [
+        "Suppose a database contains:",
+        "M",
+        "strings.",
+        "Direct comparison requires:",
+        "M",
+        "edit-distance evaluations for a brute-force query.",
+        "With embeddings:",
+        "offline: compute z_i = f(s_i) online: compute z_q once then: search vector index",
+        "The query can use approximate nearest-neighbor structures developed for the latent geometry."
+      ]
+    },
+    {
+      "heading": "Embedding distortion and ANN error compound",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 17,
+      "word_count": 83,
+      "evidence": "Suppose a certified embedding satisfies:",
+      "paragraphs": [
+        "Suppose a certified embedding satisfies:",
+        "s · ED(x,y) ≤ ρ( f(x), f(y) ) ≤ α s · ED(x,y)",
+        "and the vector search engine returns a:",
+        "c-approximate nearest neighbor",
+        "in embedding space.",
+        "Let:",
+        "p*",
+        "be the true nearest neighbor under edit distance and:",
+        "r",
+        "the returned item.",
+        "Then:",
+        "ρ( f(q), f(r) ) ≤ c · ρ( f(q), f(p*) )",
+        "Using the embedding inequalities:",
+        "ED(q,r) ≤ c α · ED(q,p*)",
+        "under this noncontracting scaled formulation.",
+        "Thus two approximation sources multiply:",
+        "embedding distortion × index approximation"
+      ]
+    },
+    {
+      "heading": "Learned embeddings usually lack this certificate",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 5,
+      "word_count": 41,
+      "evidence": "A neural model may achieve:",
+      "paragraphs": [
+        "A neural model may achieve:",
+        "99% recall on a test benchmark",
+        "without any theorem asserting:",
+        "for every possible pair α ≤ constant",
+        "Consequently the end-to-end retrieval system has an empirical guarantee, not necessarily a worst-case approximation guarantee relative to edit distance."
+      ]
+    },
+    {
+      "heading": "Average embeddings and similarity-measure embeddings",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 6,
+      "word_count": 79,
+      "evidence": "Theoretical embedding research is also moving beyond ordinary normed-vector bi-Lipschitz embeddings.",
+      "paragraphs": [
+        "Theoretical embedding research is also moving beyond ordinary normed-vector bi-Lipschitz embeddings.",
+        "Andoni and Nosatzki introduced embeddings into similarity measures such as weighted Jaccard-like representations and developed average-embedding tools for approximate nearest-neighbor search.",
+        "Their FOCS 2025 result gives new edit-distance ANNS algorithms with polylogarithmic approximation for fixed-length strings.",
+        "This is important conceptually because it demonstrates:",
+        "useful representation for search does not require a globally low-distortion ℓ₁ or ℓ₂ embedding",
+        "The target representation can be designed directly around the downstream algorithm."
+      ]
+    },
+    {
+      "heading": "The learned analogue",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 10,
+      "word_count": 52,
+      "evidence": "Machine learning can follow the same philosophy.",
+      "paragraphs": [
+        "Machine learning can follow the same philosophy.",
+        "Instead of requiring:",
+        "ρ(z_x,z_y) ≈ ED(x,y) for every pair",
+        "one can optimize directly for:",
+        "retrieval recall classification accuracy candidate filtering clustering quality",
+        "This can produce better downstream performance.",
+        "But the resulting representation should then be described as:",
+        "task-optimized sequence embedding",
+        "rather than automatically:",
+        "edit-distance embedding"
+      ]
+    },
+    {
+      "heading": "The semantic-embedding trap",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 13,
+      "word_count": 69,
+      "evidence": "Modern language models produce powerful embeddings, but generic semantic embeddings do not approximate Levenshtein distance.",
+      "paragraphs": [
+        "Modern language models produce powerful embeddings, but generic semantic embeddings do not approximate Levenshtein distance.",
+        "Consider:",
+        "\"car\" \"cat\"",
+        "Their Levenshtein distance is:",
+        "1",
+        "but their meanings differ.",
+        "Now consider:",
+        "\"car\" \"automobile\"",
+        "Their lexical edit distance is large, but their semantic meanings are very close.",
+        "A semantic encoder should ideally learn:",
+        "car ≈ automobile",
+        "which is almost the opposite of preserving edit-distance geometry.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Pretrained models can still be trained to approximate edit distance",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 3,
+      "word_count": 46,
+      "evidence": "The fact that a pretrained model was originally trained for semantic or biological objectives does not prevent it from being fine-tuned with:",
+      "paragraphs": [
+        "The fact that a pretrained model was originally trained for semantic or biological objectives does not prevent it from being fine-tuned with:",
+        "edit-distance supervision",
+        "A pretrained encoder can provide strong local and contextual features, while the fine-tuning loss forces its geometry toward the target edit metric."
+      ]
+    },
+    {
+      "heading": "LLMED",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 4,
+      "word_count": 75,
+      "evidence": "A 2025 bioRxiv preprint by Li, Chen, Zhang, and Shao introduced LLMED, an edit-distance embedding system built on a pretrained genomic language model.",
+      "paragraphs": [
+        "A 2025 bioRxiv preprint by Li, Chen, Zhang, and Shao introduced LLMED, an edit-distance embedding system built on a pretrained genomic language model.",
+        "The model uses contrastive learning to produce genomic sequence embeddings intended to approximate edit-distance relationships and support large-scale similar-sequence search.",
+        "The authors report improvements over the learning-based and rule-based baselines studied in their experiments.",
+        "Because this work was released as a preprint, its empirical results should be distinguished from peer-reviewed theoretical guarantees."
+      ]
+    },
+    {
+      "heading": "Why a genomic language model may help",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 8,
+      "word_count": 65,
+      "evidence": "A pretrained biological sequence model can already encode regularities such as:",
+      "paragraphs": [
+        "A pretrained biological sequence model can already encode regularities such as:",
+        "local motifs;",
+        "long-range context;",
+        "sequence composition;",
+        "domain-specific patterns.",
+        "Fine-tuning can then reorganize this representation around edit-distance supervision rather than learning every feature from scratch.",
+        "However, this introduces distribution dependence.",
+        "A genomic model trained on biological sequence families should not be assumed to approximate edit distance equally well for arbitrary text or arbitrary synthetic strings."
+      ]
+    },
+    {
+      "heading": "One vector may not be enough",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 5,
+      "word_count": 33,
+      "evidence": "A single embedding:",
+      "paragraphs": [
+        "A single embedding:",
+        "f(x) ∈ R^d",
+        "must compress all local alignment possibilities into one point.",
+        "An alternative is to represent each sequence using several vectors:",
+        "g(x) = { z₁, z₂, ..., z_r }"
+      ]
+    },
+    {
+      "heading": "Locality-sensitive multi-embeddings",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 5,
+      "word_count": 42,
+      "evidence": "A set-valued representation can express different aspects or local alignment hypotheses.",
+      "paragraphs": [
+        "A set-valued representation can express different aspects or local alignment hypotheses.",
+        "For example, define:",
+        "d_multi(x,y) = min_(i,j) || z_i(x) - z_j(y) ||₂",
+        "A similar pair only needs one compatible pair of representatives.",
+        "This creates additional flexibility unavailable to a single global vector."
+      ]
+    },
+    {
+      "heading": "MELO-ED",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 9,
+      "word_count": 71,
+      "evidence": "A 2025 bioRxiv preprint by Yuan, Chen, Ahmed, and Shao introduced MELO-ED, a learned locality-sensitive multi-embedding framework for edit-distance-based biological sequence search.",
+      "paragraphs": [
+        "A 2025 bioRxiv preprint by Yuan, Chen, Ahmed, and Shao introduced MELO-ED, a learned locality-sensitive multi-embedding framework for edit-distance-based biological sequence search.",
+        "The system combines:",
+        "locality-sensitive bucketing;",
+        "multiple learned embeddings;",
+        "a Siamese convolutional architecture;",
+        "vector-space search.",
+        "The central representation principle is:",
+        "similar strings: at least one embedding pair should be close dissimilar strings: all relevant embedding pairs should remain separated",
+        "The preprint reports strong results on simulated DNA and barcode datasets."
+      ]
+    },
+    {
+      "heading": "Minimum distance between embedding sets is not generally a metric",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "d(A,B) = min_( a∈A, b∈B ) ||a-b||",
+        "Even though Euclidean distance is a metric, this set-to-set minimum generally fails triangle inequality.",
+        "Therefore:",
+        "multi-embedding search score",
+        "should not automatically be called a metric.",
+        "The representation may still be extremely effective for locality-sensitive retrieval."
+      ]
+    },
+    {
+      "heading": "Learning exact edit-distance labels is expensive",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 12,
+      "word_count": 49,
+      "evidence": "Suppose a training corpus contains:",
+      "paragraphs": [
+        "Suppose a training corpus contains:",
+        "M",
+        "strings.",
+        "The number of unordered pairs is:",
+        "M(M-1)/2",
+        "For:",
+        "M = 1,000,000",
+        "this is approximately:",
+        "5 × 10^11",
+        "pairs.",
+        "Computing exact edit distance for every pair would defeat much of the purpose of learning a faster representation.",
+        "Training therefore requires careful pair sampling."
+      ]
+    },
+    {
+      "heading": "Uniform random pairs are usually poor training data",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 6,
+      "word_count": 44,
+      "evidence": "For many natural datasets, two randomly selected sequences are far apart.",
+      "paragraphs": [
+        "For many natural datasets, two randomly selected sequences are far apart.",
+        "A random-pair dataset can therefore become dominated by:",
+        "large-distance pairs",
+        "while the operational problem—nearest-neighbor search—depends primarily on:",
+        "small-distance pairs",
+        "A model can achieve low overall RMSE while performing badly precisely where retrieval matters."
+      ]
+    },
+    {
+      "heading": "Distance-stratified sampling",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "A better training distribution can deliberately include:",
+      "paragraphs": [
+        "A better training distribution can deliberately include:",
+        "ED = 0 ED = 1 ED = 2 ED = 3–5 ED = 6–10 medium distances large distances",
+        "with controlled proportions.",
+        "This makes the learned geometry sensitive to all operational distance regimes."
+      ]
+    },
+    {
+      "heading": "Synthetic edit augmentation",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 9,
+      "word_count": 19,
+      "evidence": "Start from sequence:",
+      "paragraphs": [
+        "Start from sequence:",
+        "x",
+        "and generate:",
+        "y",
+        "by applying random:",
+        "insertions;",
+        "deletions;",
+        "substitutions.",
+        "This creates arbitrarily many near-neighbor examples."
+      ]
+    },
+    {
+      "heading": "The number of generated edits is not necessarily the edit distance",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 14,
+      "word_count": 68,
+      "evidence": "This is a subtle but critical mistake.",
+      "paragraphs": [
+        "This is a subtle but critical mistake.",
+        "Suppose we apply two synthetic edits:",
+        "insert \"a\" then delete the same \"a\"",
+        "The final string may equal the original:",
+        "ED(x,y) = 0",
+        "despite:",
+        "2 generated operations",
+        "Different generated edits can also admit a cheaper alternative alignment.",
+        "Therefore:",
+        "number of augmentation edits",
+        "is only an upper bound on:",
+        "ED(x,y)",
+        "unless the construction proves otherwise.",
+        "For exact supervision, recompute the actual distance."
+      ]
+    },
+    {
+      "heading": "Hard-negative mining",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "A particularly informative negative is a pair that:",
+      "paragraphs": [
+        "A particularly informative negative is a pair that:",
+        "looks similar to the model but has relatively large true edit distance",
+        "Training can iteratively:",
+        "1. embed database 2. retrieve current nearest neighbors 3. compute exact ED for candidates 4. identify false neighbors 5. add them as hard negatives 6. retrain",
+        "This directly targets embedding failures that damage search quality."
+      ]
+    },
+    {
+      "heading": "Hard positives",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "The opposite case is also important:",
+      "paragraphs": [
+        "The opposite case is also important:",
+        "true ED is small but embedding distance is unexpectedly large",
+        "These examples teach the model invariance to difficult insertion/deletion patterns."
+      ]
+    },
+    {
+      "heading": "Length difference is an exact lower bound",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "For unit-cost Levenshtein distance:",
+      "paragraphs": [
+        "For unit-cost Levenshtein distance:",
+        "ED(x,y) ≥ || |x| - |y| ||",
+        "A learned embedding can exploit sequence length as a useful signal.",
+        "But relying too strongly on length creates failure modes."
+      ]
+    },
+    {
+      "heading": "Easy training examples",
+      "level": 3,
+      "id": "ux-section-80",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "|x| = 20 |y| = 100 ED ≥ 80",
+      "paragraphs": [
+        "|x| = 20 |y| = 100 ED ≥ 80",
+        "Length alone almost solves the pair."
+      ]
+    },
+    {
+      "heading": "Hard examples",
+      "level": 3,
+      "id": "ux-section-81",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "|x| = |y| = 1000 ED = 500",
+      "paragraphs": [
+        "|x| = |y| = 1000 ED = 500",
+        "Length gives no information.",
+        "Training must therefore contain equal-length high-distance pairs and unequal-length low-relative-distance pairs."
+      ]
+    },
+    {
+      "heading": "Length normalization changes the target",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 10,
+      "word_count": 43,
+      "evidence": "Suppose labels use:",
+      "paragraphs": [
+        "Suppose labels use:",
+        "ED_norm(x,y) = ED(x,y) / max( |x|, |y| )",
+        "The network is no longer learning raw edit distance.",
+        "It is learning a normalized score.",
+        "The distinction matters because:",
+        "ED = 10",
+        "means very different things for:",
+        "length 20",
+        "and:",
+        "length 10,000"
+      ]
+    },
+    {
+      "heading": "Representation units must be fixed before training",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 11,
+      "word_count": 42,
+      "evidence": "A model can target edit distance over:",
+      "paragraphs": [
+        "A model can target edit distance over:",
+        "bytes;",
+        "Unicode code points;",
+        "grapheme clusters;",
+        "words;",
+        "phonemes;",
+        "DNA bases;",
+        "tokens.",
+        "Those are different target functions.",
+        "A neural model trained against byte-level ED is not automatically approximating grapheme-level ED.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Unicode normalization must precede label generation when intended",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 8,
+      "word_count": 40,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "é",
+        "represented as:",
+        "U+00E9",
+        "versus:",
+        "U+0065 U+0301",
+        "If the application considers these equivalent, but training labels are computed before canonical normalization, the model is being taught to reproduce a representational artifact.",
+        "Machine learning cannot repair an incorrectly defined target."
+      ]
+    },
+    {
+      "heading": "Pair leakage",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 13,
+      "word_count": 58,
+      "evidence": "Suppose sequence:",
+      "paragraphs": [
+        "Suppose sequence:",
+        "x",
+        "is used to generate:",
+        "x₁' x₂' x₃' ...",
+        "through synthetic edits.",
+        "If some derivatives are placed in training and others in testing, the test set may be much easier than genuinely unseen data.",
+        "A safer split groups related sequences by:",
+        "original parent;",
+        "biological family;",
+        "entity;",
+        "document source;",
+        "generation cluster.",
+        "before assigning train and test partitions."
+      ]
+    },
+    {
+      "heading": "Distribution shift",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 3,
+      "word_count": 46,
+      "evidence": "A learned embedding can fail when any of these change:",
+      "paragraphs": [
+        "A learned embedding can fail when any of these change:",
+        "sequence length alphabet error rate edit type distribution language biological taxon repetitiveness sequence entropy",
+        "For example, training only on substitutions may produce a model that behaves like learned Hamming distance and fails badly on insertion/deletion shifts."
+      ]
+    },
+    {
+      "heading": "Insertions and deletions are the critical challenge",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 7,
+      "word_count": 44,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "x = abcdefghij y = xabcdefghij",
+        "The exact distance is:",
+        "1",
+        "but almost every absolute position is shifted.",
+        "A representation based mostly on corresponding positional features can interpret the pair as highly dissimilar.",
+        "A serious edit-distance embedding benchmark must contain such global-shift examples."
+      ]
+    },
+    {
+      "heading": "Repetitive strings",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "abababababababab",
+        "and:",
+        "babababababababa",
+        "Many local substrings are identical, but their optimal alignment is globally ambiguous.",
+        "Repetitive strings have long been difficult for theoretical edit-distance algorithms and are equally important adversarial tests for learned models."
+      ]
+    },
+    {
+      "heading": "Embedding collapse",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "f(x) ≈ constant vector",
+        "for all sequences.",
+        "Then all distances become approximately zero.",
+        "Certain poorly designed contrastive or reconstruction losses can permit partial forms of this collapse.",
+        "Training objectives need explicit mechanisms that preserve separation among genuinely distant sequences."
+      ]
+    },
+    {
+      "heading": "Scale indeterminacy",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "Triplet constraints such as:",
+      "paragraphs": [
+        "Triplet constraints such as:",
+        "d(a,p) + margin < d(a,n)",
+        "do not uniquely determine the numerical scale.",
+        "If a model is intended to predict raw edit distance, calibration may require:",
+        "d_hat = a · ρ( f(x), f(y) ) + b",
+        "or a nonlinear calibration function learned on held-out data."
+      ]
+    },
+    {
+      "heading": "Calibration must be evaluated separately from ranking",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 6,
+      "word_count": 25,
+      "evidence": "A model can have excellent:",
+      "paragraphs": [
+        "A model can have excellent:",
+        "Spearman rank correlation",
+        "while poor:",
+        "absolute distance error",
+        "and vice versa.",
+        "Search and numerical approximation are related but distinct objectives."
+      ]
+    },
+    {
+      "heading": "Evaluation: absolute error",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 6,
+      "word_count": 15,
+      "evidence": "Given true distances:",
+      "paragraphs": [
+        "Given true distances:",
+        "d_i",
+        "and predictions:",
+        "d_hat_i",
+        "measure:",
+        "MAE = 1/N Σ_i | d_hat_i-d_i |"
+      ]
+    },
+    {
+      "heading": "Root mean squared error",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "RMSE = sqrt( 1/N Σ_i ( d_hat_i-d_i )² )",
+      "paragraphs": [
+        "RMSE = sqrt( 1/N Σ_i ( d_hat_i-d_i )² )",
+        "RMSE penalizes large individual errors more heavily."
+      ]
+    },
+    {
+      "heading": "Relative error",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 4,
+      "word_count": 17,
+      "evidence": "RE_i = | d_hat_i-d_i | / max( 1, d_i )",
+      "paragraphs": [
+        "RE_i = | d_hat_i-d_i | / max( 1, d_i )",
+        "The:",
+        "max(1,d_i)",
+        "term avoids division by zero."
+      ]
+    },
+    {
+      "heading": "Empirical distortion",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 12,
+      "word_count": 51,
+      "evidence": "After selecting an appropriate scale:",
+      "paragraphs": [
+        "After selecting an appropriate scale:",
+        "s",
+        "one can inspect pairwise ratios such as:",
+        "ρ( f(x), f(y) ) / ( s · ED(x,y) )",
+        "for:",
+        "ED(x,y) > 0",
+        "and report:",
+        "median;",
+        "95th percentile;",
+        "99th percentile;",
+        "maximum observed distortion.",
+        "This still gives only empirical distortion on the tested sample, not a worst-case theorem."
+      ]
+    },
+    {
+      "heading": "Stress",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "Metric embedding literature often measures aggregate distortion through a stress-like objective:",
+      "paragraphs": [
+        "Metric embedding literature often measures aggregate distortion through a stress-like objective:",
+        "Stress = Σ_ij ( d_hat_ij-d_ij )² / Σ_ij d_ij²",
+        "or related normalized variants.",
+        "This is useful for comparing latent geometries."
+      ]
+    },
+    {
+      "heading": "Rank correlation",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 6,
+      "word_count": 15,
+      "evidence": "For search-oriented models measure:",
+      "paragraphs": [
+        "For search-oriented models measure:",
+        "Spearman ρ Kendall τ",
+        "between:",
+        "true ED ranking",
+        "and:",
+        "embedding-distance ranking"
+      ]
+    },
+    {
+      "heading": "Retrieval recall",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "NN_k^ED(q)",
+        "be the true top- k neighbors under edit distance and:",
+        "NN_k^embed(q)",
+        "the embedding result.",
+        "Then:",
+        "Recall@k = | NN_k^ED(q) ∩ NN_k^embed(q) | / k"
+      ]
+    },
+    {
+      "heading": "Embedding recall versus index recall",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "To isolate errors, benchmark two systems.",
+      "paragraphs": [
+        "To isolate errors, benchmark two systems."
+      ]
+    },
+    {
+      "heading": "Exact search in embedding space",
+      "level": 3,
+      "id": "ux-section-100",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "compute distance to every embedding",
+      "paragraphs": [
+        "compute distance to every embedding",
+        "This measures representation error."
+      ]
+    },
+    {
+      "heading": "Approximate vector index",
+      "level": 3,
+      "id": "ux-section-101",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "ANN search over same embeddings",
+      "paragraphs": [
+        "ANN search over same embeddings",
+        "This adds indexing error.",
+        "If the second performs poorly, one must determine whether the problem lies in:",
+        "encoder geometry",
+        "or:",
+        "ANN search configuration"
+      ]
+    },
+    {
+      "heading": "Threshold evaluation",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 10,
+      "word_count": 34,
+      "evidence": "If the operational problem is:",
+      "paragraphs": [
+        "If the operational problem is:",
+        "ED(x,y) ≤ k ?",
+        "measure:",
+        "precision;",
+        "recall;",
+        "ROC-AUC;",
+        "PR-AUC;",
+        "false positives near k ;",
+        "false negatives near k .",
+        "Errors far from the threshold may have no operational impact."
+      ]
+    },
+    {
+      "heading": "Evaluate by distance bucket",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 24,
+      "evidence": "True distance Why test separately? 0 Tests identity preservation 1–2 Critical nearest-neighbor regime 3–10 Common fuzzy-matching regime Medium Tests calibration Large Tests global geometry",
+      "paragraphs": [
+        "True distance Why test separately? 0 Tests identity preservation 1–2 Critical nearest-neighbor regime 3–10 Common fuzzy-matching regime Medium Tests calibration Large Tests global geometry"
+      ]
+    },
+    {
+      "heading": "Identity should be tested explicitly",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "For every sequence:",
+      "paragraphs": [
+        "For every sequence:",
+        "ED(x,x) = 0",
+        "A learned numerical approximation should satisfy:",
+        "d_hat(x,x) ≈ 0",
+        "and a metric embedding using ordinary geometric distance satisfies this automatically:",
+        "ρ( f(x), f(x) ) = 0"
+      ]
+    },
+    {
+      "heading": "But distinct-sequence collisions remain possible",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 9,
+      "word_count": 20,
+      "evidence": "Test whether:",
+      "paragraphs": [
+        "Test whether:",
+        "x ≠ y",
+        "yet:",
+        "f(x) ≈ f(y)",
+        "especially among:",
+        "long repetitive sequences;",
+        "anagrams;",
+        "shifted strings;",
+        "same-length random strings."
+      ]
+    },
+    {
+      "heading": "Triangle tests",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "For a pairwise learned score:",
+      "paragraphs": [
+        "For a pairwise learned score:",
+        "dθ(x,z) ≤ dθ(x,y) + dθ(y,z)",
+        "is not guaranteed.",
+        "Sample triplets and measure:",
+        "triangle_violation = max( 0, dθ(x,z) - dθ(x,y) - dθ(y,z) )",
+        "If metricity is operationally required, this can also be included as a regularizer."
+      ]
+    },
+    {
+      "heading": "Symmetry regularization",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "For a directional pair model:",
+      "paragraphs": [
+        "For a directional pair model:",
+        "L_sym = | dθ(x,y) - dθ(y,x) |",
+        "can encourage symmetry.",
+        "A Siamese embedding with symmetric geometric distance obtains symmetry structurally rather than through training."
+      ]
+    },
+    {
+      "heading": "Triangle regularization is not the same as guaranteed metricity",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 4,
+      "word_count": 22,
+      "evidence": "A finite training set can satisfy:",
+      "paragraphs": [
+        "A finite training set can satisfy:",
+        "L_triangle ≈ 0",
+        "while unseen triples violate triangle inequality.",
+        "Architectural guarantees are stronger than empirical regularization."
+      ]
+    },
+    {
+      "heading": "Metric-by-construction versus metric-by-training",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 1,
+      "word_count": 29,
+      "evidence": "METRIC BY CONSTRUCTION dθ(x,y) = || fθ(x)-fθ(y) ||₂ triangle inequality follows from geometry METRIC BY TRAINING arbitrary neural score + triangle penalty triangle inequality only encouraged on sampled data",
+      "paragraphs": [
+        "METRIC BY CONSTRUCTION dθ(x,y) = || fθ(x)-fθ(y) ||₂ triangle inequality follows from geometry METRIC BY TRAINING arbitrary neural score + triangle penalty triangle inequality only encouraged on sampled data"
+      ]
+    },
+    {
+      "heading": "Interpretability hierarchy",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 1,
+      "word_count": 46,
+      "evidence": "Model Edit script available? Parameter interpretability Unit-cost Levenshtein Yes Very high Learned symbol costs Yes High Probabilistic edit model Yes / posterior alignments Moderate to high Neural contextual edit model Often Moderate Single-vector neural embedding No direct edit script Low Generic cross-encoder similarity No Usually low",
+      "paragraphs": [
+        "Model Edit script available? Parameter interpretability Unit-cost Levenshtein Yes Very high Learned symbol costs Yes High Probabilistic edit model Yes / posterior alignments Moderate to high Neural contextual edit model Often Moderate Single-vector neural embedding No direct edit script Low Generic cross-encoder similarity No Usually low"
+      ]
+    },
+    {
+      "heading": "If an edit script is required, embeddings are insufficient",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 9,
+      "word_count": 58,
+      "evidence": "Suppose a user asks:",
+      "paragraphs": [
+        "Suppose a user asks:",
+        "Why is the distance 7?",
+        "A Euclidean embedding may return:",
+        "||z_x-z_y|| = 6.83",
+        "but it cannot directly explain:",
+        "delete position 14 substitute q → g insert e at 38 ...",
+        "One must run an alignment algorithm afterward.",
+        "Therefore a common architecture is:",
+        "learned embedding ↓ candidate retrieval ↓ exact edit distance ↓ edit script"
+      ]
+    },
+    {
+      "heading": "The hybrid retrieval architecture",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 2,
+      "word_count": 45,
+      "evidence": "QUERY STRING ↓ NEURAL EMBEDDING ↓ VECTOR INDEX ↓ TOP 1000 CANDIDATES ↓ CHEAP EXACT LOWER BOUNDS ↓ BOUNDED EDIT DISTANCE ↓ TOP 20 EXACT MATCHES ↓ OPTIONAL EDIT SCRIPTS",
+      "paragraphs": [
+        "QUERY STRING ↓ NEURAL EMBEDDING ↓ VECTOR INDEX ↓ TOP 1000 CANDIDATES ↓ CHEAP EXACT LOWER BOUNDS ↓ BOUNDED EDIT DISTANCE ↓ TOP 20 EXACT MATCHES ↓ OPTIONAL EDIT SCRIPTS",
+        "This architecture preserves exact final semantics while using learned representations only where approximation is safe."
+      ]
+    },
+    {
+      "heading": "Embedding versus edit-distance indexing",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "Learned vector indexing is not the only way to accelerate search.",
+      "paragraphs": [
+        "Learned vector indexing is not the only way to accelerate search.",
+        "Alternative exact or approximate strategies include:",
+        "q-gram indexes;",
+        "filters;",
+        "Levenshtein automata;",
+        "BK-tree-like metric structures;",
+        "specialized edit-distance LSH;",
+        "bounded exact verification.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "When a learned embedding is most attractive",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "It is particularly useful when:",
+      "paragraphs": [
+        "It is particularly useful when:",
+        "database size is enormous queries are frequent database vectors can be precomputed some approximation is acceptable training distribution resembles deployment vector search infrastructure already exists"
+      ]
+    },
+    {
+      "heading": "When learned embeddings may be unnecessary",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 6,
+      "word_count": 26,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "k is tiny",
+        "and:",
+        "candidate count is already small",
+        "exact bounded computation may already be close to linear.",
+        "See Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "When learned embeddings may be dangerous",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "Use caution when:",
+      "paragraphs": [
+        "Use caution when:",
+        "exact threshold decisions are legally or operationally important;",
+        "out-of-distribution strings are common;",
+        "the alphabet changes frequently;",
+        "exact edit scripts are required;",
+        "worst-case guarantees matter;",
+        "the training target is poorly defined."
+      ]
+    },
+    {
+      "heading": "Semantic similarity versus learned lexical similarity",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 12,
+      "word_count": 77,
+      "evidence": "One can deliberately train a model so that:",
+      "paragraphs": [
+        "One can deliberately train a model so that:",
+        "\"john smith\" and \"jon smyth\"",
+        "are close.",
+        "This may resemble weighted edit distance.",
+        "But if training additionally teaches:",
+        "\"ibm\" and \"international business machines\"",
+        "to be close, the learned geometry is incorporating semantic or entity knowledge that ordinary edit distance cannot represent.",
+        "At that point the target has changed from:",
+        "edit similarity",
+        "to:",
+        "task-specific identity similarity",
+        "That may be exactly what the application needs, but the distinction should remain explicit."
+      ]
+    },
+    {
+      "heading": "Learned edit costs offer a controlled middle ground",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 11,
+      "word_count": 69,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "\"jon\" and \"john\"",
+        "should be close because:",
+        "insert h",
+        "is common.",
+        "A learned edit model can encode this without abandoning alignment semantics.",
+        "But:",
+        "\"ibm\" and \"international business machines\"",
+        "requires long-range abbreviation knowledge not naturally represented by independent character edit costs.",
+        "This reveals a natural model hierarchy:",
+        "unit-cost ED ↓ learned symbol costs ↓ contextual edit costs ↓ phrase / block transformations ↓ neural sequence similarity ↓ semantic representation"
+      ]
+    },
+    {
+      "heading": "More flexibility means weaker edit semantics",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 4,
+      "word_count": 38,
+      "evidence": "As models become richer they can capture more real-world relationships.",
+      "paragraphs": [
+        "As models become richer they can capture more real-world relationships.",
+        "But the connection to the original mathematical notion of edit distance becomes weaker.",
+        "This is not inherently good or bad.",
+        "The correct model depends on the target question."
+      ]
+    },
+    {
+      "heading": "Learned embeddings for graph edit distance",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 6,
+      "word_count": 49,
+      "evidence": "The same idea extends beyond strings.",
+      "paragraphs": [
+        "The same idea extends beyond strings.",
+        "Exact graph edit distance is computationally difficult, so neural models frequently learn graph representations whose pairwise scores approximate GED or structural similarity.",
+        "See Tree and Graph Edit Distance .",
+        "Again:",
+        "graph embedding distance ≠ exact GED",
+        "unless an explicit guarantee has been established."
+      ]
+    },
+    {
+      "heading": "Learning the target versus learning a surrogate",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 11,
+      "word_count": 58,
+      "evidence": "Suppose exact labels are:",
+      "paragraphs": [
+        "Suppose exact labels are:",
+        "d_i = ED(x_i,y_i)",
+        "and model predictions are:",
+        "d_hat_i",
+        "Then the model is explicitly learning an edit-distance surrogate.",
+        "But suppose labels are instead:",
+        "same product different product",
+        "or:",
+        "same patient different patient",
+        "The model is learning a task similarity.",
+        "Even if edit distance inspired the architecture, its output is not automatically an approximation of ED."
+      ]
+    },
+    {
+      "heading": "Teacher–student interpretation",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 11,
+      "word_count": 44,
+      "evidence": "An edit-distance embedding can be viewed as knowledge distillation.",
+      "paragraphs": [
+        "An edit-distance embedding can be viewed as knowledge distillation.",
+        "The teacher is:",
+        "exact ED or high-quality alignment algorithm",
+        "The student is:",
+        "fast neural encoder",
+        "Training transfers:",
+        "slow pairwise metric ↓ fast reusable representation",
+        "The student trades:",
+        "exactness and alignment detail",
+        "for:",
+        "throughput and indexability"
+      ]
+    },
+    {
+      "heading": "The cost of the teacher",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 4,
+      "word_count": 46,
+      "evidence": "Creating labels may require exact dynamic programming.",
+      "paragraphs": [
+        "Creating labels may require exact dynamic programming.",
+        "One practical strategy is:",
+        "1. sample informative pairs 2. compute exact ED offline 3. train embedding 4. mine failures 5. compute additional exact labels 6. retrain",
+        "This active-learning-like process spends expensive exact computation only where the student needs information."
+      ]
+    },
+    {
+      "heading": "Use specialized exact algorithms to generate labels",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "Label generation itself can use:",
+      "paragraphs": [
+        "Label generation itself can use:",
+        "Myers Bit-Vector Algorithm for suitable pattern lengths;",
+        "Ukkonen Algorithm for bounded cases;",
+        "Landau–Vishkin Algorithm in low-distance regimes;",
+        "optimized dynamic programming otherwise.",
+        "The learning pipeline therefore does not replace classical algorithm research; it can depend on it."
+      ]
+    },
+    {
+      "heading": "Nearest-neighbor labels can be more valuable than arbitrary pairs",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "If deployment performs nearest-neighbor search, the most valuable supervision may be:",
+      "paragraphs": [
+        "If deployment performs nearest-neighbor search, the most valuable supervision may be:",
+        "which items are actually nearest under ED?",
+        "rather than millions of unrelated large-distance pairs.",
+        "Training and evaluation distributions should reflect the downstream query distribution."
+      ]
+    },
+    {
+      "heading": "Local versus global fidelity",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 11,
+      "word_count": 48,
+      "evidence": "A search system may only need accurate geometry for:",
+      "paragraphs": [
+        "A search system may only need accurate geometry for:",
+        "ED ≤ 10",
+        "and may not care whether:",
+        "ED = 500",
+        "is predicted as:",
+        "300 or 900",
+        "This motivates weighted objectives such as:",
+        "L = w(d) · error( d_hat, d )",
+        "where:",
+        "w(d)",
+        "is larger for small d ."
+      ]
+    },
+    {
+      "heading": "But local optimization changes the claim",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 5,
+      "word_count": 23,
+      "evidence": "Such a model is better described as:",
+      "paragraphs": [
+        "Such a model is better described as:",
+        "low-distance embedding",
+        "or:",
+        "retrieval-oriented edit embedding",
+        "rather than a uniform approximation of the entire edit metric."
+      ]
+    },
+    {
+      "heading": "A learned gap embedding",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 5,
+      "word_count": 52,
+      "evidence": "Suppose training only enforces:",
+      "paragraphs": [
+        "Suppose training only enforces:",
+        "ED ≤ k ↓ embedding distance ≤ r₁ ED ≥ ck ↓ embedding distance ≥ r₂",
+        "with no constraints in between.",
+        "This is analogous to the gap edit-distance problem described in Approximate Edit Distance Algorithms .",
+        "It may support excellent candidate filtering while providing no calibrated distance estimate."
+      ]
+    },
+    {
+      "heading": "Multiple accuracy objectives cannot always be optimized simultaneously",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "A model might be asked to achieve:",
+      "paragraphs": [
+        "A model might be asked to achieve:",
+        "low RMSE high recall@10 high Spearman correlation metricity tiny embedding dimension fast encoding",
+        "These objectives can conflict.",
+        "For example, increasing embedding dimension may improve numerical approximation but increase index memory and search cost."
+      ]
+    },
+    {
+      "heading": "Embedding dimension",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 13,
+      "word_count": 36,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "d",
+        "be latent dimension.",
+        "Small:",
+        "d",
+        "gives:",
+        "smaller indexes;",
+        "faster distance computation;",
+        "better cache behavior.",
+        "Large:",
+        "d",
+        "gives the encoder more capacity to preserve complex geometry.",
+        "The appropriate dimension is therefore an empirical rate-distortion trade-off."
+      ]
+    },
+    {
+      "heading": "Quantization adds another distortion layer",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "Embeddings may be stored as:",
+      "paragraphs": [
+        "Embeddings may be stored as:",
+        "float32 float16 int8 binary codes",
+        "Quantization changes:",
+        "z → Q(z)",
+        "and introduces additional error:",
+        "ρ( Q(z_x), Q(z_y) ) ≠ ρ( z_x, z_y )",
+        "A complete retrieval benchmark should evaluate the representation actually deployed, not only full-precision training vectors."
+      ]
+    },
+    {
+      "heading": "Three layers of approximation in production",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "TRUE EDIT DISTANCE │ │ learned representation error ▼ EMBEDDING DISTANCE │ │ quantization error ▼ STORED VECTOR DISTANCE │ │ ANN search error ▼ RETRIEVED CANDIDATES",
+      "paragraphs": [
+        "TRUE EDIT DISTANCE │ │ learned representation error ▼ EMBEDDING DISTANCE │ │ quantization error ▼ STORED VECTOR DISTANCE │ │ ANN search error ▼ RETRIEVED CANDIDATES",
+        "High final recall requires managing all three."
+      ]
+    },
+    {
+      "heading": "Re-ranking restores exactness",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 7,
+      "word_count": 40,
+      "evidence": "Suppose ANN returns:",
+      "paragraphs": [
+        "Suppose ANN returns:",
+        "1000 candidates",
+        "Exact edit distance can be computed only for those candidates.",
+        "Then:",
+        "final ordering",
+        "is exact within the candidate set.",
+        "The only remaining approximation is whether the vector stage failed to retrieve a true nearest neighbor."
+      ]
+    },
+    {
+      "heading": "Candidate recall is therefore crucial",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "If the true nearest item is missing after embedding retrieval, no exact re-ranking step can recover it.",
+      "paragraphs": [
+        "If the true nearest item is missing after embedding retrieval, no exact re-ranking step can recover it.",
+        "For hybrid systems, measure:",
+        "candidate recall@C",
+        "for candidate count:",
+        "C",
+        "rather than evaluating only final vector-space top-1 accuracy."
+      ]
+    },
+    {
+      "heading": "Out-of-distribution detection",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 10,
+      "word_count": 48,
+      "evidence": "A learned model should ideally identify inputs far from its training distribution.",
+      "paragraphs": [
+        "A learned model should ideally identify inputs far from its training distribution.",
+        "Possible signals include:",
+        "unknown alphabet symbols;",
+        "extreme sequence lengths;",
+        "low encoder confidence;",
+        "unusual embedding norms;",
+        "large disagreement among ensemble models.",
+        "An OOD system can route such inputs to:",
+        "exact algorithm",
+        "instead of trusting the learned approximation."
+      ]
+    },
+    {
+      "heading": "Do not evaluate only IID test data",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "A serious benchmark should include:",
+      "paragraphs": [
+        "A serious benchmark should include:",
+        "TRAIN: length ≤ 100 TEST: length 101–200 TRAIN: mostly substitutions TEST: insertions/deletions TRAIN: high-entropy sequences TEST: periodic sequences TRAIN: alphabet A TEST: expanded alphabet B",
+        "This reveals whether the model learned edit structure or merely the training distribution."
+      ]
+    },
+    {
+      "heading": "Can a neural embedding have a provable distortion guarantee?",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 7,
+      "word_count": 40,
+      "evidence": "In principle, yes, if the architecture and training procedure are accompanied by a theorem.",
+      "paragraphs": [
+        "In principle, yes, if the architecture and training procedure are accompanied by a theorem.",
+        "In practice, most learned edit-distance embeddings provide:",
+        "empirical accuracy guarantees",
+        "rather than:",
+        "worst-case bi-Lipschitz guarantees",
+        "for all strings.",
+        "Bridging this gap is an important research direction."
+      ]
+    },
+    {
+      "heading": "Data-dependent guarantees",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "A more realistic theoretical target may be:",
+      "paragraphs": [
+        "A more realistic theoretical target may be:",
+        "with probability ≥ 1-δ for (x,y) ~ P relative error ≤ ε",
+        "rather than demanding:",
+        "for every possible x,y ∈ Σ*",
+        "This combines statistical learning theory with metric embedding theory."
+      ]
+    },
+    {
+      "heading": "Distribution-specific geometry",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 6,
+      "word_count": 55,
+      "evidence": "The complete edit metric contains pathological structures that may never occur in a real corpus.",
+      "paragraphs": [
+        "The complete edit metric contains pathological structures that may never occur in a real corpus.",
+        "A biological database may occupy a small structured subset:",
+        "S ⊂ Σ*",
+        "with much easier geometry.",
+        "Learning can exploit this.",
+        "That is one of the main reasons data-dependent embeddings can dramatically outperform worst-case constructions empirically without violating theoretical lower bounds."
+      ]
+    },
+    {
+      "heading": "Research frontier: certified learned embeddings",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "An important open direction is to combine:",
+      "paragraphs": [
+        "An important open direction is to combine:",
+        "learned data-dependent representations",
+        "with:",
+        "provable distortion bounds",
+        "at least over a specified distribution, length range, or distance regime."
+      ]
+    },
+    {
+      "heading": "Research frontier: near-distance specialization",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "Search applications care disproportionately about:",
+      "paragraphs": [
+        "Search applications care disproportionately about:",
+        "small ED",
+        "A model designed specifically for:",
+        "ED ≤ k",
+        "could exploit structure unavailable to a global embedding.",
+        "This connects learned embeddings directly to parameterized edit-distance theory."
+      ]
+    },
+    {
+      "heading": "Research frontier: set-valued embeddings",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "Multi-embedding systems challenge the assumption that one sequence must correspond to one point.",
+      "paragraphs": [
+        "Multi-embedding systems challenge the assumption that one sequence must correspond to one point.",
+        "Future representations may use:",
+        "a set of vectors a distribution a geometric region a hierarchy of vectors",
+        "to encode multiple plausible alignments."
+      ]
+    },
+    {
+      "heading": "Research frontier: foundation models for sequence geometry",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 7,
+      "word_count": 61,
+      "evidence": "Large pretrained sequence models provide representations learned from enormous corpora.",
+      "paragraphs": [
+        "Large pretrained sequence models provide representations learned from enormous corpora.",
+        "Fine-tuning these models to preserve edit-distance geometry raises questions about:",
+        "how much edit structure is already encoded;",
+        "whether pretraining improves OOD generalization;",
+        "whether semantic or evolutionary objectives conflict with lexical edit geometry;",
+        "how small an embedding can retain useful edit information.",
+        "LLMED represents an early example of this direction in genomics."
+      ]
+    },
+    {
+      "heading": "Research frontier: learned costs with guaranteed metricity",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "Another promising direction is to retain exact alignment while learning:",
+      "paragraphs": [
+        "Another promising direction is to retain exact alignment while learning:",
+        "context-sensitive edit costs",
+        "subject to hard mathematical constraints that preserve:",
+        "symmetry;",
+        "triangle inequality;",
+        "nonnegative costs;",
+        "interpretable edit scripts.",
+        "This would occupy an attractive middle ground between fixed Levenshtein distance and unconstrained neural similarity."
+      ]
+    },
+    {
+      "heading": "Research frontier: differentiable exact structure",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 8,
+      "word_count": 42,
+      "evidence": "Soft dynamic programming provides gradients but changes the objective.",
+      "paragraphs": [
+        "Soft dynamic programming provides gradients but changes the objective.",
+        "A long-term question is how much of the exact combinatorial structure can be retained while still permitting efficient gradient-based training.",
+        "Related ideas include:",
+        "implicit differentiation;",
+        "structured prediction;",
+        "perturb-and-MAP methods;",
+        "straight-through estimators;",
+        "continuous relaxations."
+      ]
+    },
+    {
+      "heading": "Research frontier: structured edit embeddings",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 3,
+      "word_count": 39,
+      "evidence": "Tree and graph edit distances are even more expensive than string ED.",
+      "paragraphs": [
+        "Tree and graph edit distances are even more expensive than string ED.",
+        "Learning embeddings for these structural metrics may offer larger computational gains, but the target geometry is also substantially more complex.",
+        "See Tree and Graph Edit Distance ."
+      ]
+    },
+    {
+      "heading": "A practical decision table",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 1,
+      "word_count": 79,
+      "evidence": "Requirement Recommended model family Exact Levenshtein value Classical exact algorithm Exact value with small distance Bounded / parameterized algorithm Domain-specific edit costs and explicit alignment Learned weighted edit distance Probabilistic transformation model Stochastic edit transducer End-to-end gradient learning with alignment bias Differentiable / neural edit model Massive nearest-neighbor search Learned edit-distance embedding + ANN Exact final search semantics Embedding retrieval + exact re-ranking Semantic similarity Semantic encoder, not ED embedding Worst-case metric guarantee Provable embedding / exact metric method",
+      "paragraphs": [
+        "Requirement Recommended model family Exact Levenshtein value Classical exact algorithm Exact value with small distance Bounded / parameterized algorithm Domain-specific edit costs and explicit alignment Learned weighted edit distance Probabilistic transformation model Stochastic edit transducer End-to-end gradient learning with alignment bias Differentiable / neural edit model Massive nearest-neighbor search Learned edit-distance embedding + ANN Exact final search semantics Embedding retrieval + exact re-ranking Semantic similarity Semantic encoder, not ED embedding Worst-case metric guarantee Provable embedding / exact metric method"
+      ]
+    },
+    {
+      "heading": "Common misconception: learned embedding distance is learned Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "Not necessarily.",
+      "paragraphs": [
+        "Not necessarily.",
+        "If:",
+        "ED",
+        "is fixed and the model learns:",
+        "fθ",
+        "then the learned component is the representation, not the target distance."
+      ]
+    },
+    {
+      "heading": "Common misconception: any neural text embedding approximates edit distance",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Semantic encoders are usually trained to collapse semantic paraphrases regardless of lexical form, which can directly conflict with Levenshtein geometry."
+      ]
+    },
+    {
+      "heading": "Common misconception: Euclidean embeddings automatically reproduce ED",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Euclidean geometry gives metric properties to the latent distance, but whether that metric resembles edit distance is a separate approximation question."
+      ]
+    },
+    {
+      "heading": "Common misconception: a low average RMSE means low distortion",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "A model may have excellent mean error while containing a small set of catastrophic pairs.",
+        "Worst-case distortion and mean squared error measure different properties."
+      ]
+    },
+    {
+      "heading": "Common misconception: theoretical non-embeddability makes neural embeddings useless",
+      "level": 2,
+      "id": "ux-section-152",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Worst-case lower bounds apply to global metric-preservation requirements.",
+        "A learned model can approximate a restricted empirical distribution extremely well."
+      ]
+    },
+    {
+      "heading": "Common misconception: good retrieval proves accurate distance estimation",
+      "level": 2,
+      "id": "ux-section-153",
+      "paragraph_count": 3,
+      "word_count": 13,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Correct ranking requires only relative ordering.",
+        "Numerical distance estimation additionally requires calibration."
+      ]
+    },
+    {
+      "heading": "Common misconception: good distance estimation proves good retrieval",
+      "level": 2,
+      "id": "ux-section-154",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "Not necessarily.",
+      "paragraphs": [
+        "Not necessarily.",
+        "Small systematic errors among extremely close candidates can reorder nearest neighbors even when global RMSE is tiny."
+      ]
+    },
+    {
+      "heading": "Common misconception: applying r random edits creates a pair at distance r",
+      "level": 2,
+      "id": "ux-section-155",
+      "paragraph_count": 4,
+      "word_count": 16,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "The generated edit script only proves:",
+        "ED(x,y) ≤ r",
+        "The true optimum can be smaller."
+      ]
+    },
+    {
+      "heading": "Common misconception: a learned cost matrix remains a metric",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Asymmetry, zero-cost transformations, or incompatible substitution costs can break metric properties."
+      ]
+    },
+    {
+      "heading": "Common misconception: soft edit distance is exact edit distance with gradients",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Replacing:",
+        "min",
+        "with:",
+        "softmin",
+        "changes the objective.",
+        "The result converges toward the hard minimum as temperature approaches zero but is a different function at positive temperature."
+      ]
+    },
+    {
+      "heading": "Common misconception: vector search removes all edit-distance computation",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Only if approximate embedding results are sufficient.",
+      "paragraphs": [
+        "Only if approximate embedding results are sufficient.",
+        "Systems requiring exact final ranking often still run exact ED on the candidate set."
+      ]
+    },
+    {
+      "heading": "Common misconception: one embedding geometry is universally best",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Euclidean, hyperbolic, Hamming, set-valued, and similarity-measure representations make different structural assumptions.",
+        "The best geometry depends on the data distribution and downstream objective."
+      ]
+    },
+    {
+      "heading": "Conceptual taxonomy",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 1,
+      "word_count": 114,
+      "evidence": "LEARNED EDIT DISTANCE AND EMBEDDINGS │ ├── Learn edit parameters │ │ │ ├── operation costs │ ├── edit probabilities │ ├── contextual costs │ └── metric-constrained costs │ ├── Differentiable edit models │ │ │ ├── soft minimum │ ├── probabilistic alignment │ ├── neural contextual ED │ └── structured gradients │ ├── Provable metric embeddings │ │ │ ├── ℓ1 │ ├── Hamming │ ├── average embeddings │ └── similarity-measure embeddings │ ├── Learned distance embeddings │ │ │ ├── Euclidean │ ├── hyperbolic │ ├── CNN / Transformer │ ├── genomic language models │ └── multi-embeddings │ └── Task-specific similarity │ ├── retrieval ├── classification ├── entity matching └── semantic similarity",
+      "paragraphs": [
+        "LEARNED EDIT DISTANCE AND EMBEDDINGS │ ├── Learn edit parameters │ │ │ ├── operation costs │ ├── edit probabilities │ ├── contextual costs │ └── metric-constrained costs │ ├── Differentiable edit models │ │ │ ├── soft minimum │ ├── probabilistic alignment │ ├── neural contextual ED │ └── structured gradients │ ├── Provable metric embeddings │ │ │ ├── ℓ1 │ ├── Hamming │ ├── average embeddings │ └── similarity-measure embeddings │ ├── Learned distance embeddings │ │ │ ├── Euclidean │ ├── hyperbolic │ ├── CNN / Transformer │ ├── genomic language models │ └── multi-embeddings │ └── Task-specific similarity │ ├── retrieval ├── classification ├── entity matching └── semantic similarity"
+      ]
+    },
+    {
+      "heading": "Historical progression",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 1,
+      "word_count": 106,
+      "evidence": "1990s │ └── Ristad–Yianilos stochastic learned string-edit distance │ 2000s │ ├── edit-cost │ metric learning │ └── theoretical metric embeddings │ 2007 │ Ostrovsky–Rabani subpolynomial-distortion ℓ1 embedding │ 2009 │ Ω(log n) ℓ1 lower bound │ 2012 │ GESL: learned edit similarity with generalization theory │ 2016 │ CGK randomized edit → Hamming embedding │ 2019 │ differentiable Soft Edit Distance │ 2020 │ CNN-ED: neural Euclidean edit embedding │ 2021 │ NeuroSEED: learned geometric sequence embeddings │ 2022 │ Neural String Edit Distance │ 2025 │ similarity-measure embeddings for ANNS │ ├── LLMED │ genomic LLM │ edit embedding │ └── MELO-ED learned multi-embedding",
+      "paragraphs": [
+        "1990s │ └── Ristad–Yianilos stochastic learned string-edit distance │ 2000s │ ├── edit-cost │ metric learning │ └── theoretical metric embeddings │ 2007 │ Ostrovsky–Rabani subpolynomial-distortion ℓ1 embedding │ 2009 │ Ω(log n) ℓ1 lower bound │ 2012 │ GESL: learned edit similarity with generalization theory │ 2016 │ CGK randomized edit → Hamming embedding │ 2019 │ differentiable Soft Edit Distance │ 2020 │ CNN-ED: neural Euclidean edit embedding │ 2021 │ NeuroSEED: learned geometric sequence embeddings │ 2022 │ Neural String Edit Distance │ 2025 │ similarity-measure embeddings for ANNS │ ├── LLMED │ genomic LLM │ edit embedding │ └── MELO-ED learned multi-embedding"
+      ]
+    },
+    {
+      "heading": "Key distinctions",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 1,
+      "word_count": 89,
+      "evidence": "Question Learned costs Learned embedding Generic learned similarity Does an edit path remain explicit? Yes No Usually no Can database representation be precomputed? No special advantage Yes Depends on architecture Can vector ANN be used directly? No Yes Only for bi-encoder models Does output necessarily approximate classical ED? No, costs changed Only if trained to do so No Can metricity be guaranteed structurally? Yes with constrained costs Yes for latent geometry, subject to injectivity for a true metric Usually not Supports domain semantics? Limited but interpretable Yes Very flexible",
+      "paragraphs": [
+        "Question Learned costs Learned embedding Generic learned similarity Does an edit path remain explicit? Yes No Usually no Can database representation be precomputed? No special advantage Yes Depends on architecture Can vector ANN be used directly? No Yes Only for bi-encoder models Does output necessarily approximate classical ED? No, costs changed Only if trained to do so No Can metricity be guaranteed structurally? Yes with constrained costs Yes for latent geometry, subject to injectivity for a true metric Usually not Supports domain semantics? Limited but interpretable Yes Very flexible"
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 1,
+      "word_count": 183,
+      "evidence": "Question Answer Can edit costs be learned? Yes; stochastic and discriminative methods have done so for decades. Does learned weighted ED remain Levenshtein distance? It remains an edit distance but is no longer standard unit-cost Levenshtein distance. Can edit DP be made differentiable? Yes, through soft alignment and related structured-learning techniques. Is soft ED identical to exact ED? No. Can ED be embedded into vectors? Yes, approximately. Is constant-distortion global embedding into ℓ1 possible? No; an Ω(log n) lower bound is known for the binary edit metric. Does that forbid good neural embeddings? No; neural models can specialize to finite or distribution-specific data. Does Euclidean latent distance satisfy triangle inequality? Yes. Is the resulting string distance necessarily a",
+      "paragraphs": [
+        "Question Answer Can edit costs be learned? Yes; stochastic and discriminative methods have done so for decades. Does learned weighted ED remain Levenshtein distance? It remains an edit distance but is no longer standard unit-cost Levenshtein distance. Can edit DP be made differentiable? Yes, through soft alignment and related structured-learning techniques. Is soft ED identical to exact ED? No. Can ED be embedded into vectors? Yes, approximately. Is constant-distortion global embedding into ℓ1 possible? No; an Ω(log n) lower bound is known for the binary edit metric. Does that forbid good neural embeddings? No; neural models can specialize to finite or distribution-specific data. Does Euclidean latent distance satisfy triangle inequality? Yes. Is the resulting string distance necessarily a true metric? Only if distinct strings do not collapse to the same latent point. Does triplet loss calibrate edit distance? No; it primarily trains relative ordering. Can embeddings support scalable search? Yes, because database representations can be precomputed and indexed. Can embeddings return an edit script? Not directly. Should exact ED be used after embedding retrieval? Often yes when final correctness or precise ranking matters."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 13,
+      "word_count": 815,
+      "evidence": "Learned edit distance is not one algorithm. It is a family of methods that introduce data-driven parameters at different points in the edit-distance pipeline. The most conservative approach learns insertion, deletion, and substitution costs while retaining classical dynamic programming. This preserves explicit alignments and allows domain-specific transformations to become cheaper or more expensive than standard unit-cost edits.",
+      "paragraphs": [
+        "Learned edit distance is not one algorithm. It is a family of methods that introduce data-driven parameters at different points in the edit-distance pipeline. The most conservative approach learns insertion, deletion, and substitution costs while retaining classical dynamic programming. This preserves explicit alignments and allows domain-specific transformations to become cheaper or more expensive than standard unit-cost edits.",
+        "The stochastic model of Ristad and Yianilos established an early framework for learning edit behavior from unaligned sequence pairs. Instead of fixing edit costs manually, a probabilistic transducer learns the probabilities of edit operations from data while treating the actual alignment as latent. Later discriminative approaches such as Good Edit Similarity Learning optimized edit parameters directly for predictive tasks and added statistical generalization analysis.",
+        "Learned costs require mathematical discipline. Arbitrary insertion, deletion, and substitution parameters can destroy symmetry, identity of indiscernibles, or triangle inequality. If metricity matters, it is preferable to parameterize costs through a metric structure or explicitly constrain them during learning. Metric-preserving parameterizations can retain both data dependence and interpretable edit scripts.",
+        "A second line of work makes edit-distance computation differentiable. Standard dynamic programming uses a hard minimum over predecessor states. Replacing this minimum with a smooth log-sum-exp operation creates a soft alignment over many possible edit paths. The resulting gradient can be interpreted as an expectation over those paths, connecting edit distance to probabilistic transducers, structured prediction, and differentiable dynamic programming. However, soft edit distance is a surrogate rather than ordinary Levenshtein distance and does not automatically retain metric properties.",
+        "A third and fundamentally different approach leaves edit distance unchanged and learns a representation that approximates it. An encoder maps every sequence independently to a low-dimensional vector, and geometric distance between those vectors acts as a fast surrogate for edit distance. Database vectors can then be precomputed and searched using standard approximate nearest-neighbor infrastructure.",
+        "This learned-embedding approach has deep roots in theoretical metric embedding. Ostrovsky and Rabani proved that edit distance over fixed-length binary strings admits an ℓ₁ embedding with subpolynomial distortion 2^O(sqrt(log n log log n)) . Krauthgamer and Rabani later proved an Ω(log n) lower bound for embedding the binary edit metric into ℓ₁ , ruling out constant worst-case distortion in that target space.",
+        "These lower bounds do not contradict the strong empirical performance of learned embeddings. Theoretical embeddings must preserve every pair in an entire metric space. A neural model usually optimizes expected error over a restricted dataset or probability distribution. Natural-language, genomic, or domain-specific sequence collections may occupy a tiny structured subset of the complete string space and can therefore admit much better empirical representations.",
+        "Modern neural systems exploit exactly this distinction. CNN-ED learns fixed-dimensional Euclidean string embeddings using both numerical edit-distance approximation and retrieval-oriented objectives. NeuroSEED learns geometric embeddings of biological sequences and demonstrates that non-Euclidean, particularly hyperbolic, geometry can be advantageous for hierarchical biological data. Neural String Edit Distance preserves more explicit alignment structure by combining differentiable edit modeling with neural contextual representations.",
+        "The newest direction uses large pretrained sequence models and more flexible representations. The 2025 LLMED preprint fine-tunes a genomic language model to produce embeddings oriented toward edit-distance approximation and sequence search. MELO-ED uses multiple embeddings per sequence rather than forcing every possible alignment relationship into one vector, illustrating a broader shift from single-point representations toward set-valued locality-sensitive representations.",
+        "These systems should be evaluated according to what they actually optimize. Low RMSE measures numerical calibration. Triplet loss and rank correlation measure ordering. Recall@k measures retrieval. Threshold classification measures neighborhood separation. None of these individually proves low worst-case metric distortion. Likewise, excellent IID test accuracy does not establish robustness to new lengths, alphabets, edit distributions, repetitive strings, or insertion-induced global shifts.",
+        "A major practical lesson is that exact and learned methods need not compete. A high-throughput system can use a learned embedding to search millions of sequences, retrieve a manageable candidate set, and then apply exact bounded edit distance to those candidates. This combines the throughput of vector search with the mathematical semantics and edit-script interpretability of classical algorithms.",
+        "The deeper theoretical lesson is that representation is itself an algorithmic resource. Classical edit distance represents a sequence pair through a dynamic-programming alignment matrix. Learned edit costs modify the geometry inside that matrix. Differentiable models soften the optimization over paths. Metric embeddings replace the alignment space with a geometric representation. Neural embeddings make that representation data-dependent. Each step trades some combination of universality, interpretability, exactness, computational cost, and provable guarantees.",
+        "The frontier is therefore not simply to build a neural model with lower benchmark error. The more interesting problem is to determine how much of edit distance's combinatorial structure can be compressed into learned representations while retaining useful guarantees: metricity, low distortion, robustness outside the training distribution, efficient indexing, and recoverable alignment information. That intersection of algorithm theory, metric geometry, structured prediction, and representation learning is what makes learned edit distance an important modern extension of classical Levenshtein theory."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 8,
+      "word_count": 105,
+      "evidence": "Weighted Levenshtein Distance — the mathematical basis for learning nonuniform edit-operation costs.",
+      "paragraphs": [
+        "Weighted Levenshtein Distance — the mathematical basis for learning nonuniform edit-operation costs.",
+        "Edit Distance Complexity — why exact pairwise computation motivates surrogate representations.",
+        "Approximate Edit Distance Algorithms — provable alternatives to learned approximation.",
+        "Bounded and Parameterized Edit Distance — exact low-distance computation as an alternative to learned approximation.",
+        "Indexing and Filtering for Edit Distance — scalable search without requiring a learned embedding.",
+        "Tree and Graph Edit Distance — extending learned structural similarity beyond strings.",
+        "String Similarity vs Semantic Similarity — why generic semantic embeddings should not be confused with edit-distance embeddings.",
+        "Edit Distance Research Frontiers — open problems spanning approximation, embeddings, learning, and structured distance."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 12,
+      "word_count": 290,
+      "evidence": "Eric Sven Ristad and Peter N. Yianilos, “Learning String-Edit Distance,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 20(5), 522–532, 1998. DOI record .",
+      "paragraphs": [
+        "Eric Sven Ristad and Peter N. Yianilos, “Learning String-Edit Distance,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 20(5), 522–532, 1998. DOI record .",
+        "Rafail Ostrovsky and Yuval Rabani, “Low Distortion Embeddings for Edit Distance,” Journal of the ACM , 54(5), Article 23, 2007. DOI record .",
+        "Robert Krauthgamer and Yuval Rabani, “Improved Lower Bounds for Embeddings into L1,” SIAM Journal on Computing , 38(6), 2487–2498, 2009. DOI record .",
+        "Aurélien Bellet, Amaury Habrard, and Marc Sebban, “Good Edit Similarity Learning by Loss Minimization,” Machine Learning , 89(1–2), 5–35, 2012. DOI record .",
+        "Diptarka Chakraborty, Elazar Goldenberg, and Michal Koucký, “Streaming Algorithms for Embedding and Computing Edit Distance in the Low Distance Regime,” STOC 2016 , 712–725. DOI record .",
+        "Evgenii Ofitserov, Vasily Tsvetkov, and Vadim Nazarov, “Soft Edit Distance for Differentiable Comparison of Symbolic Sequences,” 2019 preprint. arXiv record .",
+        "Xinyan Dai, Xiao Yan, Kaiwen Zhou, Yuxuan Wang, Han Yang, and James Cheng, “Convolutional Embedding for Edit Distance,” SIGIR 2020 , 599–608. DOI record .",
+        "Gabriele Corso, Zhitao Ying, Michal Pándy, Petar Veličković, Jure Leskovec, and Pietro Liò, “Neural Distance Embeddings for Biological Sequences,” Advances in Neural Information Processing Systems 34 , 2021. NeurIPS record .",
+        "Jindřich Libovický and Alexander Fraser, “Neural String Edit Distance,” Proceedings of the Sixth Workshop on Structured Prediction for NLP , 52–66, 2022. DOI record .",
+        "Alexandr Andoni and Negev Shekel Nosatzki, “Embeddings into Similarity Measures for Nearest Neighbor Search,” FOCS 2025 , 864–893. DOI record .",
+        "Xiang Li, Ke Chen, Yijia Zhang, and Mingfu Shao, “Edit Distance Embedding with Genomic Large Language Model,” bioRxiv preprint, 2025. Preprint DOI .",
+        "Xin Yuan, Ke Chen, Ajmain Yasar Ahmed, and Mingfu Shao, “MELO-ED: Learning Locality-Sensitive Multi-Embeddings for Edit Distance,” bioRxiv preprint, 2025. Preprint DOI ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-edit-distance-algorithms",
+      "evidence": [
+        {
+          "section": "A learned gap embedding",
+          "anchor_id": "ux-section-128",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "This is analogous to the gap edit-distance problem described in Approximate Edit Distance Algorithms ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-165",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "Approximate Edit Distance Algorithms — provable alternatives to learned approximation."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "When learned embeddings may be unnecessary",
+          "anchor_id": "ux-section-115",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-165",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — exact low-distance computation as an alternative to learned approximation."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Why embeddings are attractive",
+          "anchor_id": "ux-section-30",
+          "alias": "edit distance complexity",
+          "excerpt": "For two length- n strings, general exact computation is still associated with near-quadratic worst-case behavior; see Edit Distance Complexity ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-165",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — why exact pairwise computation motivates surrogate representations."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-research-frontiers",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-165",
+          "alias": "edit distance research frontiers",
+          "excerpt": "Edit Distance Research Frontiers — open problems spanning approximation, embeddings, learning, and structured distance."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Learned Edit Distance and Embeddings",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Classical edit distance defines similarity through a fixed mathematical rule: specify a set of edit operations, assign each operation a cost, and find the minimum-cost sequence of edits transforming one sequence into another. In standard Levenshtein distance , insertion, deletion, and substitution each cost one."
+        },
+        {
+          "section": "What exactly can be learned?",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "Learned component Fixed component Typical output Edit operation costs Edit operations and DP structure Learned weighted edit distance Edit probabilities Stochastic transducer structure Probability or probabilistic edit score Soft alignment parameters Differentiable DP recurrence Differentiable surrogate distance Sequence encoder Target edit-distance labels Embedding approximating ED Embedding geometry Training examples Euclidean, hyperbolic, or other representation Pairwise similarity model Task labels Task-specific score"
+        },
+        {
+          "section": "Ristad and Yianilos: learning string-edit distance",
+          "anchor_id": "ux-section-8",
+          "alias": "edit distance",
+          "excerpt": "A foundational result was the stochastic edit-distance model of Eric Ristad and Peter Yianilos."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Learned Edit Distance and Embeddings",
+          "anchor_id": "ux-section-1",
+          "alias": "edit operations",
+          "excerpt": "Classical edit distance defines similarity through a fixed mathematical rule: specify a set of edit operations, assign each operation a cost, and find the minimum-cost sequence of edits transforming one sequence into another. In standard Levenshtein distance , insertion, deletion, and substitution each cost one."
+        },
+        {
+          "section": "What exactly can be learned?",
+          "anchor_id": "ux-section-3",
+          "alias": "edit operations",
+          "excerpt": "Learned component Fixed component Typical output Edit operation costs Edit operations and DP structure Learned weighted edit distance Edit probabilities Stochastic transducer structure Probability or probabilistic edit score Soft alignment parameters Differentiable DP recurrence Differentiable surrogate distance Sequence encoder Target edit-distance labels Embedding approximating ED Embedding geometry Training examples Euclidean, hyperbolic, or other representation Pairwise similarity model Task labels Task-specific score"
+        },
+        {
+          "section": "Good Edit Similarity Learning",
+          "anchor_id": "ux-section-13",
+          "alias": "edit operations",
+          "excerpt": "The learned object is still structurally connected to edit operations, but the training criterion comes from machine learning."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Embedding versus edit-distance indexing",
+          "anchor_id": "ux-section-113",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-165",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — scalable search without requiring a learned embedding."
+        }
+      ]
+    },
+    {
+      "target": "/landau-vishkin-algorithm",
+      "evidence": [
+        {
+          "section": "Use specialized exact algorithms to generate labels",
+          "anchor_id": "ux-section-124",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "Landau–Vishkin Algorithm in low-distance regimes;"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "Embedding versus edit-distance indexing",
+          "anchor_id": "ux-section-113",
+          "alias": "levenshtein automata",
+          "excerpt": "Levenshtein automata;"
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Use specialized exact algorithms to generate labels",
+          "anchor_id": "ux-section-124",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm for suitable pattern lengths;"
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "The semantic-embedding trap",
+          "anchor_id": "ux-section-64",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-165",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "String Similarity vs Semantic Similarity — why generic semantic embeddings should not be confused with edit-distance embeddings."
+        }
+      ]
+    },
+    {
+      "target": "/theory",
+      "evidence": [
+        {
+          "section": "Research frontier: near-distance specialization",
+          "anchor_id": "ux-section-141",
+          "alias": "edit distance theory",
+          "excerpt": "This connects learned embeddings directly to parameterized edit-distance theory."
+        }
+      ]
+    },
+    {
+      "target": "/tree-and-graph-edit-distance",
+      "evidence": [
+        {
+          "section": "Learned embeddings for graph edit distance",
+          "anchor_id": "ux-section-120",
+          "alias": "tree and graph edit distance",
+          "excerpt": "See Tree and Graph Edit Distance ."
+        },
+        {
+          "section": "Research frontier: structured edit embeddings",
+          "anchor_id": "ux-section-146",
+          "alias": "tree and graph edit distance",
+          "excerpt": "See Tree and Graph Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-165",
+          "alias": "tree and graph edit distance",
+          "excerpt": "Tree and Graph Edit Distance — extending learned structural similarity beyond strings."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Use specialized exact algorithms to generate labels",
+          "anchor_id": "ux-section-124",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm for bounded cases;"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Representation units must be fixed before training",
+          "anchor_id": "ux-section-83",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "The classical starting point",
+          "anchor_id": "ux-section-2",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "The weighted formulation is developed separately in Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-165",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — the mathematical basis for learning nonuniform edit-operation costs."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page",
+      "type": "WebPage",
+      "name": "Learned Edit Distance and Embeddings",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#learned-edit-costs"
+        },
+        {
+          "@id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+        },
+        {
+          "@id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#differentiable-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "type": "TechArticle",
+      "name": "Learned Edit Distance and Embeddings",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#learned-edit-costs"
+        },
+        {
+          "@id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+        },
+        {
+          "@id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#differentiable-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept",
+      "type": "DefinedTerm",
+      "name": "Learned Edit Distance and Embeddings",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#learned-edit-costs",
+      "type": "DefinedTerm",
+      "name": "Learned Edit Costs",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding",
+      "type": "DefinedTerm",
+      "name": "Edit Distance Embedding",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#differentiable-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Differentiable Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/learned-edit-distance-and-embeddings#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "hasPart",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#learned-edit-costs"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#differentiable-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page",
+      "mainEntity",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page",
+      "isPartOf",
+      "https://www.levenshtein.net/theory#collection"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page",
+      "hasPart",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#learned-edit-costs"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#differentiable-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "mentions",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "mentions",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "mentions",
+      "https://www.levenshtein.net/string-similarity-vs-semantic-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "isPartOf",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#page"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.1109/34.682181"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.1145/1284320.1284322"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.1137/060660126"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.1007/s10994-012-5293-8"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.1145/2897518.2897577"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.48550/arxiv.1904.12562"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.1145/3397271.3401045"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://proceedings.neurips.cc/paper/2021/hash/9a1de01f893e0d2551ecbb7ce4dc963e-abstract.html"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.18653/v1/2022.spnlp-1.6"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.1109/focs63196.2025.00045"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.1101/2025.09.25.678635"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#article",
+      "citation",
+      "https://doi.org/10.1101/2025.11.23.689944"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#learned-edit-costs",
+      "isPartOf",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding",
+      "isPartOf",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#differentiable-edit-distance",
+      "isPartOf",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://doi.org/10.1109/34.682181",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#learned-edit-costs"
+    ],
+    [
+      "https://doi.org/10.1145/1284320.1284322",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ],
+    [
+      "https://doi.org/10.1137/060660126",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ],
+    [
+      "https://doi.org/10.1007/s10994-012-5293-8",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#learned-edit-costs"
+    ],
+    [
+      "https://doi.org/10.1145/2897518.2897577",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ],
+    [
+      "https://doi.org/10.48550/arxiv.1904.12562",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#differentiable-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1145/3397271.3401045",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ],
+    [
+      "https://proceedings.neurips.cc/paper/2021/hash/9a1de01f893e0d2551ecbb7ce4dc963e-abstract.html",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ],
+    [
+      "https://doi.org/10.18653/v1/2022.spnlp-1.6",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#learned-edit-costs"
+    ],
+    [
+      "https://doi.org/10.18653/v1/2022.spnlp-1.6",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#differentiable-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1109/focs63196.2025.00045",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ],
+    [
+      "https://doi.org/10.1101/2025.09.25.678635",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ],
+    [
+      "https://doi.org/10.1101/2025.11.23.689944",
+      "about",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#edit-distance-embedding"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1109/34.682181",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/1284320.1284322",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/060660126",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1007/s10994-012-5293-8",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/2897518.2897577",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.48550/arxiv.1904.12562",
+      "anchor": "arXiv record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3397271.3401045",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://proceedings.neurips.cc/paper/2021/hash/9a1de01f893e0d2551ecbb7ce4dc963e-abstract.html",
+      "anchor": "NeurIPS record"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/2022.spnlp-1.6",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/focs63196.2025.00045",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1101/2025.09.25.678635",
+      "anchor": "Preprint DOI"
+    },
+    {
+      "url": "https://doi.org/10.1101/2025.11.23.689944",
+      "anchor": "Preprint DOI"
+    }
+  ]
+}

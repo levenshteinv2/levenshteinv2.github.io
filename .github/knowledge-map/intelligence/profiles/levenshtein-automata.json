@@ -1,0 +1,2835 @@
+{
+  "url": "/levenshtein-automata",
+  "title": "Levenshtein Automata: Finite-State Fuzzy String Matching",
+  "h1": [
+    "Levenshtein Automata: Finite-State Fuzzy String Matching"
+  ],
+  "group": "Algorithms",
+  "provisional_mission": "Automata chấp nhận chuỗi trong ngưỡng",
+  "content_sha256": "a8462d3287c37b90c03e4d0b1c418be24a79091544b6c7e50c6e002048c1881b",
+  "canonical": "https://www.levenshtein.net/levenshtein-automata",
+  "primary_entity_candidate": "Levenshtein Automata: Finite-State Fuzzy String Matching",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Levenshtein Automata",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 6,
+      "word_count": 169,
+      "evidence": "A Levenshtein automaton is a finite-state machine that recognizes exactly the strings lying within a specified Levenshtein distance of a fixed pattern. Instead of computing an edit-distance matrix independently for every candidate string, the allowed edit neighborhood of the pattern is compiled into an automaton. A candidate is accepted precisely when its sequence of symbols drives the automaton into an accepting state.",
+      "paragraphs": [
+        "A Levenshtein automaton is a finite-state machine that recognizes exactly the strings lying within a specified Levenshtein distance of a fixed pattern. Instead of computing an edit-distance matrix independently for every candidate string, the allowed edit neighborhood of the pattern is compiled into an automaton. A candidate is accepted precisely when its sequence of symbols drives the automaton into an accepting state.",
+        "This changes the computational viewpoint fundamentally. Classical dynamic programming asks:",
+        "What is the minimum edit cost between pattern P and candidate V?",
+        "A Levenshtein automaton asks:",
+        "Does V belong to the language L(P,k) = { V : d(P,V) ≤ k } ?",
+        "For a fixed pattern P and error bound k , this language is regular and can therefore be recognized by a finite automaton. This finite-state formulation is particularly important for fuzzy dictionary search because the automaton can be traversed simultaneously with a trie, finite-state lexicon, or other term dictionary, pruning entire lexical branches that cannot possibly lead to a string within the permitted edit radius."
+      ]
+    },
+    {
+      "heading": "Formal definition",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 13,
+      "word_count": 81,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "P = p₁p₂...pₘ",
+        "be a fixed pattern over alphabet Σ , and let:",
+        "k ≥ 0",
+        "be an integer edit-distance bound.",
+        "Define the Levenshtein neighborhood:",
+        "Lₖ(P) = { V ∈ Σ* : d_L(P,V) ≤ k }",
+        "where d_L is standard unit-cost Levenshtein distance:",
+        "insertion cost 1 deletion cost 1 substitution cost 1 match cost 0",
+        "A Levenshtein automaton of degree k for P is a finite automaton whose accepted language is exactly:",
+        "Lₖ(P)",
+        "Thus:",
+        "V accepted ⇔ d_L(P,V) ≤ k"
+      ]
+    },
+    {
+      "heading": "Why an automaton exists",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 12,
+      "word_count": 91,
+      "evidence": "The existence of a finite automaton follows directly from the bounded edit model.",
+      "paragraphs": [
+        "The existence of a finite automaton follows directly from the bounded edit model.",
+        "For a fixed pattern of length m and maximum edit count k , a matching process only needs to know two bounded quantities:",
+        "how far it has progressed through the pattern;",
+        "how many edits have been spent.",
+        "These can be represented by a state:",
+        "(i,e)",
+        "where:",
+        "0 ≤ i ≤ m 0 ≤ e ≤ k",
+        "There are only:",
+        "(m + 1)(k + 1)",
+        "such basic position/error combinations.",
+        "Transitions between these states correspond directly to edit operations ."
+      ]
+    },
+    {
+      "heading": "The classical nondeterministic Levenshtein automaton",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 11,
+      "word_count": 67,
+      "evidence": "The most intuitive construction is a nondeterministic finite automaton, or NFA.",
+      "paragraphs": [
+        "The most intuitive construction is a nondeterministic finite automaton, or NFA.",
+        "Define:",
+        "Q = { (i,e) : 0 ≤ i ≤ m, 0 ≤ e ≤ k }",
+        "where:",
+        "i = pattern position e = edits already used",
+        "The initial state is:",
+        "(0,0)",
+        "A state:",
+        "(i,e)",
+        "means approximately:",
+        "The input consumed so far can be aligned with the first i symbols of the pattern using e edits."
+      ]
+    },
+    {
+      "heading": "The four transition types",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "Assume:",
+      "paragraphs": [
+        "Assume:",
+        "i < m",
+        "and let the next pattern symbol be:",
+        "pᵢ₊₁",
+        "The automaton has four conceptual transition types."
+      ]
+    },
+    {
+      "heading": "1. Match",
+      "level": 3,
+      "id": "ux-section-6",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "If the next input symbol equals the next pattern symbol:",
+      "paragraphs": [
+        "If the next input symbol equals the next pattern symbol:",
+        "a = pᵢ₊₁",
+        "advance through the pattern without increasing the edit count:",
+        "(i,e) -- pᵢ₊₁ --> (i+1,e)"
+      ]
+    },
+    {
+      "heading": "2. Substitution",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "If the candidate contains a different symbol:",
+      "paragraphs": [
+        "If the candidate contains a different symbol:",
+        "a ≠ pᵢ₊₁",
+        "consume the candidate symbol and advance through the pattern while spending one edit:",
+        "(i,e) -- a --> (i+1,e+1)",
+        "provided:",
+        "e < k"
+      ]
+    },
+    {
+      "heading": "3. Insertion",
+      "level": 3,
+      "id": "ux-section-8",
+      "paragraph_count": 5,
+      "word_count": 56,
+      "evidence": "If the candidate contains an extra symbol relative to the pattern, consume the input symbol but do not advance the pattern:",
+      "paragraphs": [
+        "If the candidate contains an extra symbol relative to the pattern, consume the input symbol but do not advance the pattern:",
+        "(i,e) -- a --> (i,e+1)",
+        "for any input symbol a , provided:",
+        "e < k",
+        "The operation is called an insertion because the candidate can be obtained from the pattern by inserting the consumed symbol."
+      ]
+    },
+    {
+      "heading": "4. Deletion",
+      "level": 3,
+      "id": "ux-section-9",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "If one pattern symbol is absent from the candidate, advance the pattern without consuming input:",
+      "paragraphs": [
+        "If one pattern symbol is absent from the candidate, advance the pattern without consuming input:",
+        "(i,e) -- ε --> (i+1,e+1)",
+        "where ε denotes an empty transition.",
+        "This corresponds to deleting:",
+        "pᵢ₊₁",
+        "from the pattern."
+      ]
+    },
+    {
+      "heading": "Transition summary",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 1,
+      "word_count": 25,
+      "evidence": "Operation Consumes candidate symbol? Advances pattern? Edit count Match Yes Yes Unchanged Substitution Yes Yes +1 Insertion Yes No +1 Deletion No: ε Yes +1",
+      "paragraphs": [
+        "Operation Consumes candidate symbol? Advances pattern? Edit count Match Yes Yes Unchanged Substitution Yes Yes +1 Insertion Yes No +1 Deletion No: ε Yes +1"
+      ]
+    },
+    {
+      "heading": "The automaton as an edit grid",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 10,
+      "word_count": 111,
+      "evidence": "The state structure can be arranged as a grid.",
+      "paragraphs": [
+        "The state structure can be arranged as a grid.",
+        "For a pattern:",
+        "P = p₁p₂p₃p₄",
+        "and:",
+        "k = 2",
+        "the conceptual states are:",
+        "edits 0 (0,0) --p₁--> (1,0) --p₂--> (2,0) --p₃--> (3,0) --p₄--> (4,0) | | | | | | | | | | 1 (0,1) --p₁--> (1,1) --p₂--> (2,1) --p₃--> (3,1) --p₄--> (4,1) | | | | | | | | | | 2 (0,2) --p₁--> (1,2) --p₂--> (2,2) --p₃--> (3,2) --p₄--> (4,2) pattern position 0 1 2 3 4",
+        "Horizontal transitions represent matches.",
+        "Additional diagonal, vertical, and epsilon transitions represent substitutions, insertions, and deletions.",
+        "This grid is closely related to the dynamic-programming matrix used by the Wagner–Fischer algorithm ."
+      ]
+    },
+    {
+      "heading": "Acceptance states",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 14,
+      "word_count": 96,
+      "evidence": "The most direct accepting states are:",
+      "paragraphs": [
+        "The most direct accepting states are:",
+        "(m,e) for 0 ≤ e ≤ k",
+        "because these states have consumed the entire pattern within the edit budget.",
+        "However, epsilon deletion transitions matter when the input ends before the pattern does.",
+        "Suppose the machine finishes input in:",
+        "(i,e)",
+        "with:",
+        "i < m",
+        "The remaining:",
+        "m - i",
+        "pattern symbols can all be deleted.",
+        "Therefore the state is accepting through its epsilon closure whenever:",
+        "e + (m-i) ≤ k",
+        "An NFA implementation can express this naturally through epsilon transitions. An epsilon-free implementation must account for these possible trailing deletions explicitly."
+      ]
+    },
+    {
+      "heading": "A fundamental length bound",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 9,
+      "word_count": 57,
+      "evidence": "Every string within Levenshtein radius k of a pattern of length m must have length:",
+      "paragraphs": [
+        "Every string within Levenshtein radius k of a pattern of length m must have length:",
+        "m-k ≤ |V| ≤ m+k",
+        "because substitution leaves length unchanged, while each insertion or deletion changes length by only one.",
+        "Equivalently:",
+        "||V|-m| ≤ d_L(P,V)",
+        "Therefore:",
+        "||V|-m| > k",
+        "implies immediate rejection.",
+        "This length property is useful even before an automaton is traversed."
+      ]
+    },
+    {
+      "heading": "Worked example: pattern \"book\" with k = 1",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "P = \"book\" k = 1"
+      ]
+    },
+    {
+      "heading": "Exact match",
+      "level": 3,
+      "id": "ux-section-15",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "book",
+      "paragraphs": [
+        "book",
+        "follows four zero-cost match transitions:",
+        "(0,0) --b--> (1,0) --o--> (2,0) --o--> (3,0) --k--> (4,0)",
+        "The final state is accepting."
+      ]
+    },
+    {
+      "heading": "One insertion",
+      "level": 3,
+      "id": "ux-section-16",
+      "paragraph_count": 7,
+      "word_count": 23,
+      "evidence": "Candidate:",
+      "paragraphs": [
+        "Candidate:",
+        "books",
+        "can follow the exact path for book and then consume:",
+        "s",
+        "as an insertion:",
+        "(4,0) --s--> (4,1)",
+        "The candidate is accepted."
+      ]
+    },
+    {
+      "heading": "One deletion",
+      "level": 3,
+      "id": "ux-section-17",
+      "paragraph_count": 10,
+      "word_count": 44,
+      "evidence": "Candidate:",
+      "paragraphs": [
+        "Candidate:",
+        "bok",
+        "can be aligned as:",
+        "b o o k | | | b o k",
+        "After matching the first b and o , the automaton can delete one o through an epsilon transition:",
+        "(2,0) --ε--> (3,1)",
+        "then match:",
+        "k",
+        "and finish in:",
+        "(4,1)"
+      ]
+    },
+    {
+      "heading": "One substitution",
+      "level": 3,
+      "id": "ux-section-18",
+      "paragraph_count": 7,
+      "word_count": 16,
+      "evidence": "Candidate:",
+      "paragraphs": [
+        "Candidate:",
+        "boak",
+        "can follow:",
+        "book boak",
+        "with one substitution:",
+        "o → a",
+        "and is therefore accepted."
+      ]
+    },
+    {
+      "heading": "Two substitutions",
+      "level": 3,
+      "id": "ux-section-19",
+      "paragraph_count": 8,
+      "word_count": 25,
+      "evidence": "Candidate:",
+      "paragraphs": [
+        "Candidate:",
+        "back",
+        "requires:",
+        "o → a o → c",
+        "under classical Levenshtein operations.",
+        "Therefore:",
+        "d_L(\"book\",\"back\") = 2",
+        "and the automaton of degree 1 rejects it."
+      ]
+    },
+    {
+      "heading": "Correctness theorem",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "For the classical NFA:",
+      "paragraphs": [
+        "For the classical NFA:",
+        "A(P,k)",
+        "the accepted language is exactly:",
+        "L(A(P,k)) = { V : d_L(P,V) ≤ k }"
+      ]
+    },
+    {
+      "heading": "Proof idea: accepting path implies edit script",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 14,
+      "word_count": 74,
+      "evidence": "Every transition in an accepting path corresponds to exactly one of:",
+      "paragraphs": [
+        "Every transition in an accepting path corresponds to exactly one of:",
+        "a zero-cost match;",
+        "an insertion;",
+        "a deletion;",
+        "a substitution.",
+        "The error coordinate:",
+        "e",
+        "increases exactly when one edit is used.",
+        "An accepting path can therefore contain at most:",
+        "k",
+        "edit transitions.",
+        "Removing the zero-cost matches from the path leaves a valid edit script transforming the pattern into the accepted candidate with cost at most k .",
+        "Hence:",
+        "V accepted ⇒ d_L(P,V) ≤ k"
+      ]
+    },
+    {
+      "heading": "Proof idea: edit script implies accepting path",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 12,
+      "word_count": 80,
+      "evidence": "Conversely, suppose:",
+      "paragraphs": [
+        "Conversely, suppose:",
+        "d_L(P,V) ≤ k",
+        "Then there exists an edit script using at most k insertion, deletion, and substitution operations.",
+        "Process the script from left to right.",
+        "Each operation has a corresponding automaton transition:",
+        "match → match transition insertion → insertion transition deletion → epsilon deletion substitution → substitution transition",
+        "Following these transitions constructs a path from:",
+        "(0,0)",
+        "to an accepting state while consuming exactly V .",
+        "Therefore:",
+        "d_L(P,V) ≤ k ⇒ V accepted",
+        "Together the two directions establish equivalence."
+      ]
+    },
+    {
+      "heading": "Why the NFA is nondeterministic",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 12,
+      "word_count": 73,
+      "evidence": "Suppose the current pattern position expects:",
+      "paragraphs": [
+        "Suppose the current pattern position expects:",
+        "a",
+        "and the candidate also contains:",
+        "a",
+        "Several interpretations may still be possible.",
+        "The symbol could be:",
+        "the intended exact match;",
+        "an inserted extra a ;",
+        "part of another edit alignment after a deletion.",
+        "An optimal interpretation cannot always be selected greedily.",
+        "The NFA therefore keeps multiple hypotheses alive simultaneously.",
+        "This is analogous to dynamic programming preserving multiple possible sequence alignments rather than committing immediately to one."
+      ]
+    },
+    {
+      "heading": "Epsilon closure",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 8,
+      "word_count": 78,
+      "evidence": "Deletion transitions consume no candidate symbol.",
+      "paragraphs": [
+        "Deletion transitions consume no candidate symbol.",
+        "Therefore, before and after consuming an input symbol, the active NFA state set must include every state reachable through zero or more epsilon transitions.",
+        "For example, with:",
+        "k = 2",
+        "the start state's epsilon closure can include:",
+        "(0,0) (1,1) (2,2)",
+        "representing the possibilities of deleting zero, one, or two leading pattern symbols before consuming the first candidate symbol.",
+        "Epsilon closure is mathematically simple but adds runtime complexity to a direct NFA simulation."
+      ]
+    },
+    {
+      "heading": "From NFA to DFA",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 10,
+      "word_count": 85,
+      "evidence": "A deterministic finite automaton, or DFA, has exactly one active state after every consumed input prefix.",
+      "paragraphs": [
+        "A deterministic finite automaton, or DFA, has exactly one active state after every consumed input prefix.",
+        "The standard subset construction converts the Levenshtein NFA into a DFA.",
+        "A DFA state represents a set of NFA states:",
+        "S = { (i₁,e₁), (i₂,e₂), ... }",
+        "including the appropriate epsilon closure.",
+        "When candidate symbol c arrives:",
+        "follow every NFA transition labeled by c from every state in S ;",
+        "take the union of the resulting states;",
+        "compute their epsilon closure;",
+        "use that set as the next DFA state."
+      ]
+    },
+    {
+      "heading": "A DFA state represents competing alignments",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 17,
+      "word_count": 60,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "P = \"cat\" k = 1",
+        "After consuming:",
+        "\"c\"",
+        "one deterministic state may represent several NFA hypotheses such as:",
+        "(1,0)",
+        "meaning:",
+        "c matched c exactly",
+        "together with:",
+        "(0,1)",
+        "meaning:",
+        "the consumed c was an insertion",
+        "and:",
+        "(2,1)",
+        "meaning:",
+        "c matched the first pattern character and a was deleted",
+        "The deterministic state compresses these competing hypotheses into one finite object."
+      ]
+    },
+    {
+      "heading": "Dynamic programming and DFA states are closely related",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 18,
+      "word_count": 106,
+      "evidence": "There is another useful way to understand the construction.",
+      "paragraphs": [
+        "There is another useful way to understand the construction.",
+        "After reading candidate prefix V , define a truncated dynamic-programming vector:",
+        "R_V[i] = min( k+1, d_L( P[1..i], V ) )",
+        "for:",
+        "0 ≤ i ≤ m",
+        "Values above the threshold are collapsed into:",
+        "k+1",
+        "because their precise magnitude no longer matters for recognition.",
+        "Reading another character:",
+        "c",
+        "deterministically transforms:",
+        "R_V",
+        "into:",
+        "R_Vc",
+        "using the Levenshtein recurrence.",
+        "Thus a DFA state can also be regarded as a precomputed equivalence class of bounded dynamic-programming configurations.",
+        "This gives a powerful interpretation:",
+        "dynamic programming: compute the state transition at runtime finite-state automaton: precompute possible transitions and perform table lookup at runtime"
+      ]
+    },
+    {
+      "heading": "Why naive determinization is not enough",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 7,
+      "word_count": 68,
+      "evidence": "General subset construction can theoretically produce exponentially many deterministic states relative to the underlying NFA.",
+      "paragraphs": [
+        "General subset construction can theoretically produce exponentially many deterministic states relative to the underlying NFA.",
+        "A naive implementation could therefore create an unnecessarily large machine.",
+        "Levenshtein automata have much more structure than an arbitrary NFA, however.",
+        "The error budget:",
+        "k",
+        "is small in many practical applications, and only a restricted region around the current pattern position can remain relevant.",
+        "This special structure is what the Schulz–Mihov construction exploits."
+      ]
+    },
+    {
+      "heading": "The Schulz–Mihov result",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 9,
+      "word_count": 77,
+      "evidence": "Klaus U. Schulz and Stoyan Mihov developed a highly influential deterministic construction for Levenshtein automata.",
+      "paragraphs": [
+        "Klaus U. Schulz and Stoyan Mihov developed a highly influential deterministic construction for Levenshtein automata.",
+        "For any fixed distance bound:",
+        "k",
+        "and pattern:",
+        "P",
+        "their method can construct a deterministic Levenshtein automaton in time linear in:",
+        "|P|",
+        "with the constant depending on the fixed degree k .",
+        "This is a central theoretical and practical result because it means the deterministic machine does not need to be obtained by performing an unrestricted generic powerset construction for every word."
+      ]
+    },
+    {
+      "heading": "Positions in the Schulz–Mihov model",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 9,
+      "word_count": 45,
+      "evidence": "A basic position can be represented as:",
+      "paragraphs": [
+        "A basic position can be represented as:",
+        "i#e",
+        "where:",
+        "i = pattern offset e = number of errors used",
+        "For example:",
+        "3#1",
+        "means:",
+        "The process has reached pattern position 3 after spending one edit.",
+        "A deterministic state consists conceptually of a set of such positions."
+      ]
+    },
+    {
+      "heading": "Residual language of a position",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 10,
+      "word_count": 56,
+      "evidence": "Suppose the maximum permitted distance is:",
+      "paragraphs": [
+        "Suppose the maximum permitted distance is:",
+        "k",
+        "and the machine is in position:",
+        "i#e",
+        "Then there remain:",
+        "k-e",
+        "edits available for matching the remaining pattern suffix:",
+        "P[i+1..m]",
+        "The residual language is therefore essentially the Levenshtein neighborhood of that suffix with the remaining edit budget.",
+        "This observation is important because one position can make another position redundant."
+      ]
+    },
+    {
+      "heading": "Subsumption",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 13,
+      "word_count": 72,
+      "evidence": "Suppose a deterministic state contains two positions:",
+      "paragraphs": [
+        "Suppose a deterministic state contains two positions:",
+        "π₁ and π₂",
+        "and every continuation accepted from:",
+        "π₂",
+        "is already accepted from:",
+        "π₁",
+        "Then:",
+        "π₂",
+        "does not contribute anything to the recognized language.",
+        "It can be removed.",
+        "Schulz–Mihov use such subsumption relations to reduce deterministic states to compact canonical forms rather than retaining every raw NFA position produced by subset construction.",
+        "Conceptually:",
+        "raw set of positions ↓ remove dominated positions ↓ canonical deterministic state"
+      ]
+    },
+    {
+      "heading": "Why only a local pattern window matters",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 7,
+      "word_count": 91,
+      "evidence": "For a fixed edit bound k , active positions cannot be spread arbitrarily far apart along the pattern.",
+      "paragraphs": [
+        "For a fixed edit bound k , active positions cannot be spread arbitrarily far apart along the pattern.",
+        "If two alignment hypotheses differ too greatly in pattern position, their implied insertion/deletion imbalance already exceeds the remaining error budget.",
+        "Consequently, transitions from a deterministic state depend only on a bounded window of pattern symbols near the state's current boundary.",
+        "A commonly used parametric description needs a local window on the order of:",
+        "2k + 1",
+        "pattern positions.",
+        "This locality is crucial because it makes transition structure independent of the complete pattern length."
+      ]
+    },
+    {
+      "heading": "Characteristic vectors",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 9,
+      "word_count": 54,
+      "evidence": "Instead of making a transition depend directly on the identity of an input character, the deterministic construction can summarize how that character relates to the relevant pattern window.",
+      "paragraphs": [
+        "Instead of making a transition depend directly on the identity of an input character, the deterministic construction can summarize how that character relates to the relevant pattern window.",
+        "For symbol:",
+        "x",
+        "and pattern fragment:",
+        "V = v₁v₂...vᵣ",
+        "define its characteristic vector:",
+        "χ(x,V) = <b₁,b₂,...,bᵣ>",
+        "where:",
+        "bⱼ = 1 if x = vⱼ 0 otherwise"
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-35",
+      "paragraph_count": 14,
+      "word_count": 36,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "V = \"hello\"",
+        "For:",
+        "x = \"l\"",
+        "the characteristic vector is:",
+        "χ(\"l\",\"hello\") = <0,0,1,1,0>",
+        "For:",
+        "x = \"o\"",
+        "it is:",
+        "<0,0,0,0,1>",
+        "For a symbol absent from the fragment:",
+        "x = \"x\"",
+        "the vector is:",
+        "<0,0,0,0,0>"
+      ]
+    },
+    {
+      "heading": "Why characteristic vectors are powerful",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 10,
+      "word_count": 79,
+      "evidence": "The automaton usually does not care whether the incoming symbol is literally:",
+      "paragraphs": [
+        "The automaton usually does not care whether the incoming symbol is literally:",
+        "x y z or λ",
+        "It cares which relevant pattern positions match that symbol.",
+        "Thus two alphabet symbols producing the same characteristic vector have identical effects on the current parametric state.",
+        "This converts a potentially huge alphabet into a small set of local equality patterns.",
+        "For a window of length:",
+        "r",
+        "there are at most:",
+        "2^r",
+        "possible characteristic vectors, regardless of the size of the underlying alphabet."
+      ]
+    },
+    {
+      "heading": "Alphabet equivalence classes",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 8,
+      "word_count": 81,
+      "evidence": "Consider Unicode, where the alphabet can contain more than a million code points.",
+      "paragraphs": [
+        "Consider Unicode, where the alphabet can contain more than a million code points.",
+        "For a short pattern, nearly all of those symbols may have exactly the same relationship to the pattern:",
+        "they match no relevant position",
+        "and therefore share:",
+        "χ = 000...0",
+        "The DFA does not need one semantically different transition rule for every such character.",
+        "Transitions can be grouped into equivalence classes based on characteristic vectors.",
+        "This is an important reason automaton-based fuzzy search remains practical even over large alphabets."
+      ]
+    },
+    {
+      "heading": "Parametric states",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 11,
+      "word_count": 81,
+      "evidence": "Absolute pattern position is another source of apparent duplication.",
+      "paragraphs": [
+        "Absolute pattern position is another source of apparent duplication.",
+        "Consider deterministic states centered around:",
+        "pattern position 20",
+        "and:",
+        "pattern position 200",
+        "If their relative error configurations are identical, they have the same structural behavior except for their absolute offset in the pattern.",
+        "The state can therefore be decomposed into:",
+        "parametric state shape + absolute pattern offset",
+        "Conceptually:",
+        "absolute DFA state = (shape, position)",
+        "For fixed k , the number of possible state shapes is finite and independent of the pattern length."
+      ]
+    },
+    {
+      "heading": "Why this gives linear construction",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 7,
+      "word_count": 84,
+      "evidence": "Once the parametric state descriptions have been determined for a given distance bound, building a concrete automaton for a pattern mainly consists of instantiating those descriptions at successive pattern offsets.",
+      "paragraphs": [
+        "Once the parametric state descriptions have been determined for a given distance bound, building a concrete automaton for a pattern mainly consists of instantiating those descriptions at successive pattern offsets.",
+        "Thus:",
+        "fixed k ↓ finite set of parametric state types ↓ pattern positions 0..m ↓ concrete DFA states",
+        "and the amount of work grows linearly with:",
+        "m = |P|",
+        "for fixed k .",
+        "The constants increase substantially as k increases, which is why practical automaton implementations are usually most attractive for small edit radii."
+      ]
+    },
+    {
+      "heading": "Acceptance in a parametric state",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 10,
+      "word_count": 84,
+      "evidence": "Suppose a deterministic state is anchored at pattern offset:",
+      "paragraphs": [
+        "Suppose a deterministic state is anchored at pattern offset:",
+        "i",
+        "and the state shape indicates that the minimum error count represented by the state is:",
+        "e_min",
+        "The remaining pattern length is approximately:",
+        "m - i",
+        "If the remaining unmatched pattern symbols can be deleted without exceeding the total edit budget, the state can be accepting.",
+        "The basic acceptance principle is therefore:",
+        "current errors + minimum edits still required ≤ k",
+        "This is the finite-state version of a lower-bound test familiar from bounded dynamic programming."
+      ]
+    },
+    {
+      "heading": "Universal Levenshtein automata",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 8,
+      "word_count": 85,
+      "evidence": "The parametric viewpoint leads to an even more abstract idea: the universal Levenshtein automaton .",
+      "paragraphs": [
+        "The parametric viewpoint leads to an even more abstract idea: the universal Levenshtein automaton .",
+        "A normal fixed-word automaton is built for:",
+        "specific pattern P + specific distance bound k",
+        "A universal Levenshtein automaton is constructed for the distance bound but is independent of the particular pattern and alphabet.",
+        "It does not directly consume ordinary characters.",
+        "Instead it consumes characteristic information derived from the two words being compared.",
+        "Conceptually:",
+        "pattern + candidate symbols ↓ characteristic vectors ↓ universal automaton for k ↓ accept / reject"
+      ]
+    },
+    {
+      "heading": "Why it is called universal",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 6,
+      "word_count": 46,
+      "evidence": "For a fixed neighborhood bound:",
+      "paragraphs": [
+        "For a fixed neighborhood bound:",
+        "k",
+        "the same universal machine can be reused for:",
+        "\"hello\" \"algorithm\" \"levenshtein\" DNA sequences token sequences ...",
+        "provided the required characteristic-vector sequence is generated correctly.",
+        "The pattern-dependent information has been moved out of the automaton topology and into the input encoding."
+      ]
+    },
+    {
+      "heading": "Universal neighborhood decision",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 13,
+      "word_count": 52,
+      "evidence": "Let two words be:",
+      "paragraphs": [
+        "Let two words be:",
+        "W and V",
+        "A universal Levenshtein construction derives a sequence of bit vectors:",
+        "χ(W,V)",
+        "encoding the relevant equality relationships between the two words.",
+        "The universal automaton accepts that sequence exactly when:",
+        "d_L(W,V) ≤ k",
+        "This connects several areas:",
+        "finite-state automata;",
+        "dynamic programming;",
+        "edit distance;",
+        "bit-vector representations;",
+        "approximate matching."
+      ]
+    },
+    {
+      "heading": "Levenshtein automata and dictionaries",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 3,
+      "word_count": 45,
+      "evidence": "The most important practical application of Levenshtein automata is not testing one isolated candidate.",
+      "paragraphs": [
+        "The most important practical application of Levenshtein automata is not testing one isolated candidate.",
+        "If only two strings are being compared, an optimized dynamic-programming or bit-vector implementation may be simpler.",
+        "Automata become especially powerful when the candidate strings themselves are stored in a structured lexicon."
+      ]
+    },
+    {
+      "heading": "Trie representation",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 7,
+      "word_count": 66,
+      "evidence": "Suppose a dictionary contains:",
+      "paragraphs": [
+        "Suppose a dictionary contains:",
+        "car card care cat dog door",
+        "A trie shares common prefixes:",
+        "root ├── c │ └── a │ ├── r* │ │ ├── d* │ │ └── e* │ └── t* └── d └── o ├── g* └── o └── r*",
+        "where:",
+        "* = dictionary word endpoint",
+        "The dictionary is no longer a collection of unrelated strings. Common prefixes are represented once."
+      ]
+    },
+    {
+      "heading": "Traversing trie and Levenshtein DFA together",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 16,
+      "word_count": 51,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "q_D",
+        "be a trie state and:",
+        "q_L",
+        "a Levenshtein DFA state.",
+        "The search state is the pair:",
+        "(q_D, q_L)",
+        "For a trie edge labeled:",
+        "c",
+        "compute:",
+        "q'_L = δ_L(q_L,c)",
+        "If:",
+        "q'_L",
+        "is dead, the entire dictionary branch can be discarded.",
+        "If not, descend into the trie child while carrying:",
+        "q'_L"
+      ]
+    },
+    {
+      "heading": "Trie-intersection pseudocode",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 1,
+      "word_count": 34,
+      "evidence": "function fuzzy_dictionary_search( dictionary_node, lev_state, prefix ): if dictionary_node.is_final and levenshtein_is_accepting(lev_state): emit(prefix) for each (symbol, child) in dictionary_node.outgoing_edges: next_lev = levenshtein_transition( lev_state, symbol ) if next_lev != DEAD: fuzzy_dictionary_search( child, next_lev, prefix + symbol )",
+      "paragraphs": [
+        "function fuzzy_dictionary_search( dictionary_node, lev_state, prefix ): if dictionary_node.is_final and levenshtein_is_accepting(lev_state): emit(prefix) for each (symbol, child) in dictionary_node.outgoing_edges: next_lev = levenshtein_transition( lev_state, symbol ) if next_lev != DEAD: fuzzy_dictionary_search( child, next_lev, prefix + symbol )"
+      ]
+    },
+    {
+      "heading": "The language-intersection interpretation",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 9,
+      "word_count": 53,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "D",
+        "be the language of all strings in the dictionary.",
+        "The Levenshtein automaton recognizes:",
+        "Lₖ(P)",
+        "The desired correction candidates are:",
+        "D ∩ Lₖ(P)",
+        "The simultaneous traversal is therefore a product-automaton computation for the intersection of two regular languages.",
+        "DICTIONARY AUTOMATON × LEVENSHTEIN AUTOMATON ↓ WORDS IN THE DICTIONARY WITH DISTANCE ≤ k"
+      ]
+    },
+    {
+      "heading": "Why this can outperform brute-force dictionary scanning",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 12,
+      "word_count": 65,
+      "evidence": "A brute-force approach performs:",
+      "paragraphs": [
+        "A brute-force approach performs:",
+        "for every dictionary word V: compute d(P,V)",
+        "If the dictionary contains:",
+        "N",
+        "terms, all N words are examined independently.",
+        "Automaton/trie intersection instead evaluates a common prefix once.",
+        "More importantly, if the Levenshtein state becomes impossible after prefix:",
+        "xyz",
+        "then every dictionary term beginning with:",
+        "xyz...",
+        "is rejected simultaneously.",
+        "A single dead transition can therefore eliminate thousands or millions of candidate strings."
+      ]
+    },
+    {
+      "heading": "Example of branch pruning",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 10,
+      "word_count": 72,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "query = \"cat\" k = 1",
+        "and a dictionary contains a large branch beginning:",
+        "geo...",
+        "After enough symbols are consumed, the Levenshtein automaton can reach a state from which no continuation is capable of producing a word within distance 1 of:",
+        "cat",
+        "At that point:",
+        "geo...",
+        "and every descendant of that trie node can be skipped.",
+        "This is fundamentally different from computing a complete pairwise edit distance for each descendant term."
+      ]
+    },
+    {
+      "heading": "Finite-state dictionaries",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 9,
+      "word_count": 56,
+      "evidence": "A trie is only one possible lexical representation.",
+      "paragraphs": [
+        "A trie is only one possible lexical representation.",
+        "A dictionary can also be represented by:",
+        "a deterministic finite automaton;",
+        "a minimal acyclic finite-state automaton;",
+        "a finite-state transducer;",
+        "a compact term-index FST.",
+        "These structures can share both prefixes and, in some cases, suffix-equivalent subgraphs.",
+        "The same principle applies:",
+        "dictionary state + Levenshtein state = product search state"
+      ]
+    },
+    {
+      "heading": "A generic product traversal",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 2,
+      "word_count": 42,
+      "evidence": "function intersect( dictionary_state, levenshtein_state ): if dictionary_state.final and levenshtein_state.accepting: report dictionary entry for transition dictionary_state --c--> dictionary_next: lev_next = delta( levenshtein_state, c ) if lev_next != DEAD: intersect( dictionary_next, lev_next )",
+      "paragraphs": [
+        "function intersect( dictionary_state, levenshtein_state ): if dictionary_state.final and levenshtein_state.accepting: report dictionary entry for transition dictionary_state --c--> dictionary_next: lev_next = delta( levenshtein_state, c ) if lev_next != DEAD: intersect( dictionary_next, lev_next )",
+        "The search enumerates only dictionary paths compatible with the Levenshtein neighborhood."
+      ]
+    },
+    {
+      "heading": "Automata avoid explicit edit-neighborhood generation",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 10,
+      "word_count": 82,
+      "evidence": "Another naive fuzzy-search strategy is to generate every word obtainable from the query using up to k edits and then perform exact dictionary lookups.",
+      "paragraphs": [
+        "Another naive fuzzy-search strategy is to generate every word obtainable from the query using up to k edits and then perform exact dictionary lookups.",
+        "Even for:",
+        "k = 1",
+        "a pattern of length m over an alphabet of size σ can produce operation candidates on the order of:",
+        "substitutions: m(σ-1) deletions: m insertions: (m+1)σ",
+        "before duplicate strings are removed.",
+        "For:",
+        "k = 2",
+        "the combinatorial neighborhood becomes dramatically larger.",
+        "The automaton represents the entire neighborhood implicitly without enumerating all possible edited strings."
+      ]
+    },
+    {
+      "heading": "Automaton construction versus automaton execution",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 11,
+      "word_count": 91,
+      "evidence": "Two separate costs should be distinguished:",
+      "paragraphs": [
+        "Two separate costs should be distinguished:",
+        "constructing or instantiating the Levenshtein automaton;",
+        "running it against candidates or a dictionary.",
+        "For a fixed small k , the Schulz–Mihov deterministic construction is linear in pattern length.",
+        "Once a DFA is available, reading a candidate of length n requires:",
+        "n",
+        "deterministic transition steps.",
+        "If transition lookup is constant-time:",
+        "candidate recognition = O(n)",
+        "after construction.",
+        "This does not mean fuzzy dictionary search is simply O(n) , because dictionary traversal can visit many product states. Its cost depends on how strongly the automaton prunes the dictionary."
+      ]
+    },
+    {
+      "heading": "Search complexity depends on the neighborhood",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 15,
+      "word_count": 65,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "V",
+        "be the number of dictionary edges actually visited during product traversal.",
+        "Then search work is approximately proportional to:",
+        "V",
+        "plus result-output costs.",
+        "When:",
+        "k",
+        "is small, pruning can be very strong.",
+        "When:",
+        "k",
+        "is large, many dictionary branches remain viable and:",
+        "V",
+        "can approach the size of the dictionary structure.",
+        "No automaton can avoid the fundamental cost of returning an enormous result set."
+      ]
+    },
+    {
+      "heading": "The effect of k",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 3,
+      "word_count": 49,
+      "evidence": "Increasing the edit radius has several simultaneous effects.",
+      "paragraphs": [
+        "Increasing the edit radius has several simultaneous effects.",
+        "larger k ↓ more NFA rows ↓ more possible alignment hypotheses ↓ more deterministic state shapes ↓ larger accepted language ↓ less dictionary pruning ↓ more output candidates",
+        "This is why practical fuzzy term search typically uses very small edit distances."
+      ]
+    },
+    {
+      "heading": "k = 0",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "k = 0",
+        "the Levenshtein automaton degenerates to an ordinary exact-string automaton:",
+        "q₀ --p₁--> q₁ --p₂--> q₂ ... --pₘ--> qₘ",
+        "No insertion, deletion, or substitution transitions exist.",
+        "The accepted language contains exactly:",
+        "{P}"
+      ]
+    },
+    {
+      "heading": "k = 1",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "k = 1",
+        "the machine must represent:",
+        "the exact path;",
+        "one insertion at any point;",
+        "one deletion at any point;",
+        "one substitution at any point.",
+        "This remains compact enough that deterministic automata are very practical."
+      ]
+    },
+    {
+      "heading": "k = 2 and beyond",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 4,
+      "word_count": 61,
+      "evidence": "At distance 2, edit operations can interact:",
+      "paragraphs": [
+        "At distance 2, edit operations can interact:",
+        "insert + delete substitute + insert delete + delete substitute + substitute ...",
+        "The number of possible NFA hypotheses and deterministic state configurations increases substantially.",
+        "The growth is driven not by pattern length alone but by the number of structurally distinct ways that up to k edits can shift alignments relative to the pattern."
+      ]
+    },
+    {
+      "heading": "Why automata are especially suitable for term dictionaries",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 13,
+      "word_count": 49,
+      "evidence": "Term dictionaries possess exactly the structure automata can exploit:",
+      "paragraphs": [
+        "Term dictionaries possess exactly the structure automata can exploit:",
+        "shared prefixes;",
+        "finite symbolic alphabets;",
+        "many repeated searches;",
+        "short to moderate string lengths;",
+        "small practical edit radii.",
+        "This makes Levenshtein automata a natural mechanism for:",
+        "spell correction;",
+        "fuzzy term expansion;",
+        "query correction;",
+        "OCR lexicon lookup;",
+        "name lookup;",
+        "dictionary-backed entity matching."
+      ]
+    },
+    {
+      "heading": "Apache Lucene as an engineering example",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 6,
+      "word_count": 77,
+      "evidence": "Apache Lucene contains a production implementation of deterministic Levenshtein automata based on the Schulz–Mihov approach.",
+      "paragraphs": [
+        "Apache Lucene contains a production implementation of deterministic Levenshtein automata based on the Schulz–Mihov approach.",
+        "Its implementation uses parametric descriptions of the automata and creates deterministic finite automata for specific input terms.",
+        "Conceptually, a Lucene-style absolute state can be viewed as:",
+        "parametric state + pattern offset",
+        "The automaton transition additionally receives a characteristic vector describing how the current input symbol matches the relevant portion of the pattern.",
+        "This is very close to the theoretical architecture described above."
+      ]
+    },
+    {
+      "heading": "Parametric transition table",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "For fixed k , transitions can conceptually be represented as:",
+      "paragraphs": [
+        "For fixed k , transitions can conceptually be represented as:",
+        "transition( parametric_state, characteristic_vector, boundary_condition ) = ( next_parametric_state, offset_increment )",
+        "The actual word determines the characteristic vector.",
+        "The state-transition logic itself can be precomputed.",
+        "This separates:",
+        "distance-model structure from query-word contents"
+      ]
+    },
+    {
+      "heading": "Minimal boundary",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 12,
+      "word_count": 65,
+      "evidence": "A deterministic state can have several active pattern positions.",
+      "paragraphs": [
+        "A deterministic state can have several active pattern positions.",
+        "Let:",
+        "i_min",
+        "be its leftmost relevant pattern position.",
+        "Instead of storing every position absolutely, represent them relative to:",
+        "i_min",
+        "and store the absolute boundary separately.",
+        "For example:",
+        "absolute active positions: 20#1 21#0 23#2",
+        "can be normalized structurally as something resembling:",
+        "0#1 1#0 3#2 offset = 20",
+        "The normalized state shape can reappear at many other offsets."
+      ]
+    },
+    {
+      "heading": "Why the final pattern boundary needs special handling",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 9,
+      "word_count": 65,
+      "evidence": "Near the end of a pattern, the normal:",
+      "paragraphs": [
+        "Near the end of a pattern, the normal:",
+        "2k+1",
+        "local window may extend beyond the word.",
+        "The number of available pattern symbols therefore shrinks.",
+        "Parametric automata commonly distinguish boundary cases such as:",
+        "position = m position = m-1 position = m-2 ...",
+        "because transition behavior differs when fewer pattern symbols remain.",
+        "This is one reason a parametric description includes both:",
+        "state shape and current position"
+      ]
+    },
+    {
+      "heading": "DFA minimization",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 7,
+      "word_count": 62,
+      "evidence": "The specialized deterministic automaton does not necessarily need to be minimal to be useful.",
+      "paragraphs": [
+        "The specialized deterministic automaton does not necessarily need to be minimal to be useful.",
+        "Two distinct DFA states could theoretically recognize identical residual languages and therefore be mergeable.",
+        "Full DFA minimization can reduce the state count, but it introduces its own construction cost.",
+        "In many production systems:",
+        "fast construction + compact enough DFA",
+        "is preferable to:",
+        "expensive construction + provably minimal DFA"
+      ]
+    },
+    {
+      "heading": "Dead states",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 9,
+      "word_count": 57,
+      "evidence": "A conceptual DFA has a dead state:",
+      "paragraphs": [
+        "A conceptual DFA has a dead state:",
+        "∅",
+        "representing:",
+        "No alignment hypothesis remains within the edit budget.",
+        "Every transition from this state returns to itself.",
+        "A practical automaton used for trie intersection does not necessarily need to materialize this state.",
+        "A missing transition can simply mean:",
+        "prune this dictionary branch",
+        "which saves both memory and traversal work."
+      ]
+    },
+    {
+      "heading": "Exact prefixes",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "Some fuzzy-search systems require a prefix of length:",
+      "paragraphs": [
+        "Some fuzzy-search systems require a prefix of length:",
+        "r",
+        "to match exactly, while allowing edit errors only after that prefix.",
+        "The language becomes:",
+        "exact_prefix(P,r) concatenated with fuzzy_suffix_language",
+        "This can be represented by chaining:",
+        "r exact transitions ↓ Levenshtein automaton for the remaining pattern",
+        "Requiring an exact prefix can drastically reduce candidate branching in large dictionaries."
+      ]
+    },
+    {
+      "heading": "Automata versus Wagner–Fischer",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 1,
+      "word_count": 58,
+      "evidence": "Property Wagner–Fischer Levenshtein automaton Main problem Compute distance between a pair of sequences Recognize all strings within a fixed radius Representation Dynamic-programming matrix Finite-state machine Per candidate DP computation Automaton traversal Dictionary intersection Not intrinsic Natural Arbitrary weighted costs Natural Requires a more general automaton model Best role General exact pairwise baseline Repeated bounded search in structured lexica",
+      "paragraphs": [
+        "Property Wagner–Fischer Levenshtein automaton Main problem Compute distance between a pair of sequences Recognize all strings within a fixed radius Representation Dynamic-programming matrix Finite-state machine Per candidate DP computation Automaton traversal Dictionary intersection Not intrinsic Natural Arbitrary weighted costs Natural Requires a more general automaton model Best role General exact pairwise baseline Repeated bounded search in structured lexica"
+      ]
+    },
+    {
+      "heading": "Automata versus Ukkonen",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 3,
+      "word_count": 75,
+      "evidence": "The Ukkonen algorithm and Levenshtein automata both exploit a small edit bound but in different ways.",
+      "paragraphs": [
+        "The Ukkonen algorithm and Levenshtein automata both exploit a small edit bound but in different ways.",
+        "Ukkonen: candidate pair ↓ restrict DP computation to viable diagonals Levenshtein automaton: pattern + k ↓ compile all viable bounded alignments into finite state",
+        "Property Ukkonen Levenshtein automata Small k exploited? Yes Yes Main technique Banded / distance-sensitive DP Finite-state compilation One pair Very natural Construction overhead may be unnecessary Trie/FST dictionary Requires external traversal logic Natural product traversal"
+      ]
+    },
+    {
+      "heading": "Automata versus Myers bit vectors",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 4,
+      "word_count": 74,
+      "evidence": "The Myers bit-vector algorithm also converts dynamic-programming structure into compact machine state.",
+      "paragraphs": [
+        "The Myers bit-vector algorithm also converts dynamic-programming structure into compact machine state.",
+        "But the representation is different:",
+        "Myers: bit-vector representation of DP differences Levenshtein DFA: finite-state representation of bounded alignment configurations",
+        "Property Myers Levenshtein automaton Primary acceleration Machine-word parallelism Precomputed finite-state transitions Dependence on k Basic scan largely independent of k Automaton structure strongly depends on k Trie intersection Possible but less structurally direct Natural Pattern preprocessing Equality masks Automaton construction / parametric instantiation"
+      ]
+    },
+    {
+      "heading": "Automata versus explicit neighbor generation",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "An explicit generator constructs candidates such as:",
+      "paragraphs": [
+        "An explicit generator constructs candidates such as:",
+        "cat bat cut car at cats coat ...",
+        "and then performs dictionary lookups.",
+        "A Levenshtein automaton instead recognizes this entire set symbolically.",
+        "Method Main weakness Generate all edited strings Combinatorial candidate explosion Brute-force dictionary DP Examines every dictionary term Automaton × trie Visits only lexicon branches consistent with the error neighborhood"
+      ]
+    },
+    {
+      "heading": "Automata and filtering",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 7,
+      "word_count": 59,
+      "evidence": "Levenshtein automata do not make every other filtering strategy obsolete.",
+      "paragraphs": [
+        "Levenshtein automata do not make every other filtering strategy obsolete.",
+        "A large system can combine:",
+        "length filter ↓ prefix constraints ↓ dictionary automaton ↓ Levenshtein DFA ↓ candidate ranking",
+        "or:",
+        "q-gram candidate generation ↓ Levenshtein automaton verification",
+        "The correct architecture depends on collection size, query volume, string lengths, and error thresholds.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Levenshtein automata are recognition machines, not ranking models",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 14,
+      "word_count": 70,
+      "evidence": "The automaton naturally answers:",
+      "paragraphs": [
+        "The automaton naturally answers:",
+        "d(P,V) ≤ k ?",
+        "It does not by itself determine which of several accepted candidates should rank first.",
+        "Suppose:",
+        "query = \"bok\" book distance 1 box distance 1 boy distance 1",
+        "All can be accepted by a degree-1 automaton.",
+        "Ranking may additionally use:",
+        "exact edit distance;",
+        "word frequency;",
+        "language probability;",
+        "query frequency;",
+        "field relevance;",
+        "semantic context.",
+        "A fuzzy-search system is therefore larger than its Levenshtein automaton."
+      ]
+    },
+    {
+      "heading": "Recovering the exact edit distance",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "A degree- k automaton fundamentally gives a bounded yes/no answer.",
+      "paragraphs": [
+        "A degree- k automaton fundamentally gives a bounded yes/no answer.",
+        "Several strategies can recover the exact distance for accepted terms."
+      ]
+    },
+    {
+      "heading": "Method 1: annotate states",
+      "level": 3,
+      "id": "ux-section-75",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "A deterministic state can retain information about the minimum error count represented by its active configurations.",
+      "paragraphs": [
+        "A deterministic state can retain information about the minimum error count represented by its active configurations."
+      ]
+    },
+    {
+      "heading": "Method 2: run smaller automata",
+      "level": 3,
+      "id": "ux-section-76",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "For accepted candidate V :",
+      "paragraphs": [
+        "For accepted candidate V :",
+        "test k = 0 test k = 1 ...",
+        "until acceptance occurs."
+      ]
+    },
+    {
+      "heading": "Method 3: verify candidate separately",
+      "level": 3,
+      "id": "ux-section-77",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "Use the automaton only for candidate generation and calculate exact distance afterward with:",
+      "paragraphs": [
+        "Use the automaton only for candidate generation and calculate exact distance afterward with:",
+        "Wagner–Fischer;",
+        "Ukkonen;",
+        "Myers bit vectors.",
+        "The third architecture is common because candidate generation and scoring can be optimized independently."
+      ]
+    },
+    {
+      "heading": "Transpositions",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 8,
+      "word_count": 75,
+      "evidence": "Classical Levenshtein automata recognize the insertion/deletion/substitution distance.",
+      "paragraphs": [
+        "Classical Levenshtein automata recognize the insertion/deletion/substitution distance.",
+        "They do not treat:",
+        "ab → ba",
+        "as one primitive edit.",
+        "Supporting adjacent transpositions requires additional state because the automaton must remember enough history to verify that two neighboring symbols have been exchanged.",
+        "A transposition-aware automaton therefore represents a different distance model.",
+        "This distinction is particularly important because practical search software often uses an Optimal String Alignment-style transposition extension rather than unrestricted Damerau–Levenshtein distance.",
+        "See Damerau–Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Transposition-aware fuzzy search",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 10,
+      "word_count": 48,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "hte the",
+        "Classical Levenshtein distance normally requires two edits:",
+        "h → t t → h",
+        "A transposition-aware model can count:",
+        "ht → th",
+        "as one operation.",
+        "If a search product advertises:",
+        "edit distance = 1",
+        "for this pair, its automaton is not recognizing the classical Levenshtein neighborhood."
+      ]
+    },
+    {
+      "heading": "Weighted edit costs",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 13,
+      "word_count": 73,
+      "evidence": "The classical automaton assumes every edit consumes exactly one unit of error budget.",
+      "paragraphs": [
+        "The classical automaton assumes every edit consumes exactly one unit of error budget.",
+        "A weighted model might define:",
+        "substitute(e,r) = 0.2 substitute(e,q) = 1.3 insert(x) = 0.7",
+        "The simple state coordinate:",
+        "e ∈ {0,1,...,k}",
+        "is no longer sufficient when arbitrary real-valued costs are allowed.",
+        "Possible generalized approaches include:",
+        "weighted finite-state automata;",
+        "weighted finite-state transducers;",
+        "integer-scaled bounded cost states;",
+        "dynamic programming.",
+        "The exact construction depends on the cost algebra.",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Levenshtein automata and finite-state transducers",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 14,
+      "word_count": 89,
+      "evidence": "An ordinary Levenshtein automaton recognizes candidate strings relative to one fixed pattern.",
+      "paragraphs": [
+        "An ordinary Levenshtein automaton recognizes candidate strings relative to one fixed pattern.",
+        "A finite-state transducer can represent the edit relation more directly:",
+        "input sequence ↓ edit transducer ↓ output sequence",
+        "Transitions can map:",
+        "a : a",
+        "for a match,",
+        "a : b",
+        "for substitution,",
+        "ε : b",
+        "for insertion, and:",
+        "a : ε",
+        "for deletion.",
+        "Composing such a transducer with a fixed pattern or dictionary is another finite-state route to approximate matching.",
+        "Levenshtein automata can therefore be understood as one specialized compiled representation of a broader finite-state edit relation."
+      ]
+    },
+    {
+      "heading": "Unicode and the automaton alphabet",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "The automaton operates on sequence symbols. It does not define what one symbol means.",
+      "paragraphs": [
+        "The automaton operates on sequence symbols. It does not define what one symbol means.",
+        "Possible units include:",
+        "bytes;",
+        "UTF-8 code units;",
+        "UTF-16 code units;",
+        "Unicode code points;",
+        "grapheme clusters;",
+        "tokens.",
+        "These choices create different automata and different accepted languages."
+      ]
+    },
+    {
+      "heading": "Canonical-equivalent Unicode strings",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "The visible character:",
+      "paragraphs": [
+        "The visible character:",
+        "é",
+        "can be represented as:",
+        "U+00E9",
+        "or:",
+        "U+0065 U+0301",
+        "Without normalization, a code-point automaton sees different sequences.",
+        "Therefore canonical normalization should generally occur before automaton construction when canonically equivalent text is intended to compare identically."
+      ]
+    },
+    {
+      "heading": "Code point versus grapheme automata",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 5,
+      "word_count": 55,
+      "evidence": "A user-perceived character can contain several Unicode code points.",
+      "paragraphs": [
+        "A user-perceived character can contain several Unicode code points.",
+        "If the intended edit unit is a grapheme cluster:",
+        "raw text ↓ Unicode normalization ↓ grapheme segmentation ↓ map each grapheme to a symbolic token ↓ construct Levenshtein automaton",
+        "The finite-state theory is unchanged; only the alphabet elements have changed.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Large alphabets do not necessarily imply huge transition tables",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 10,
+      "word_count": 68,
+      "evidence": "A naive DFA over Unicode might seem to require one transition for every code point from every state.",
+      "paragraphs": [
+        "A naive DFA over Unicode might seem to require one transition for every code point from every state.",
+        "This is unnecessary.",
+        "Transition behavior can be partitioned into:",
+        "characters occurring in relevant pattern positions + all remaining characters",
+        "or, more generally, characteristic-vector equivalence classes.",
+        "Intervals of equivalent Unicode code points can also be represented as transition ranges.",
+        "Thus:",
+        "alphabet size",
+        "does not directly determine:",
+        "number of semantically distinct transitions"
+      ]
+    },
+    {
+      "heading": "Token-level automata",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 10,
+      "word_count": 48,
+      "evidence": "A Levenshtein automaton can operate over words or tokens instead of characters.",
+      "paragraphs": [
+        "A Levenshtein automaton can operate over words or tokens instead of characters.",
+        "For example:",
+        "P = [the, quick, brown, fox]",
+        "with:",
+        "k = 1",
+        "can accept:",
+        "[the, brown, fox]",
+        "through one token deletion.",
+        "The alphabet is now a vocabulary of token identifiers.",
+        "The automaton construction remains structurally identical."
+      ]
+    },
+    {
+      "heading": "Applications in spelling correction",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 6,
+      "word_count": 67,
+      "evidence": "A classic lexical correction pipeline is:",
+      "paragraphs": [
+        "A classic lexical correction pipeline is:",
+        "garbled word ↓ Levenshtein automaton × dictionary trie / FSA ↓ candidate words ↓ frequency / language ranking ↓ correction suggestions",
+        "This was a central motivation for the Schulz–Mihov work.",
+        "The automaton provides exact candidate completeness with respect to the chosen Levenshtein radius:",
+        "every dictionary word with distance ≤ k can be generated",
+        "without requiring exhaustive comparison against every dictionary entry."
+      ]
+    },
+    {
+      "heading": "Applications in OCR correction",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 8,
+      "word_count": 56,
+      "evidence": "OCR frequently produces local character errors such as:",
+      "paragraphs": [
+        "OCR frequently produces local character errors such as:",
+        "substitutions between visually similar characters;",
+        "missing characters;",
+        "spurious characters.",
+        "A dictionary-backed correction system can therefore use a Levenshtein automaton to enumerate lexically plausible candidates.",
+        "However, ordinary unit-cost Levenshtein distance does not distinguish:",
+        "common OCR confusion from unlikely substitution",
+        "so weighted error models or channel probabilities may improve ranking."
+      ]
+    },
+    {
+      "heading": "Applications in search engines",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 4,
+      "word_count": 61,
+      "evidence": "A search engine term dictionary can use automata to enumerate indexed terms close to a misspelled query term.",
+      "paragraphs": [
+        "A search engine term dictionary can use automata to enumerate indexed terms close to a misspelled query term.",
+        "A typical architecture is:",
+        "query term ↓ optional exact prefix ↓ Levenshtein automaton × indexed term dictionary ↓ matching indexed terms ↓ term expansion / ranking ↓ document retrieval",
+        "The automaton operates at the term-dictionary layer; it does not itself score complete documents."
+      ]
+    },
+    {
+      "heading": "Applications in names and identifiers",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 9,
+      "word_count": 52,
+      "evidence": "Automata can also retrieve candidate strings for:",
+      "paragraphs": [
+        "Automata can also retrieve candidate strings for:",
+        "personal names;",
+        "place names;",
+        "product identifiers;",
+        "catalog terms;",
+        "usernames.",
+        "But a small edit distance does not establish that two strings refer to the same real-world entity.",
+        "lexical similarity ≠ entity identity",
+        "Automata should therefore generate candidate evidence rather than make an identity decision by themselves."
+      ]
+    },
+    {
+      "heading": "Finite automata versus semantic similarity",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "Levenshtein automata recognize lexical edit neighborhoods.",
+      "paragraphs": [
+        "Levenshtein automata recognize lexical edit neighborhoods.",
+        "They do not recognize semantic neighborhoods.",
+        "car automobile",
+        "are semantically similar but have large Levenshtein distance.",
+        "car cat",
+        "have edit distance 1 but different meanings.",
+        "Therefore:",
+        "Levenshtein automaton = surface sequence recognizer not = semantic similarity model",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Pruning through residual feasibility",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 6,
+      "word_count": 62,
+      "evidence": "A DFA state represents not only the edits already used but also which portions of the pattern remain reachable.",
+      "paragraphs": [
+        "A DFA state represents not only the edits already used but also which portions of the pattern remain reachable.",
+        "If every active configuration requires more remaining edits than available:",
+        "minimum possible final cost > k",
+        "the state is dead.",
+        "This is analogous to lower-bound pruning in bounded dynamic programming.",
+        "In automaton form, the decision has already been compiled into the transition graph."
+      ]
+    },
+    {
+      "heading": "Automata as compiled dynamic programming",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 3,
+      "word_count": 51,
+      "evidence": "This perspective is useful enough to state explicitly.",
+      "paragraphs": [
+        "This perspective is useful enough to state explicitly.",
+        "Wagner–Fischer candidate symbol arrives ↓ calculate new DP row ↓ repeat Levenshtein DFA all relevant bounded DP row forms precomputed as states ↓ candidate symbol arrives ↓ table transition ↓ repeat",
+        "The DFA can therefore be understood as a compiled bounded dynamic program."
+      ]
+    },
+    {
+      "heading": "Why compilation helps dictionary search",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 8,
+      "word_count": 61,
+      "evidence": "Dynamic programming usually assumes the next candidate string is already known.",
+      "paragraphs": [
+        "Dynamic programming usually assumes the next candidate string is already known.",
+        "A dictionary trie has many possible next characters.",
+        "With a DFA state:",
+        "q",
+        "the search procedure can evaluate each outgoing dictionary symbol independently:",
+        "a → δ(q,a) b → δ(q,b) c → δ(q,c) ...",
+        "and immediately know which branches remain viable.",
+        "This makes the edit model compositional with the dictionary graph."
+      ]
+    },
+    {
+      "heading": "NFA simulation can also be useful",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "A deterministic automaton is not always mandatory.",
+      "paragraphs": [
+        "A deterministic automaton is not always mandatory.",
+        "For small k , a compact active-state representation can simulate the NFA directly.",
+        "Possible representations include:",
+        "sets of (i,e) pairs;",
+        "bitsets;",
+        "small fixed arrays;",
+        "SIMD-friendly masks.",
+        "The trade-off is:",
+        "NFA: cheap construction, more work per consumed symbol DFA: more construction, cheap deterministic transition"
+      ]
+    },
+    {
+      "heading": "When DFA construction pays off",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 6,
+      "word_count": 43,
+      "evidence": "A deterministic machine is particularly attractive when:",
+      "paragraphs": [
+        "A deterministic machine is particularly attractive when:",
+        "the same query is tested against many candidates;",
+        "the query drives a large dictionary traversal;",
+        "transition tables can be reused;",
+        "latency of each transition matters.",
+        "For one short candidate comparison, construction overhead can outweigh the benefit."
+      ]
+    },
+    {
+      "heading": "Query reuse",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 6,
+      "word_count": 39,
+      "evidence": "Suppose the same pattern is used for:",
+      "paragraphs": [
+        "Suppose the same pattern is used for:",
+        "1,000,000",
+        "candidate strings.",
+        "The automaton can be constructed once:",
+        "P ↓ construct DFA once ↓ candidate 1 candidate 2 candidate 3 ... candidate 1,000,000",
+        "The construction cost is amortized across the workload."
+      ]
+    },
+    {
+      "heading": "Dictionary reuse",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 5,
+      "word_count": 61,
+      "evidence": "The opposite side can also be preprocessed.",
+      "paragraphs": [
+        "The opposite side can also be preprocessed.",
+        "The dictionary trie or finite-state lexicon is normally built once and reused for many fuzzy queries:",
+        "dictionary ↓ persistent FSA/FST query P₁ → automaton A₁ → intersect query P₂ → automaton A₂ → intersect query P₃ → automaton A₃ → intersect",
+        "This creates an efficient separation between:",
+        "persistent corpus structure and query-specific error model"
+      ]
+    },
+    {
+      "heading": "Automaton state explosion",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 9,
+      "word_count": 61,
+      "evidence": "The general subset-construction problem warns that:",
+      "paragraphs": [
+        "The general subset-construction problem warns that:",
+        "NFA states → potentially many DFA subsets",
+        "Specialized Levenshtein construction dramatically controls this for small fixed k , but the underlying combinatorial pressure remains visible as k grows.",
+        "More edits allow:",
+        "more simultaneous pattern offsets;",
+        "more error-count combinations;",
+        "more relative alignment configurations;",
+        "more characteristic-vector responses.",
+        "The automaton constant therefore grows rapidly with the distance degree."
+      ]
+    },
+    {
+      "heading": "The \"wall effect\"",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 5,
+      "word_count": 71,
+      "evidence": "A broad challenge in approximate dictionary search is that once the tolerated distance becomes too large relative to word length, a substantial fraction of the lexicon can lie within or near the query neighborhood.",
+      "paragraphs": [
+        "A broad challenge in approximate dictionary search is that once the tolerated distance becomes too large relative to word length, a substantial fraction of the lexicon can lie within or near the query neighborhood.",
+        "At that point:",
+        "automaton pruning weakens + result set grows + dictionary traversal expands",
+        "No implementation detail can fully eliminate this information-theoretic problem.",
+        "Large fuzzy radii are therefore often better handled by alternative candidate-generation or similarity-search architectures."
+      ]
+    },
+    {
+      "heading": "Distance threshold should depend on string length",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 12,
+      "word_count": 51,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "P = \"cat\"",
+        "a radius:",
+        "k = 2",
+        "permits very large relative variation.",
+        "For a 30-character technical identifier:",
+        "k = 2",
+        "is much more restrictive.",
+        "Thus automaton size is only one consideration.",
+        "Retrieval precision also depends on:",
+        "k / pattern length",
+        "and on the statistical structure of the term dictionary."
+      ]
+    },
+    {
+      "heading": "Normalization and case folding",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 7,
+      "word_count": 56,
+      "evidence": "If search is intended to be case-insensitive:",
+      "paragraphs": [
+        "If search is intended to be case-insensitive:",
+        "Algorithm algorithm",
+        "should normally be normalized before automaton construction.",
+        "Likewise, punctuation, diacritics, width variants, or compatibility characters may require application-specific preprocessing.",
+        "The complete pipeline is:",
+        "raw query ↓ normalization ↓ segmentation ↓ symbol sequence ↓ Levenshtein automaton ↓ dictionary traversal",
+        "The automaton can only compare the representation it receives."
+      ]
+    },
+    {
+      "heading": "Testing a Levenshtein automaton",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 10,
+      "word_count": 52,
+      "evidence": "A strong implementation should be differential-tested against a trusted edit-distance implementation.",
+      "paragraphs": [
+        "A strong implementation should be differential-tested against a trusted edit-distance implementation.",
+        "For randomly generated pattern/candidate pairs:",
+        "d = wagner_fischer(pattern,candidate) accepted = automaton_accepts(candidate) assert( accepted == (d <= k) )",
+        "This test should be repeated across:",
+        "many pattern lengths;",
+        "all supported values of k ;",
+        "different alphabets;",
+        "repeated characters;",
+        "empty strings;",
+        "Unicode inputs."
+      ]
+    },
+    {
+      "heading": "Exact match",
+      "level": 3,
+      "id": "ux-section-105",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "P = \"book\" V = \"book\" k = 0 accept",
+      "paragraphs": [
+        "P = \"book\" V = \"book\" k = 0 accept"
+      ]
+    },
+    {
+      "heading": "Single insertion",
+      "level": 3,
+      "id": "ux-section-106",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "P = \"book\" V = \"books\" k = 1 accept",
+      "paragraphs": [
+        "P = \"book\" V = \"books\" k = 1 accept"
+      ]
+    },
+    {
+      "heading": "Single deletion",
+      "level": 3,
+      "id": "ux-section-107",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "P = \"book\" V = \"bok\" k = 1 accept",
+      "paragraphs": [
+        "P = \"book\" V = \"bok\" k = 1 accept"
+      ]
+    },
+    {
+      "heading": "Single substitution",
+      "level": 3,
+      "id": "ux-section-108",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "P = \"book\" V = \"boak\" k = 1 accept",
+      "paragraphs": [
+        "P = \"book\" V = \"boak\" k = 1 accept"
+      ]
+    },
+    {
+      "heading": "Distance one beyond threshold",
+      "level": 3,
+      "id": "ux-section-109",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "P = \"book\" V = \"back\" k = 1 reject",
+      "paragraphs": [
+        "P = \"book\" V = \"back\" k = 1 reject"
+      ]
+    },
+    {
+      "heading": "Leading deletion",
+      "level": 3,
+      "id": "ux-section-110",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "P = \"book\" V = \"ook\" k = 1 accept",
+      "paragraphs": [
+        "P = \"book\" V = \"ook\" k = 1 accept"
+      ]
+    },
+    {
+      "heading": "Trailing deletion",
+      "level": 3,
+      "id": "ux-section-111",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "P = \"book\" V = \"boo\" k = 1 accept",
+      "paragraphs": [
+        "P = \"book\" V = \"boo\" k = 1 accept"
+      ]
+    },
+    {
+      "heading": "Empty candidate",
+      "level": 3,
+      "id": "ux-section-112",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "P = \"ab\" V = \"\" k = 2 accept",
+      "paragraphs": [
+        "P = \"ab\" V = \"\" k = 2 accept"
+      ]
+    },
+    {
+      "heading": "Length bound",
+      "level": 3,
+      "id": "ux-section-113",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "|P| = 5 |V| = 9 k = 2 reject",
+      "paragraphs": [
+        "|P| = 5 |V| = 9 k = 2 reject",
+        "because:",
+        "|9 - 5| = 4 > 2"
+      ]
+    },
+    {
+      "heading": "Testing determinization",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 7,
+      "word_count": 32,
+      "evidence": "If both NFA and DFA implementations exist:",
+      "paragraphs": [
+        "If both NFA and DFA implementations exist:",
+        "nfa_accepts(V) == dfa_accepts(V)",
+        "must hold for every tested string.",
+        "This verifies that:",
+        "epsilon closure is correct;",
+        "subset transitions are complete;",
+        "accept states are propagated correctly."
+      ]
+    },
+    {
+      "heading": "Testing trie intersection",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 8,
+      "word_count": 57,
+      "evidence": "Given a small known dictionary:",
+      "paragraphs": [
+        "Given a small known dictionary:",
+        "D = { book, books, back, cook, look, booking }",
+        "and:",
+        "P = \"book\" k = 1",
+        "compute the expected answer by brute force:",
+        "{ V in D : d(P,V) ≤ 1 }",
+        "Then verify that automaton/trie traversal returns exactly the same set.",
+        "This tests search completeness as well as recognition correctness."
+      ]
+    },
+    {
+      "heading": "Lossless fuzzy dictionary search",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 5,
+      "word_count": 51,
+      "evidence": "A correctly constructed Levenshtein automaton gives an exact bounded language.",
+      "paragraphs": [
+        "A correctly constructed Levenshtein automaton gives an exact bounded language.",
+        "Therefore dictionary intersection can be lossless:",
+        "candidate missed = algorithmic bug not = intended approximation",
+        "provided the dictionary itself is traversed completely with respect to all non-dead product states.",
+        "This differs from heuristic candidate-generation systems that intentionally sacrifice recall for speed."
+      ]
+    },
+    {
+      "heading": "Practical memory layout",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 9,
+      "word_count": 46,
+      "evidence": "A deterministic automaton can store states in an integer array:",
+      "paragraphs": [
+        "A deterministic automaton can store states in an integer array:",
+        "state 0 state 1 state 2 ...",
+        "Transitions can be represented using:",
+        "dense alphabet tables;",
+        "sparse maps;",
+        "characteristic-vector tables;",
+        "code-point ranges;",
+        "generated parametric transition functions.",
+        "The correct representation depends strongly on alphabet size and query volume."
+      ]
+    },
+    {
+      "heading": "Dense transition table",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 5,
+      "word_count": 20,
+      "evidence": "For a small alphabet:",
+      "paragraphs": [
+        "For a small alphabet:",
+        "Σ = {A,C,G,T}",
+        "a dense array can be ideal:",
+        "next[state][symbol]",
+        "Transition lookup is then extremely cheap."
+      ]
+    },
+    {
+      "heading": "Sparse transition representation",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "For Unicode:",
+      "paragraphs": [
+        "For Unicode:",
+        "next[state][1,114,112 possible code points]",
+        "would be wasteful.",
+        "Instead:",
+        "specific relevant characters + default \"other\" class",
+        "can represent the same transition behavior compactly."
+      ]
+    },
+    {
+      "heading": "Transition caching",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "When building states lazily, transition results can be cached:",
+      "paragraphs": [
+        "When building states lazily, transition results can be cached:",
+        "(state, characteristic_vector) ↓ next_state",
+        "If the same configuration occurs repeatedly across dictionary branches, the transition need only be computed once."
+      ]
+    },
+    {
+      "heading": "Lazy determinization",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 9,
+      "word_count": 66,
+      "evidence": "A complete DFA does not always need to be materialized before search begins.",
+      "paragraphs": [
+        "A complete DFA does not always need to be materialized before search begins.",
+        "A system can:",
+        "begin with the initial deterministic configuration;",
+        "construct a transition only when the dictionary requires it;",
+        "memoize the resulting state;",
+        "never construct unreachable states.",
+        "This combines aspects of:",
+        "NFA flexibility + DFA transition reuse",
+        "and can be attractive when dictionary traversal touches only a small portion of the theoretically possible automaton."
+      ]
+    },
+    {
+      "heading": "Automaton minimization versus lazy construction",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "These are different optimization strategies.",
+      "paragraphs": [
+        "These are different optimization strategies.",
+        "minimization: merge equivalent already-known states lazy construction: avoid constructing unused states",
+        "In a query-time fuzzy search engine, avoiding unnecessary construction can be more valuable than producing a globally minimal DFA."
+      ]
+    },
+    {
+      "heading": "Thread safety and query reuse",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "Once a deterministic automaton has been constructed and made immutable, it can naturally be shared across independent read-only candidate traversals.",
+      "paragraphs": [
+        "Once a deterministic automaton has been constructed and made immutable, it can naturally be shared across independent read-only candidate traversals.",
+        "Mutable construction caches, however, require synchronization if built concurrently.",
+        "A clean design often separates:",
+        "construction phase from immutable execution phase"
+      ]
+    },
+    {
+      "heading": "When Levenshtein automata are an excellent choice",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 1,
+      "word_count": 62,
+      "evidence": "Condition Why automata fit Small edit radius Automata remain compact and pruning is strong. Large dictionary Trie/FST branches can be pruned collectively. Dictionary already stored as FSA/FST Language intersection is natural. One query against many candidate terms Automaton construction is amortized. Need complete radius search Recognition can be exact, not heuristic. Unit-cost lexical edits Classical Levenshtein automaton directly represents the error model.",
+      "paragraphs": [
+        "Condition Why automata fit Small edit radius Automata remain compact and pruning is strong. Large dictionary Trie/FST branches can be pruned collectively. Dictionary already stored as FSA/FST Language intersection is natural. One query against many candidate terms Automaton construction is amortized. Need complete radius search Recognition can be exact, not heuristic. Unit-cost lexical edits Classical Levenshtein automaton directly represents the error model."
+      ]
+    },
+    {
+      "heading": "When another method may be better",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 1,
+      "word_count": 55,
+      "evidence": "Situation Better starting direction One isolated pair of strings Wagner–Fischer, Ukkonen, or Myers Large or unrestricted k Filtering, metric search, or another retrieval architecture Arbitrary weighted costs Weighted DP or weighted finite-state models Very short pattern fitting in one machine word Myers may be exceptionally efficient Semantic similarity Semantic representations Complex biological scoring Sequence-alignment algorithms",
+      "paragraphs": [
+        "Situation Better starting direction One isolated pair of strings Wagner–Fischer, Ukkonen, or Myers Large or unrestricted k Filtering, metric search, or another retrieval architecture Arbitrary weighted costs Weighted DP or weighted finite-state models Very short pattern fitting in one machine word Myers may be exceptionally efficient Semantic similarity Semantic representations Complex biological scoring Sequence-alignment algorithms"
+      ]
+    },
+    {
+      "heading": "\"A Levenshtein automaton computes only one edit path\"",
+      "level": 3,
+      "id": "ux-section-127",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "No. The NFA simultaneously represents all edit scripts whose cost remains within the bound.",
+      "paragraphs": [
+        "No. The NFA simultaneously represents all edit scripts whose cost remains within the bound."
+      ]
+    },
+    {
+      "heading": "\"The automaton approximates Levenshtein distance\"",
+      "level": 3,
+      "id": "ux-section-128",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "No. The recognized language can correspond exactly to the unit-cost Levenshtein radius.",
+      "paragraphs": [
+        "No. The recognized language can correspond exactly to the unit-cost Levenshtein radius."
+      ]
+    },
+    {
+      "heading": "\"The DFA state is just the edit count\"",
+      "level": 3,
+      "id": "ux-section-129",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "No. Pattern position and competing alignment possibilities also matter.",
+      "paragraphs": [
+        "No. Pattern position and competing alignment possibilities also matter."
+      ]
+    },
+    {
+      "heading": "\"Insertion and deletion are symmetric automaton transitions\"",
+      "level": 3,
+      "id": "ux-section-130",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "They have different input-consumption behavior:",
+      "paragraphs": [
+        "They have different input-consumption behavior:",
+        "insertion: consume input, do not advance pattern deletion: advance pattern, consume no input"
+      ]
+    },
+    {
+      "heading": "\"DFA construction always creates an enormous exponential machine\"",
+      "level": 3,
+      "id": "ux-section-131",
+      "paragraph_count": 1,
+      "word_count": 28,
+      "evidence": "Generic subset construction has that worst-case risk, but specialized fixed-degree Levenshtein constructions exploit strong structural regularities and can be built linearly in pattern length for fixed distance bounds.",
+      "paragraphs": [
+        "Generic subset construction has that worst-case risk, but specialized fixed-degree Levenshtein constructions exploit strong structural regularities and can be built linearly in pattern length for fixed distance bounds."
+      ]
+    },
+    {
+      "heading": "\"The number of Unicode characters determines the automaton size\"",
+      "level": 3,
+      "id": "ux-section-132",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Not directly. Input characters can be grouped according to identical characteristic-vector behavior.",
+      "paragraphs": [
+        "Not directly. Input characters can be grouped according to identical characteristic-vector behavior."
+      ]
+    },
+    {
+      "heading": "\"Automaton acceptance gives semantic similarity\"",
+      "level": 3,
+      "id": "ux-section-133",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "No. It gives bounded lexical sequence similarity under the chosen edit model.",
+      "paragraphs": [
+        "No. It gives bounded lexical sequence similarity under the chosen edit model."
+      ]
+    },
+    {
+      "heading": "\"Transposition is automatically one Levenshtein edit\"",
+      "level": 3,
+      "id": "ux-section-134",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "No. Classical Levenshtein automata use insertion, deletion, and substitution only.",
+      "paragraphs": [
+        "No. Classical Levenshtein automata use insertion, deletion, and substitution only."
+      ]
+    },
+    {
+      "heading": "Implementation checklist",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 14,
+      "word_count": 113,
+      "evidence": "Define the sequence unit. Byte, code point, grapheme cluster, character, word, or token?",
+      "paragraphs": [
+        "Define the sequence unit. Byte, code point, grapheme cluster, character, word, or token?",
+        "Normalize input before constructing the automaton if required.",
+        "Define the distance model explicitly. Classical Levenshtein or a transposition-aware extension?",
+        "Select the maximum distance k.",
+        "Check the length lower bound before expensive traversal.",
+        "Choose NFA simulation, eager DFA, lazy DFA, or parametric DFA.",
+        "Handle epsilon deletion closure correctly if using an NFA.",
+        "Canonicalize deterministic state sets.",
+        "Remove subsumed positions when using a Schulz–Mihov-style construction.",
+        "Use characteristic-vector equivalence classes rather than enormous dense alphabets.",
+        "Handle final-pattern boundary states correctly.",
+        "Represent dead transitions efficiently for dictionary pruning.",
+        "Differential-test acceptance against an exact Levenshtein implementation.",
+        "Test dictionary intersection against brute-force results on small corpora."
+      ]
+    },
+    {
+      "heading": "A complete conceptual architecture",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 1,
+      "word_count": 81,
+      "evidence": "PATTERN P + EDIT BOUND k │ ▼ LEVENSHTEIN ERROR MODEL │ ▼ NFA POSITIONS (i,e) │ ├── match ├── insertion ├── deletion └── substitution │ ▼ EPSILON CLOSURE │ ▼ DETERMINISTIC STATE SETS │ ▼ SUBSUMPTION / NORMALIZATION │ ▼ PARAMETRIC STATE SHAPES │ + CHARACTERISTIC VECTORS │ ▼ DETERMINISTIC LEVENSHTEIN AUTOMATON │ ├─────────────────────┐ │ │ ▼ ▼ CANDIDATE STRING DICTIONARY TRIE/FST │ │ ▼ ▼ ACCEPT / REJECT PRODUCT TRAVERSAL │ ▼ ALL DICTIONARY TERMS WITH DISTANCE ≤ k",
+      "paragraphs": [
+        "PATTERN P + EDIT BOUND k │ ▼ LEVENSHTEIN ERROR MODEL │ ▼ NFA POSITIONS (i,e) │ ├── match ├── insertion ├── deletion └── substitution │ ▼ EPSILON CLOSURE │ ▼ DETERMINISTIC STATE SETS │ ▼ SUBSUMPTION / NORMALIZATION │ ▼ PARAMETRIC STATE SHAPES │ + CHARACTERISTIC VECTORS │ ▼ DETERMINISTIC LEVENSHTEIN AUTOMATON │ ├─────────────────────┐ │ │ ▼ ▼ CANDIDATE STRING DICTIONARY TRIE/FST │ │ ▼ ▼ ACCEPT / REJECT PRODUCT TRAVERSAL │ ▼ ALL DICTIONARY TERMS WITH DISTANCE ≤ k"
+      ]
+    },
+    {
+      "heading": "The most important theoretical distinction",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 9,
+      "word_count": 75,
+      "evidence": "The mathematical entity:",
+      "paragraphs": [
+        "The mathematical entity:",
+        "Levenshtein distance",
+        "defines which candidate strings belong to the neighborhood.",
+        "The:",
+        "Levenshtein automaton",
+        "is one computational representation of that neighborhood.",
+        "Therefore:",
+        "distance = mathematical relation automaton = finite-state recognizer for a bounded part of that relation",
+        "This distinction is analogous to the relationship between Levenshtein distance and the Wagner–Fischer or Myers algorithms: the metric is the object being computed or recognized; the algorithmic structure is the method used to work with it."
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 1,
+      "word_count": 96,
+      "evidence": "Property Levenshtein automata Recognized language {V : d_L(P,V) ≤ k} Classical edit operations Insertion, deletion, substitution Basic NFA state (pattern position, edits used) Basic NFA state count (m+1)(k+1) Deletion transition Epsilon transition advancing pattern Insertion transition Consumes candidate symbol without advancing pattern Determinization DFA states represent sets of NFA positions Schulz–Mihov result For fixed degree, deterministic automaton construction is linear in pattern length Characteristic vector Bit pattern describing where an input symbol matches the relevant pattern window Best practical role Bounded fuzzy search over tries and finite-state term dictionaries Classical transposition primitive? No Semantic similarity? No",
+      "paragraphs": [
+        "Property Levenshtein automata Recognized language {V : d_L(P,V) ≤ k} Classical edit operations Insertion, deletion, substitution Basic NFA state (pattern position, edits used) Basic NFA state count (m+1)(k+1) Deletion transition Epsilon transition advancing pattern Insertion transition Consumes candidate symbol without advancing pattern Determinization DFA states represent sets of NFA positions Schulz–Mihov result For fixed degree, deterministic automaton construction is linear in pattern length Characteristic vector Bit pattern describing where an input symbol matches the relevant pattern window Best practical role Bounded fuzzy search over tries and finite-state term dictionaries Classical transposition primitive? No Semantic similarity? No"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 5,
+      "word_count": 292,
+      "evidence": "A Levenshtein automaton converts a bounded edit-distance problem into finite-state language recognition. For pattern P and error bound k , it accepts exactly the strings whose standard Levenshtein distance from P does not exceed k .",
+      "paragraphs": [
+        "A Levenshtein automaton converts a bounded edit-distance problem into finite-state language recognition. For pattern P and error bound k , it accepts exactly the strings whose standard Levenshtein distance from P does not exceed k .",
+        "The classical NFA makes the relationship to edit operations explicit. A state (i,e) records pattern progress and edits spent. Matches advance both input and pattern without cost; substitutions advance both with one error; insertions consume input without advancing the pattern; deletions advance the pattern through epsilon transitions without consuming input. Every accepting path corresponds to a valid edit script, and every edit script of cost at most k corresponds to an accepting path.",
+        "Determinization combines all simultaneously viable edit hypotheses into one DFA state. The Schulz–Mihov approach exploits the highly constrained structure of these state sets: redundant positions can be removed by subsumption, states can be normalized relative to a pattern offset, and transitions can depend on compact characteristic vectors rather than absolute alphabet symbols. For every fixed distance degree, this permits a deterministic Levenshtein automaton for a word to be constructed in time linear in the word's length.",
+        "The finite-state formulation is especially powerful for dictionary search. A Levenshtein DFA can be traversed in parallel with a trie or finite-state lexicon. Whenever an automaton transition becomes impossible, the corresponding dictionary branch is pruned completely. The resulting traversal computes the language intersection between the dictionary and the query's edit-distance neighborhood without comparing the query independently against every stored word.",
+        "Levenshtein automata should therefore be understood as more than another way to calculate a numerical edit distance. They are a compiled representation of bounded dynamic-programming possibilities, a bridge between string metrics and formal-language theory, and one of the most important algorithmic foundations for exact fuzzy lexical search."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 7,
+      "word_count": 91,
+      "evidence": "Wagner–Fischer Algorithm — the dynamic-programming structure from which the automaton interpretation can be derived.",
+      "paragraphs": [
+        "Wagner–Fischer Algorithm — the dynamic-programming structure from which the automaton interpretation can be derived.",
+        "Ukkonen Algorithm — another way to exploit a small edit threshold by restricting dynamic-programming states.",
+        "Myers Bit-Vector Algorithm — encoding edit-distance dynamic programming in machine-word bit vectors.",
+        "Indexing and Filtering for Edit Distance — scalable candidate generation and pruning.",
+        "Approximate String Matching — the broader algorithmic problem that includes automaton-based searching.",
+        "Fuzzy Search with Edit Distance — integrating lexical error tolerance into retrieval systems.",
+        "Damerau–Levenshtein Distance — transpositions and the distinction between classical Levenshtein and transposition-aware models."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 6,
+      "word_count": 129,
+      "evidence": "Klaus U. Schulz and Stoyan Mihov, “Fast String Correction with Levenshtein Automata,” International Journal on Document Analysis and Recognition , 5(1), 67–85, 2002. DOI: 10.1007/s10032-002-0082-8. DOI record .",
+      "paragraphs": [
+        "Klaus U. Schulz and Stoyan Mihov, “Fast String Correction with Levenshtein Automata,” International Journal on Document Analysis and Recognition , 5(1), 67–85, 2002. DOI: 10.1007/s10032-002-0082-8. DOI record .",
+        "Petar Mitankin, Stoyan Mihov, and Klaus U. Schulz, “Deciding Word Neighborhood with Universal Neighborhood Automata,” Theoretical Computer Science , 412(22), 2340–2355, 2011. DOI: 10.1016/j.tcs.2011.01.013. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI: 10.1145/375360.375365. DOI record .",
+        "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI: 10.1016/S0019-9958(85)80046-2. DOI record .",
+        "Gene Myers, “A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming,” Journal of the ACM , 46(3), 395–415, 1999. DOI: 10.1145/316542.316550. DOI record .",
+        "Apache Lucene, “LevenshteinAutomata.” Lucene API documentation ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-140",
+          "alias": "approximate string matching",
+          "excerpt": "Approximate String Matching — the broader algorithmic problem that includes automaton-based searching."
+        },
+        {
+          "section": "References",
+          "anchor_id": "ux-section-141",
+          "alias": "approximate string matching",
+          "excerpt": "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI: 10.1145/375360.375365. DOI record ."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Transpositions",
+          "anchor_id": "ux-section-78",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "This distinction is particularly important because practical search software often uses an Optimal String Alignment-style transposition extension rather than unrestricted Damerau–Levenshtein distance."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-140",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Damerau–Levenshtein Distance — transpositions and the distinction between classical Levenshtein and transposition-aware models."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Levenshtein Automata",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "A Levenshtein automaton is a finite-state machine that recognizes exactly the strings lying within a specified Levenshtein distance of a fixed pattern. Instead of computing an edit-distance matrix independently for every candidate string, the allowed edit neighborhood of the pattern is compiled into an automaton. A candidate is accepted precisely when its sequence of symbols drives the automaton into an accepting state."
+        },
+        {
+          "section": "Formal definition",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "be an integer edit-distance bound."
+        },
+        {
+          "section": "Universal neighborhood decision",
+          "anchor_id": "ux-section-43",
+          "alias": "edit distance",
+          "excerpt": "edit distance;"
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Why an automaton exists",
+          "anchor_id": "ux-section-3",
+          "alias": "edit operations",
+          "excerpt": "Transitions between these states correspond directly to edit operations ."
+        },
+        {
+          "section": "k = 2 and beyond",
+          "anchor_id": "ux-section-59",
+          "alias": "edit operations",
+          "excerpt": "At distance 2, edit operations can interact:"
+        },
+        {
+          "section": "Key facts",
+          "anchor_id": "ux-section-138",
+          "alias": "edit operations",
+          "excerpt": "Property Levenshtein automata Recognized language {V : d_L(P,V) ≤ k} Classical edit operations Insertion, deletion, substitution Basic NFA state (pattern position, edits used) Basic NFA state count (m+1)(k+1) Deletion transition Epsilon transition advancing pattern Insertion transition Consumes candidate symbol without advancing pattern Determinization DFA states represent sets of NFA positions Schulz–Mihov result For fixed degree, deterministic automaton construction is linear in pattern length Characteristic vector Bit pattern describing where an input symbol matches the relevant pattern window Best practical role Bounded fuzzy search over tries and finite-state term dictionaries Classical"
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-with-edit-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-140",
+          "alias": "fuzzy search with edit distance",
+          "excerpt": "Fuzzy Search with Edit Distance — integrating lexical error tolerance into retrieval systems."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Automata and filtering",
+          "anchor_id": "ux-section-72",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-140",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — scalable candidate generation and pruning."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Automata versus Myers bit vectors",
+          "anchor_id": "ux-section-70",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "The Myers bit-vector algorithm also converts dynamic-programming structure into compact machine state."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-140",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm — encoding edit-distance dynamic programming in machine-word bit vectors."
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-139",
+          "alias": "string metrics",
+          "excerpt": "Levenshtein automata should therefore be understood as more than another way to calculate a numerical edit distance. They are a compiled representation of bounded dynamic-programming possibilities, a bridge between string metrics and formal-language theory, and one of the most important algorithmic foundations for exact fuzzy lexical search."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Finite automata versus semantic similarity",
+          "anchor_id": "ux-section-91",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Automata versus Ukkonen",
+          "anchor_id": "ux-section-69",
+          "alias": "ukkonen algorithm",
+          "excerpt": "The Ukkonen algorithm and Levenshtein automata both exploit a small edit bound but in different ways."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-140",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm — another way to exploit a small edit threshold by restricting dynamic-programming states."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Code point versus grapheme automata",
+          "anchor_id": "ux-section-84",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "The automaton as an edit grid",
+          "anchor_id": "ux-section-11",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "This grid is closely related to the dynamic-programming matrix used by the Wagner–Fischer algorithm ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-140",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "Wagner–Fischer Algorithm — the dynamic-programming structure from which the automaton interpretation can be derived."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted edit costs",
+          "anchor_id": "ux-section-80",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/levenshtein-automata#page",
+      "type": "WebPage",
+      "name": "Levenshtein Automata",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/levenshtein-automata#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-automata#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-automata#article",
+      "type": "TechArticle",
+      "name": "Levenshtein Automata",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-automata#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/approximate-string-matching#term"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-automata#concept",
+      "type": "DefinedTerm",
+      "name": "Levenshtein Automata",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-automata#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "hasPart",
+      "https://www.levenshtein.net/levenshtein-automata#page"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-automata#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#page",
+      "mainEntity",
+      "https://www.levenshtein.net/levenshtein-automata#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#page",
+      "isPartOf",
+      "https://www.levenshtein.net/algorithms#collection"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#page",
+      "hasPart",
+      "https://www.levenshtein.net/levenshtein-automata#article"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-automata#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "about",
+      "https://www.levenshtein.net/approximate-string-matching#term"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "mentions",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "mentions",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "mentions",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "mentions",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "isPartOf",
+      "https://www.levenshtein.net/levenshtein-automata#page"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "citation",
+      "https://doi.org/10.1007/s10032-002-0082-8"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "citation",
+      "https://doi.org/10.1016/j.tcs.2011.01.013"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "citation",
+      "https://doi.org/10.1016/S0019-9958(85)80046-2"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-automata#article",
+      "citation",
+      "https://doi.org/10.1145/316542.316550"
+    ],
+    [
+      "https://doi.org/10.1007/s10032-002-0082-8",
+      "about",
+      "https://www.levenshtein.net/levenshtein-automata#concept"
+    ],
+    [
+      "https://doi.org/10.1007/s10032-002-0082-8",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://doi.org/10.1016/j.tcs.2011.01.013",
+      "about",
+      "https://www.levenshtein.net/levenshtein-automata#concept"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1007/s10032-002-0082-8",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.tcs.2011.01.013",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/S0019-9958(85)80046-2",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/316542.316550",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://lucene.apache.org/core/10_3_0/core/org/apache/lucene/util/automaton/LevenshteinAutomata.html",
+      "anchor": "Lucene API documentation"
+    }
+  ]
+}

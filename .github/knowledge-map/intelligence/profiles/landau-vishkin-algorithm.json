@@ -1,0 +1,2678 @@
+{
+  "url": "/landau-vishkin-algorithm",
+  "title": "Landau–Vishkin Algorithm: Bounded Edit Distance & Approximate Matching",
+  "h1": [
+    "Landau–Vishkin Algorithm: Bounded Edit Distance & Approximate Matching"
+  ],
+  "group": "Algorithms",
+  "provisional_mission": "k differences và LCE",
+  "content_sha256": "7c12375ad57eab4f74433ef3481a0358fefff501dde01140adf031b2275ed821",
+  "canonical": "https://www.levenshtein.net/landau-vishkin-algorithm",
+  "primary_entity_candidate": "Landau–Vishkin Algorithm: Bounded Edit Distance & Approximate Matching",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Landau–Vishkin Algorithm",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 7,
+      "word_count": 236,
+      "evidence": "The Landau–Vishkin algorithm is a family of exact, parameter-sensitive methods for edit distance and approximate string matching developed by Gad M. Landau and Uzi Vishkin during the 1980s. Its central idea is to stop evaluating the dynamic-programming matrix cell by cell. Instead, the algorithm tracks only the farthest-reaching edit path on each relevant diagonal and uses longest common extension queries to jump across arbitrarily long runs of exact matches in a single operation.",
+      "paragraphs": [
+        "The Landau–Vishkin algorithm is a family of exact, parameter-sensitive methods for edit distance and approximate string matching developed by Gad M. Landau and Uzi Vishkin during the 1980s. Its central idea is to stop evaluating the dynamic-programming matrix cell by cell. Instead, the algorithm tracks only the farthest-reaching edit path on each relevant diagonal and uses longest common extension queries to jump across arbitrarily long runs of exact matches in a single operation.",
+        "This creates a fundamentally different view of Levenshtein distance . Classical dynamic programming spends work on every pair of prefixes. Landau–Vishkin instead concentrates computation at the positions where an edit is actually required:",
+        "match match match match mismatch match match match insertion match match ...",
+        "The long match runs can be skipped by a longest common extension, or LCE , query. The computational state therefore becomes proportional to the number of relevant error events and diagonals rather than to the area of the complete dynamic-programming matrix.",
+        "This distinction is especially powerful in the bounded edit-distance regime. For two strings of total length O(n) whose unit-cost edit distance is at most k , the classic Landau–Vishkin approach yields an exact:",
+        "O(n + k²)",
+        "algorithm after the string data have been prepared for constant-time LCE queries. In approximate pattern matching over a text, related Landau–Vishkin formulations traverse many starting diagonals and lead to the historically important k -dependent string-search algorithms associated with their 1980s work."
+      ]
+    },
+    {
+      "heading": "Terminology: there is more than one Landau–Vishkin result",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 7,
+      "word_count": 183,
+      "evidence": "The phrase Landau–Vishkin algorithm is used somewhat broadly in the literature. Several closely related papers appeared during the development of the method, and their problem formulations and complexity bounds should not be conflated.",
+      "paragraphs": [
+        "The phrase Landau–Vishkin algorithm is used somewhat broadly in the literature. Several closely related papers appeared during the development of the method, and their problem formulations and complexity bounds should not be conflated.",
+        "Work Problem / result Landau, Vishkin & Nussinov, 1986 Biological sequence matching with at most k differences; an early O(k²n) -type formulation. Landau & Vishkin, STOC 1986 Introduced efficient parallelism and a new serial approximate-matching algorithm. Landau & Vishkin, JCSS 1988 Fast String Matching with k Differences ; historically central to the bounded-edit-distance method. Landau & Vishkin, 1989 Serial approximate string matching in O(nk) time for a fixed alphabet, together with a parallel formulation.",
+        "Modern bounded-edit-distance literature commonly refers to the Landau–Vishkin JCSS 1988 result when stating the exact:",
+        "O(n + k²)",
+        "bound for two strings whose edit distance is at most k .",
+        "This article therefore concentrates on the underlying algorithmic principle shared by these formulations:",
+        "For each error budget and edit diagonal, preserve only the path that has progressed farthest, introduce one additional edit, and then greedily extend through the next maximal exact-match region using an LCE query."
+      ]
+    },
+    {
+      "heading": "The underlying edit-distance problem",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 12,
+      "word_count": 47,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "X = x₀x₁...xₘ₋₁ Y = y₀y₁...yₙ₋₁",
+        "The standard unit-cost edit distance between X and Y is the minimum number of:",
+        "insertions;",
+        "deletions;",
+        "substitutions;",
+        "required to transform one sequence into the other.",
+        "A match costs:",
+        "0",
+        "and every allowed edit costs:",
+        "1",
+        "in the classical Landau–Vishkin setting."
+      ]
+    },
+    {
+      "heading": "The bounded problem",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 10,
+      "word_count": 54,
+      "evidence": "Instead of asking only:",
+      "paragraphs": [
+        "Instead of asking only:",
+        "What is ed(X,Y)?",
+        "suppose the application provides a bound:",
+        "k",
+        "and asks:",
+        "Is ed(X,Y) ≤ k? and, if so, what is the exact distance?",
+        "This is the bounded edit-distance problem.",
+        "When:",
+        "k << min(m,n)",
+        "the complete quadratic matrix contains a huge amount of information that is irrelevant to the decision."
+      ]
+    },
+    {
+      "heading": "Classical dynamic programming",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 12,
+      "word_count": 64,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "D[i][j] = ed( X[0..i-1], Y[0..j-1] )",
+        "where:",
+        "0 ≤ i ≤ m 0 ≤ j ≤ n",
+        "The standard Wagner–Fischer recurrence is:",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + mismatch ) mismatch = 0 if x[i-1] = y[j-1] 1 otherwise",
+        "with:",
+        "D[i][0] = i D[0][j] = j",
+        "For strings of comparable length:",
+        "Time: Θ(mn)",
+        "even if:",
+        "ed(X,Y) = 1"
+      ]
+    },
+    {
+      "heading": "The edit graph",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 12,
+      "word_count": 89,
+      "evidence": "The matrix can instead be viewed as a directed graph.",
+      "paragraphs": [
+        "The matrix can instead be viewed as a directed graph.",
+        "A vertex:",
+        "(i,j)",
+        "means:",
+        "The first i symbols of X and first j symbols of Y have been consumed.",
+        "The graph has four conceptual moves.",
+        "Move Coordinates Interpretation Cost Diagonal (i,j) → (i+1,j+1) Match 0 Diagonal (i,j) → (i+1,j+1) Substitution 1 Horizontal (i,j) → (i,j+1) Insertion relative to X 1 Vertical (i,j) → (i+1,j) Deletion from X 1",
+        "An edit script is therefore a path from:",
+        "(0,0)",
+        "to:",
+        "(m,n)",
+        "and its number of nonmatching moves is its edit cost."
+      ]
+    },
+    {
+      "heading": "Diagonals",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 15,
+      "word_count": 63,
+      "evidence": "Define the diagonal number:",
+      "paragraphs": [
+        "Define the diagonal number:",
+        "δ = j - i",
+        "All cells satisfying the same value of:",
+        "j - i",
+        "lie on the same diagonal.",
+        "Y δ=0 \\ \\ \\ \\ X",
+        "The main diagonal is:",
+        "δ = 0",
+        "A horizontal insertion changes:",
+        "δ → δ + 1",
+        "A vertical deletion changes:",
+        "δ → δ - 1",
+        "A match or substitution leaves:",
+        "δ",
+        "unchanged."
+      ]
+    },
+    {
+      "heading": "Why only 2k + 1 diagonals matter in bounded pairwise distance",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 12,
+      "word_count": 83,
+      "evidence": "Suppose an edit path uses at most:",
+      "paragraphs": [
+        "Suppose an edit path uses at most:",
+        "k",
+        "edits.",
+        "Its diagonal offset is the difference between the number of horizontal and vertical gap moves taken so far.",
+        "Therefore:",
+        "|δ| ≤ k",
+        "along every path having total cost at most k .",
+        "A path outside:",
+        "-k ≤ δ ≤ k",
+        "cannot possibly represent a valid bounded solution.",
+        "This already reduces the relevant geometry from a full matrix to a narrow diagonal region.",
+        "Landau–Vishkin goes significantly further than merely computing all cells inside this band."
+      ]
+    },
+    {
+      "heading": "The crucial insight: matches should be taken greedily",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 13,
+      "word_count": 93,
+      "evidence": "Suppose an edit path reaches:",
+      "paragraphs": [
+        "Suppose an edit path reaches:",
+        "(i,j)",
+        "and:",
+        "x[i] = y[j]",
+        "Following the diagonal match edge costs:",
+        "0",
+        "There is no benefit in stopping before that match.",
+        "If:",
+        "x[i] = y[j] x[i+1] = y[j+1] x[i+2] = y[j+2] ...",
+        "for a long run, an optimal bounded path can take the complete matching run immediately without spending another edit.",
+        "Thus:",
+        "reach an edit boundary ↓ spend one edit ↓ jump across all following exact matches ↓ stop at next mismatch",
+        "The algorithm needs to represent the places where errors occur, not every matched character between them."
+      ]
+    },
+    {
+      "heading": "Longest Common Extension",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 7,
+      "word_count": 22,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "LCE_XY(i,j)",
+        "as the largest integer:",
+        "ℓ ≥ 0",
+        "such that:",
+        "X[i .. i+ℓ-1] = Y[j .. j+ℓ-1]",
+        "subject to string boundaries."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-11",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "X = abcdefgh ^ i = 2 Y = xxcdexxx ^ j = 2",
+      "paragraphs": [
+        "X = abcdefgh ^ i = 2 Y = xxcdexxx ^ j = 2",
+        "The suffixes beginning at those positions start:",
+        "X[2..] = cdefgh Y[2..] = cdexxx",
+        "Their common prefix is:",
+        "cde",
+        "therefore:",
+        "LCE_XY(2,2) = 3"
+      ]
+    },
+    {
+      "heading": "Why LCE is the accelerator",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "Without an LCE data structure, extending a path might require:",
+      "paragraphs": [
+        "Without an LCE data structure, extending a path might require:",
+        "while X[i] == Y[j]: i++ j++",
+        "which can inspect long matching regions repeatedly.",
+        "With constant-time LCE:",
+        "ℓ = LCE_XY(i,j) i += ℓ j += ℓ",
+        "an arbitrarily long exact-match run is skipped in:",
+        "O(1)",
+        "query time after preprocessing."
+      ]
+    },
+    {
+      "heading": "Building constant-time LCE queries",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 6,
+      "word_count": 45,
+      "evidence": "A classical construction concatenates the two strings with separator symbols not belonging to the original alphabet:",
+      "paragraphs": [
+        "A classical construction concatenates the two strings with separator symbols not belonging to the original alphabet:",
+        "S = X + # + Y + $",
+        "where:",
+        "# != $",
+        "and neither separator occurs inside the input strings.",
+        "There are several ways to preprocess S ."
+      ]
+    },
+    {
+      "heading": "Generalized suffix tree",
+      "level": 3,
+      "id": "ux-section-14",
+      "paragraph_count": 4,
+      "word_count": 47,
+      "evidence": "A suffix tree can represent all suffixes of the strings.",
+      "paragraphs": [
+        "A suffix tree can represent all suffixes of the strings.",
+        "The LCE of two suffixes equals the string depth of their lowest common ancestor:",
+        "LCE(i,j) = depth( LCA( suffix_i, suffix_j ) )",
+        "With an appropriate LCA data structure, queries can be answered in constant time after preprocessing."
+      ]
+    },
+    {
+      "heading": "Suffix array + LCP + RMQ",
+      "level": 3,
+      "id": "ux-section-15",
+      "paragraph_count": 9,
+      "word_count": 59,
+      "evidence": "A more compact modern representation uses:",
+      "paragraphs": [
+        "A more compact modern representation uses:",
+        "suffix array + LCP array + range minimum query",
+        "If suffixes beginning at positions i and j have suffix-array ranks:",
+        "r_i and r_j",
+        "their LCE is the minimum LCP value between those ranks.",
+        "LCE(i,j) = RMQ( LCP[ min(r_i,r_j)+1 ... max(r_i,r_j) ] )",
+        "With a constant-time RMQ structure, LCE is again:",
+        "O(1)",
+        "after preprocessing."
+      ]
+    },
+    {
+      "heading": "Farthest-reaching paths",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 7,
+      "word_count": 49,
+      "evidence": "The second major Landau–Vishkin idea is a dominance relation between paths.",
+      "paragraphs": [
+        "The second major Landau–Vishkin idea is a dominance relation between paths.",
+        "Fix:",
+        "an edit budget e ;",
+        "a diagonal δ .",
+        "There may be many edit paths that:",
+        "use at most e edits and end on diagonal δ",
+        "Landau–Vishkin keeps only the path that reaches farthest along that diagonal."
+      ]
+    },
+    {
+      "heading": "Why a farther path dominates a shorter path",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 13,
+      "word_count": 104,
+      "evidence": "Suppose two paths:",
+      "paragraphs": [
+        "Suppose two paths:",
+        "A and B",
+        "have:",
+        "the same edit budget e the same diagonal δ",
+        "but:",
+        "A ends at (i₁,j₁) B ends at (i₂,j₂) i₂ ≥ i₁",
+        "Because both points lie on the same diagonal:",
+        "j₁ - i₁ = j₂ - i₂ = δ",
+        "Path B has consumed at least as much of both strings while spending no more edit budget.",
+        "For the purpose of reaching the final vertex, the shorter path cannot offer an advantage that the farther path lacks.",
+        "Thus all dominated paths can be discarded.",
+        "This reduces an enormous collection of edit scripts to:",
+        "one state per (edit count, diagonal)"
+      ]
+    },
+    {
+      "heading": "Formal farthest-reaching state",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 8,
+      "word_count": 46,
+      "evidence": "Using prefix coordinates, define:",
+      "paragraphs": [
+        "Using prefix coordinates, define:",
+        "F[e][δ]",
+        "as the maximum row coordinate i such that an edit path:",
+        "uses at most e edits;",
+        "ends on diagonal δ ;",
+        "has been extended greedily through the maximal following exact-match run.",
+        "The corresponding column coordinate is:",
+        "j = F[e][δ] + δ"
+      ]
+    },
+    {
+      "heading": "Base state",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 6,
+      "word_count": 26,
+      "evidence": "For pairwise alignment beginning at:",
+      "paragraphs": [
+        "For pairwise alignment beginning at:",
+        "(0,0)",
+        "the zero-error state exists only on the main diagonal:",
+        "F[0][0] = LCE_XY(0,0)",
+        "and:",
+        "F[0][δ] = -∞ for δ != 0"
+      ]
+    },
+    {
+      "heading": "How one additional edit reaches a diagonal",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 6,
+      "word_count": 25,
+      "evidence": "Suppose we want:",
+      "paragraphs": [
+        "Suppose we want:",
+        "F[e][δ]",
+        "and already know all states using:",
+        "e - 1",
+        "edits.",
+        "There are exactly three relevant ways to introduce the next edit."
+      ]
+    },
+    {
+      "heading": "1. Substitution",
+      "level": 3,
+      "id": "ux-section-21",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "Begin from the farthest-reaching state on the same diagonal:",
+      "paragraphs": [
+        "Begin from the farthest-reaching state on the same diagonal:",
+        "F[e-1][δ]",
+        "and consume one symbol from each string:",
+        "(i,j) → (i+1,j+1)",
+        "The new row position is:",
+        "F[e-1][δ] + 1"
+      ]
+    },
+    {
+      "heading": "2. Insertion relative to X",
+      "level": 3,
+      "id": "ux-section-22",
+      "paragraph_count": 9,
+      "word_count": 32,
+      "evidence": "A horizontal move:",
+      "paragraphs": [
+        "A horizontal move:",
+        "(i,j) → (i,j+1)",
+        "increases the diagonal by one.",
+        "To end on diagonal:",
+        "δ",
+        "the previous state must therefore be on:",
+        "δ - 1",
+        "and the row position remains:",
+        "F[e-1][δ-1]"
+      ]
+    },
+    {
+      "heading": "3. Deletion from X",
+      "level": 3,
+      "id": "ux-section-23",
+      "paragraph_count": 9,
+      "word_count": 33,
+      "evidence": "A vertical move:",
+      "paragraphs": [
+        "A vertical move:",
+        "(i,j) → (i+1,j)",
+        "decreases the diagonal by one.",
+        "To end on:",
+        "δ",
+        "the previous state must therefore be on:",
+        "δ + 1",
+        "and the row position becomes:",
+        "F[e-1][δ+1] + 1"
+      ]
+    },
+    {
+      "heading": "The core recurrence",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 11,
+      "word_count": 59,
+      "evidence": "Ignoring invalid string-boundary cases, first compute:",
+      "paragraphs": [
+        "Ignoring invalid string-boundary cases, first compute:",
+        "x = max( F[e-1][δ] + 1, F[e-1][δ-1], F[e-1][δ+1] + 1 )",
+        "The three candidates correspond respectively to:",
+        "substitution insertion deletion",
+        "The corresponding column is:",
+        "y = x + δ",
+        "Then extend greedily:",
+        "ℓ = LCE_XY(x,y)",
+        "and set:",
+        "F[e][δ] = x + ℓ",
+        "This is the conceptual heart of the Landau–Vishkin bounded edit-distance computation."
+      ]
+    },
+    {
+      "heading": "The algorithm in one recurrence",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 1,
+      "word_count": 36,
+      "evidence": "EDIT EVENT x = max( same diagonal + substitution, left diagonal + insertion, right diagonal + deletion ) ↓ EXACT MATCH RUN ℓ = LCE(x, x + δ) ↓ FARTHEST REACH F[e][δ] = x + ℓ",
+      "paragraphs": [
+        "EDIT EVENT x = max( same diagonal + substitution, left diagonal + insertion, right diagonal + deletion ) ↓ EXACT MATCH RUN ℓ = LCE(x, x + δ) ↓ FARTHEST REACH F[e][δ] = x + ℓ"
+      ]
+    },
+    {
+      "heading": "Why only O(k²) states are needed for two strings",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 19,
+      "word_count": 60,
+      "evidence": "For edit budget:",
+      "paragraphs": [
+        "For edit budget:",
+        "e",
+        "only diagonals:",
+        "-e, -e+1, ..., 0, ..., e-1, e",
+        "can be reached.",
+        "There are:",
+        "2e + 1",
+        "such states.",
+        "Across all:",
+        "e = 0..k",
+        "the number of states is:",
+        "Σ(2e+1) = (k+1)² = O(k²)",
+        "If each state performs only:",
+        "constant arithmetic;",
+        "one maximum over three candidates;",
+        "one constant-time LCE query;",
+        "the dynamic part requires:",
+        "O(k²)",
+        "time."
+      ]
+    },
+    {
+      "heading": "Adding LCE preprocessing",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 9,
+      "word_count": 55,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "N = m + n",
+        "With linear-time preprocessing in a suitable string model:",
+        "LCE preprocessing: O(N) farthest-reaching states: O(k²) total: O(N + k²)",
+        "For two length- n strings, this is commonly written:",
+        "O(n + k²)",
+        "when:",
+        "ed(X,Y) ≤ k",
+        "or when the algorithm is required only to decide whether the distance exceeds k ."
+      ]
+    },
+    {
+      "heading": "Immediate rejection by length difference",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 9,
+      "word_count": 42,
+      "evidence": "Before any LCE structure is queried:",
+      "paragraphs": [
+        "Before any LCE structure is queried:",
+        "ed(X,Y) ≥ |m-n|",
+        "Therefore:",
+        "if |m-n| > k: return >k",
+        "The final vertex lies on diagonal:",
+        "δ_final = n - m",
+        "so this diagonal must also satisfy:",
+        "|δ_final| ≤ k",
+        "for a bounded solution to exist."
+      ]
+    },
+    {
+      "heading": "Acceptance condition",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 12,
+      "word_count": 65,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "δ_final = n - m",
+        "After computing layer:",
+        "e",
+        "the strings can be aligned with at most e edits if:",
+        "F[e][δ_final] ≥ m",
+        "because the corresponding column is:",
+        "F[e][δ_final] + δ_final ≥ n",
+        "after valid boundary clipping.",
+        "If layers are processed in increasing order:",
+        "e = 0 1 2 ... k",
+        "the first layer reaching the final vertex gives the exact unit-cost edit distance."
+      ]
+    },
+    {
+      "heading": "Reference bounded-distance pseudocode",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 2,
+      "word_count": 226,
+      "evidence": "function landau_vishkin_distance(X, Y, k): m = length(X) n = length(Y) if abs(m - n) > k: return GREATER_THAN_K preprocess X and Y for O(1) LCE queries NEG_INF = -infinity previous = map from diagonal to row current = map from diagonal to row start = LCE(X, 0, Y, 0) previous[0] = start if n - m == 0 and start >= m: return 0 for e = 1 to k: clear current for delta = -e to e: best = NEG_INF # substitution if previous contains delta: best = max( best, previous[delta] + 1 ) # insertion relative to X if previous contains delta - 1: best = max( best, previous[delta - 1] ) # deletion from X if previous contains delta + 1: best = max( best, previous[delta + 1] + 1 ) if best is invalid: continue i = clamp best to valid X boundary j = i + delta if i < 0 or i > m: continue if j < 0 or j > n: continue",
+      "paragraphs": [
+        "function landau_vishkin_distance(X, Y, k): m = length(X) n = length(Y) if abs(m - n) > k: return GREATER_THAN_K preprocess X and Y for O(1) LCE queries NEG_INF = -infinity previous = map from diagonal to row current = map from diagonal to row start = LCE(X, 0, Y, 0) previous[0] = start if n - m == 0 and start >= m: return 0 for e = 1 to k: clear current for delta = -e to e: best = NEG_INF # substitution if previous contains delta: best = max( best, previous[delta] + 1 ) # insertion relative to X if previous contains delta - 1: best = max( best, previous[delta - 1] ) # deletion from X if previous contains delta + 1: best = max( best, previous[delta + 1] + 1 ) if best is invalid: continue i = clamp best to valid X boundary j = i + delta if i < 0 or i > m: continue if j < 0 or j > n: continue extension = LCE(X, i, Y, j) i = min( m, i + extension ) current[delta] = i final_delta = n - m if current contains final_delta: i = current[final_delta] if i >= m: return e swap(previous, current) return GREATER_THAN_K",
+        "Production code must treat matrix boundaries carefully. The pseudocode emphasizes the recurrence rather than every off-by-one condition."
+      ]
+    },
+    {
+      "heading": "Worked example: one substitution",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "X = \"abcdef\" Y = \"abqdef\" k = 1"
+      ]
+    },
+    {
+      "heading": "Zero edits",
+      "level": 3,
+      "id": "ux-section-32",
+      "paragraph_count": 7,
+      "word_count": 23,
+      "evidence": "The strings share:",
+      "paragraphs": [
+        "The strings share:",
+        "\"ab\"",
+        "from the beginning.",
+        "Therefore:",
+        "F[0][0] = LCE(0,0) = 2",
+        "The first mismatch is:",
+        "X[2] = c Y[2] = q"
+      ]
+    },
+    {
+      "heading": "One edit",
+      "level": 3,
+      "id": "ux-section-33",
+      "paragraph_count": 18,
+      "word_count": 79,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "e = 1 δ = 0",
+        "the substitution candidate is:",
+        "x = F[0][0] + 1 = 3",
+        "The edit consumes:",
+        "c and q",
+        "Now compare:",
+        "X[3..] = \"def\" Y[3..] = \"def\"",
+        "so:",
+        "LCE(3,3) = 3",
+        "and:",
+        "F[1][0] = 3 + 3 = 6",
+        "The path reaches the end of both strings.",
+        "Therefore:",
+        "ed( \"abcdef\", \"abqdef\" ) = 1",
+        "The algorithm examined the mismatch boundary and then jumped across the entire suffix:",
+        "\"def\"",
+        "without filling its individual dynamic-programming cells."
+      ]
+    },
+    {
+      "heading": "Worked example: one insertion",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 26,
+      "word_count": 91,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "X = \"abc\" Y = \"abxc\"",
+        "The common prefix is:",
+        "\"ab\"",
+        "so:",
+        "F[0][0] = 2",
+        "The final diagonal is:",
+        "δ_final = 4 - 3 = 1",
+        "For:",
+        "e = 1 δ = 1",
+        "the horizontal insertion candidate comes from:",
+        "δ - 1 = 0",
+        "with row coordinate:",
+        "x = F[0][0] = 2",
+        "The inserted target character is:",
+        "Y[2] = x",
+        "After consuming it, the state is aligned at:",
+        "X[2] = c Y[3] = c",
+        "and:",
+        "LCE(2,3) = 1",
+        "so:",
+        "F[1][1] = 3",
+        "which reaches:",
+        "(3,4)",
+        "and proves:",
+        "ed(\"abc\",\"abxc\") = 1"
+      ]
+    },
+    {
+      "heading": "Worked example: one deletion",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 16,
+      "word_count": 51,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "X = \"abxc\" Y = \"abc\"",
+        "Again:",
+        "F[0][0] = 2",
+        "The final diagonal is:",
+        "δ_final = 3 - 4 = -1",
+        "The vertical deletion candidate moves from diagonal:",
+        "0",
+        "to:",
+        "-1",
+        "consumes:",
+        "X[2] = x",
+        "and then the LCE jumps across the final:",
+        "c",
+        "The result is again:",
+        "1 edit"
+      ]
+    },
+    {
+      "heading": "Why the farthest-reaching recurrence is correct",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Correctness can be separated into two claims.",
+      "paragraphs": [
+        "Correctness can be separated into two claims."
+      ]
+    },
+    {
+      "heading": "Claim 1: every candidate edit is represented",
+      "level": 3,
+      "id": "ux-section-37",
+      "paragraph_count": 3,
+      "word_count": 42,
+      "evidence": "Any path ending on diagonal δ with exactly one newly added edit must have arrived through one of:",
+      "paragraphs": [
+        "Any path ending on diagonal δ with exactly one newly added edit must have arrived through one of:",
+        "δ via substitution δ - 1 via insertion δ + 1 via deletion",
+        "There is no fourth unit-cost edit operation in classical Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Claim 2: only the farthest predecessor matters",
+      "level": 3,
+      "id": "ux-section-38",
+      "paragraph_count": 5,
+      "word_count": 53,
+      "evidence": "Among paths with the same:",
+      "paragraphs": [
+        "Among paths with the same:",
+        "edit budget and diagonal",
+        "a farther-reaching path dominates every shorter path.",
+        "Replacing a shorter predecessor by the farther predecessor cannot consume additional edit budget and begins the future alignment no earlier.",
+        "Therefore the optimum state on diagonal δ is obtained by extending only the three farthest-reaching predecessor states."
+      ]
+    },
+    {
+      "heading": "Greedy extension lemma",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "After an edit reaches:",
+      "paragraphs": [
+        "After an edit reaches:",
+        "(i,j)",
+        "suppose:",
+        "X[i .. i+ℓ-1] = Y[j .. j+ℓ-1]",
+        "Every one of those ℓ diagonal transitions is a zero-cost match.",
+        "Skipping any of them cannot improve the remaining edit budget.",
+        "Therefore a farthest-reaching optimal state must extend through the complete maximal matching prefix.",
+        "The LCE operation performs exactly this greedy extension."
+      ]
+    },
+    {
+      "heading": "Inductive correctness proof",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 14,
+      "word_count": 134,
+      "evidence": "Assume every:",
+      "paragraphs": [
+        "Assume every:",
+        "F[e-1][δ]",
+        "is the true farthest row reachable on diagonal δ using at most e-1 edits after maximal match extension.",
+        "Take any optimal e -edit path ending on diagonal δ .",
+        "Immediately before its final edit, it must lie on one of:",
+        "δ - 1 δ δ + 1",
+        "By the induction hypothesis, the corresponding stored predecessor reaches at least as far as the prefix used by that path.",
+        "Applying the same edit from the stored predecessor therefore reaches at least as far before match extension.",
+        "The LCE then gives the maximum possible zero-cost extension.",
+        "Thus the recurrence produces a state at least as far as every valid e -edit path.",
+        "Every generated candidate is itself a valid edit path, so it cannot exceed the true farthest reachable position.",
+        "Therefore:",
+        "F[e][δ]",
+        "is exact."
+      ]
+    },
+    {
+      "heading": "The algorithm does not fill a band",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 12,
+      "word_count": 63,
+      "evidence": "This is one of the most important distinctions between Landau–Vishkin and ordinary banded dynamic programming.",
+      "paragraphs": [
+        "This is one of the most important distinctions between Landau–Vishkin and ordinary banded dynamic programming.",
+        "A banded DP algorithm may evaluate:",
+        "every cell satisfying: |i-j| ≤ k",
+        "which is approximately:",
+        "O(nk)",
+        "cells for two length- n strings.",
+        "Landau–Vishkin instead keeps only:",
+        "one farthest-reaching breakpoint per: (edit count, diagonal)",
+        "which gives only:",
+        "O(k²)",
+        "breakpoint states.",
+        "The remaining string length is absorbed into LCE preprocessing."
+      ]
+    },
+    {
+      "heading": "Landau–Vishkin versus Ukkonen",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 2,
+      "word_count": 84,
+      "evidence": "The Ukkonen algorithm also exploits small edit distance, but the computational granularity differs.",
+      "paragraphs": [
+        "The Ukkonen algorithm also exploits small edit distance, but the computational granularity differs.",
+        "Property Ukkonen-style banded DP Landau–Vishkin Main representation DP cells inside a narrow band Farthest-reaching path per error level and diagonal Exact runs Usually processed cell by cell Skipped by LCE Bounded pairwise work Typically O(nk) O(n+k²) with LCE preprocessing Heavy string preprocessing Not inherently required Central to classical constant-time LCE formulation Good when k is small and implementation simplicity matters k is small and long exact runs can be jumped efficiently"
+      ]
+    },
+    {
+      "heading": "Landau–Vishkin versus Myers bit vectors",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 5,
+      "word_count": 112,
+      "evidence": "The Myers Bit-Vector Algorithm described elsewhere on this site is Gene Myers' 1999 word-parallel algorithm.",
+      "paragraphs": [
+        "The Myers Bit-Vector Algorithm described elsewhere on this site is Gene Myers' 1999 word-parallel algorithm.",
+        "It should not be confused with Myers' separate 1986 O(ND) difference algorithm, whose farthest-reaching diagonal geometry is closely related to this family of ideas.",
+        "The 1999 bit-vector method and Landau–Vishkin accelerate dynamic programming differently:",
+        "Landau–Vishkin: few strategically selected edit breakpoints + LCE jumps Myers bit-vector: many DP relations processed simultaneously inside machine words",
+        "Property Landau–Vishkin Myers bit-vector Primary parameter Small edit distance k Machine word width w Main state Farthest coordinate by diagonal/error Pv/Mv bit vectors Long exact runs LCE jump Absorbed through bit-vector state update Unit-cost assumption Fundamental to classical method Fundamental to classical bit-vector representation"
+      ]
+    },
+    {
+      "heading": "Landau–Vishkin versus Wagner–Fischer",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 2,
+      "word_count": 50,
+      "evidence": "Wagner–Fischer: every prefix pair ↓ Θ(mn) states Landau–Vishkin: only error frontiers ↓ one farthest state per diagonal / error budget ↓ O(k²) bounded states + string preprocessing",
+      "paragraphs": [
+        "Wagner–Fischer: every prefix pair ↓ Θ(mn) states Landau–Vishkin: only error frontiers ↓ one farthest state per diagonal / error budget ↓ O(k²) bounded states + string preprocessing",
+        "Landau–Vishkin does not change the edit-distance definition. It computes the same unit-cost distance while exploiting additional structure available when the distance is bounded."
+      ]
+    },
+    {
+      "heading": "Approximate string matching",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 8,
+      "word_count": 64,
+      "evidence": "The historical Landau–Vishkin work is not limited to comparing two complete strings.",
+      "paragraphs": [
+        "The historical Landau–Vishkin work is not limited to comparing two complete strings.",
+        "The approximate string-matching problem is:",
+        "pattern P of length m text T of length n maximum differences k find every substring T[s..e] such that: ed( P, T[s..e] ) ≤ k",
+        "The differences may be:",
+        "mismatched characters;",
+        "extra text characters;",
+        "extra pattern characters.",
+        "This corresponds to Approximate String Matching under the edit-distance model."
+      ]
+    },
+    {
+      "heading": "Many starting positions become many diagonals",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 9,
+      "word_count": 70,
+      "evidence": "For pairwise alignment, the path begins only at:",
+      "paragraphs": [
+        "For pairwise alignment, the path begins only at:",
+        "(0,0)",
+        "For pattern search, a match can begin at many text positions.",
+        "These possible starts correspond naturally to different diagonals of the pattern-versus-text dynamic-programming table.",
+        "Landau–Vishkin can initialize a zero-error path for each relevant text-start diagonal:",
+        "start position s ↓ diagonal s ↓ initial LCE( P[0..], T[s..] )",
+        "Each path is then expanded through the same:",
+        "edit + maximal exact extension",
+        "mechanism."
+      ]
+    },
+    {
+      "heading": "Farthest-reaching d-paths",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 15,
+      "word_count": 87,
+      "evidence": "In the classical approximate-matching terminology, a:",
+      "paragraphs": [
+        "In the classical approximate-matching terminology, a:",
+        "d-path",
+        "is a path containing exactly d differences.",
+        "For every diagonal:",
+        "h",
+        "the algorithm maintains its:",
+        "farthest-reaching d-path",
+        "A farthest-reaching d -path on diagonal h is one whose ending column is at least as large as that of every other d -path on the same diagonal.",
+        "For:",
+        "d > 0",
+        "the farthest-reaching state on diagonal h can be derived from farthest-reaching:",
+        "(d-1)-paths",
+        "on:",
+        "h-1 h h+1",
+        "by adding the appropriate insertion, substitution, or deletion and then performing another maximal LCE extension."
+      ]
+    },
+    {
+      "heading": "Approximate-matching state diagram",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 1,
+      "word_count": 39,
+      "evidence": "previous error layer d-1 diagonal h-1 \\ \\ insertion-like transition \\ > diagonal h / / deletion-like transition / diagonal h+1 and: diagonal h | | mismatch/substitution v diagonal h each candidate ↓ LCE jump ↓ choose farthest endpoint",
+      "paragraphs": [
+        "previous error layer d-1 diagonal h-1 \\ \\ insertion-like transition \\ > diagonal h / / deletion-like transition / diagonal h+1 and: diagonal h | | mismatch/substitution v diagonal h each candidate ↓ LCE jump ↓ choose farthest endpoint"
+      ]
+    },
+    {
+      "heading": "Reporting a match",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 8,
+      "word_count": 33,
+      "evidence": "The pattern dimension contains:",
+      "paragraphs": [
+        "The pattern dimension contains:",
+        "m",
+        "symbols.",
+        "Whenever a farthest-reaching path reaches:",
+        "pattern row m",
+        "with:",
+        "d ≤ k",
+        "the corresponding text interval represents an occurrence of the pattern with at most k differences."
+      ]
+    },
+    {
+      "heading": "Historical complexity of approximate matching",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 12,
+      "word_count": 86,
+      "evidence": "The exact complexity statement depends on which Landau–Vishkin paper and formulation is being discussed.",
+      "paragraphs": [
+        "The exact complexity statement depends on which Landau–Vishkin paper and formulation is being discussed.",
+        "The 1988 JCSS paper Fast String Matching with k Differences reports, for a text of length n and pattern of length m :",
+        "O(m + nk²)",
+        "for a fixed-size alphabet, and:",
+        "O(m log m + nk²)",
+        "for general input, with:",
+        "O(m)",
+        "space.",
+        "Related subsequent Landau–Vishkin work gives a serial:",
+        "O(nk)",
+        "approximate string-matching algorithm for fixed alphabets.",
+        "It is therefore incorrect to attach one unqualified complexity number to every algorithm historically called \"Landau–Vishkin.\""
+      ]
+    },
+    {
+      "heading": "Bounded pairwise distance versus approximate text search",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "Problem Relevant geometry Bounded distance between X and Y Only O(k) diagonals around one starting point Approximate pattern matching in text Many text-start diagonals must be explored",
+      "paragraphs": [
+        "Problem Relevant geometry Bounded distance between X and Y Only O(k) diagonals around one starting point Approximate pattern matching in text Many text-start diagonals must be explored",
+        "This is why:",
+        "O(n + k²)",
+        "for bounded pairwise distance and:",
+        "O(nk)",
+        "for certain approximate-search formulations are not contradictory.",
+        "They solve different computational tasks."
+      ]
+    },
+    {
+      "heading": "Why the pairwise state count is k²",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 4,
+      "word_count": 38,
+      "evidence": "For one pair of strings:",
+      "paragraphs": [
+        "For one pair of strings:",
+        "error level 0: 1 diagonal error level 1: 3 diagonals error level 2: 5 diagonals ... error level k: 2k+1 diagonals",
+        "Total:",
+        "1 + 3 + 5 + ... + (2k+1) = (k+1)²"
+      ]
+    },
+    {
+      "heading": "Why text searching adds an n factor",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 4,
+      "word_count": 50,
+      "evidence": "Approximate searching must consider potential matches ending or beginning throughout a text of length:",
+      "paragraphs": [
+        "Approximate searching must consider potential matches ending or beginning throughout a text of length:",
+        "n",
+        "The text therefore introduces a global search dimension not present in a single pairwise bounded-distance instance.",
+        "The Landau–Vishkin machinery accelerates the local edit structure, but the algorithm still has to discover occurrences across the text."
+      ]
+    },
+    {
+      "heading": "LCE is conceptually separable from Landau–Vishkin",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 10,
+      "word_count": 50,
+      "evidence": "The algorithm needs an operation:",
+      "paragraphs": [
+        "The algorithm needs an operation:",
+        "LCE(i,j)",
+        "It does not fundamentally require one particular LCE data structure.",
+        "Possible implementations include:",
+        "generalized suffix tree + LCA;",
+        "suffix array + LCP + RMQ;",
+        "rolling-hash-based extension with verification;",
+        "direct character scanning;",
+        "word-at-a-time or SIMD equality scanning.",
+        "The theoretical complexity depends on the LCE cost."
+      ]
+    },
+    {
+      "heading": "General LCE-cost formulation",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 9,
+      "word_count": 32,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "t_LCE",
+        "is the time required for one longest-common-extension query, then the bounded pairwise dynamic phase requires approximately:",
+        "O(k² · t_LCE)",
+        "in addition to preprocessing.",
+        "For:",
+        "t_LCE = O(1)",
+        "this becomes:",
+        "O(k²)"
+      ]
+    },
+    {
+      "heading": "Why a simple LCE can outperform a sophisticated one in practice",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 14,
+      "word_count": 76,
+      "evidence": "The theoretically elegant construction:",
+      "paragraphs": [
+        "The theoretically elegant construction:",
+        "suffix tree + constant-time LCA",
+        "has significant implementation and memory overhead.",
+        "On modern hardware, direct comparison can sometimes be faster when exact runs are short or moderate:",
+        "while equal: advance",
+        "especially if the implementation compares:",
+        "machine words;",
+        "SIMD vectors;",
+        "large byte chunks.",
+        "Later experimental work has specifically investigated replacing the heavy classical LCE structure in Landau–Vishkin with simpler LCE mechanisms.",
+        "Thus:",
+        "best asymptotic LCE",
+        "does not automatically imply:",
+        "fastest practical Landau–Vishkin implementation"
+      ]
+    },
+    {
+      "heading": "Traceback and edit-script reconstruction",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 6,
+      "word_count": 44,
+      "evidence": "The numerical distance can be obtained from the farthest-reaching frontiers without preserving the entire DP matrix.",
+      "paragraphs": [
+        "The numerical distance can be obtained from the farthest-reaching frontiers without preserving the entire DP matrix.",
+        "To recover an optimal edit script, store for every state:",
+        "(e,δ)",
+        "the predecessor that generated its maximum:",
+        "SUBSTITUTION INSERTION DELETION",
+        "and the coordinate immediately before its LCE extension."
+      ]
+    },
+    {
+      "heading": "Parent information",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 7,
+      "word_count": 29,
+      "evidence": "A traceback record can contain:",
+      "paragraphs": [
+        "A traceback record can contain:",
+        "parent_error_level parent_diagonal edit_operation position_before_edit position_after_edit length_of_LCE_run",
+        "Starting from the successful:",
+        "(e, δ_final)",
+        "state, follow parent pointers toward:",
+        "(0,0)",
+        "and reverse the resulting edit sequence."
+      ]
+    },
+    {
+      "heading": "Space for traceback",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 9,
+      "word_count": 49,
+      "evidence": "Distance-only computation needs only the preceding error layer:",
+      "paragraphs": [
+        "Distance-only computation needs only the preceding error layer:",
+        "O(k)",
+        "farthest-reaching values, excluding the LCE structure.",
+        "Straightforward traceback storage for every state needs:",
+        "O(k²)",
+        "parent information.",
+        "Outputting the complete character-level alignment can itself require:",
+        "Ω(m+n)",
+        "time because long exact runs must be emitted even though the distance computation skipped them."
+      ]
+    },
+    {
+      "heading": "Distance-only memory reduction",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 13,
+      "word_count": 35,
+      "evidence": "The recurrence for:",
+      "paragraphs": [
+        "The recurrence for:",
+        "F[e][δ]",
+        "depends only on states from:",
+        "e - 1",
+        "Therefore:",
+        "previous layer current layer",
+        "are sufficient.",
+        "Each layer contains only:",
+        "O(k)",
+        "active diagonal states.",
+        "The dynamic frontier therefore requires:",
+        "O(k)",
+        "working memory."
+      ]
+    },
+    {
+      "heading": "A useful optimization: stop at the first successful error layer",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 12,
+      "word_count": 46,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "ed(X,Y) = s",
+        "and:",
+        "s < k",
+        "There is no need to construct layers:",
+        "s+1 ... k",
+        "The first layer reaching the final diagonal gives the exact distance.",
+        "The actual number of frontier states becomes:",
+        "O(s²)",
+        "rather than:",
+        "O(k²)",
+        "once LCE preprocessing has been completed."
+      ]
+    },
+    {
+      "heading": "A tighter conceptual runtime",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 8,
+      "word_count": 44,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "s = ed(X,Y) ≤ k",
+        "the dynamic portion can be viewed as:",
+        "O(s²)",
+        "states.",
+        "The overall computation is therefore naturally output-sensitive:",
+        "preprocessing + quadratic in the small distance parameter",
+        "although published bounded formulations are conventionally expressed using the provided upper bound k ."
+      ]
+    },
+    {
+      "heading": "Why arbitrary weighted edit distance breaks the classical recurrence",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 12,
+      "word_count": 97,
+      "evidence": "The classic algorithm depends on every error consuming exactly:",
+      "paragraphs": [
+        "The classic algorithm depends on every error consuming exactly:",
+        "1 unit",
+        "of budget.",
+        "Then states can be organized into integer layers:",
+        "0 edits 1 edit 2 edits ... k edits",
+        "With a weighted model:",
+        "insert(a) = 0.7 delete(b) = 1.3 substitute(c,d) = 4.2",
+        "this uniform layered structure disappears.",
+        "A substitution can cost more than several insertions; different characters can lead to different transition costs; and the simple:",
+        "e - 1 → e",
+        "frontier recurrence is no longer valid.",
+        "This is why classical Landau–Vishkin should not be casually described as an algorithm for arbitrary weighted Levenshtein distance ."
+      ]
+    },
+    {
+      "heading": "Modern weighted bounded edit distance",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 2,
+      "word_count": 47,
+      "evidence": "Weighted bounded edit distance remained substantially harder than the unit-cost problem. Modern research has developed separate algorithms for bounded weighted instances, including small-integer and general weighted models.",
+      "paragraphs": [
+        "Weighted bounded edit distance remained substantially harder than the unit-cost problem. Modern research has developed separate algorithms for bounded weighted instances, including small-integer and general weighted models.",
+        "Those results build on a much richer collection of techniques and should not be attributed to the original Landau–Vishkin algorithm."
+      ]
+    },
+    {
+      "heading": "Transpositions are not classical Landau–Vishkin edits",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "The recurrence uses three unit-cost error moves:",
+      "paragraphs": [
+        "The recurrence uses three unit-cost error moves:",
+        "substitution insertion deletion",
+        "An adjacent transposition:",
+        "ab → ba",
+        "is not one primitive Landau–Vishkin edit.",
+        "A transposition-aware model requires additional state and a different recurrence.",
+        "See Damerau–Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Relationship to sequence alignment",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 6,
+      "word_count": 66,
+      "evidence": "The diagonal-path interpretation is naturally an alignment interpretation.",
+      "paragraphs": [
+        "The diagonal-path interpretation is naturally an alignment interpretation.",
+        "X: A C G - T A Y: A C G G T A",
+        "A gap shifts the path to a neighboring diagonal.",
+        "A mismatch spends one edit but remains on the same diagonal.",
+        "A long exact region becomes one LCE jump.",
+        "This makes Landau–Vishkin conceptually attractive for sequence verification when the expected number of differences is small."
+      ]
+    },
+    {
+      "heading": "But biological alignment may require richer scoring",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 10,
+      "word_count": 54,
+      "evidence": "Real sequence alignment often uses:",
+      "paragraphs": [
+        "Real sequence alignment often uses:",
+        "affine gap penalties;",
+        "substitution matrices;",
+        "local alignment;",
+        "quality scores;",
+        "context-dependent error probabilities.",
+        "For example, an affine gap cost can be:",
+        "gap(g) = gap_open + (g-1) × gap_extend",
+        "This is not equivalent to counting every inserted or deleted nucleotide independently with unit cost.",
+        "See Sequence Alignment and Gap Models ."
+      ]
+    },
+    {
+      "heading": "Genomic verification",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 5,
+      "word_count": 76,
+      "evidence": "Landau–Vishkin-type alignment is especially natural in a filter-and-verify pipeline:",
+      "paragraphs": [
+        "Landau–Vishkin-type alignment is especially natural in a filter-and-verify pipeline:",
+        "sequencing read ↓ seed / index lookup ↓ candidate genomic location ↓ Landau–Vishkin bounded verification ↓ distance ≤ k ? ↓ accept / reject candidate",
+        "The candidate-generation stage reduces the enormous reference genome to a small collection of plausible regions.",
+        "Landau–Vishkin then exploits the expectation that a real read alignment contains only a small number of differences.",
+        "See Edit Distance in Genomic Search and Read Mapping ."
+      ]
+    },
+    {
+      "heading": "Why it is not itself an indexing algorithm",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 11,
+      "word_count": 46,
+      "evidence": "Landau–Vishkin accelerates verification of edit relationships.",
+      "paragraphs": [
+        "Landau–Vishkin accelerates verification of edit relationships.",
+        "It does not automatically solve:",
+        "Which of one billion strings should I compare against?",
+        "Large collections still need structures such as:",
+        "suffix indexes;",
+        "q-gram filters;",
+        "tries;",
+        "FM-indexes;",
+        "seed indexes;",
+        "other candidate-generation methods.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Landau–Vishkin as an exact verifier",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 2,
+      "word_count": 29,
+      "evidence": "LARGE COLLECTION ↓ CHEAP FILTER ↓ SMALL CANDIDATE SET ↓ LANDAU–VISHKIN ↓ EXACT BOUNDED EDIT DISTANCE",
+      "paragraphs": [
+        "LARGE COLLECTION ↓ CHEAP FILTER ↓ SMALL CANDIDATE SET ↓ LANDAU–VISHKIN ↓ EXACT BOUNDED EDIT DISTANCE",
+        "This division of labor is often more important than the pairwise algorithm alone."
+      ]
+    },
+    {
+      "heading": "Unicode and sequence representation",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 11,
+      "word_count": 64,
+      "evidence": "Like every edit-distance algorithm, Landau–Vishkin operates on abstract sequence elements.",
+      "paragraphs": [
+        "Like every edit-distance algorithm, Landau–Vishkin operates on abstract sequence elements.",
+        "It does not define whether one element is:",
+        "a byte;",
+        "a UTF-8 code unit;",
+        "a UTF-16 code unit;",
+        "a Unicode code point;",
+        "a grapheme cluster;",
+        "a token;",
+        "a biological residue.",
+        "This matters especially for LCE preprocessing because the same sequence representation must be used both:",
+        "to count edit operations and to determine exact-match runs"
+      ]
+    },
+    {
+      "heading": "Unicode normalization",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 12,
+      "word_count": 46,
+      "evidence": "The visible character:",
+      "paragraphs": [
+        "The visible character:",
+        "é",
+        "may be represented as:",
+        "U+00E9",
+        "or:",
+        "U+0065 U+0301",
+        "Without Unicode normalization:",
+        "LCE",
+        "may terminate immediately even though the strings are canonically equivalent at the text level.",
+        "Normalization should therefore occur before both:",
+        "LCE indexing and edit-distance computation",
+        "when canonical equivalence is intended."
+      ]
+    },
+    {
+      "heading": "Grapheme-level Landau–Vishkin",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 4,
+      "word_count": 41,
+      "evidence": "If one edit should correspond to a user-perceived character:",
+      "paragraphs": [
+        "If one edit should correspond to a user-perceived character:",
+        "raw Unicode text ↓ normalization ↓ grapheme segmentation ↓ map grapheme clusters to symbols ↓ build LCE representation ↓ run Landau–Vishkin",
+        "The diagonal algorithm remains unchanged.",
+        "Only the underlying alphabet has changed."
+      ]
+    },
+    {
+      "heading": "Token-level Landau–Vishkin",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 12,
+      "word_count": 50,
+      "evidence": "The algorithm is not intrinsically character-based.",
+      "paragraphs": [
+        "The algorithm is not intrinsically character-based.",
+        "Suppose:",
+        "X = [the, quick, brown, fox] Y = [the, fast, brown, fox]",
+        "The first token matches:",
+        "the",
+        "then one substitution occurs:",
+        "quick → fast",
+        "followed by an LCE of:",
+        "[brown, fox]",
+        "At token level:",
+        "ed(X,Y) = 1",
+        "The exact same farthest-reaching recurrence applies."
+      ]
+    },
+    {
+      "heading": "What makes Landau–Vishkin different from ordinary pruning",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 6,
+      "word_count": 43,
+      "evidence": "Simple bounded algorithms may say:",
+      "paragraphs": [
+        "Simple bounded algorithms may say:",
+        "ignore cells outside the band",
+        "Landau–Vishkin says something stronger:",
+        "inside the band, most cells are also unnecessary",
+        "because long zero-cost diagonal regions can be compressed into a single LCE operation.",
+        "The useful states are the edit frontiers ."
+      ]
+    },
+    {
+      "heading": "Edit frontiers",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "For each error budget:",
+      "paragraphs": [
+        "For each error budget:",
+        "e",
+        "the array:",
+        "{ F[e][δ] : -e ≤ δ ≤ e }",
+        "forms a frontier through the edit graph.",
+        "Everything behind the frontier is dominated.",
+        "Everything beyond the frontier requires more than e edits.",
+        "consumed region ████████████████ farthest frontier /\\ /\\ /\\ / \\/ V \\ unreachable with e edits ........................."
+      ]
+    },
+    {
+      "heading": "Connection to parameterized algorithms",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 9,
+      "word_count": 58,
+      "evidence": "A parameterized algorithm seeks a running time in which a difficult part of the input is isolated into a parameter:",
+      "paragraphs": [
+        "A parameterized algorithm seeks a running time in which a difficult part of the input is isolated into a parameter:",
+        "f(k) · poly(n)",
+        "or, even better:",
+        "O(n + f(k))",
+        "Landau–Vishkin's bounded pairwise result has exactly this flavor:",
+        "O(n + k²)",
+        "The large string length contributes only linearly; the expensive combinatorial edit structure is confined to:",
+        "k²",
+        "farthest-reaching states."
+      ]
+    },
+    {
+      "heading": "Why O(n + k²) is so important",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 14,
+      "word_count": 76,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "n = 1,000,000 k = 5",
+        "A full quadratic matrix would contain on the order of:",
+        "10^12",
+        "cells.",
+        "A conventional width- k band would contain on the order of:",
+        "10^7",
+        "cells.",
+        "The Landau–Vishkin frontier contains only approximately:",
+        "(k+1)² = 36",
+        "error/diagonal states, after the strings have been indexed for LCE.",
+        "This example deliberately separates:",
+        "string preprocessing cost from edit-frontier cost",
+        "The algorithm still has to inspect enough input to build or access the LCE representation."
+      ]
+    },
+    {
+      "heading": "Worst case when k is large",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 7,
+      "word_count": 31,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "k = Θ(n)",
+        "then:",
+        "n + k² = Θ(n²)",
+        "The method therefore does not give a strongly subquadratic algorithm for unrestricted exact edit distance.",
+        "Its power comes from:",
+        "small k"
+      ]
+    },
+    {
+      "heading": "Connection to edit-distance lower bounds",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 10,
+      "word_count": 47,
+      "evidence": "Modern complexity theory provides strong evidence that unrestricted exact edit distance cannot be solved in:",
+      "paragraphs": [
+        "Modern complexity theory provides strong evidence that unrestricted exact edit distance cannot be solved in:",
+        "O(n^(2-ε))",
+        "time for any fixed positive:",
+        "ε",
+        "under standard fine-grained complexity hypotheses.",
+        "Landau–Vishkin does not contradict this barrier.",
+        "When:",
+        "k = Θ(n)",
+        "its bounded complexity becomes quadratic.",
+        "See Edit Distance Complexity ."
+      ]
+    },
+    {
+      "heading": "Why bounded edit distance can be easier than general edit distance",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 2,
+      "word_count": 43,
+      "evidence": "general edit distance: optimal path may wander through Θ(n) diagonals and contain Θ(n) edits bounded edit distance: optimal path lies inside only 2k+1 diagonals and changes error layer at most k times",
+      "paragraphs": [
+        "general edit distance: optimal path may wander through Θ(n) diagonals and contain Θ(n) edits bounded edit distance: optimal path lies inside only 2k+1 diagonals and changes error layer at most k times",
+        "The bounded problem exposes geometric structure unavailable to an unrestricted computation."
+      ]
+    },
+    {
+      "heading": "Practical implementation without a suffix tree",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 4,
+      "word_count": 51,
+      "evidence": "A production implementation does not necessarily need to reproduce the original suffix-tree machinery.",
+      "paragraphs": [
+        "A production implementation does not necessarily need to reproduce the original suffix-tree machinery.",
+        "For moderate sequence lengths, one can use:",
+        "function LCE(X,i,Y,j): while i < |X| and j < |Y| and X[i] == Y[j]: i++ j++ length++ return length",
+        "This destroys the worst-case constant-time LCE guarantee but can have excellent constants."
+      ]
+    },
+    {
+      "heading": "Word-at-a-time LCE",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "For byte strings:",
+      "paragraphs": [
+        "For byte strings:",
+        "compare 8 / 16 / 32 bytes at once",
+        "and identify the first differing byte using:",
+        "XOR;",
+        "bit scans;",
+        "SIMD comparison masks.",
+        "Then an LCE can often skip large exact regions with very little overhead and no global suffix structure."
+      ]
+    },
+    {
+      "heading": "Choosing the LCE implementation",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 1,
+      "word_count": 38,
+      "evidence": "Situation LCE strategy Need formal worst-case bound Suffix tree or suffix-array/LCP/RMQ structure Short strings Direct scanning Byte-oriented data Word/SIMD scanning Many repeated queries over same strings Precomputed LCE index becomes more attractive Memory constrained Avoid heavy suffix-tree structures",
+      "paragraphs": [
+        "Situation LCE strategy Need formal worst-case bound Suffix tree or suffix-array/LCP/RMQ structure Short strings Direct scanning Byte-oriented data Word/SIMD scanning Many repeated queries over same strings Precomputed LCE index becomes more attractive Memory constrained Avoid heavy suffix-tree structures"
+      ]
+    },
+    {
+      "heading": "LCE preprocessing is reusable",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "If the same string pair is queried for multiple thresholds:",
+      "paragraphs": [
+        "If the same string pair is queried for multiple thresholds:",
+        "k = 1 k = 2 k = 4 ...",
+        "the suffix structure is constructed only once.",
+        "Likewise, in some search architectures, a persistent text index can be reused across many pattern computations."
+      ]
+    },
+    {
+      "heading": "Threshold doubling",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 7,
+      "word_count": 68,
+      "evidence": "If no upper bound is known but the actual edit distance is expected to be small, a system can conceptually try:",
+      "paragraphs": [
+        "If no upper bound is known but the actual edit distance is expected to be small, a system can conceptually try:",
+        "k = 1 2 4 8 ...",
+        "until a solution is found.",
+        "However, it is often better to reuse frontier information or directly process increasing error layers rather than restart the complete computation.",
+        "Because Landau–Vishkin naturally builds:",
+        "F[0] F[1] F[2] ...",
+        "the exact distance is discovered incrementally."
+      ]
+    },
+    {
+      "heading": "Implementation with arrays instead of maps",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 10,
+      "word_count": 37,
+      "evidence": "For a known:",
+      "paragraphs": [
+        "For a known:",
+        "k",
+        "diagonals lie in:",
+        "[-k, k]",
+        "Use an offset:",
+        "index = delta + k",
+        "and store states in arrays of size:",
+        "2k + 1",
+        "This removes hash-map overhead:",
+        "previous[0 .. 2k] current[0 .. 2k]"
+      ]
+    },
+    {
+      "heading": "Boundary clipping",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "The recurrence can propose coordinates outside the valid rectangle:",
+      "paragraphs": [
+        "The recurrence can propose coordinates outside the valid rectangle:",
+        "0 ≤ i ≤ m 0 ≤ j ≤ n",
+        "A correct implementation must reject or clip invalid candidates before performing LCE.",
+        "Special care is required near:",
+        "the top boundary;",
+        "the left boundary;",
+        "the bottom boundary;",
+        "the right boundary."
+      ]
+    },
+    {
+      "heading": "Off-by-one errors",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "Landau–Vishkin implementations are particularly vulnerable to inconsistent coordinate conventions.",
+      "paragraphs": [
+        "Landau–Vishkin implementations are particularly vulnerable to inconsistent coordinate conventions.",
+        "Choose one convention and keep it everywhere."
+      ]
+    },
+    {
+      "heading": "Prefix-coordinate convention",
+      "level": 3,
+      "id": "ux-section-90",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "(i,j) means: i symbols of X consumed j symbols of Y consumed",
+      "paragraphs": [
+        "(i,j) means: i symbols of X consumed j symbols of Y consumed",
+        "Then the next unconsumed symbols are:",
+        "X[i] Y[j]",
+        "and:",
+        "LCE(i,j)",
+        "starts at those indexes.",
+        "This convention makes the recurrence relatively clean."
+      ]
+    },
+    {
+      "heading": "Do not mix cell indexes with character indexes",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "F[e][δ] = i",
+        "is a prefix length, the next character is:",
+        "X[i]",
+        "not:",
+        "X[i+1]",
+        "under zero-based indexing.",
+        "Many published pseudocodes use one-based strings and matrix coordinates, producing formulas containing:",
+        "+1 +2",
+        "that should not be copied mechanically into a zero-based implementation."
+      ]
+    },
+    {
+      "heading": "Testing against Wagner–Fischer",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "The strongest basic test is differential testing.",
+      "paragraphs": [
+        "The strongest basic test is differential testing.",
+        "expected = wagner_fischer(X,Y) if expected <= k: assert( landau_vishkin(X,Y,k) == expected ) else: assert( landau_vishkin(X,Y,k) == GREATER_THAN_K )",
+        "This should be run over large numbers of random short strings."
+      ]
+    },
+    {
+      "heading": "Identity",
+      "level": 3,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "X = \"algorithm\" Y = \"algorithm\" k = 0 result = 0",
+      "paragraphs": [
+        "X = \"algorithm\" Y = \"algorithm\" k = 0 result = 0"
+      ]
+    },
+    {
+      "heading": "Single substitution",
+      "level": 3,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "X = \"abcdef\" Y = \"abqdef\" k = 1 result = 1",
+      "paragraphs": [
+        "X = \"abcdef\" Y = \"abqdef\" k = 1 result = 1"
+      ]
+    },
+    {
+      "heading": "Single insertion",
+      "level": 3,
+      "id": "ux-section-96",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "X = \"abc\" Y = \"abxc\" k = 1 result = 1",
+      "paragraphs": [
+        "X = \"abc\" Y = \"abxc\" k = 1 result = 1"
+      ]
+    },
+    {
+      "heading": "Single deletion",
+      "level": 3,
+      "id": "ux-section-97",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "X = \"abxc\" Y = \"abc\" k = 1 result = 1",
+      "paragraphs": [
+        "X = \"abxc\" Y = \"abc\" k = 1 result = 1"
+      ]
+    },
+    {
+      "heading": "Distance exactly k",
+      "level": 3,
+      "id": "ux-section-98",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "X = \"kitten\" Y = \"sitting\" k = 3 result = 3",
+      "paragraphs": [
+        "X = \"kitten\" Y = \"sitting\" k = 3 result = 3"
+      ]
+    },
+    {
+      "heading": "Distance k + 1",
+      "level": 3,
+      "id": "ux-section-99",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "X = \"kitten\" Y = \"sitting\" k = 2 result = GREATER_THAN_K",
+      "paragraphs": [
+        "X = \"kitten\" Y = \"sitting\" k = 2 result = GREATER_THAN_K"
+      ]
+    },
+    {
+      "heading": "Length rejection",
+      "level": 3,
+      "id": "ux-section-100",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "X = \"abc\" Y = \"abcdefgh\" k = 2 |3 - 8| = 5 result = GREATER_THAN_K",
+      "paragraphs": [
+        "X = \"abc\" Y = \"abcdefgh\" k = 2 |3 - 8| = 5 result = GREATER_THAN_K"
+      ]
+    },
+    {
+      "heading": "Empty strings",
+      "level": 3,
+      "id": "ux-section-101",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "X = \"\" Y = \"\" result = 0",
+      "paragraphs": [
+        "X = \"\" Y = \"\" result = 0",
+        "X = \"\" Y = \"abc\" k = 3 result = 3"
+      ]
+    },
+    {
+      "heading": "Long exact prefix",
+      "level": 3,
+      "id": "ux-section-102",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Use strings sharing thousands of characters before one error to verify the LCE jump.",
+      "paragraphs": [
+        "Use strings sharing thousands of characters before one error to verify the LCE jump."
+      ]
+    },
+    {
+      "heading": "Long exact suffix",
+      "level": 3,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Place the error near the beginning and confirm the final LCE reaches the end.",
+      "paragraphs": [
+        "Place the error near the beginning and confirm the final LCE reaches the end."
+      ]
+    },
+    {
+      "heading": "Testing the farthest-reaching invariant",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 6,
+      "word_count": 39,
+      "evidence": "For every state:",
+      "paragraphs": [
+        "For every state:",
+        "(e,δ)",
+        "a brute-force DP implementation can verify that no coordinate farther than:",
+        "F[e][δ]",
+        "is reachable on that diagonal with at most e edits.",
+        "This directly validates the main algorithmic invariant rather than only the final distance."
+      ]
+    },
+    {
+      "heading": "Testing LCE separately",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "Because LCE correctness is foundational, test:",
+      "paragraphs": [
+        "Because LCE correctness is foundational, test:",
+        "LCE(i,j)",
+        "against direct character scanning for random pairs of suffixes.",
+        "A single incorrect LCE result can cause Landau–Vishkin to jump across a mismatch and return an invalid edit distance."
+      ]
+    },
+    {
+      "heading": "Rolling hashes require verification",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "Hash-based LCE can use binary search over substring equality:",
+      "paragraphs": [
+        "Hash-based LCE can use binary search over substring equality:",
+        "hash(X[i..i+ℓ]) == hash(Y[j..j+ℓ]) ?",
+        "but ordinary hashing has collision probability.",
+        "If exact correctness is required, options include:",
+        "collision-free deterministic structures;",
+        "multiple independent hashes with an explicitly probabilistic contract;",
+        "direct verification of the discovered region.",
+        "A randomized LCE changes the correctness model of an otherwise exact algorithm."
+      ]
+    },
+    {
+      "heading": "Performance engineering",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 10,
+      "word_count": 62,
+      "evidence": "Important practical considerations include:",
+      "paragraphs": [
+        "Important practical considerations include:",
+        "dense arrays for diagonal frontiers;",
+        "reusing buffers between edit layers;",
+        "keeping diagonal states in contiguous memory;",
+        "avoiding expensive per-state object allocation;",
+        "specializing the LCE implementation to the alphabet;",
+        "using integer symbol IDs rather than heavyweight objects;",
+        "normalizing Unicode once before the hot loop;",
+        "stopping immediately when the final diagonal reaches the target endpoint.",
+        "See Levenshtein Performance Engineering ."
+      ]
+    },
+    {
+      "heading": "When Landau–Vishkin is an excellent choice",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 1,
+      "word_count": 64,
+      "evidence": "Condition Why it fits Small expected edit distance Only O(k²) farthest-reaching states are required for pairwise bounded distance. Long sequences Long matching runs are skipped through LCE. Unit-cost insert/delete/substitute model The classical recurrence applies directly. Candidate verification A small k is often already known from the retrieval stage. Repeated LCE access is cheap The algorithm benefits strongly from constant-time or very fast extension queries.",
+      "paragraphs": [
+        "Condition Why it fits Small expected edit distance Only O(k²) farthest-reaching states are required for pairwise bounded distance. Long sequences Long matching runs are skipped through LCE. Unit-cost insert/delete/substitute model The classical recurrence applies directly. Candidate verification A small k is often already known from the retrieval stage. Repeated LCE access is cheap The algorithm benefits strongly from constant-time or very fast extension queries."
+      ]
+    },
+    {
+      "heading": "When another method may be better",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 1,
+      "word_count": 64,
+      "evidence": "Situation Alternative k is large Full DP, bit-parallel methods, or other general algorithms Short patterns fit in one word Myers bit-vector algorithm Simple implementation desired Ukkonen-style banded DP Huge dictionary search Levenshtein automata or indexing/filtering Arbitrary weighted edits Weighted dynamic programming or modern weighted bounded algorithms Affine biological gaps Sequence-alignment methods with explicit gap states Semantic similarity Semantic representations rather than lexical edit distance",
+      "paragraphs": [
+        "Situation Alternative k is large Full DP, bit-parallel methods, or other general algorithms Short patterns fit in one word Myers bit-vector algorithm Simple implementation desired Ukkonen-style banded DP Huge dictionary search Levenshtein automata or indexing/filtering Arbitrary weighted edits Weighted dynamic programming or modern weighted bounded algorithms Affine biological gaps Sequence-alignment methods with explicit gap states Semantic similarity Semantic representations rather than lexical edit distance"
+      ]
+    },
+    {
+      "heading": "\"Landau–Vishkin simply computes the k-wide DP band\"",
+      "level": 3,
+      "id": "ux-section-111",
+      "paragraph_count": 1,
+      "word_count": 24,
+      "evidence": "No. Its distinctive idea is to store only the farthest-reaching state for each error count and diagonal and jump over exact runs with LCE.",
+      "paragraphs": [
+        "No. Its distinctive idea is to store only the farthest-reaching state for each error count and diagonal and jump over exact runs with LCE."
+      ]
+    },
+    {
+      "heading": "\"The algorithm is O(nk)\"",
+      "level": 3,
+      "id": "ux-section-112",
+      "paragraph_count": 1,
+      "word_count": 37,
+      "evidence": "That statement is valid for important approximate-matching formulations, but not as a universal description of every Landau–Vishkin result. The bounded pairwise problem is commonly stated as O(n+k²) , while the 1988 JCSS approximate-matching paper reports different bounds.",
+      "paragraphs": [
+        "That statement is valid for important approximate-matching formulations, but not as a universal description of every Landau–Vishkin result. The bounded pairwise problem is commonly stated as O(n+k²) , while the 1988 JCSS approximate-matching paper reports different bounds."
+      ]
+    },
+    {
+      "heading": "\"The JCSS 1988 paper itself says every Landau–Vishkin search is O(nk)\"",
+      "level": 3,
+      "id": "ux-section-113",
+      "paragraph_count": 1,
+      "word_count": 28,
+      "evidence": "No. The JCSS paper reports O(m+nk²) for a fixed alphabet and O(m log m+nk²) for general input. The later serial approximate-matching formulation achieves O(nk) for a fixed alphabet.",
+      "paragraphs": [
+        "No. The JCSS paper reports O(m+nk²) for a fixed alphabet and O(m log m+nk²) for general input. The later serial approximate-matching formulation achieves O(nk) for a fixed alphabet."
+      ]
+    },
+    {
+      "heading": "\"The algorithm is heuristic\"",
+      "level": 3,
+      "id": "ux-section-114",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "No. With exact LCE queries it computes exact unit-cost edit-distance information.",
+      "paragraphs": [
+        "No. With exact LCE queries it computes exact unit-cost edit-distance information."
+      ]
+    },
+    {
+      "heading": "\"Farthest-reaching means the path with the fewest edits\"",
+      "level": 3,
+      "id": "ux-section-115",
+      "paragraph_count": 1,
+      "word_count": 24,
+      "evidence": "No. The edit budget is fixed first. Among paths using that budget and ending on one diagonal, only the path reaching farthest is retained.",
+      "paragraphs": [
+        "No. The edit budget is fixed first. Among paths using that budget and ending on one diagonal, only the path reaching farthest is retained."
+      ]
+    },
+    {
+      "heading": "\"Greedy extension makes the algorithm greedy overall\"",
+      "level": 3,
+      "id": "ux-section-116",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "No. Only zero-cost exact matches are greedily extended. Competing edit choices are still represented across diagonals and error layers.",
+      "paragraphs": [
+        "No. Only zero-cost exact matches are greedily extended. Competing edit choices are still represented across diagonals and error layers."
+      ]
+    },
+    {
+      "heading": "\"LCE itself computes edit distance\"",
+      "level": 3,
+      "id": "ux-section-117",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "No. LCE only jumps across exact-match segments. The farthest-reaching recurrence determines how edits connect those segments.",
+      "paragraphs": [
+        "No. LCE only jumps across exact-match segments. The farthest-reaching recurrence determines how edits connect those segments."
+      ]
+    },
+    {
+      "heading": "\"Landau–Vishkin naturally supports arbitrary weighted costs\"",
+      "level": 3,
+      "id": "ux-section-118",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "No. Uniform unit-cost error layers are fundamental to the classical recurrence.",
+      "paragraphs": [
+        "No. Uniform unit-cost error layers are fundamental to the classical recurrence."
+      ]
+    },
+    {
+      "heading": "\"Small edit distance means semantic similarity\"",
+      "level": 3,
+      "id": "ux-section-119",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "No. The algorithm measures a lexical sequence transformation.",
+      "paragraphs": [
+        "No. The algorithm measures a lexical sequence transformation."
+      ]
+    },
+    {
+      "heading": "The core conceptual decomposition",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 1,
+      "word_count": 58,
+      "evidence": "EDIT DISTANCE MATRIX ↓ VIEW AS EDIT GRAPH ↓ GROUP STATES BY DIAGONAL δ ↓ GROUP PATHS BY ERROR COUNT e ↓ ON EACH (e,δ), KEEP ONLY FARTHEST PATH ↓ ADD ONE ERROR FROM δ-1, δ, OR δ+1 ↓ LCE JUMP THROUGH ALL FOLLOWING MATCHES ↓ NEW FARTHEST STATE ↓ REPEAT UNTIL TARGET REACHED OR e = k",
+      "paragraphs": [
+        "EDIT DISTANCE MATRIX ↓ VIEW AS EDIT GRAPH ↓ GROUP STATES BY DIAGONAL δ ↓ GROUP PATHS BY ERROR COUNT e ↓ ON EACH (e,δ), KEEP ONLY FARTHEST PATH ↓ ADD ONE ERROR FROM δ-1, δ, OR δ+1 ↓ LCE JUMP THROUGH ALL FOLLOWING MATCHES ↓ NEW FARTHEST STATE ↓ REPEAT UNTIL TARGET REACHED OR e = k"
+      ]
+    },
+    {
+      "heading": "Key mathematical state",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "F[e][δ] = farthest prefix position of X reachable on diagonal δ with at most e unit edits after maximal exact-match extension",
+      "paragraphs": [
+        "F[e][δ] = farthest prefix position of X reachable on diagonal δ with at most e unit edits after maximal exact-match extension",
+        "and:",
+        "j = F[e][δ] + δ",
+        "is the corresponding prefix position in Y ."
+      ]
+    },
+    {
+      "heading": "Key recurrence",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "x = max( F[e-1][δ] + 1, F[e-1][δ-1], F[e-1][δ+1] + 1 ) y = x + δ F[e][δ] = x + LCE_XY(x,y)",
+      "paragraphs": [
+        "x = max( F[e-1][δ] + 1, F[e-1][δ-1], F[e-1][δ+1] + 1 ) y = x + δ F[e][δ] = x + LCE_XY(x,y)",
+        "with invalid predecessor and boundary cases excluded."
+      ]
+    },
+    {
+      "heading": "Key complexity result for bounded pairwise edit distance",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "number of frontier states: O(k²) LCE preprocessing: O(n) constant-time LCE: O(1) per state total: O(n + k²)",
+      "paragraphs": [
+        "number of frontier states: O(k²) LCE preprocessing: O(n) constant-time LCE: O(1) per state total: O(n + k²)",
+        "for the classical unit-cost bounded problem under an appropriate string-processing model."
+      ]
+    },
+    {
+      "heading": "Scientific significance",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 6,
+      "word_count": 97,
+      "evidence": "Landau–Vishkin is important for more than its complexity bound.",
+      "paragraphs": [
+        "Landau–Vishkin is important for more than its complexity bound.",
+        "It demonstrates a powerful algorithm-design pattern:",
+        "A dynamic-programming matrix can contain long regions in which the optimal transition is obvious. Instead of evaluating every state, represent only the points where the solution's combinatorial structure changes and use a secondary data structure to jump across the trivial regions.",
+        "In Landau–Vishkin:",
+        "nontrivial events = edit operations trivial regions = exact matching runs compressed state = farthest-reaching diagonal frontier jump primitive = LCE",
+        "This idea has influenced bounded edit distance, approximate matching, sequence algorithms, dynamic string problems, and modern parameterized approaches."
+      ]
+    },
+    {
+      "heading": "Historical perspective",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 9,
+      "word_count": 84,
+      "evidence": "The work developed during a period in which researchers were trying to move approximate string matching beyond full O(mn) dynamic programming.",
+      "paragraphs": [
+        "The work developed during a period in which researchers were trying to move approximate string matching beyond full O(mn) dynamic programming.",
+        "Landau and Vishkin introduced methods combining:",
+        "edit-graph diagonals;",
+        "farthest-reaching paths;",
+        "fast exact string-matching primitives;",
+        "suffix-based preprocessing;",
+        "parallel algorithm design.",
+        "Their 1988 JCSS paper Fast String Matching with k Differences became one of the foundational references for bounded edit distance and approximate matching.",
+        "Subsequent research refined the preprocessing, space usage, LCE implementation, and parameter dependence, but the core geometric insight remains recognizable decades later."
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 1,
+      "word_count": 93,
+      "evidence": "Property Landau–Vishkin Authors Gad M. Landau and Uzi Vishkin Core edit model Unit-cost insertion, deletion, substitution Main representation Farthest-reaching path per diagonal and error budget Critical auxiliary primitive Longest Common Extension (LCE) Diagonal definition δ = j-i Relevant diagonals for k-bounded pairwise distance 2k+1 Number of bounded frontier states O(k²) Bounded pairwise complexity O(n+k²) with appropriate LCE preprocessing 1988 JCSS approximate-search bound O(m+nk²) for fixed alphabet Later fixed-alphabet serial search result O(nk) Exact? Yes Arbitrary weighted costs? No, not in the classical algorithm Primitive transposition? No Best theoretical regime Small edit distance k",
+      "paragraphs": [
+        "Property Landau–Vishkin Authors Gad M. Landau and Uzi Vishkin Core edit model Unit-cost insertion, deletion, substitution Main representation Farthest-reaching path per diagonal and error budget Critical auxiliary primitive Longest Common Extension (LCE) Diagonal definition δ = j-i Relevant diagonals for k-bounded pairwise distance 2k+1 Number of bounded frontier states O(k²) Bounded pairwise complexity O(n+k²) with appropriate LCE preprocessing 1988 JCSS approximate-search bound O(m+nk²) for fixed alphabet Later fixed-alphabet serial search result O(nk) Exact? Yes Arbitrary weighted costs? No, not in the classical algorithm Primitive transposition? No Best theoretical regime Small edit distance k"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 5,
+      "word_count": 240,
+      "evidence": "The Landau–Vishkin algorithm replaces cell-by-cell edit-distance dynamic programming with a sparse frontier of farthest-reaching edit paths. States are organized by error count and matrix diagonal. For a fixed error budget and diagonal, every path except the farthest-reaching one is dominated and can be discarded.",
+      "paragraphs": [
+        "The Landau–Vishkin algorithm replaces cell-by-cell edit-distance dynamic programming with a sparse frontier of farthest-reaching edit paths. States are organized by error count and matrix diagonal. For a fixed error budget and diagonal, every path except the farthest-reaching one is dominated and can be discarded.",
+        "From each retained frontier state, the next layer introduces exactly one substitution, insertion, or deletion. The resulting path is then greedily advanced over the complete following run of equal symbols. A longest common extension query makes this exact-match extension constant-time after suitable string preprocessing.",
+        "For bounded pairwise unit-cost edit distance, error layer e contains only 2e+1 relevant diagonals. Summing over all layers through k gives only O(k²) frontier states. Together with linear-time LCE preprocessing, this yields the classic O(n+k²) bounded edit-distance result.",
+        "The same diagonal and farthest-reaching principles also underlie the Landau–Vishkin approximate string-matching algorithms. Because approximate text search must consider potential occurrences throughout a text rather than only one start-to-end alignment, its complexity bounds differ. The 1988 JCSS paper reports O(m+nk²) time for a fixed alphabet, while subsequent Landau–Vishkin work gives an O(nk) fixed-alphabet serial approximate-matching algorithm.",
+        "The lasting contribution is the abstraction itself: edit distance does not always need to be solved by enumerating a matrix. When the number of differences is small, the meaningful information lies at the boundaries between long exact-match regions. Landau–Vishkin captures those boundaries with a small collection of diagonal frontier states and uses LCE to skip everything in between."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 8,
+      "word_count": 114,
+      "evidence": "Wagner–Fischer Algorithm — the complete dynamic-programming baseline whose edit graph provides the geometric foundation for Landau–Vishkin.",
+      "paragraphs": [
+        "Wagner–Fischer Algorithm — the complete dynamic-programming baseline whose edit graph provides the geometric foundation for Landau–Vishkin.",
+        "Ukkonen Algorithm — bounded and distance-sensitive dynamic programming without the same LCE-based frontier compression.",
+        "Myers Bit-Vector Algorithm — word-parallel edit-distance computation using bit-vector DP differences.",
+        "Bounded and Parameterized Edit Distance — the broader theory of edit-distance algorithms whose complexity depends on k.",
+        "Approximate String Matching — the broader search problem addressed by the historical Landau–Vishkin work.",
+        "Indexing and Filtering for Edit Distance — reducing large candidate collections before exact bounded verification.",
+        "Edit Distance Complexity — quadratic barriers, parameterized algorithms, approximation, and modern lower bounds.",
+        "Landau–Vishkin 1988 Paper — detailed study of Fast String Matching with k Differences ."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 7,
+      "word_count": 203,
+      "evidence": "Gad M. Landau and Uzi Vishkin, “Fast String Matching with k Differences,” Journal of Computer and System Sciences , 37(1), 63–78, 1988. DOI: 10.1016/0022-0000(88)90045-1. DOI record .",
+      "paragraphs": [
+        "Gad M. Landau and Uzi Vishkin, “Fast String Matching with k Differences,” Journal of Computer and System Sciences , 37(1), 63–78, 1988. DOI: 10.1016/0022-0000(88)90045-1. DOI record .",
+        "Gad M. Landau and Uzi Vishkin, “Introducing Efficient Parallelism into Approximate String Matching and a New Serial Algorithm,” Proceedings of the 18th Annual ACM Symposium on Theory of Computing , 220–230, 1986. DOI: 10.1145/12130.12152. DOI record .",
+        "Gad M. Landau and Uzi Vishkin, “Fast Parallel and Serial Approximate String Matching,” Journal of Algorithms , 10(2), 157–169, 1989. DOI: 10.1016/0196-6774(89)90010-2. DOI record .",
+        "Gad M. Landau, Uzi Vishkin, and Ruth Nussinov, “An Efficient String Matching Algorithm with k Differences for Nucleotide and Amino Acid Sequences,” Nucleic Acids Research , 14(1), 31–46, 1986. DOI: 10.1093/nar/14.1.31. DOI record .",
+        "Rodrigo C. de Castro Miranda, Mauricio Ayala-Rincón, and Leon Solon, “Modifications of the Landau-Vishkin Algorithm Computing Longest Common Extensions via Suffix Arrays and Efficient RMQ Computations.” Paper .",
+        "Simone Faro and M. O. Külekci, “The Longest Common Extension Problem Revisited and Applications to Approximate String Searching,” Journal of Discrete Algorithms , 8(4), 418–428, 2010. DOI: 10.1016/j.jda.2010.08.004. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI: 10.1145/375360.375365. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Landau–Vishkin Algorithm",
+          "anchor_id": "ux-section-1",
+          "alias": "approximate string matching",
+          "excerpt": "The Landau–Vishkin algorithm is a family of exact, parameter-sensitive methods for edit distance and approximate string matching developed by Gad M. Landau and Uzi Vishkin during the 1980s. Its central idea is to stop evaluating the dynamic-programming matrix cell by cell. Instead, the algorithm tracks only the farthest-reaching edit path on each relevant diagonal and uses longest common extension queries to jump across arbitrarily long runs of exact matches in a single operation."
+        },
+        {
+          "section": "Terminology: there is more than one Landau–Vishkin result",
+          "anchor_id": "ux-section-2",
+          "alias": "approximate string matching",
+          "excerpt": "Work Problem / result Landau, Vishkin & Nussinov, 1986 Biological sequence matching with at most k differences; an early O(k²n) -type formulation. Landau & Vishkin, STOC 1986 Introduced efficient parallelism and a new serial approximate-matching algorithm. Landau & Vishkin, JCSS 1988 Fast String Matching with k Differences ; historically central to the bounded-edit-distance method. Landau & Vishkin, 1989 Serial approximate string matching in O(nk) time for a fixed alphabet, together with a parallel formulation."
+        },
+        {
+          "section": "Approximate string matching",
+          "anchor_id": "ux-section-45",
+          "alias": "approximate string matching",
+          "excerpt": "The approximate string-matching problem is:"
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-128",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — the broader theory of edit-distance algorithms whose complexity depends on k."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Transpositions are not classical Landau–Vishkin edits",
+          "anchor_id": "ux-section-65",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau–Levenshtein Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Connection to edit-distance lower bounds",
+          "anchor_id": "ux-section-80",
+          "alias": "edit distance complexity",
+          "excerpt": "See Edit Distance Complexity ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-128",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — quadratic barriers, parameterized algorithms, approximation, and modern lower bounds."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-in-genomic-search-and-read-mapping",
+      "evidence": [
+        {
+          "section": "Genomic verification",
+          "anchor_id": "ux-section-68",
+          "alias": "edit distance in genomic search and read mapping",
+          "excerpt": "See Edit Distance in Genomic Search and Read Mapping ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Landau–Vishkin Algorithm",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "The Landau–Vishkin algorithm is a family of exact, parameter-sensitive methods for edit distance and approximate string matching developed by Gad M. Landau and Uzi Vishkin during the 1980s. Its central idea is to stop evaluating the dynamic-programming matrix cell by cell. Instead, the algorithm tracks only the farthest-reaching edit path on each relevant diagonal and uses longest common extension queries to jump across arbitrarily long runs of exact matches in a single operation."
+        },
+        {
+          "section": "Terminology: there is more than one Landau–Vishkin result",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "Work Problem / result Landau, Vishkin & Nussinov, 1986 Biological sequence matching with at most k differences; an early O(k²n) -type formulation. Landau & Vishkin, STOC 1986 Introduced efficient parallelism and a new serial approximate-matching algorithm. Landau & Vishkin, JCSS 1988 Fast String Matching with k Differences ; historically central to the bounded-edit-distance method. Landau & Vishkin, 1989 Serial approximate string matching in O(nk) time for a fixed alphabet, together with a parallel formulation."
+        },
+        {
+          "section": "The underlying edit-distance problem",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "The standard unit-cost edit distance between X and Y is the minimum number of:"
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Unicode and sequence representation",
+          "anchor_id": "ux-section-71",
+          "alias": "edit operations",
+          "excerpt": "to count edit operations and to determine exact-match runs"
+        },
+        {
+          "section": "Scientific significance",
+          "anchor_id": "ux-section-124",
+          "alias": "edit operations",
+          "excerpt": "nontrivial events = edit operations trivial regions = exact matching runs compressed state = farthest-reaching diagonal frontier jump primitive = LCE"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Why it is not itself an indexing algorithm",
+          "anchor_id": "ux-section-69",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-128",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — reducing large candidate collections before exact bounded verification."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "When another method may be better",
+          "anchor_id": "ux-section-109",
+          "alias": "levenshtein automata",
+          "excerpt": "Situation Alternative k is large Full DP, bit-parallel methods, or other general algorithms Short patterns fit in one word Myers bit-vector algorithm Simple implementation desired Ukkonen-style banded DP Huge dictionary search Levenshtein automata or indexing/filtering Arbitrary weighted edits Weighted dynamic programming or modern weighted bounded algorithms Affine biological gaps Sequence-alignment methods with explicit gap states Semantic similarity Semantic representations rather than lexical edit distance"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-performance-engineering",
+      "evidence": [
+        {
+          "section": "Performance engineering",
+          "anchor_id": "ux-section-107",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "See Levenshtein Performance Engineering ."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Landau–Vishkin versus Myers bit vectors",
+          "anchor_id": "ux-section-43",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "The Myers Bit-Vector Algorithm described elsewhere on this site is Gene Myers' 1999 word-parallel algorithm."
+        },
+        {
+          "section": "When another method may be better",
+          "anchor_id": "ux-section-109",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Situation Alternative k is large Full DP, bit-parallel methods, or other general algorithms Short patterns fit in one word Myers bit-vector algorithm Simple implementation desired Ukkonen-style banded DP Huge dictionary search Levenshtein automata or indexing/filtering Arbitrary weighted edits Weighted dynamic programming or modern weighted bounded algorithms Affine biological gaps Sequence-alignment methods with explicit gap states Semantic similarity Semantic representations rather than lexical edit distance"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-128",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm — word-parallel edit-distance computation using bit-vector DP differences."
+        }
+      ]
+    },
+    {
+      "target": "/paper-landau-vishkin-1988",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-128",
+          "alias": "landau vishkin 1988",
+          "excerpt": "Landau–Vishkin 1988 Paper — detailed study of Fast String Matching with k Differences ."
+        }
+      ]
+    },
+    {
+      "target": "/paper-myers-1999",
+      "evidence": [
+        {
+          "section": "Landau–Vishkin versus Myers bit vectors",
+          "anchor_id": "ux-section-43",
+          "alias": "myers 1999",
+          "excerpt": "The Myers Bit-Vector Algorithm described elsewhere on this site is Gene Myers' 1999 word-parallel algorithm."
+        }
+      ]
+    },
+    {
+      "target": "/sequence-alignment-and-gap-models",
+      "evidence": [
+        {
+          "section": "But biological alignment may require richer scoring",
+          "anchor_id": "ux-section-67",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "See Sequence Alignment and Gap Models ."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Landau–Vishkin versus Ukkonen",
+          "anchor_id": "ux-section-42",
+          "alias": "ukkonen algorithm",
+          "excerpt": "The Ukkonen algorithm also exploits small edit distance, but the computational granularity differs."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-128",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm — bounded and distance-sensitive dynamic programming without the same LCE-based frontier compression."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-128",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "Wagner–Fischer Algorithm — the complete dynamic-programming baseline whose edit graph provides the geometric foundation for Landau–Vishkin."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Why arbitrary weighted edit distance breaks the classical recurrence",
+          "anchor_id": "ux-section-63",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "This is why classical Landau–Vishkin should not be casually described as an algorithm for arbitrary weighted Levenshtein distance ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/landau-vishkin-algorithm#page",
+      "type": "WebPage",
+      "name": "Landau–Vishkin Algorithm",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "type": "TechArticle",
+      "name": "Landau–Vishkin Algorithm",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/approximate-string-matching#term"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm",
+      "type": "DefinedTerm",
+      "name": "Landau–Vishkin Algorithm",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/landau-vishkin-algorithm#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "hasPart",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#page",
+      "mainEntity",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#page",
+      "isPartOf",
+      "https://www.levenshtein.net/algorithms#collection"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#page",
+      "hasPart",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/approximate-string-matching#term"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "isPartOf",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "citation",
+      "https://doi.org/10.1016/0022-0000(88)90045-1"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/12130.12152"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "citation",
+      "https://doi.org/10.1016/0196-6774(89)90010-2"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "citation",
+      "https://doi.org/10.1093/nar/14.1.31"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "citation",
+      "https://doi.org/10.1016/j.jda.2010.08.004"
+    ],
+    [
+      "https://www.levenshtein.net/landau-vishkin-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ],
+    [
+      "https://doi.org/10.1016/0022-0000(88)90045-1",
+      "about",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://doi.org/10.1016/0022-0000(88)90045-1",
+      "about",
+      "https://www.levenshtein.net/approximate-string-matching#term"
+    ],
+    [
+      "https://doi.org/10.1016/0022-0000(88)90045-1",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://doi.org/10.1145/12130.12152",
+      "about",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://doi.org/10.1016/0196-6774(89)90010-2",
+      "about",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1016/0022-0000(88)90045-1",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/12130.12152",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/0196-6774(89)90010-2",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1093/nar/14.1.31",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://mat.unb.br/~ayala/lvsaANDrmq.pdf",
+      "anchor": "Paper"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.jda.2010.08.004",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    }
+  ]
+}

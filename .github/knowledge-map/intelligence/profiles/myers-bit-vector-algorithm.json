@@ -1,0 +1,2682 @@
+{
+  "url": "/myers-bit-vector-algorithm",
+  "title": "Myers Bit-Vector Algorithm: Bit-Parallel Edit Distance",
+  "h1": [
+    "Myers Bit-Vector Algorithm: Bit-Parallel Edit Distance"
+  ],
+  "group": "Algorithms",
+  "provisional_mission": "Bit-parallel",
+  "content_sha256": "b0f685f298430bdc4e7de231dab6d3a510fafb37179976e39117645e42f2dcd8",
+  "canonical": "https://www.levenshtein.net/myers-bit-vector-algorithm",
+  "primary_entity_candidate": "Myers Bit-Vector Algorithm: Bit-Parallel Edit Distance",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Myers Bit-Vector Algorithm",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 2,
+      "word_count": 136,
+      "evidence": "The Myers bit-vector algorithm is a word-parallel method for computing and exploiting unit-cost edit distance. Introduced by Gene Myers in 1999, it transforms the classical dynamic-programming matrix into compact bit-vector state so that many edit-distance cells can be advanced simultaneously using a small sequence of Boolean, shift, addition, and arithmetic operations. When the pattern fits inside a machine word, an entire dynamic-programming column can effectively be updated with a constant number of machine-word operations for each scanned text symbol.",
+      "paragraphs": [
+        "The Myers bit-vector algorithm is a word-parallel method for computing and exploiting unit-cost edit distance. Introduced by Gene Myers in 1999, it transforms the classical dynamic-programming matrix into compact bit-vector state so that many edit-distance cells can be advanced simultaneously using a small sequence of Boolean, shift, addition, and arithmetic operations. When the pattern fits inside a machine word, an entire dynamic-programming column can effectively be updated with a constant number of machine-word operations for each scanned text symbol.",
+        "The algorithm is closely connected to Levenshtein distance , but an important historical distinction must be preserved: Myers' original 1999 formulation addresses approximate substring matching under unit-cost insertion, deletion, and substitution. The same bit-vector machinery can be adapted to global pairwise edit distance and has subsequently become a major building block in high-performance sequence-alignment and string-matching software."
+      ]
+    },
+    {
+      "heading": "The problem solved in Myers' original paper",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 8,
+      "word_count": 126,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "P = p₁p₂...pₘ T = t₁t₂...tₙ",
+        "where P is a pattern of length m and T is a text of length n .",
+        "Given an error threshold k , the classical approximate string-matching problem is to report every text position j for which some suffix ending at j is within edit distance k of the pattern:",
+        "min over g of d( P, T[g..j] ) ≤ k",
+        "Here d is unit-cost Levenshtein distance:",
+        "insertion cost 1 deletion cost 1 substitution cost 1 match cost 0",
+        "This is a search problem rather than merely a pairwise-distance problem. The algorithm scans the text from left to right and maintains enough information to know the best edit distance of the pattern against a suffix ending at every text position."
+      ]
+    },
+    {
+      "heading": "The classical dynamic-programming formulation",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 18,
+      "word_count": 116,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "C[i][j]",
+        "as the minimum edit distance between pattern prefix:",
+        "P[1..i]",
+        "and a suffix of:",
+        "T[1..j]",
+        "ending at position j .",
+        "The recurrence is the familiar Levenshtein recurrence:",
+        "C[i][j] = min( C[i-1][j-1] + mismatch(pᵢ,tⱼ), C[i-1][j] + 1, C[i][j-1] + 1 ) mismatch(a,b) = 0 if a = b 1 otherwise",
+        "For approximate substring matching, the top boundary is:",
+        "C[0][j] = 0 for every j",
+        "rather than:",
+        "C[0][j] = j",
+        "as in ordinary global pairwise edit distance.",
+        "This boundary condition means arbitrary text before the beginning of a candidate occurrence is free.",
+        "The output condition is:",
+        "C[m][j] ≤ k",
+        "so the bottom cell of each text column tells whether an approximate occurrence ends at position j ."
+      ]
+    },
+    {
+      "heading": "The bottleneck in ordinary dynamic programming",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 9,
+      "word_count": 68,
+      "evidence": "The standard algorithm evaluates approximately:",
+      "paragraphs": [
+        "The standard algorithm evaluates approximately:",
+        "m × n",
+        "cells.",
+        "Thus:",
+        "Time: O(mn)",
+        "and a conventional column-by-column implementation requires:",
+        "O(m)",
+        "working memory if only the current and preceding columns are retained.",
+        "Myers' key contribution is not simply to compress the integers stored in one column. The deeper insight is that the differences between neighboring dynamic-programming values are highly constrained and can therefore be encoded compactly and updated in parallel."
+      ]
+    },
+    {
+      "heading": "The fundamental delta property",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 14,
+      "word_count": 90,
+      "evidence": "For the unit-cost Levenshtein recurrence, differences between adjacent DP cells are always one of:",
+      "paragraphs": [
+        "For the unit-cost Levenshtein recurrence, differences between adjacent DP cells are always one of:",
+        "-1 0 +1",
+        "Define the vertical difference:",
+        "Dv[i,j] = C[i,j] - C[i-1,j]",
+        "and the horizontal difference:",
+        "Dh[i,j] = C[i,j] - C[i,j-1]",
+        "Then:",
+        "Dv[i,j] ∈ {-1,0,+1} Dh[i,j] ∈ {-1,0,+1}",
+        "for every interior matrix position.",
+        "This property is extraordinarily important. A conventional DP column stores full integer values:",
+        "0 1 2 2 3 4 ...",
+        "but Myers instead represents the changes between adjacent values:",
+        "+1 +1 0 +1 +1 ...",
+        "Each vertical difference requires only three logical states."
+      ]
+    },
+    {
+      "heading": "The relocatable dynamic-programming matrix",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 8,
+      "word_count": 91,
+      "evidence": "Because the top boundary in the original substring-matching formulation satisfies:",
+      "paragraphs": [
+        "Because the top boundary in the original substring-matching formulation satisfies:",
+        "C[0][j] = 0",
+        "the complete set of values in column j can be reconstructed from its vertical differences:",
+        "C[1,j] = C[0,j] + Dv[1,j] C[2,j] = C[1,j] + Dv[2,j] ... C[m,j] = C[0,j] + sum from i=1 to m of Dv[i,j]",
+        "Therefore the vector:",
+        "Dv_j = ( Dv[1,j], Dv[2,j], ... Dv[m,j] )",
+        "contains enough information to represent the column relative to its known top value.",
+        "Myers calls this a relocatable representation of the dynamic-programming matrix: absolute values are replaced by local differences."
+      ]
+    },
+    {
+      "heading": "Encoding a complete column with two bit vectors",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 12,
+      "word_count": 79,
+      "evidence": "Because every vertical difference is only:",
+      "paragraphs": [
+        "Because every vertical difference is only:",
+        "-1, 0, or +1",
+        "two bit vectors are sufficient.",
+        "Define:",
+        "Pv[i] = 1 iff Dv[i] = +1 Mv[i] = 1 iff Dv[i] = -1",
+        "When:",
+        "Pv[i] = 0 and Mv[i] = 0",
+        "the vertical difference is zero.",
+        "The pair:",
+        "(Pv, Mv)",
+        "therefore represents the complete vertical delta state of one dynamic-programming column.",
+        "Pv bit Mv bit Vertical difference 1 0 +1 0 0 0 0 1 -1 1 1 Not a valid state"
+      ]
+    },
+    {
+      "heading": "Why the machine word matters",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 12,
+      "word_count": 86,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "w = number of bits in one machine word",
+        "For a common machine:",
+        "w = 32 or w = 64",
+        "If:",
+        "m ≤ w",
+        "then every pattern position fits into one bit of a single machine word.",
+        "Instead of performing scalar work separately for:",
+        "pattern position 1 pattern position 2 pattern position 3 ... pattern position m",
+        "the CPU can manipulate all those logical positions simultaneously.",
+        "64 pattern positions ↓ one 64-bit word ↓ a small sequence of machine operations",
+        "This is bit parallelism ."
+      ]
+    },
+    {
+      "heading": "The pattern-equality masks",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 8,
+      "word_count": 64,
+      "evidence": "Every DP cell needs to know whether:",
+      "paragraphs": [
+        "Every DP cell needs to know whether:",
+        "pᵢ = tⱼ",
+        "If these comparisons were performed individually for every i , Myers would lose the benefit of word-level parallelism.",
+        "Instead, the pattern is preprocessed.",
+        "For every symbol c , create a bit mask:",
+        "Peq[c]",
+        "such that bit i is set exactly when pattern position i contains c :",
+        "Peq[c][i] = 1 iff pᵢ = c"
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-10",
+      "paragraph_count": 14,
+      "word_count": 82,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "P = \"banana\"",
+        "using the least significant bit for pattern position 1.",
+        "Then conceptually:",
+        "positions: 6 5 4 3 2 1 pattern: a n a n a b",
+        "The equality mask for a contains ones at positions 2, 4, and 6:",
+        "Peq['a'] = 101010",
+        "For n :",
+        "Peq['n'] = 010100",
+        "and for b :",
+        "Peq['b'] = 000001",
+        "When text symbol tⱼ arrives, the complete pattern-equality vector is obtained with one lookup:",
+        "Eq = Peq[tⱼ]",
+        "No loop over the pattern is required."
+      ]
+    },
+    {
+      "heading": "Initialization",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 12,
+      "word_count": 72,
+      "evidence": "Before scanning any text symbol, the pattern is being compared against the empty text suffix.",
+      "paragraphs": [
+        "Before scanning any text symbol, the pattern is being compared against the empty text suffix.",
+        "Its distance is:",
+        "Score = m",
+        "because all m pattern symbols would have to be deleted.",
+        "The initial vertical deltas are all:",
+        "+1",
+        "because:",
+        "C[i,0] = i",
+        "so:",
+        "Pv = 111...111 Mv = 000...000 Score = m",
+        "For a pattern occupying exactly m bits:",
+        "MASK = (1 << m) - 1 Pv = MASK Mv = 0"
+      ]
+    },
+    {
+      "heading": "Why Myers keeps a separate Score",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 14,
+      "word_count": 65,
+      "evidence": "The bit vectors encode differences, not the absolute bottom DP value.",
+      "paragraphs": [
+        "The bit vectors encode differences, not the absolute bottom DP value.",
+        "The search nevertheless needs:",
+        "C[m,j]",
+        "after every text character.",
+        "Let:",
+        "Score_j = C[m,j]",
+        "Then:",
+        "Score_j = Score_(j-1) + Dh[m,j]",
+        "Since:",
+        "Dh[m,j] ∈ {-1,0,+1}",
+        "the score changes by at most one after scanning each text symbol.",
+        "Myers therefore maintains:",
+        "Pv Mv Score",
+        "rather than reconstructing the complete column and summing its vertical differences every time."
+      ]
+    },
+    {
+      "heading": "Horizontal delta vectors",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 8,
+      "word_count": 60,
+      "evidence": "During one scanning step, Myers also constructs bit-vector encodings of horizontal differences:",
+      "paragraphs": [
+        "During one scanning step, Myers also constructs bit-vector encodings of horizontal differences:",
+        "Ph[i] = 1 iff Dh[i,j] = +1 Mh[i] = 1 iff Dh[i,j] = -1",
+        "Again:",
+        "Ph[i] = 0 and Mh[i] = 0",
+        "means:",
+        "Dh[i,j] = 0",
+        "The calculation of a new column proceeds conceptually in two stages:",
+        "previous vertical deltas ↓ new horizontal deltas ↓ new vertical deltas"
+      ]
+    },
+    {
+      "heading": "The local DP-cell relationship",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 10,
+      "word_count": 84,
+      "evidence": "Each DP cell can be regarded as receiving:",
+      "paragraphs": [
+        "Each DP cell can be regarded as receiving:",
+        "one vertical delta from its left edge;",
+        "one horizontal delta from its upper edge;",
+        "one equality bit describing whether the pattern and text symbols match.",
+        "and producing:",
+        "one horizontal delta along its lower edge;",
+        "one vertical delta along its right edge.",
+        "The scalar recurrence has therefore been transformed into a local finite-state relationship among:",
+        "-1 0 +1 match / mismatch",
+        "Myers then derives Boolean formulas that apply this relationship to every row of a word simultaneously."
+      ]
+    },
+    {
+      "heading": "The Xv intermediate vector",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "One of the intermediate logical masks is:",
+      "paragraphs": [
+        "One of the intermediate logical masks is:",
+        "Xv = Eq | Mv",
+        "Conceptually, Xv summarizes information required to determine the next vertical differences from the horizontal input state.",
+        "It combines:",
+        "symbol equality + negative vertical deltas",
+        "into one bit vector."
+      ]
+    },
+    {
+      "heading": "The difficult part: Xh",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 6,
+      "word_count": 58,
+      "evidence": "The horizontal counterpart is more subtle because a dependency appears to propagate along the pattern dimension.",
+      "paragraphs": [
+        "The horizontal counterpart is more subtle because a dependency appears to propagate along the pattern dimension.",
+        "Myers derives:",
+        "Xh = ( ( (Eq & Pv) + Pv ) ^ Pv ) | Eq",
+        "or in conventional programming notation:",
+        "Xh = (((Eq & Pv) + Pv) ^ Pv) | Eq",
+        "This expression is the conceptual heart of the algorithm."
+      ]
+    },
+    {
+      "heading": "Why integer addition appears inside a string algorithm",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 14,
+      "word_count": 106,
+      "evidence": "The dynamic-programming dependency appears to require propagation through runs of pattern positions.",
+      "paragraphs": [
+        "The dynamic-programming dependency appears to require propagation through runs of pattern positions.",
+        "Myers observes that ordinary binary addition already contains a hardware mechanism capable of propagating information through runs of bits:",
+        "carry propagation",
+        "Suppose an equality bit begins inside a run of set Pv bits.",
+        "The expression:",
+        "(Eq & Pv) + Pv",
+        "causes binary carries to propagate across that run.",
+        "The subsequent XOR:",
+        "^ Pv",
+        "reveals which positions were affected by the carry propagation.",
+        "Finally:",
+        "| Eq",
+        "restores equality positions that need to remain explicitly represented.",
+        "The algorithm therefore turns a sequential-looking dynamic-programming dependency into a machine-word addition whose carry hardware performs the propagation in parallel."
+      ]
+    },
+    {
+      "heading": "A key interpretation of the carry trick",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "The expression:",
+      "paragraphs": [
+        "The expression:",
+        "(((Eq & Pv) + Pv) ^ Pv) | Eq",
+        "is not an arbitrary bit hack.",
+        "It is a compact implementation of a precise logical statement:",
+        "A position belongs to Xh when an equality condition can propagate to that position through an appropriate uninterrupted run of positive vertical-delta states.",
+        "The integer adder is being used as a parallel prefix-propagation mechanism."
+      ]
+    },
+    {
+      "heading": "Computing Ph and Mh",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 5,
+      "word_count": 42,
+      "evidence": "Once Xh is available, the horizontal delta masks are:",
+      "paragraphs": [
+        "Once Xh is available, the horizontal delta masks are:",
+        "Ph = Mv | ~(Xh | Pv) Mh = Pv & Xh",
+        "where:",
+        "Ph = horizontal +1 states Mh = horizontal -1 states",
+        "Any position present in neither mask has horizontal delta zero."
+      ]
+    },
+    {
+      "heading": "Updating the bottom score",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 17,
+      "word_count": 57,
+      "evidence": "The highest pattern bit corresponds to row:",
+      "paragraphs": [
+        "The highest pattern bit corresponds to row:",
+        "m",
+        "Define:",
+        "LAST = 1 << (m - 1)",
+        "If:",
+        "Ph & LAST != 0",
+        "then:",
+        "Dh[m,j] = +1",
+        "so:",
+        "Score += 1",
+        "If:",
+        "Mh & LAST != 0",
+        "then:",
+        "Dh[m,j] = -1",
+        "so:",
+        "Score -= 1",
+        "Otherwise the bottom-row horizontal delta is zero and the score does not change."
+      ]
+    },
+    {
+      "heading": "Shifting the horizontal state",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 9,
+      "word_count": 77,
+      "evidence": "The horizontal deltas produced at row i become inputs to the vertical update for row i+1 .",
+      "paragraphs": [
+        "The horizontal deltas produced at row i become inputs to the vertical update for row i+1 .",
+        "They must therefore be shifted by one bit:",
+        "Ph <<= 1 Mh <<= 1",
+        "For Myers' original approximate substring-matching boundary:",
+        "C[0,j] = 0",
+        "the horizontal difference in the top row is:",
+        "Dh[0,j] = 0",
+        "so a zero is shifted into the first position.",
+        "This boundary detail is important because the corresponding global pairwise-distance adaptation uses a different incoming top-row delta."
+      ]
+    },
+    {
+      "heading": "Computing the next vertical state",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "After shifting the horizontal vectors:",
+      "paragraphs": [
+        "After shifting the horizontal vectors:",
+        "Pv = Mh | ~(Xv | Ph) Mv = Ph & Xv",
+        "The resulting:",
+        "(Pv, Mv)",
+        "is the relocatable vertical-delta representation of the newly scanned text column."
+      ]
+    },
+    {
+      "heading": "The complete one-word update",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 5,
+      "word_count": 105,
+      "evidence": "For the original approximate-search boundary and:",
+      "paragraphs": [
+        "For the original approximate-search boundary and:",
+        "m ≤ w",
+        "one scanning step is conceptually:",
+        "Eq = Peq[text[j]] Xv = Eq | Mv Xh = (((Eq & Pv) + Pv) ^ Pv) | Eq Ph = Mv | ~(Xh | Pv) Mh = Pv & Xh if Ph & LAST: Score += 1 else if Mh & LAST: Score -= 1 Ph <<= 1 Mh <<= 1 Pv = Mh | ~(Xv | Ph) Mv = Ph & Xv if Score <= k: report match ending at j",
+        "The remarkable feature is that there is no loop over the m pattern positions inside this scanning step."
+      ]
+    },
+    {
+      "heading": "A safer finite-width version",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 6,
+      "word_count": 171,
+      "evidence": "In mathematical pseudocode, bitwise NOT implicitly affects an unbounded number of bits. Real machine words are finite.",
+      "paragraphs": [
+        "In mathematical pseudocode, bitwise NOT implicitly affects an unbounded number of bits. Real machine words are finite.",
+        "For clarity, an implementation can explicitly mask all states to the m active bits:",
+        "MASK = (1 << m) - 1 Pv = MASK Mv = 0 Score = m for symbol in text: Eq = Peq.get(symbol, 0) & MASK Xv = (Eq | Mv) & MASK Xh = ( (((Eq & Pv) + Pv) ^ Pv) | Eq ) & MASK Ph = ( Mv | ~(Xh | Pv) ) & MASK Mh = (Pv & Xh) & MASK if (Ph & LAST) != 0: Score += 1 else if (Mh & LAST) != 0: Score -= 1 Ph = (Ph << 1) & MASK Mh = (Mh << 1) & MASK Pv = ( Mh | ~(Xv | Ph) ) & MASK Mv = (Ph & Xv) & MASK",
+        "Explicit masking is particularly valuable in languages whose integers have arbitrary precision, because:",
+        "~x",
+        "does not naturally behave like a fixed-width machine-word complement."
+      ]
+    },
+    {
+      "heading": "A small worked scanning example",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 27,
+      "word_count": 115,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "P = \"abc\"",
+        "so:",
+        "m = 3",
+        "and:",
+        "MASK = 111₂",
+        "The precomputed equality masks are:",
+        "Peq['a'] = 001 Peq['b'] = 010 Peq['c'] = 100",
+        "Initialization:",
+        "Pv = 111 Mv = 000 Score = 3",
+        "Now scan text character:",
+        "'a'",
+        "Then:",
+        "Eq = 001",
+        "and:",
+        "Xv = Eq | Mv = 001",
+        "Next:",
+        "Xh = (((001 & 111) + 111) ^ 111) | 001",
+        "Within the active three-bit state, the result is:",
+        "Xh = 111",
+        "Therefore:",
+        "Ph = 000 Mh = 111",
+        "The highest pattern bit is set in Mh , so:",
+        "Score: 3 → 2",
+        "which is correct:",
+        "d( \"abc\", \"a\" ) = 2",
+        "for the best suffix ending at that text position."
+      ]
+    },
+    {
+      "heading": "A complete score trace",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 9,
+      "word_count": 98,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "P = \"abc\" T = \"zaxcabc\"",
+        "the original substring-search state produces the following bottom scores:",
+        "Text prefix processed Current symbol Score Interpretation z z 3 No useful pattern agreement yet za a 2 abc → a requires two deletions zax x 2 Best suffix remains two edits away zaxc c 1 abc → axc is one substitution zaxca a 2 No distance-1 suffix ends here zaxcab b 1 Suffix ab requires one deletion zaxcabc c 0 Exact suffix abc",
+        "If:",
+        "k = 1",
+        "the algorithm reports positions whose scores are:",
+        "1 or 0",
+        "as approximate occurrence endpoints."
+      ]
+    },
+    {
+      "heading": "Why Score is not a global prefix distance in the original algorithm",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 16,
+      "word_count": 69,
+      "evidence": "The boundary:",
+      "paragraphs": [
+        "The boundary:",
+        "C[0,j] = 0",
+        "means the algorithm can begin matching the pattern at any text position without paying for preceding text.",
+        "Therefore after scanning:",
+        "\"zabc\"",
+        "the original search formulation reports:",
+        "Score = 0",
+        "because the suffix:",
+        "\"abc\"",
+        "is an exact match.",
+        "But the global Levenshtein distance:",
+        "d(\"abc\",\"zabc\")",
+        "is:",
+        "1",
+        "because the leading z must be inserted.",
+        "This is one of the most important distinctions when implementing Myers' algorithm."
+      ]
+    },
+    {
+      "heading": "Original Myers search versus global Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 1,
+      "word_count": 53,
+      "evidence": "Property Original Myers search Global pairwise distance Question Does a suffix ending here match the pattern approximately? What is the distance between two complete sequences? Top DP boundary C[0,j] = 0 C[0,j] = j Leading target text Free Penalized Top horizontal delta 0 +1 Primary original use Approximate text matching Pairwise edit distance",
+      "paragraphs": [
+        "Property Original Myers search Global pairwise distance Question Does a suffix ending here match the pattern approximately? What is the distance between two complete sequences? Top DP boundary C[0,j] = 0 C[0,j] = j Leading target text Free Penalized Top horizontal delta 0 +1 Primary original use Approximate text matching Pairwise edit distance"
+      ]
+    },
+    {
+      "heading": "The global pairwise adaptation",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 8,
+      "word_count": 60,
+      "evidence": "For global Levenshtein distance, the top row is:",
+      "paragraphs": [
+        "For global Levenshtein distance, the top row is:",
+        "C[0,j] = j",
+        "so:",
+        "Dh[0,j] = +1",
+        "rather than zero.",
+        "In a common one-word adaptation, this boundary is introduced when shifting Ph :",
+        "Ph = ((Ph << 1) | 1) & MASK Mh = (Mh << 1) & MASK",
+        "The inserted low bit represents the +1 horizontal delta at the top boundary."
+      ]
+    },
+    {
+      "heading": "Reference global-distance pseudocode",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 2,
+      "word_count": 170,
+      "evidence": "function myers_global(pattern, target): m = length(pattern) if m == 0: return length(target) require m <= word_size MASK = (1 << m) - 1 LAST = 1 << (m - 1) Peq = build_equality_masks(pattern) Pv = MASK Mv = 0 Score = m for c in target: Eq = Peq.get(c, 0) & MASK Xv = (Eq | Mv) & MASK Xh = ( (((Eq & Pv) + Pv) ^ Pv) | Eq ) & MASK Ph = ( Mv | ~(Xh | Pv) ) & MASK Mh = (Pv & Xh) & MASK if (Ph & LAST) != 0: Score += 1 else if (Mh & LAST) != 0: Score -= 1 Ph = ((Ph << 1) | 1) & MASK Mh = (Mh << 1) & MASK Pv = ( Mh | ~(Xv | Ph) ) & MASK Mv = (Ph & Xv) & MASK return Score",
+      "paragraphs": [
+        "function myers_global(pattern, target): m = length(pattern) if m == 0: return length(target) require m <= word_size MASK = (1 << m) - 1 LAST = 1 << (m - 1) Peq = build_equality_masks(pattern) Pv = MASK Mv = 0 Score = m for c in target: Eq = Peq.get(c, 0) & MASK Xv = (Eq | Mv) & MASK Xh = ( (((Eq & Pv) + Pv) ^ Pv) | Eq ) & MASK Ph = ( Mv | ~(Xh | Pv) ) & MASK Mh = (Pv & Xh) & MASK if (Ph & LAST) != 0: Score += 1 else if (Mh & LAST) != 0: Score -= 1 Ph = ((Ph << 1) | 1) & MASK Mh = (Mh << 1) & MASK Pv = ( Mh | ~(Xv | Ph) ) & MASK Mv = (Ph & Xv) & MASK return Score",
+        "This version returns the ordinary unit-cost Levenshtein distance between the complete pattern and target, provided the bit-width and boundary assumptions are implemented correctly."
+      ]
+    },
+    {
+      "heading": "Why confusing the two boundaries causes subtle bugs",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 6,
+      "word_count": 56,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "pattern = \"abc\" target = \"zabc\"",
+        "Expected results are:",
+        "approximate substring search: 0 global pairwise distance: 1",
+        "If an implementation uses the original Myers top boundary while claiming to compute global distance, it can silently undercount leading target characters.",
+        "Conversely, a global initialization used in approximate substring search can incorrectly penalize text preceding the occurrence."
+      ]
+    },
+    {
+      "heading": "Complexity when the pattern fits in one word",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 11,
+      "word_count": 88,
+      "evidence": "Assume:",
+      "paragraphs": [
+        "Assume:",
+        "m ≤ w",
+        "and that Boolean word operations, shifts, and integer addition take constant time.",
+        "Then the algorithm performs only a constant number of word operations for each scanned text symbol.",
+        "The scan is therefore:",
+        "O(n)",
+        "after preprocessing the pattern-equality masks.",
+        "Myers' original analysis notes that the basic scanning loop can be expressed using only a small fixed number of bit operations per text symbol.",
+        "This is why the method can be dramatically faster than scalar:",
+        "O(mn)",
+        "dynamic programming when m is at most the machine-word width."
+      ]
+    },
+    {
+      "heading": "The more general complexity",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 16,
+      "word_count": 66,
+      "evidence": "When:",
+      "paragraphs": [
+        "When:",
+        "m > w",
+        "the pattern state must span:",
+        "b = ceil(m / w)",
+        "machine words.",
+        "Updating an m -bit logical vector then requires:",
+        "O(ceil(m/w))",
+        "word operations.",
+        "The basic algorithm therefore has a scanning complexity of:",
+        "O( n · ceil(m/w) )",
+        "often written asymptotically as:",
+        "O(nm/w)",
+        "under the word-RAM model.",
+        "This corresponds to a factor of approximately:",
+        "w",
+        "fewer logical DP-state updates than scalar dynamic programming."
+      ]
+    },
+    {
+      "heading": "Bit parallelism does not magically remove all dependence on m",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 9,
+      "word_count": 52,
+      "evidence": "The statement:",
+      "paragraphs": [
+        "The statement:",
+        "Myers runs in O(n)",
+        "is only appropriate when the pattern fits into a constant number of machine words.",
+        "For unrestricted pattern length:",
+        "m >> w",
+        "the algorithm must process multiple words per text character.",
+        "A more accurate general description is:",
+        "O( n · ceil(m/w) )",
+        "for the basic multiword representation."
+      ]
+    },
+    {
+      "heading": "Why w is not just a theoretical symbol",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 12,
+      "word_count": 55,
+      "evidence": "On a 64-bit machine:",
+      "paragraphs": [
+        "On a 64-bit machine:",
+        "w = 64",
+        "A pattern of:",
+        "m = 32",
+        "fits easily in one word.",
+        "A pattern of:",
+        "m = 64",
+        "still fits in one word.",
+        "A pattern of:",
+        "m = 65",
+        "requires at least two words.",
+        "Thus one extra pattern symbol can cross a block boundary and materially change implementation structure."
+      ]
+    },
+    {
+      "heading": "Multiword blocks",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 9,
+      "word_count": 80,
+      "evidence": "For long patterns, divide the pattern into blocks of at most w positions:",
+      "paragraphs": [
+        "For long patterns, divide the pattern into blocks of at most w positions:",
+        "pattern ┌─────────┬─────────┬─────────┐ │ block 0 │ block 1 │ block 2 │ │ w │ w │ ... │ └─────────┴─────────┴─────────┘",
+        "Every block maintains its own:",
+        "Pv Mv Score boundary information",
+        "But the blocks are not completely independent.",
+        "Horizontal delta information leaving one block must become the input boundary condition for the next block.",
+        "Therefore a correct multiword implementation must propagate:",
+        "-1 0 or +1",
+        "between neighboring blocks."
+      ]
+    },
+    {
+      "heading": "The block abstraction",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "Myers generalizes the one-word calculation by viewing a rectangular region of the DP matrix as a transformation:",
+      "paragraphs": [
+        "Myers generalizes the one-word calculation by viewing a rectangular region of the DP matrix as a transformation:",
+        "input deltas ↓ w-cell block ↓ output deltas",
+        "A one-word bit-vector update can compute an entire:",
+        "1 × w",
+        "block of dynamic-programming cells efficiently.",
+        "This block abstraction makes the bit-vector method composable with other algorithms that compute only selected regions of a DP matrix."
+      ]
+    },
+    {
+      "heading": "Connection to Ukkonen",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 7,
+      "word_count": 72,
+      "evidence": "The Ukkonen algorithm reduces work by computing only the region of the matrix that can contain sufficiently low-cost states.",
+      "paragraphs": [
+        "The Ukkonen algorithm reduces work by computing only the region of the matrix that can contain sufficiently low-cost states.",
+        "Myers reduces work in another dimension:",
+        "Ukkonen: compute fewer DP states Myers: compute many remaining states in parallel using machine words",
+        "These principles can be combined.",
+        "Myers' paper uses the bit-vector block machinery to accelerate zone-based dynamic-programming methods and derives an expected-time approximate-matching algorithm of:",
+        "O(kn/w)",
+        "for the corresponding large-pattern setting analyzed there."
+      ]
+    },
+    {
+      "heading": "Myers versus Wagner–Fischer",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 1,
+      "word_count": 70,
+      "evidence": "Property Wagner–Fischer Myers bit-vector Representation Integer DP cells Bit-vector delta states Basic update unit One DP cell Up to w logical rows per word Unit-cost edit distance Yes Yes Arbitrary weighted costs Natural Not directly supported by the standard Myers formulation Understanding / reference implementation Very simple Substantially more complex Pattern ≤ machine word O(mn) Linear scan in n after preprocessing Long pattern O(mn) Approximately O(nm/w) for basic multiword form",
+      "paragraphs": [
+        "Property Wagner–Fischer Myers bit-vector Representation Integer DP cells Bit-vector delta states Basic update unit One DP cell Up to w logical rows per word Unit-cost edit distance Yes Yes Arbitrary weighted costs Natural Not directly supported by the standard Myers formulation Understanding / reference implementation Very simple Substantially more complex Pattern ≤ machine word O(mn) Linear scan in n after preprocessing Long pattern O(mn) Approximately O(nm/w) for basic multiword form"
+      ]
+    },
+    {
+      "heading": "Myers versus Ukkonen",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 3,
+      "word_count": 86,
+      "evidence": "Property Ukkonen Myers Primary idea Restrict the state space Pack many states into words Main parameter exploited Small edit distance / threshold Machine word width Small k important? Yes Basic algorithm is independent of k Best conceptual description Output-sensitive / banded DP Bit-parallel relocatable DP",
+      "paragraphs": [
+        "Property Ukkonen Myers Primary idea Restrict the state space Pack many states into words Main parameter exploited Small edit distance / threshold Machine word width Small k important? Yes Basic algorithm is independent of k Best conceptual description Output-sensitive / banded DP Bit-parallel relocatable DP",
+        "A particularly important feature of Myers' basic algorithm is that its central scan does not have a multiplicative dependency on k .",
+        "Earlier bit-vector approximate-matching techniques frequently maintained state for every permitted error level. Myers instead encodes the DP matrix itself."
+      ]
+    },
+    {
+      "heading": "Why independence from k matters",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 9,
+      "word_count": 65,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "pattern length = 50 word size = 64",
+        "and compare:",
+        "k = 1 versus k = 10",
+        "In the basic one-word Myers scan, the same bit-vector state update is performed.",
+        "The threshold is used to decide:",
+        "Score ≤ k ?",
+        "but the bit-vector transition itself does not require maintaining ten separate error levels.",
+        "This was a major conceptual difference from preceding bit-parallel automaton-state algorithms."
+      ]
+    },
+    {
+      "heading": "Relationship to Levenshtein automata",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 5,
+      "word_count": 69,
+      "evidence": "Earlier bit-vector approximate-matching algorithms can be viewed as representing the active state set of a k -difference automaton.",
+      "paragraphs": [
+        "Earlier bit-vector approximate-matching algorithms can be viewed as representing the active state set of a k -difference automaton.",
+        "Myers changes the representation target:",
+        "earlier approach: bit-vector representation of automaton states Myers: bit-vector representation of DP differences",
+        "Both solve closely related approximate-matching problems, but Myers' representation removes a direct multiplicative dependence on the allowed number of errors in the basic algorithm.",
+        "Finite-state approaches are treated separately in Levenshtein Automata ."
+      ]
+    },
+    {
+      "heading": "Why the algorithm is exact",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "Bit parallelism is sometimes mistaken for approximation.",
+      "paragraphs": [
+        "Bit parallelism is sometimes mistaken for approximation.",
+        "Myers' algorithm does not approximate the Levenshtein recurrence.",
+        "It computes an exact representation of the same dynamic-programming state transitions.",
+        "The transformation is:",
+        "integer DP matrix ↓ neighbor differences ↓ {-1,0,+1} ↓ two-bit-vector encoding ↓ Boolean/arithmetic identities ↓ exact DP evolution",
+        "The speedup comes from representation and hardware parallelism, not from changing the distance definition."
+      ]
+    },
+    {
+      "heading": "Why Pv and Mv are enough",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 9,
+      "word_count": 57,
+      "evidence": "Suppose the vertical differences of a column are:",
+      "paragraphs": [
+        "Suppose the vertical differences of a column are:",
+        "+1 0 -1 +1 -1 0",
+        "Then:",
+        "Pv = 001001-like pattern Mv = 010100-like pattern",
+        "with bit positions assigned consistently.",
+        "Every zero difference is implicit:",
+        "zero_mask = ~(Pv | Mv)",
+        "within the active pattern width.",
+        "Thus three states per position are encoded without storing a third explicit bit vector."
+      ]
+    },
+    {
+      "heading": "The significance of adjacent differences being bounded",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 6,
+      "word_count": 59,
+      "evidence": "The entire method depends on the special structure of unit-cost edit distance.",
+      "paragraphs": [
+        "The entire method depends on the special structure of unit-cost edit distance.",
+        "If neighboring DP values could differ by arbitrary amounts:",
+        "-37 +12 +98 ...",
+        "two masks would not be sufficient.",
+        "The bounded-difference lemma converts a numerical DP matrix into finite-state local information.",
+        "This is why the standard Myers algorithm does not generalize trivially to arbitrary weighted edit costs."
+      ]
+    },
+    {
+      "heading": "Why arbitrary weighted Levenshtein is difficult",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 8,
+      "word_count": 73,
+      "evidence": "Suppose substitution costs can be:",
+      "paragraphs": [
+        "Suppose substitution costs can be:",
+        "0.17 0.82 4.0 ...",
+        "and insertion and deletion costs vary by symbol.",
+        "Then adjacent DP differences are no longer necessarily restricted to:",
+        "-1 0 +1",
+        "The compact Pv/Mv encoding loses its defining property.",
+        "Other bit-parallel formulations exist for richer scoring systems, but they require different representations and should not be called the standard Myers 1999 bit-vector algorithm without qualification.",
+        "For general weighted costs, see Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Transposition is not part of the classical Myers state",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 10,
+      "word_count": 49,
+      "evidence": "The standard Myers recurrence implements the unit-cost operations:",
+      "paragraphs": [
+        "The standard Myers recurrence implements the unit-cost operations:",
+        "insertion deletion substitution",
+        "It does not make adjacent transposition a primitive operation.",
+        "Therefore:",
+        "ab ba",
+        "has standard Levenshtein cost:",
+        "2",
+        "rather than a one-edit transposition cost.",
+        "A Damerau–Levenshtein or Optimal String Alignment implementation requires additional state structure.",
+        "See Damerau–Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Alphabet preprocessing in practice",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 9,
+      "word_count": 74,
+      "evidence": "For a small fixed alphabet such as DNA:",
+      "paragraphs": [
+        "For a small fixed alphabet such as DNA:",
+        "{A,C,G,T}",
+        "Peq can be a tiny direct array.",
+        "For ASCII, a fixed array with 128 or 256 entries is also straightforward.",
+        "Unicode requires more care.",
+        "Allocating one bit vector for every possible Unicode code point is generally wasteful.",
+        "A practical implementation may instead store masks only for symbols actually appearing in the pattern:",
+        "map<symbol, bitmask>",
+        "and return zero for any text symbol absent from the map."
+      ]
+    },
+    {
+      "heading": "Peq construction pseudocode",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 2,
+      "word_count": 45,
+      "evidence": "function build_peq(pattern): Peq = empty map for i = 0 to length(pattern)-1: c = pattern[i] Peq[c] = Peq.get(c, 0) | (1 << i) return Peq",
+      "paragraphs": [
+        "function build_peq(pattern): Peq = empty map for i = 0 to length(pattern)-1: c = pattern[i] Peq[c] = Peq.get(c, 0) | (1 << i) return Peq",
+        "This preprocessing depends only on the pattern and can be reused when the same pattern is compared against many texts."
+      ]
+    },
+    {
+      "heading": "Pattern reuse",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 8,
+      "word_count": 50,
+      "evidence": "If one query is searched against many targets:",
+      "paragraphs": [
+        "If one query is searched against many targets:",
+        "pattern ↓ build Peq once ↓ target 1 target 2 target 3 ... target N",
+        "the equality-mask construction cost is amortized across all comparisons.",
+        "This makes Myers particularly attractive in workloads such as:",
+        "read-to-candidate verification;",
+        "dictionary lookup;",
+        "batch fuzzy matching;",
+        "one-query-to-many-record comparison."
+      ]
+    },
+    {
+      "heading": "Unsigned arithmetic is important",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "The carry-propagation expression:",
+      "paragraphs": [
+        "The carry-propagation expression:",
+        "(Eq & Pv) + Pv",
+        "depends on predictable machine-word addition.",
+        "In languages such as C and C++, unsigned arithmetic is usually the appropriate representation because overflow is defined modulo:",
+        "2^w",
+        "for a w -bit unsigned word.",
+        "Using signed overflow can introduce undefined or implementation-dependent behavior in some languages."
+      ]
+    },
+    {
+      "heading": "Bitwise NOT requires special care",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 10,
+      "word_count": 60,
+      "evidence": "Expressions such as:",
+      "paragraphs": [
+        "Expressions such as:",
+        "~(Xh | Pv)",
+        "set every bit outside the active pattern region as well.",
+        "For a pattern shorter than the machine word, unused high bits should not be allowed to contaminate state.",
+        "A clear approach is:",
+        "value & MASK",
+        "after relevant operations.",
+        "This is essential in arbitrary-precision integer languages where:",
+        "~x",
+        "conceptually has infinitely many leading one bits."
+      ]
+    },
+    {
+      "heading": "The highest active bit",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 11,
+      "word_count": 59,
+      "evidence": "The bottom DP row corresponds to:",
+      "paragraphs": [
+        "The bottom DP row corresponds to:",
+        "bit m-1",
+        "when zero-based bit numbering is used.",
+        "Therefore:",
+        "LAST = 1 << (m-1)",
+        "must be computed carefully.",
+        "Common bugs include:",
+        "using bit m instead of m-1 ;",
+        "using the machine-word high bit rather than the pattern high bit;",
+        "failing when m = 0 ;",
+        "overflowing a signed shift into the sign bit."
+      ]
+    },
+    {
+      "heading": "The empty-pattern case",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 7,
+      "word_count": 32,
+      "evidence": "For global edit distance:",
+      "paragraphs": [
+        "For global edit distance:",
+        "d(\"\", target) = length(target)",
+        "There is no valid:",
+        "1 << (m-1)",
+        "when:",
+        "m = 0",
+        "so the empty-pattern case should normally be handled before entering the bit-vector algorithm."
+      ]
+    },
+    {
+      "heading": "Pattern length exactly equal to word width",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 8,
+      "word_count": 71,
+      "evidence": "The expression:",
+      "paragraphs": [
+        "The expression:",
+        "(1 << m) - 1",
+        "can itself be invalid in fixed-width languages when:",
+        "m = w",
+        "because shifting a w -bit value by exactly w bits can be undefined or invalid.",
+        "Production implementations therefore commonly special-case the full-word mask:",
+        "if m == w: MASK = ALL_ONES else: MASK = (1 << m) - 1",
+        "This is an engineering issue rather than an algorithmic one, but it matters for correctness."
+      ]
+    },
+    {
+      "heading": "Finding the distance versus finding the alignment path",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "The compact bit-vector state gives distance information efficiently.",
+      "paragraphs": [
+        "The compact bit-vector state gives distance information efficiently.",
+        "It does not automatically preserve every predecessor decision needed to reconstruct:",
+        "insert delete substitute match",
+        "along an optimal path.",
+        "A full Wagner–Fischer matrix stores enough information for straightforward backtracking.",
+        "The Myers bit-vector scan deliberately compresses away much of that history."
+      ]
+    },
+    {
+      "heading": "The original algorithm does not directly return an edit script",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "The output of the basic approximate-matching algorithm is primarily:",
+      "paragraphs": [
+        "The output of the basic approximate-matching algorithm is primarily:",
+        "match endpoints + their edit scores",
+        "rather than:",
+        "complete optimal edit paths",
+        "Later systems combine Myers-style scoring with additional algorithms or recomputation strategies to reconstruct alignments."
+      ]
+    },
+    {
+      "heading": "Edlib as an important modern implementation",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 4,
+      "word_count": 65,
+      "evidence": "The Edlib library is a prominent practical implementation based on Myers' bit-vector method. It extends the original algorithmic framework to support additional alignment modes and optimal-path reconstruction while retaining bit-vector edit-distance computation.",
+      "paragraphs": [
+        "The Edlib library is a prominent practical implementation based on Myers' bit-vector method. It extends the original algorithmic framework to support additional alignment modes and optimal-path reconstruction while retaining bit-vector edit-distance computation.",
+        "This provides an instructive example of the distinction between:",
+        "historical Myers algorithm and modern systems built around Myers' core primitive",
+        "A mature implementation can combine Myers with banding, Hirschberg-style reconstruction, and workload-specific engineering."
+      ]
+    },
+    {
+      "heading": "Global, prefix, and infix alignment modes",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 3,
+      "word_count": 66,
+      "evidence": "Different boundary conditions correspond to different alignment questions.",
+      "paragraphs": [
+        "Different boundary conditions correspond to different alignment questions.",
+        "Mode Conceptual question Global Transform the complete pattern into the complete target. Prefix / semiglobal Align the pattern while allowing selected terminal gaps to be free. Infix / substring search Find a substring of the target that best matches the pattern.",
+        "The central bit-vector transition can remain closely related while the boundary conditions and interpretation of Score change."
+      ]
+    },
+    {
+      "heading": "Why boundary conditions are part of the algorithm",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 10,
+      "word_count": 72,
+      "evidence": "It is not enough to copy these lines:",
+      "paragraphs": [
+        "It is not enough to copy these lines:",
+        "Xv = Eq | Mv Xh = (((Eq & Pv) + Pv) ^ Pv) | Eq",
+        "and assume the result computes the desired distance.",
+        "The full mathematical problem also depends on:",
+        "initial Pv and Mv ;",
+        "initial Score ;",
+        "top horizontal boundary state;",
+        "how blocks are connected;",
+        "which score is reported.",
+        "Two implementations can use the same core formulas while solving different alignment problems."
+      ]
+    },
+    {
+      "heading": "Limited regular-expression extension",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 8,
+      "word_count": 69,
+      "evidence": "Myers also notes that the equality-mask mechanism can support limited pattern expressions.",
+      "paragraphs": [
+        "Myers also notes that the equality-mask mechanism can support limited pattern expressions.",
+        "Normally:",
+        "Peq[c][i] = 1 iff pattern[i] = c",
+        "but a pattern position can instead represent a set of acceptable symbols.",
+        "Then:",
+        "Peq[c][i] = 1 iff c belongs to allowed_symbols[i]",
+        "A wildcard position can therefore set the corresponding bit in every relevant equality mask.",
+        "The dynamic-programming core does not need to know why the equality condition is true."
+      ]
+    },
+    {
+      "heading": "Why Peq is an abstraction boundary",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 6,
+      "word_count": 42,
+      "evidence": "The bit-vector algorithm only needs:",
+      "paragraphs": [
+        "The bit-vector algorithm only needs:",
+        "Eq[i] = does text symbol c match pattern position i?",
+        "Therefore the definition of “match” can be supplied by preprocessing.",
+        "This separates:",
+        "symbol matching semantics from edit-distance state evolution",
+        "within the restrictions of the algorithm's unit-cost framework."
+      ]
+    },
+    {
+      "heading": "Unicode representation still matters",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "Myers operates on abstract sequence elements.",
+      "paragraphs": [
+        "Myers operates on abstract sequence elements.",
+        "A software implementation must decide whether one pattern position corresponds to:",
+        "one byte;",
+        "one UTF-8 code unit;",
+        "one UTF-16 code unit;",
+        "one Unicode code point;",
+        "one grapheme cluster;",
+        "one token.",
+        "Bit parallelism does not solve Unicode representation problems."
+      ]
+    },
+    {
+      "heading": "Canonical-equivalence example",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 9,
+      "word_count": 55,
+      "evidence": "The visible character:",
+      "paragraphs": [
+        "The visible character:",
+        "é",
+        "may appear as:",
+        "U+00E9",
+        "or:",
+        "U+0065 U+0301",
+        "At code-point level these are different sequences and therefore produce different Peq structures unless normalization is performed first.",
+        "The algorithm can be perfectly implemented and still compute the wrong application-level distance if preprocessing uses the wrong sequence unit.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Token-level Myers",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "Nothing in the mathematical bit-vector representation requires ASCII characters.",
+      "paragraphs": [
+        "Nothing in the mathematical bit-vector representation requires ASCII characters.",
+        "If tokens are mapped to stable symbolic IDs:",
+        "[the, quick, brown, fox]",
+        "can be treated as a sequence of four symbols.",
+        "Peq then maps token IDs to bit masks instead of characters.",
+        "This makes the same basic approach applicable to short token sequences, subject to the unit-cost edit model and pattern-length constraints."
+      ]
+    },
+    {
+      "heading": "Why word-level bit parallelism can be powerful",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 6,
+      "word_count": 46,
+      "evidence": "Consider a query containing:",
+      "paragraphs": [
+        "Consider a query containing:",
+        "40 tokens",
+        "on a machine with:",
+        "w = 64",
+        "The entire token-level pattern state can fit inside a single 64-bit word.",
+        "A text token can then advance all forty pattern positions through bit operations just as a character advances a character-level pattern."
+      ]
+    },
+    {
+      "heading": "Approximate search at scale",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 7,
+      "word_count": 78,
+      "evidence": "Myers makes one candidate comparison or one text scan faster, but it does not eliminate the need for candidate generation in large collections.",
+      "paragraphs": [
+        "Myers makes one candidate comparison or one text scan faster, but it does not eliminate the need for candidate generation in large collections.",
+        "Suppose a system has:",
+        "100,000,000 dictionary terms",
+        "Even a highly optimized Myers comparison against every term may be wasteful.",
+        "A scalable system can use:",
+        "query ↓ length filter ↓ q-gram / prefix / trie / index filter ↓ candidate set ↓ Myers exact verification ↓ valid matches",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Myers as a verifier",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 5,
+      "word_count": 44,
+      "evidence": "One of the strongest practical roles for Myers is exact verification after a cheap filter.",
+      "paragraphs": [
+        "One of the strongest practical roles for Myers is exact verification after a cheap filter.",
+        "The architecture is:",
+        "cheap approximate screening ↓ possible match ↓ exact Myers edit-distance computation ↓ accept / reject",
+        "The filter reduces candidate volume.",
+        "Myers keeps final edit-distance verification exact."
+      ]
+    },
+    {
+      "heading": "Relationship to q-gram filtering",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 8,
+      "word_count": 39,
+      "evidence": "A q-gram index can identify candidates that share enough local structure with the query.",
+      "paragraphs": [
+        "A q-gram index can identify candidates that share enough local structure with the query.",
+        "It does not necessarily determine exact Levenshtein distance.",
+        "Myers can then calculate:",
+        "d(query,candidate)",
+        "efficiently.",
+        "Thus:",
+        "q-grams: candidate-generation representation Myers: exact sequence-alignment representation",
+        "serve complementary roles."
+      ]
+    },
+    {
+      "heading": "Relationship to biological read mapping",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 8,
+      "word_count": 78,
+      "evidence": "DNA read mapping frequently uses an architecture such as:",
+      "paragraphs": [
+        "DNA read mapping frequently uses an architecture such as:",
+        "read ↓ seed / filter ↓ candidate genomic location ↓ edit-distance or alignment verification",
+        "DNA has a tiny alphabet:",
+        "A C G T",
+        "making Peq especially compact.",
+        "Short sequencing reads also commonly fit into one or a small number of machine words.",
+        "These properties make bit-parallel edit-distance techniques highly attractive for candidate verification.",
+        "However, biological alignment can require richer gap penalties and substitution models than ordinary unit-cost Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Levenshtein distance is not biological alignment",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 7,
+      "word_count": 54,
+      "evidence": "The standard Myers 1999 algorithm optimizes:",
+      "paragraphs": [
+        "The standard Myers 1999 algorithm optimizes:",
+        "insertions + deletions + substitutions",
+        "with unit cost.",
+        "Biological alignment may instead require:",
+        "substitution matrices + gap-open penalties + gap-extension penalties + local alignment + other domain-specific scoring",
+        "Therefore fast Myers edit distance should not automatically replace a biologically appropriate scoring model.",
+        "See Levenshtein vs Sequence Alignment ."
+      ]
+    },
+    {
+      "heading": "CPU-level reasons Myers is fast",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "The algorithm has several practical properties favorable to modern processors:",
+      "paragraphs": [
+        "The algorithm has several practical properties favorable to modern processors:",
+        "small working state;",
+        "few branches in the core loop;",
+        "heavy use of register-resident bit operations;",
+        "contiguous sequential text scanning;",
+        "small equality-mask tables for small alphabets;",
+        "no full DP matrix allocation;",
+        "high arithmetic intensity relative to memory traffic.",
+        "For short patterns, the active state can remain almost entirely inside CPU registers."
+      ]
+    },
+    {
+      "heading": "Register-resident computation",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 5,
+      "word_count": 42,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "m ≤ 64",
+        "a typical implementation may need only a handful of 64-bit values in the hot loop:",
+        "Pv Mv Eq Xv Xh Ph Mh Score",
+        "This is very different from repeatedly loading and storing integer rows of a dynamic-programming matrix."
+      ]
+    },
+    {
+      "heading": "Memory complexity",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 11,
+      "word_count": 51,
+      "evidence": "For a one-word pattern, the dynamic state is constant-size:",
+      "paragraphs": [
+        "For a one-word pattern, the dynamic state is constant-size:",
+        "O(1)",
+        "machine words, excluding the pattern-equality table.",
+        "For a general pattern:",
+        "ceil(m/w)",
+        "words are required per logical bit vector or per active block representation.",
+        "Thus the working DP state is proportional to:",
+        "O(m/w)",
+        "machine words rather than:",
+        "O(m)",
+        "full integer DP cells."
+      ]
+    },
+    {
+      "heading": "Peq memory",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 8,
+      "word_count": 40,
+      "evidence": "With a direct table over alphabet size:",
+      "paragraphs": [
+        "With a direct table over alphabet size:",
+        "σ",
+        "and:",
+        "b = ceil(m/w)",
+        "blocks, the equality-mask structure can conceptually require:",
+        "O(σb)",
+        "machine words.",
+        "For large sparse alphabets, a hash map or compressed table over only pattern symbols can reduce this substantially."
+      ]
+    },
+    {
+      "heading": "The relation to the Four Russians technique",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 5,
+      "word_count": 76,
+      "evidence": "The Four Russians method accelerates dynamic programming by grouping cells into blocks and precomputing the result of all possible boundary configurations for small blocks.",
+      "paragraphs": [
+        "The Four Russians method accelerates dynamic programming by grouping cells into blocks and precomputing the result of all possible boundary configurations for small blocks.",
+        "The Masek–Paterson algorithm is a foundational example of this philosophy.",
+        "Myers observes that a machine word can itself compute a block of dynamic-programming state directly:",
+        "table lookup over tiny block versus bit arithmetic over w-cell block",
+        "This removes the need for large precomputed block tables in important settings and improves cache behavior."
+      ]
+    },
+    {
+      "heading": "Why carry propagation resembles a parallel prefix computation",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 6,
+      "word_count": 70,
+      "evidence": "The most sophisticated part of Myers is:",
+      "paragraphs": [
+        "The most sophisticated part of Myers is:",
+        "((Eq & Pv) + Pv)",
+        "Binary addition can propagate a carry through an arbitrarily long contiguous run of one bits inside the machine word.",
+        "From the viewpoint of algorithm design, this means:",
+        "many dependent logical positions ↓ hardware carry chain ↓ one integer addition instruction",
+        "This is a recurring pattern in bit-parallel algorithm design: reinterpret arithmetic hardware as a massively parallel finite-state operator."
+      ]
+    },
+    {
+      "heading": "Why a naive per-bit translation misses the point",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 6,
+      "word_count": 55,
+      "evidence": "One could conceptually calculate the same Pv/Mv transitions one bit at a time:",
+      "paragraphs": [
+        "One could conceptually calculate the same Pv/Mv transitions one bit at a time:",
+        "for i = 1 to m: calculate delta state at i",
+        "but then:",
+        "time per text character = O(m)",
+        "and the benefit disappears.",
+        "Myers' accomplishment is deriving expressions whose machine-word semantics compute the same logical recurrence without explicitly iterating through the bits."
+      ]
+    },
+    {
+      "heading": "Correctness structure",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "The correctness argument can be understood in several layers.",
+      "paragraphs": [
+        "The correctness argument can be understood in several layers."
+      ]
+    },
+    {
+      "heading": "1. Classical DP correctness",
+      "level": 3,
+      "id": "ux-section-80",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "The matrix recurrence computes exact unit-cost edit distance for the chosen boundary conditions.",
+      "paragraphs": [
+        "The matrix recurrence computes exact unit-cost edit distance for the chosen boundary conditions."
+      ]
+    },
+    {
+      "heading": "2. Delta equivalence",
+      "level": 3,
+      "id": "ux-section-81",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "A complete DP column can be represented by its neighboring differences together with one absolute boundary value.",
+      "paragraphs": [
+        "A complete DP column can be represented by its neighboring differences together with one absolute boundary value."
+      ]
+    },
+    {
+      "heading": "3. Bounded delta values",
+      "level": 3,
+      "id": "ux-section-82",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "Every horizontal and vertical difference is one of:",
+      "paragraphs": [
+        "Every horizontal and vertical difference is one of:",
+        "-1 0 +1"
+      ]
+    },
+    {
+      "heading": "4. Bit-vector encoding",
+      "level": 3,
+      "id": "ux-section-83",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "The P and M masks exactly encode positive and negative deltas.",
+      "paragraphs": [
+        "The P and M masks exactly encode positive and negative deltas."
+      ]
+    },
+    {
+      "heading": "5. Boolean cell identities",
+      "level": 3,
+      "id": "ux-section-84",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "The formulas for Ph , Mh , Pv , and Mv reproduce the scalar cell transition.",
+      "paragraphs": [
+        "The formulas for Ph , Mh , Pv , and Mv reproduce the scalar cell transition."
+      ]
+    },
+    {
+      "heading": "6. Carry-propagation identity",
+      "level": 3,
+      "id": "ux-section-85",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "The integer-addition expression for Xh exactly performs the necessary propagation across runs of positive vertical states.",
+      "paragraphs": [
+        "The integer-addition expression for Xh exactly performs the necessary propagation across runs of positive vertical states."
+      ]
+    },
+    {
+      "heading": "7. Score invariant",
+      "level": 3,
+      "id": "ux-section-86",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "After scanning text position j :",
+      "paragraphs": [
+        "After scanning text position j :",
+        "Score = C[m,j]",
+        "because it is updated by the bottom horizontal difference.",
+        "Together, these invariants establish that the bit-vector representation computes the same result as the corresponding dynamic program."
+      ]
+    },
+    {
+      "heading": "A useful invariant for debugging",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 5,
+      "word_count": 57,
+      "evidence": "For every scanned text column, a reference implementation can reconstruct the vertical deltas from a conventional DP matrix and verify:",
+      "paragraphs": [
+        "For every scanned text column, a reference implementation can reconstruct the vertical deltas from a conventional DP matrix and verify:",
+        "Pv[i] = 1 iff C[i,j] - C[i-1,j] = +1 Mv[i] = 1 iff C[i,j] - C[i-1,j] = -1",
+        "and:",
+        "Score = C[m,j]",
+        "This is a powerful way to validate a new Myers implementation on short random inputs."
+      ]
+    },
+    {
+      "heading": "Reference differential testing",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 4,
+      "word_count": 46,
+      "evidence": "A production implementation should be tested against a simple trusted Wagner–Fischer implementation .",
+      "paragraphs": [
+        "A production implementation should be tested against a simple trusted Wagner–Fischer implementation .",
+        "For randomly generated strings:",
+        "expected = wagner_fischer(x,y) actual = myers_global(x,y) assert expected == actual",
+        "Testing thousands or millions of small random pairs often exposes masking, boundary, and multiword-carry bugs that hand-selected examples miss."
+      ]
+    },
+    {
+      "heading": "Identity",
+      "level": 3,
+      "id": "ux-section-90",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"abc\",\"abc\") = 0",
+      "paragraphs": [
+        "d(\"abc\",\"abc\") = 0"
+      ]
+    },
+    {
+      "heading": "Single substitution",
+      "level": 3,
+      "id": "ux-section-91",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"abc\",\"axc\") = 1",
+      "paragraphs": [
+        "d(\"abc\",\"axc\") = 1"
+      ]
+    },
+    {
+      "heading": "Leading insertion",
+      "level": 3,
+      "id": "ux-section-92",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"abc\",\"zabc\") = 1",
+      "paragraphs": [
+        "d(\"abc\",\"zabc\") = 1"
+      ]
+    },
+    {
+      "heading": "Trailing insertion",
+      "level": 3,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"abc\",\"abcz\") = 1",
+      "paragraphs": [
+        "d(\"abc\",\"abcz\") = 1"
+      ]
+    },
+    {
+      "heading": "Deletion",
+      "level": 3,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"abc\",\"ac\") = 1",
+      "paragraphs": [
+        "d(\"abc\",\"ac\") = 1"
+      ]
+    },
+    {
+      "heading": "Empty target",
+      "level": 3,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"abc\",\"\") = 3",
+      "paragraphs": [
+        "d(\"abc\",\"\") = 3"
+      ]
+    },
+    {
+      "heading": "Empty pattern",
+      "level": 3,
+      "id": "ux-section-96",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(\"\",\"abc\") = 3",
+      "paragraphs": [
+        "d(\"\",\"abc\") = 3"
+      ]
+    },
+    {
+      "heading": "Pattern exactly one machine word",
+      "level": 3,
+      "id": "ux-section-97",
+      "paragraph_count": 2,
+      "word_count": 6,
+      "evidence": "Test the boundary:",
+      "paragraphs": [
+        "Test the boundary:",
+        "m = w"
+      ]
+    },
+    {
+      "heading": "Pattern one symbol longer than one word",
+      "level": 3,
+      "id": "ux-section-98",
+      "paragraph_count": 3,
+      "word_count": 11,
+      "evidence": "Test:",
+      "paragraphs": [
+        "Test:",
+        "m = w + 1",
+        "to validate multiword carry behavior."
+      ]
+    },
+    {
+      "heading": "Approximate-search tests",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "For the original substring-search formulation:",
+      "paragraphs": [
+        "For the original substring-search formulation:",
+        "pattern = \"abc\" text = \"zzabczz\" k = 0",
+        "the exact occurrence endpoint must be reported.",
+        "For:",
+        "pattern = \"abc\" text = \"zzaxczz\" k = 1",
+        "the approximate occurrence ending after axc must be detected.",
+        "These tests specifically validate the:",
+        "C[0,j] = 0",
+        "search boundary."
+      ]
+    },
+    {
+      "heading": "Global-versus-search regression test",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "The pair:",
+      "paragraphs": [
+        "The pair:",
+        "pattern = \"abc\" target = \"zabc\"",
+        "is a useful regression case because:",
+        "global distance = 1 best-suffix search score = 0",
+        "If both modes return the same result, at least one boundary condition is likely implemented incorrectly."
+      ]
+    },
+    {
+      "heading": "Using the wrong boundary semantics",
+      "level": 3,
+      "id": "ux-section-102",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Original Myers approximate matching and global pairwise distance do not use identical top-row boundaries.",
+      "paragraphs": [
+        "Original Myers approximate matching and global pairwise distance do not use identical top-row boundaries."
+      ]
+    },
+    {
+      "heading": "Forgetting to mask bitwise NOT",
+      "level": 3,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "This is especially dangerous in Python-like arbitrary-precision integer semantics.",
+      "paragraphs": [
+        "This is especially dangerous in Python-like arbitrary-precision integer semantics."
+      ]
+    },
+    {
+      "heading": "Using signed arithmetic",
+      "level": 3,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Carry propagation and shifts should have clearly defined finite-width behavior.",
+      "paragraphs": [
+        "Carry propagation and shifts should have clearly defined finite-width behavior."
+      ]
+    },
+    {
+      "heading": "Incorrect LAST bit",
+      "level": 3,
+      "id": "ux-section-105",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "The score update depends on exactly the bit corresponding to pattern row m .",
+      "paragraphs": [
+        "The score update depends on exactly the bit corresponding to pattern row m ."
+      ]
+    },
+    {
+      "heading": "Using a one-word algorithm for m > w",
+      "level": 3,
+      "id": "ux-section-106",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Silently truncating pattern bits produces incorrect results.",
+      "paragraphs": [
+        "Silently truncating pattern bits produces incorrect results."
+      ]
+    },
+    {
+      "heading": "Ignoring cross-block horizontal carries",
+      "level": 3,
+      "id": "ux-section-107",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Multiword blocks are connected dynamic-programming regions, not independent words.",
+      "paragraphs": [
+        "Multiword blocks are connected dynamic-programming regions, not independent words."
+      ]
+    },
+    {
+      "heading": "Assuming the algorithm directly returns an alignment path",
+      "level": 3,
+      "id": "ux-section-108",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "The basic bit-vector scan computes scores, not complete predecessor history.",
+      "paragraphs": [
+        "The basic bit-vector scan computes scores, not complete predecessor history."
+      ]
+    },
+    {
+      "heading": "Applying standard Myers to arbitrary weighted edit costs",
+      "level": 3,
+      "id": "ux-section-109",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "The -1/0/+1 delta representation depends on the unit-cost model.",
+      "paragraphs": [
+        "The -1/0/+1 delta representation depends on the unit-cost model."
+      ]
+    },
+    {
+      "heading": "Applying byte-level matching to Unicode text unintentionally",
+      "level": 3,
+      "id": "ux-section-110",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "The sequence unit must be chosen before bit-vector encoding.",
+      "paragraphs": [
+        "The sequence unit must be chosen before bit-vector encoding."
+      ]
+    },
+    {
+      "heading": "Performance engineering considerations",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 11,
+      "word_count": 67,
+      "evidence": "A high-quality implementation should consider:",
+      "paragraphs": [
+        "A high-quality implementation should consider:",
+        "using the shorter suitable sequence as the bit-vector pattern where alignment semantics allow;",
+        "precomputing Peq once per reusable pattern;",
+        "using fixed-width unsigned words;",
+        "avoiding allocations inside the scanning loop;",
+        "keeping block arrays contiguous;",
+        "specializing small alphabets;",
+        "minimizing dictionary/hash lookup overhead in the hot loop;",
+        "using threshold or band information when available;",
+        "batching independent comparisons for higher-level parallelism.",
+        "See Levenshtein Performance Engineering ."
+      ]
+    },
+    {
+      "heading": "Pattern orientation can affect performance",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 10,
+      "word_count": 52,
+      "evidence": "For global pairwise distance, Levenshtein distance is symmetric:",
+      "paragraphs": [
+        "For global pairwise distance, Levenshtein distance is symmetric:",
+        "d(x,y) = d(y,x)",
+        "so it can be advantageous to place the shorter sequence on the bit-vector dimension:",
+        "m = min(|x|,|y|)",
+        "which minimizes:",
+        "ceil(m/w)",
+        "blocks.",
+        "However, the original approximate substring-search problem is directional:",
+        "pattern inside text",
+        "so blindly swapping the inputs changes the problem definition."
+      ]
+    },
+    {
+      "heading": "Thread-level and SIMD parallelism",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 7,
+      "word_count": 79,
+      "evidence": "Myers' algorithm already exploits parallelism within one machine word .",
+      "paragraphs": [
+        "Myers' algorithm already exploits parallelism within one machine word .",
+        "Additional parallelism can exist above that level.",
+        "For many independent candidate comparisons:",
+        "candidate 1 → CPU lane / thread candidate 2 → CPU lane / thread candidate 3 → CPU lane / thread ...",
+        "Implementations can combine:",
+        "bit parallelism inside each comparison + task parallelism across comparisons",
+        "SIMD techniques can also process multiple independent Myers states or specialized vectorized representations, though the design differs from the scalar word algorithm."
+      ]
+    },
+    {
+      "heading": "GPU and accelerator implementations",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 11,
+      "word_count": 57,
+      "evidence": "The small logical operation set:",
+      "paragraphs": [
+        "The small logical operation set:",
+        "AND OR XOR NOT SHIFT ADD",
+        "makes Myers attractive for specialized hardware.",
+        "However, performance on GPUs or accelerators depends on:",
+        "workload batching;",
+        "pattern-length distribution;",
+        "memory access patterns;",
+        "branch divergence;",
+        "candidate-generation architecture;",
+        "word/block synchronization.",
+        "The existence of bit parallelism does not guarantee that a direct scalar CPU implementation maps optimally to every accelerator."
+      ]
+    },
+    {
+      "heading": "Myers and edit-distance complexity",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 9,
+      "word_count": 74,
+      "evidence": "The algorithm is a good example of the importance of the computational model.",
+      "paragraphs": [
+        "The algorithm is a good example of the importance of the computational model.",
+        "Scalar dynamic programming performs:",
+        "Θ(mn)",
+        "cell updates.",
+        "Myers performs roughly:",
+        "O(nm/w)",
+        "machine-word operations for unrestricted pattern length.",
+        "This is a word-parallel improvement rather than a claim that the general edit-distance problem has become strongly subquadratic in the conventional fine-grained sense independent of word size.",
+        "See Edit Distance Complexity for the distinction between RAM-model speedups, parameterized algorithms, approximation, and fine-grained lower bounds."
+      ]
+    },
+    {
+      "heading": "Why O(nm/w) can still be enormously important",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 4,
+      "word_count": 52,
+      "evidence": "Even if the improvement is described as a word-parallel factor, a factor of:",
+      "paragraphs": [
+        "Even if the improvement is described as a word-parallel factor, a factor of:",
+        "w = 64",
+        "in the central DP work can be decisive in real workloads.",
+        "The algorithm also reduces memory traffic and often improves cache behavior, so practical gains are not necessarily limited to a simplistic theoretical factor of 64."
+      ]
+    },
+    {
+      "heading": "Myers does not replace filtering",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "For low error thresholds, filtering algorithms can avoid examining most positions or candidates at all.",
+      "paragraphs": [
+        "For low error thresholds, filtering algorithms can avoid examining most positions or candidates at all.",
+        "This can outperform an algorithm that scans every text character, even if each scan step is extremely fast.",
+        "Thus:",
+        "fast verification and fast candidate elimination",
+        "solve different bottlenecks."
+      ]
+    },
+    {
+      "heading": "A useful systems hierarchy",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 2,
+      "word_count": 43,
+      "evidence": "QUERY ↓ NORMALIZATION ↓ CANDIDATE GENERATION ↓ FILTERING ↓ MYERS BIT-VECTOR VERIFICATION ↓ DISTANCE / MATCH ENDPOINT ↓ OPTIONAL PATH RECONSTRUCTION ↓ APPLICATION DECISION",
+      "paragraphs": [
+        "QUERY ↓ NORMALIZATION ↓ CANDIDATE GENERATION ↓ FILTERING ↓ MYERS BIT-VECTOR VERIFICATION ↓ DISTANCE / MATCH ENDPOINT ↓ OPTIONAL PATH RECONSTRUCTION ↓ APPLICATION DECISION",
+        "This is often a more scalable design than using Myers as a brute-force comparison engine over an entire collection."
+      ]
+    },
+    {
+      "heading": "When Myers is an excellent choice",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 1,
+      "word_count": 61,
+      "evidence": "Condition Why Myers fits Unit-cost Levenshtein distance The algorithm directly exploits its bounded delta structure. Short or moderate pattern Pattern fits in one or few machine words. Many repeated comparisons Peq preprocessing can be reused. Small alphabet Equality-mask lookup is extremely cheap. Approximate text scanning This is the original problem formulation. Exact candidate verification Bit parallelism gives exact edit scores efficiently.",
+      "paragraphs": [
+        "Condition Why Myers fits Unit-cost Levenshtein distance The algorithm directly exploits its bounded delta structure. Short or moderate pattern Pattern fits in one or few machine words. Many repeated comparisons Peq preprocessing can be reused. Small alphabet Equality-mask lookup is extremely cheap. Approximate text scanning This is the original problem formulation. Exact candidate verification Bit parallelism gives exact edit scores efficiently."
+      ]
+    },
+    {
+      "heading": "When another method may be better",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 1,
+      "word_count": 61,
+      "evidence": "Situation Alternative direction Arbitrary weighted edit costs General dynamic programming or specialized weighted algorithms Tiny threshold on very long sequences Ukkonen-style bounded computation or hybrid methods Very large dictionary Levenshtein automata , tries, or filtering Need rich biological scoring Appropriate sequence-alignment model Need semantic similarity Semantic representations rather than character edit distance Need straightforward full alignment explanation Wagner–Fischer may be simpler",
+      "paragraphs": [
+        "Situation Alternative direction Arbitrary weighted edit costs General dynamic programming or specialized weighted algorithms Tiny threshold on very long sequences Ukkonen-style bounded computation or hybrid methods Very large dictionary Levenshtein automata , tries, or filtering Need rich biological scoring Appropriate sequence-alignment model Need semantic similarity Semantic representations rather than character edit distance Need straightforward full alignment explanation Wagner–Fischer may be simpler"
+      ]
+    },
+    {
+      "heading": "Myers and semantic similarity",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 9,
+      "word_count": 54,
+      "evidence": "The speed of the algorithm does not change what Levenshtein distance measures.",
+      "paragraphs": [
+        "The speed of the algorithm does not change what Levenshtein distance measures.",
+        "For example:",
+        "car automobile",
+        "have large lexical edit distance despite related meanings.",
+        "Meanwhile:",
+        "cat car",
+        "have edit distance 1 but unrelated meanings.",
+        "Myers makes lexical sequence comparison faster; it does not make edit distance semantic.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Historical context",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 4,
+      "word_count": 125,
+      "evidence": "Bit-parallel approximate matching predates Myers' 1999 paper. Earlier methods, including work by Wu and Manber, represented active states of approximate-matching automata with bit vectors.",
+      "paragraphs": [
+        "Bit-parallel approximate matching predates Myers' 1999 paper. Earlier methods, including work by Wu and Manber, represented active states of approximate-matching automata with bit vectors.",
+        "Myers introduced a different representation based directly on the dynamic-programming matrix's horizontal and vertical differences. Because those differences are restricted to -1 , 0 , and +1 , a whole column of DP state can be encoded using positive and negative bit masks.",
+        "The paper's crucial technical step is the derivation of a constant-size word-operation sequence for advancing this representation, including the integer-addition carry-propagation formula for Xh .",
+        "The result was published as A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming in the Journal of the ACM , volume 46, issue 3, pages 395–415, in May 1999."
+      ]
+    },
+    {
+      "heading": "The original contribution in one diagram",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 66,
+      "evidence": "CLASSICAL DP integer column: C[0] C[1] C[2] ... C[m] ↓ ADJACENT DIFFERENCES Dv[1] Dv[2] ... Dv[m] each in: {-1,0,+1} ↓ BIT-VECTOR ENCODING Pv = positions with +1 Mv = positions with -1 ↓ MATCH PREPROCESSING Eq = Peq[text symbol] ↓ WORD-PARALLEL TRANSITION Xv Xh Ph Mh Pv' Mv' ↓ BOTTOM DELTA update Score ↓ ONE TEXT CHARACTER SCANNED WITH A SMALL FIXED SET OF WORD OPERATIONS",
+      "paragraphs": [
+        "CLASSICAL DP integer column: C[0] C[1] C[2] ... C[m] ↓ ADJACENT DIFFERENCES Dv[1] Dv[2] ... Dv[m] each in: {-1,0,+1} ↓ BIT-VECTOR ENCODING Pv = positions with +1 Mv = positions with -1 ↓ MATCH PREPROCESSING Eq = Peq[text symbol] ↓ WORD-PARALLEL TRANSITION Xv Xh Ph Mh Pv' Mv' ↓ BOTTOM DELTA update Score ↓ ONE TEXT CHARACTER SCANNED WITH A SMALL FIXED SET OF WORD OPERATIONS"
+      ]
+    },
+    {
+      "heading": "The central equations",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 1,
+      "word_count": 73,
+      "evidence": "Quantity Equation Equality mask Eq = Peq[tⱼ] Vertical auxiliary mask Xv = Eq | Mv Horizontal propagation mask Xh = (((Eq & Pv) + Pv) ^ Pv) | Eq Positive horizontal deltas Ph = Mv | ~(Xh | Pv) Negative horizontal deltas Mh = Pv & Xh Positive new vertical deltas Pv = Mh | ~(Xv | Ph) after boundary shift Negative new vertical deltas Mv = Ph & Xv after boundary shift",
+      "paragraphs": [
+        "Quantity Equation Equality mask Eq = Peq[tⱼ] Vertical auxiliary mask Xv = Eq | Mv Horizontal propagation mask Xh = (((Eq & Pv) + Pv) ^ Pv) | Eq Positive horizontal deltas Ph = Mv | ~(Xh | Pv) Negative horizontal deltas Mh = Pv & Xh Positive new vertical deltas Pv = Mh | ~(Xv | Ph) after boundary shift Negative new vertical deltas Mv = Ph & Xv after boundary shift"
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 1,
+      "word_count": 103,
+      "evidence": "Property Myers bit-vector algorithm Author Gene Myers Journal publication 1999 Core model Unit-cost insertion, deletion, substitution Historical target problem Approximate substring matching Core representation Vertical DP deltas encoded by Pv and Mv Delta values -1, 0, +1 Character matches Precomputed Peq bit masks Key arithmetic trick Binary carry propagation in Xh computation Pattern ≤ w Constant-size word update per text symbol General basic scan O(n ceil(m/w)) Dependence on k in basic scan None Exact? Yes, for the represented edit model Arbitrary weighted costs? No, not directly in the classical representation Primitive transposition? No Direct alignment-path output? No, not from the basic scan alone",
+      "paragraphs": [
+        "Property Myers bit-vector algorithm Author Gene Myers Journal publication 1999 Core model Unit-cost insertion, deletion, substitution Historical target problem Approximate substring matching Core representation Vertical DP deltas encoded by Pv and Mv Delta values -1, 0, +1 Character matches Precomputed Peq bit masks Key arithmetic trick Binary carry propagation in Xh computation Pattern ≤ w Constant-size word update per text symbol General basic scan O(n ceil(m/w)) Dependence on k in basic scan None Exact? Yes, for the represented edit model Arbitrary weighted costs? No, not directly in the classical representation Primitive transposition? No Direct alignment-path output? No, not from the basic scan alone"
+      ]
+    },
+    {
+      "heading": "“Myers is an approximate algorithm”",
+      "level": 3,
+      "id": "ux-section-127",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "No. It solves approximate matching, but its Levenshtein computations are exact.",
+      "paragraphs": [
+        "No. It solves approximate matching, but its Levenshtein computations are exact."
+      ]
+    },
+    {
+      "heading": "“Myers always computes global edit distance”",
+      "level": 3,
+      "id": "ux-section-128",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "No. The original 1999 formulation is approximate substring matching with:",
+      "paragraphs": [
+        "No. The original 1999 formulation is approximate substring matching with:",
+        "C[0,j] = 0",
+        "Global distance requires different boundary treatment."
+      ]
+    },
+    {
+      "heading": "“Myers is O(n) for every pattern length”",
+      "level": 3,
+      "id": "ux-section-129",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "No. That statement assumes the pattern occupies one constant-size machine word. General basic complexity depends on:",
+      "paragraphs": [
+        "No. That statement assumes the pattern occupies one constant-size machine word. General basic complexity depends on:",
+        "ceil(m/w)"
+      ]
+    },
+    {
+      "heading": "“k determines the number of basic Myers states”",
+      "level": 3,
+      "id": "ux-section-130",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Not in the core 1999 DP-delta algorithm. Its principal bit-vector scan is independent of k .",
+      "paragraphs": [
+        "Not in the core 1999 DP-delta algorithm. Its principal bit-vector scan is independent of k ."
+      ]
+    },
+    {
+      "heading": "“Bit vectors approximate the matrix”",
+      "level": 3,
+      "id": "ux-section-131",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "No. They encode its local differences exactly.",
+      "paragraphs": [
+        "No. They encode its local differences exactly."
+      ]
+    },
+    {
+      "heading": "“The addition in Xh is only an optimization trick”",
+      "level": 3,
+      "id": "ux-section-132",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "It is more fundamental: the carry chain implements the propagation required by the DP-state logic.",
+      "paragraphs": [
+        "It is more fundamental: the carry chain implements the propagation required by the DP-state logic."
+      ]
+    },
+    {
+      "heading": "“Myers supports any edit-cost model”",
+      "level": 3,
+      "id": "ux-section-133",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "No. The standard representation relies critically on the unit-cost neighboring-delta structure.",
+      "paragraphs": [
+        "No. The standard representation relies critically on the unit-cost neighboring-delta structure."
+      ]
+    },
+    {
+      "heading": "A rigorous implementation checklist",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 14,
+      "word_count": 101,
+      "evidence": "Define the alignment problem. Global pairwise distance, prefix alignment, or substring/infix matching?",
+      "paragraphs": [
+        "Define the alignment problem. Global pairwise distance, prefix alignment, or substring/infix matching?",
+        "Define the sequence element. Byte, code point, grapheme cluster, token, or another symbol?",
+        "Confirm the edit model is compatible. Classical Myers assumes unit-cost insertion, deletion, and substitution.",
+        "Determine machine-word width.",
+        "Handle m = 0 explicitly.",
+        "Handle m = w safely.",
+        "Use unsigned finite-width arithmetic where appropriate.",
+        "Mask unused high bits.",
+        "Build Peq according to the actual sequence alphabet.",
+        "Use the correct top-boundary shift.",
+        "Implement cross-block delta propagation for m > w.",
+        "Differential-test against Wagner–Fischer.",
+        "Test global and substring semantics separately.",
+        "Do not infer an edit script from Score alone."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 5,
+      "word_count": 272,
+      "evidence": "The Myers bit-vector algorithm is one of the most elegant transformations of classical edit-distance dynamic programming. Rather than storing every integer DP value, it observes that horizontal and vertical differences between neighboring cells in the unit-cost matrix are always -1 , 0 , or +1 . A complete column can therefore be represented by two masks: Pv for positive vertical differences and Mv for negative ones.",
+      "paragraphs": [
+        "The Myers bit-vector algorithm is one of the most elegant transformations of classical edit-distance dynamic programming. Rather than storing every integer DP value, it observes that horizontal and vertical differences between neighboring cells in the unit-cost matrix are always -1 , 0 , or +1 . A complete column can therefore be represented by two masks: Pv for positive vertical differences and Mv for negative ones.",
+        "Pattern equality is also converted into bit vectors through the precomputed Peq table. The difficult sequential dependency between pattern positions is then resolved using a remarkable arithmetic identity: binary addition propagates carries through runs of set Pv bits, allowing the necessary horizontal DP dependency to be computed for an entire machine word in parallel.",
+        "When the pattern fits inside one machine word, one text character can advance the complete DP state with a fixed sequence of word operations. For longer patterns, the state is divided into ceil(m/w) blocks, giving the basic word-parallel complexity O(n ceil(m/w)) , commonly written O(nm/w) .",
+        "The original algorithm should nevertheless be understood precisely. Myers' 1999 formulation solves approximate substring matching with a zero-cost text-prefix boundary; it is not automatically identical to a global pairwise Levenshtein implementation. Boundary initialization, horizontal input deltas, block propagation, bit masking, sequence representation, and output interpretation are all part of the algorithm's correctness.",
+        "Its scientific importance goes beyond practical speed. Myers demonstrates how algebraic structure inside a dynamic-programming matrix can be exposed, encoded as finite local differences, and mapped directly onto machine arithmetic. It is therefore a foundational example of bit-parallel algorithm design as well as one of the most important practical algorithms for exact edit-distance matching."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 7,
+      "word_count": 84,
+      "evidence": "Wagner–Fischer Algorithm — the scalar dynamic-programming matrix that Myers transforms into bit-vector state.",
+      "paragraphs": [
+        "Wagner–Fischer Algorithm — the scalar dynamic-programming matrix that Myers transforms into bit-vector state.",
+        "Ukkonen Algorithm — reducing the region of the edit matrix rather than packing its states into machine words.",
+        "Levenshtein Automata — the finite-state view of bounded edit neighborhoods.",
+        "Masek–Paterson Algorithm — block-based dynamic programming and the Four Russians approach.",
+        "Landau–Vishkin Algorithm — diagonal and k-sensitive approximate string matching.",
+        "Indexing and Filtering for Edit Distance — candidate reduction before exact verification.",
+        "Levenshtein Performance Engineering — practical CPU, memory, batching, and implementation optimization."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 5,
+      "word_count": 117,
+      "evidence": "Gene Myers, “A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming,” Journal of the ACM , 46(3), 395–415, 1999. DOI: 10.1145/316542.316550. DOI record .",
+      "paragraphs": [
+        "Gene Myers, “A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming,” Journal of the ACM , 46(3), 395–415, 1999. DOI: 10.1145/316542.316550. DOI record .",
+        "Sun Wu and Udi Manber, “Fast Text Searching: Allowing Errors,” Communications of the ACM , 35(10), 83–91, 1992. DOI: 10.1145/135239.135244. DOI record .",
+        "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI: 10.1016/S0019-9958(85)80046-2. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI: 10.1145/375360.375365. DOI record .",
+        "Martin Šošić and Mile Šikić, “Edlib: a C/C++ Library for Fast, Exact Sequence Alignment Using Edit Distance,” Bioinformatics , 33(9), 1394–1395, 2017. DOI: 10.1093/bioinformatics/btw753. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "The problem solved in Myers' original paper",
+          "anchor_id": "ux-section-2",
+          "alias": "approximate string matching",
+          "excerpt": "Given an error threshold k , the classical approximate string-matching problem is to report every text position j for which some suffix ending at j is within edit distance k of the pattern:"
+        },
+        {
+          "section": "Historical context",
+          "anchor_id": "ux-section-122",
+          "alias": "approximate string matching",
+          "excerpt": "The result was published as A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming in the Journal of the ACM , volume 46, issue 3, pages 395–415, in May 1999."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "approximate string matching",
+          "excerpt": "Landau–Vishkin Algorithm — diagonal and k-sensitive approximate string matching."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Transposition is not part of the classical Myers state",
+          "anchor_id": "ux-section-47",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau–Levenshtein Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Myers and edit-distance complexity",
+          "anchor_id": "ux-section-115",
+          "alias": "edit distance complexity",
+          "excerpt": "See Edit Distance Complexity for the distinction between RAM-model speedups, parameterized algorithms, approximation, and fine-grained lower bounds."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Myers Bit-Vector Algorithm",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "The Myers bit-vector algorithm is a word-parallel method for computing and exploiting unit-cost edit distance. Introduced by Gene Myers in 1999, it transforms the classical dynamic-programming matrix into compact bit-vector state so that many edit-distance cells can be advanced simultaneously using a small sequence of Boolean, shift, addition, and arithmetic operations. When the pattern fits inside a machine word, an entire dynamic-programming column can effectively be updated with a constant number of machine-word operations for each scanned text symbol."
+        },
+        {
+          "section": "The problem solved in Myers' original paper",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "Given an error threshold k , the classical approximate string-matching problem is to report every text position j for which some suffix ending at j is within edit distance k of the pattern:"
+        },
+        {
+          "section": "The classical dynamic-programming formulation",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "as the minimum edit distance between pattern prefix:"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Approximate search at scale",
+          "anchor_id": "ux-section-67",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — candidate reduction before exact verification."
+        }
+      ]
+    },
+    {
+      "target": "/landau-vishkin-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "Landau–Vishkin Algorithm — diagonal and k-sensitive approximate string matching."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "Relationship to Levenshtein automata",
+          "anchor_id": "ux-section-42",
+          "alias": "levenshtein automata",
+          "excerpt": "Finite-state approaches are treated separately in Levenshtein Automata ."
+        },
+        {
+          "section": "When another method may be better",
+          "anchor_id": "ux-section-120",
+          "alias": "levenshtein automata",
+          "excerpt": "Situation Alternative direction Arbitrary weighted edit costs General dynamic programming or specialized weighted algorithms Tiny threshold on very long sequences Ukkonen-style bounded computation or hybrid methods Very large dictionary Levenshtein automata , tries, or filtering Need rich biological scoring Appropriate sequence-alignment model Need semantic similarity Semantic representations rather than character edit distance Need straightforward full alignment explanation Wagner–Fischer may be simpler"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "levenshtein automata",
+          "excerpt": "Levenshtein Automata — the finite-state view of bounded edit neighborhoods."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-performance-engineering",
+      "evidence": [
+        {
+          "section": "Performance engineering considerations",
+          "anchor_id": "ux-section-111",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "See Levenshtein Performance Engineering ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "Levenshtein Performance Engineering — practical CPU, memory, batching, and implementation optimization."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-sequence-alignment",
+      "evidence": [
+        {
+          "section": "Levenshtein distance is not biological alignment",
+          "anchor_id": "ux-section-71",
+          "alias": "levenshtein vs sequence alignment",
+          "excerpt": "See Levenshtein vs Sequence Alignment ."
+        }
+      ]
+    },
+    {
+      "target": "/masek-paterson-algorithm",
+      "evidence": [
+        {
+          "section": "The relation to the Four Russians technique",
+          "anchor_id": "ux-section-76",
+          "alias": "masek paterson algorithm",
+          "excerpt": "The Masek–Paterson algorithm is a foundational example of this philosophy."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "masek paterson algorithm",
+          "excerpt": "Masek–Paterson Algorithm — block-based dynamic programming and the Four Russians approach."
+        }
+      ]
+    },
+    {
+      "target": "/paper-myers-1999",
+      "evidence": [
+        {
+          "section": "Why arbitrary weighted Levenshtein is difficult",
+          "anchor_id": "ux-section-46",
+          "alias": "myers 1999",
+          "excerpt": "Other bit-parallel formulations exist for richer scoring systems, but they require different representations and should not be called the standard Myers 1999 bit-vector algorithm without qualification."
+        },
+        {
+          "section": "Levenshtein distance is not biological alignment",
+          "anchor_id": "ux-section-71",
+          "alias": "myers 1999",
+          "excerpt": "The standard Myers 1999 algorithm optimizes:"
+        },
+        {
+          "section": "Historical context",
+          "anchor_id": "ux-section-122",
+          "alias": "myers 1999",
+          "excerpt": "Bit-parallel approximate matching predates Myers' 1999 paper. Earlier methods, including work by Wu and Manber, represented active states of approximate-matching automata with bit vectors."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Myers and semantic similarity",
+          "anchor_id": "ux-section-121",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Connection to Ukkonen",
+          "anchor_id": "ux-section-38",
+          "alias": "ukkonen algorithm",
+          "excerpt": "The Ukkonen algorithm reduces work by computing only the region of the matrix that can contain sufficiently low-cost states."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm — reducing the region of the edit matrix rather than packing its states into machine words."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Canonical-equivalence example",
+          "anchor_id": "ux-section-64",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "Wagner–Fischer Algorithm — the scalar dynamic-programming matrix that Myers transforms into bit-vector state."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Why arbitrary weighted Levenshtein is difficult",
+          "anchor_id": "ux-section-46",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "For general weighted costs, see Weighted Levenshtein Distance ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/myers-bit-vector-algorithm#page",
+      "type": "WebPage",
+      "name": "Myers Bit-Vector Algorithm",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "type": "TechArticle",
+      "name": "Myers Bit-Vector Algorithm",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/approximate-string-matching#term"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm",
+      "type": "DefinedTerm",
+      "name": "Myers Bit-Vector Algorithm",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/myers-bit-vector-algorithm#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "hasPart",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#page",
+      "mainEntity",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#page",
+      "isPartOf",
+      "https://www.levenshtein.net/algorithms#collection"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#page",
+      "hasPart",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/approximate-string-matching#term"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-automata#concept"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/masek-paterson-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "isPartOf",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/316542.316550"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/135239.135244"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "citation",
+      "https://doi.org/10.1016/S0019-9958(85)80046-2"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ],
+    [
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#article",
+      "citation",
+      "https://doi.org/10.1093/bioinformatics/btw753"
+    ],
+    [
+      "https://doi.org/10.1145/316542.316550",
+      "about",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://doi.org/10.1145/316542.316550",
+      "about",
+      "https://www.levenshtein.net/approximate-string-matching#term"
+    ],
+    [
+      "https://doi.org/10.1145/316542.316550",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1145/316542.316550",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/135239.135244",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/S0019-9958(85)80046-2",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1093/bioinformatics/btw753",
+      "anchor": "DOI record"
+    }
+  ]
+}

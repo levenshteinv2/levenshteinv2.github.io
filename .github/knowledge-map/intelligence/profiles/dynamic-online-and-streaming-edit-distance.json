@@ -1,0 +1,3027 @@
+{
+  "url": "/dynamic-online-and-streaming-edit-distance",
+  "title": "Dynamic, Online & Streaming Edit Distance: Algorithms, Models & Bounds",
+  "h1": [
+    "Dynamic, Online & Streaming Edit Distance: Algorithms, Models & Bounds"
+  ],
+  "group": "Theory",
+  "provisional_mission": "Cập nhật động và mô hình streaming",
+  "content_sha256": "60cffdd564367b1e0336a0537a78eed45db513c3871bbe38d09061c5260c9663",
+  "canonical": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance",
+  "primary_entity_candidate": "Dynamic, Online & Streaming Edit Distance: Algorithms, Models & Bounds",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Dynamic, Online and Streaming Edit Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 4,
+      "word_count": 285,
+      "evidence": "Classical edit distance is a static problem: two complete sequences are available before computation begins, and an algorithm returns the minimum number or cost of edits required to transform one sequence into the other. Dynamic, online, and streaming edit distance ask what happens when this assumption is removed.",
+      "paragraphs": [
+        "Classical edit distance is a static problem: two complete sequences are available before computation begins, and an algorithm returns the minimum number or cost of edits required to transform one sequence into the other. Dynamic, online, and streaming edit distance ask what happens when this assumption is removed.",
+        "The distinction is fundamental. In an online problem, new symbols usually arrive over time and an answer is required after each arrival. In a streaming problem, one or both sequences must be processed using severely limited memory, usually in one or a small number of passes. In a dynamic problem, already existing symbols may be inserted, deleted, or substituted at arbitrary positions, and the distance must be maintained after every update.",
+        "These models share the same underlying Levenshtein distance , but they expose very different computational structures. An ordinary dynamic-programming matrix can be updated one column at a time in an append-only setting. That idea is insufficient for arbitrary internal edits because a single change can alter the globally optimal alignment. Streaming algorithms must additionally solve an information problem: how much of the past must be remembered after the raw input has disappeared?",
+        "Modern results reveal a rich complexity landscape. General exact fully dynamic edit distance can be maintained in roughly linear time per update, and fine-grained complexity gives strong evidence that a substantially sublinear update bound is impossible in the unrestricted regime. When the current distance is small, however, exact dynamic maintenance can be reduced to roughly linear dependence on the distance parameter rather than the string length. At the same time, randomized approximation allows subpolynomial update time, while streaming and sketching algorithms can summarize low-distance strings using memory determined primarily by the allowed edit budget."
+      ]
+    },
+    {
+      "heading": "Notation",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 16,
+      "word_count": 87,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "X = x₁x₂...xₘ Y = y₁y₂...yₙ",
+        "and let:",
+        "ED(X,Y)",
+        "denote standard unit-cost edit distance:",
+        "insertion = 1 deletion = 1 substitution = 1 match = 0",
+        "When both strings have length at most a common scale, write:",
+        "N = max(m,n)",
+        "unless a cited result uses another input-size convention.",
+        "For bounded problems:",
+        "k",
+        "typically denotes either:",
+        "a supplied threshold;",
+        "a promised upper bound on the distance;",
+        "or, in output-sensitive statements, a quantity related to the current true distance.",
+        "The exact interpretation of k must always be stated."
+      ]
+    },
+    {
+      "heading": "The first distinction: static, online, streaming and dynamic",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 1,
+      "word_count": 115,
+      "evidence": "Model How input changes Primary constrained resource Typical output Static Both strings fixed Total running time / memory One distance or alignment Online New symbols arrive sequentially Time per arriving symbol Answer after every arrival Streaming Input passes once or a few times Working memory and passes Distance, approximation, sketch or matches Asymmetric streaming One string streams; the other supports random access Memory for streamed side Distance or approximation Fully streaming Both inputs must be processed as streams Memory, passes and processing time Distance, sketch or matches Dynamic Insert/delete/substitute anywhere Update time Maintained distance after updates Fully dynamic Arbitrary update type at arbitrary position Worst-case or amortized update time Distance or approximat",
+      "paragraphs": [
+        "Model How input changes Primary constrained resource Typical output Static Both strings fixed Total running time / memory One distance or alignment Online New symbols arrive sequentially Time per arriving symbol Answer after every arrival Streaming Input passes once or a few times Working memory and passes Distance, approximation, sketch or matches Asymmetric streaming One string streams; the other supports random access Memory for streamed side Distance or approximation Fully streaming Both inputs must be processed as streams Memory, passes and processing time Distance, sketch or matches Dynamic Insert/delete/substitute anywhere Update time Maintained distance after updates Fully dynamic Arbitrary update type at arbitrary position Worst-case or amortized update time Distance or approximation after every update"
+      ]
+    },
+    {
+      "heading": "Why terminology matters",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 9,
+      "word_count": 43,
+      "evidence": "Consider a document:",
+      "paragraphs": [
+        "Consider a document:",
+        "abcdefghij",
+        "An online append operation might produce:",
+        "abcdefghijk",
+        "The previous prefix remains unchanged.",
+        "A fully dynamic insertion may instead produce:",
+        "abcdXefghij",
+        "Every position after the insertion point shifts.",
+        "Although both operations add one symbol, the algorithmic consequences are completely different."
+      ]
+    },
+    {
+      "heading": "The static baseline",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 7,
+      "word_count": 66,
+      "evidence": "The ordinary dynamic-programming recurrence is:",
+      "paragraphs": [
+        "The ordinary dynamic-programming recurrence is:",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + [xᵢ != yⱼ] )",
+        "with:",
+        "D[i][0] = i D[0][j] = j",
+        "This gives the classical Wagner–Fischer algorithm :",
+        "Time: O(mn) Full matrix space: O(mn) Distance-only space: O(min(m,n))",
+        "Dynamic, online, and streaming algorithms can all be understood as attempts to avoid rebuilding or storing this entire matrix whenever the input changes."
+      ]
+    },
+    {
+      "heading": "Online edit distance: the simplest incremental setting",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 10,
+      "word_count": 39,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "P",
+        "is a fixed pattern of length:",
+        "m",
+        "and text symbols arrive:",
+        "t₁, t₂, t₃, ...",
+        "After symbol:",
+        "t_j",
+        "arrives, we may want the edit distance between the pattern and the current text prefix:",
+        "ED( P, T[1..j] )"
+      ]
+    },
+    {
+      "heading": "Column-by-column online DP",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "The standard recurrence only needs the previous matrix column to compute the next one.",
+      "paragraphs": [
+        "The standard recurrence only needs the previous matrix column to compute the next one.",
+        "Therefore an append-only stream admits:",
+        "previous column ↓ new text symbol ↓ new column",
+        "using:",
+        "O(m)",
+        "time per symbol and:",
+        "O(m)",
+        "memory."
+      ]
+    },
+    {
+      "heading": "Conceptual online prefix algorithm",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 2,
+      "word_count": 66,
+      "evidence": "initialize: D[i] = i for i = 0..m for each arriving symbol c: new[0] = number_of_text_symbols_seen for i = 1..m: deletion = new[i-1] + 1 insertion = D[i] + 1 substitution = D[i-1] + [P[i-1] != c] new[i] = min( deletion, insertion, substitution ) D = new output D[m]",
+      "paragraphs": [
+        "initialize: D[i] = i for i = 0..m for each arriving symbol c: new[0] = number_of_text_symbols_seen for i = 1..m: deletion = new[i-1] + 1 insertion = D[i] + 1 substitution = D[i-1] + [P[i-1] != c] new[i] = min( deletion, insertion, substitution ) D = new output D[m]",
+        "This is an online form of the same dynamic program rather than a fundamentally new distance algorithm."
+      ]
+    },
+    {
+      "heading": "Online approximate pattern matching",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 15,
+      "word_count": 86,
+      "evidence": "A different online problem asks:",
+      "paragraphs": [
+        "A different online problem asks:",
+        "After every text symbol arrives, what is the minimum edit distance between the fixed pattern and a suffix ending at the current stream position?",
+        "This is the online analogue of approximate pattern matching.",
+        "A standard dynamic-programming formulation changes the first row initialization from:",
+        "D[0][j] = j",
+        "to:",
+        "D[0][j] = 0",
+        "so that starting a candidate substring anywhere in the text is free.",
+        "Then:",
+        "D[m][j]",
+        "represents the minimum edit distance between:",
+        "P",
+        "and a suffix of:",
+        "T[1..j]",
+        "ending at position j ."
+      ]
+    },
+    {
+      "heading": "Why this is harder than Hamming streaming",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 11,
+      "word_count": 58,
+      "evidence": "For Hamming distance, the relationship between positions is fixed:",
+      "paragraphs": [
+        "For Hamming distance, the relationship between positions is fixed:",
+        "P[i] ↔ T[j-m+i]",
+        "For edit distance, insertions and deletions shift the alignment:",
+        "P: a b c d e f T: a b X c d e f",
+        "After one insertion:",
+        "P[3]",
+        "may correspond to:",
+        "T[4]",
+        "rather than:",
+        "T[3]",
+        "The algorithm must therefore maintain information about many possible alignment offsets."
+      ]
+    },
+    {
+      "heading": "The formal online model of Clifford, Jalsenius and Sach",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 9,
+      "word_count": 93,
+      "evidence": "A particularly clean theoretical model fixes a string of length n and receives one stream symbol at a time. After each arrival, an edit-distance answer involving the fixed string and the relevant suffix of the recent stream must be reported.",
+      "paragraphs": [
+        "A particularly clean theoretical model fixes a string of length n and receives one stream symbol at a time. After each arrival, an edit-distance answer involving the fixed string and the relevant suffix of the recent stream must be reported.",
+        "This lets researchers study:",
+        "time per output",
+        "rather than merely total static runtime.",
+        "In the cell-probe model, Clifford, Jalsenius, and Sach established nontrivial lower bounds for online edit distance and also an upper bound of:",
+        "O( log² n / w )",
+        "cell probes per arriving symbol, where:",
+        "w",
+        "is the machine-cell word size."
+      ]
+    },
+    {
+      "heading": "Cell-probe time is not CPU time",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 6,
+      "word_count": 52,
+      "evidence": "The cell-probe model counts only memory-cell accesses.",
+      "paragraphs": [
+        "The cell-probe model counts only memory-cell accesses.",
+        "Computation between memory accesses is free.",
+        "Therefore:",
+        "O(log² n / w) cell probes",
+        "does not imply that a conventional implementation performs the complete update in the same number of ordinary machine instructions.",
+        "The result is primarily a statement about information transfer between memory and computation."
+      ]
+    },
+    {
+      "heading": "Online lower bounds",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 5,
+      "word_count": 56,
+      "evidence": "For constant alphabets in the bit-probe model, the same work gives a lower bound of order:",
+      "paragraphs": [
+        "For constant alphabets in the bit-probe model, the same work gives a lower bound of order:",
+        "Ω( sqrt(log n) / (log log n)^(3/2) )",
+        "per output for online edit distance.",
+        "The result illustrates an important principle:",
+        "Even when the input changes by only one arriving symbol, reporting an exact edit-distance value can require nonconstant information transfer."
+      ]
+    },
+    {
+      "heading": "Online does not mean low memory",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "An algorithm may be online while retaining:",
+      "paragraphs": [
+        "An algorithm may be online while retaining:",
+        "Θ(n)",
+        "or more memory.",
+        "\"Online\" constrains when answers are required.",
+        "\"Streaming\" primarily constrains how input is accessed and how much state may be retained.",
+        "The two properties can coexist, but neither implies the other."
+      ]
+    },
+    {
+      "heading": "The streaming model",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 10,
+      "word_count": 46,
+      "evidence": "A one-pass streaming algorithm sees:",
+      "paragraphs": [
+        "A one-pass streaming algorithm sees:",
+        "x₁ x₂ ... xₙ",
+        "in order and cannot normally revisit old symbols unless they were stored.",
+        "Its working memory should ideally satisfy:",
+        "space ≪ input length",
+        "Typical targets include:",
+        "polylog(n)",
+        "or:",
+        "poly(k, log n)",
+        "when a distance threshold k is available."
+      ]
+    },
+    {
+      "heading": "Why ordinary row reduction is not automatically a fully streaming algorithm",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 9,
+      "word_count": 70,
+      "evidence": "It is often stated that Levenshtein distance uses only:",
+      "paragraphs": [
+        "It is often stated that Levenshtein distance uses only:",
+        "O(min(m,n))",
+        "memory because Wagner–Fischer requires only two rows.",
+        "That does not imply that both strings can be discarded as simultaneous streams.",
+        "A row-wise implementation typically needs repeated access to one complete string:",
+        "for every x[i]: for every y[j]: compare x[i] with y[j]",
+        "If:",
+        "Y",
+        "has already passed through a one-way stream and was not stored, those comparisons cannot simply be repeated."
+      ]
+    },
+    {
+      "heading": "Asymmetric streaming",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "The asymmetric model provides:",
+      "paragraphs": [
+        "The asymmetric model provides:",
+        "streaming access to X and random access to Y",
+        "or vice versa.",
+        "It lies between:",
+        "ordinary random-access algorithms",
+        "and:",
+        "fully streaming algorithms"
+      ]
+    },
+    {
+      "heading": "Why asymmetric streaming is natural",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 9,
+      "word_count": 42,
+      "evidence": "Many systems contain:",
+      "paragraphs": [
+        "Many systems contain:",
+        "a stored reference sequence",
+        "and:",
+        "a large incoming sequence",
+        "For example:",
+        "reference document + incoming document stream",
+        "or:",
+        "known pattern + streaming text",
+        "Random access to the reference is inexpensive while buffering the entire incoming sequence may be impossible."
+      ]
+    },
+    {
+      "heading": "Bounded asymmetric streaming",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 10,
+      "word_count": 50,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "ED(X,Y) ≤ k",
+        "then every optimal unit-cost edit path stays inside:",
+        "|i-j| ≤ k",
+        "relative to the relevant diagonal.",
+        "Therefore only:",
+        "O(k)",
+        "DP entries need to remain active at any one row.",
+        "This yields the basic streaming-space principle:",
+        "small edit distance ↓ narrow alignment corridor ↓ small active state"
+      ]
+    },
+    {
+      "heading": "A banded asymmetric streaming baseline",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "With random access to one string:",
+      "paragraphs": [
+        "With random access to one string:",
+        "Time: O(nk) Working DP space: O(k)",
+        "up to logarithmic factors for indices and stored symbols.",
+        "This is closely related to the theory developed in Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Why fully streaming exact edit distance is harder",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 9,
+      "word_count": 62,
+      "evidence": "Suppose both strings disappear after one pass.",
+      "paragraphs": [
+        "Suppose both strings disappear after one pass.",
+        "An insertion near the beginning can shift the entire remaining correspondence:",
+        "X: abcdefgh... Y: Xabcdefgh...",
+        "A streaming algorithm may not know immediately whether an early mismatch is:",
+        "a substitution;",
+        "an insertion;",
+        "a deletion;",
+        "or the beginning of a different alignment.",
+        "It must retain enough information to resolve these possibilities later without retaining the entire strings."
+      ]
+    },
+    {
+      "heading": "Streaming in the low-distance regime",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 11,
+      "word_count": 49,
+      "evidence": "The low-distance assumption:",
+      "paragraphs": [
+        "The low-distance assumption:",
+        "ED(X,Y) ≤ k ≪ n",
+        "changes the problem substantially.",
+        "There can be only:",
+        "k",
+        "edit events along an optimal script.",
+        "Most of the two strings therefore consists of long matching structure.",
+        "A streaming algorithm can try to retain:",
+        "the exceptional regions",
+        "rather than:",
+        "the entire input"
+      ]
+    },
+    {
+      "heading": "Kernelization viewpoint",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 9,
+      "word_count": 55,
+      "evidence": "A streaming kernelization transforms a large pair:",
+      "paragraphs": [
+        "A streaming kernelization transforms a large pair:",
+        "(X,Y)",
+        "into a much smaller pair:",
+        "(X',Y')",
+        "such that:",
+        "ED(X,Y) = ED(X',Y')",
+        "for all instances satisfying the promised low-distance regime.",
+        "The high-level idea is:",
+        "large matching / repetitive regions ↓ compress or discard ↓ retain only regions that may contain edits ↓ run exact algorithm on small kernel"
+      ]
+    },
+    {
+      "heading": "Chakraborty–Goldenberg–Koucký",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 9,
+      "word_count": 73,
+      "evidence": "A major 2016 line of work developed randomized streaming embeddings and low-distance edit-distance algorithms.",
+      "paragraphs": [
+        "A major 2016 line of work developed randomized streaming embeddings and low-distance edit-distance algorithms.",
+        "Their STOC work constructed a one-pass embedding from edit distance into Hamming distance with quadratic distortion in the small-distance regime and used the structure for streaming and document-exchange applications.",
+        "Subsequent work by the same authors described streaming exact algorithms in the promised:",
+        "ED(X,Y) ≤ k",
+        "regime with total running times including:",
+        "O(n+k²)",
+        "and:",
+        "n + O(k³)",
+        "for different constructions."
+      ]
+    },
+    {
+      "heading": "Why embeddings help streaming",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 8,
+      "word_count": 49,
+      "evidence": "Hamming distance is easier to stream because symbols remain positionally aligned.",
+      "paragraphs": [
+        "Hamming distance is easier to stream because symbols remain positionally aligned.",
+        "An embedding:",
+        "f(X) f(Y)",
+        "attempts to convert insertion/deletion uncertainty into a representation where:",
+        "Hamming( f(X), f(Y) )",
+        "contains useful information about:",
+        "ED(X,Y)",
+        "A streaming-friendly embedding can be computed while symbols arrive and then summarized using familiar Hamming sketches."
+      ]
+    },
+    {
+      "heading": "But distortion matters",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 10,
+      "word_count": 44,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "ED(X,Y) = k",
+        "and the embedding only guarantees:",
+        "HD( f(X), f(Y) ) = O(k²)",
+        "then it does not preserve edit distance exactly.",
+        "The embedding may still be sufficient to:",
+        "locate likely edit regions;",
+        "construct a kernel;",
+        "support document exchange;",
+        "or obtain an approximation."
+      ]
+    },
+    {
+      "heading": "Edit-distance sketches",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 10,
+      "word_count": 44,
+      "evidence": "A sketch is a compressed representation:",
+      "paragraphs": [
+        "A sketch is a compressed representation:",
+        "sk(X)",
+        "computed independently from:",
+        "X",
+        "such that two sketches:",
+        "sk(X) and sk(Y)",
+        "allow information about:",
+        "ED(X,Y)",
+        "to be recovered.",
+        "This is stronger than ordinary pairwise streaming because the two parties do not need to process their inputs jointly."
+      ]
+    },
+    {
+      "heading": "Sketching versus compression",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 10,
+      "word_count": 43,
+      "evidence": "A general compressor must preserve enough information to reconstruct:",
+      "paragraphs": [
+        "A general compressor must preserve enough information to reconstruct:",
+        "X",
+        "itself.",
+        "A distance sketch only needs to preserve the information required for:",
+        "comparison with another sketch",
+        "Hence:",
+        "|sk(X)|",
+        "can be far smaller than:",
+        "|X|",
+        "when the task is restricted to bounded edit distance."
+      ]
+    },
+    {
+      "heading": "Kociumaka–Porat–Starikovskaya sketches",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 13,
+      "word_count": 45,
+      "evidence": "A 2021 FOCS result introduced a bounded edit-distance sketch of size:",
+      "paragraphs": [
+        "A 2021 FOCS result introduced a bounded edit-distance sketch of size:",
+        "Õ(k²)",
+        "for strings of bounded length.",
+        "Given two such sketches, the method can in:",
+        "Õ(k³)",
+        "time either:",
+        "compute ED(X,Y)",
+        "or certify:",
+        "ED(X,Y) > k",
+        "with the stated randomized guarantees.",
+        "Here:",
+        "Õ",
+        "suppresses polylogarithmic factors."
+      ]
+    },
+    {
+      "heading": "Streaming pattern matching with k edits",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 16,
+      "word_count": 66,
+      "evidence": "The same work solved a fully streaming approximate pattern-matching problem:",
+      "paragraphs": [
+        "The same work solved a fully streaming approximate pattern-matching problem:",
+        "pattern P + text stream T + threshold k",
+        "and reports occurrences whose edit distance from:",
+        "P",
+        "is at most:",
+        "k",
+        "using:",
+        "Õ(k⁵)",
+        "space and:",
+        "Õ(k⁸)",
+        "amortized time per arriving text character.",
+        "This is an important result, but it solves:",
+        "streaming pattern matching",
+        "rather than merely:",
+        "one pairwise edit-distance computation",
+        "and the distinction should be preserved."
+      ]
+    },
+    {
+      "heading": "Almost-linear dependence on k in edit-distance sketches",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 10,
+      "word_count": 75,
+      "evidence": "Koucký and Saks substantially improved the sketch-size dependence in 2024.",
+      "paragraphs": [
+        "Koucký and Saks substantially improved the sketch-size dependence in 2024.",
+        "For threshold:",
+        "k",
+        "and strings of length at most:",
+        "n",
+        "their sketch has size:",
+        "k · 2^O( sqrt( log n · log log n ) )",
+        "up to the precise encoding convention used in the result.",
+        "Given two sketches and the shared public randomness, the recovery algorithm can, with high probability:",
+        "if ED(X,Y) ≤ k: output ED(X,Y) and an optimal edit script else: output LARGE"
+      ]
+    },
+    {
+      "heading": "Why the sketch-size result matters",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 12,
+      "word_count": 36,
+      "evidence": "The dependence on:",
+      "paragraphs": [
+        "The dependence on:",
+        "k",
+        "is essentially linear up to a subpolynomial factor in:",
+        "n",
+        "rather than quadratic in:",
+        "k",
+        "as in earlier sketches.",
+        "This is particularly important for:",
+        "document exchange;",
+        "distributed comparison;",
+        "communication complexity;",
+        "archival synchronization."
+      ]
+    },
+    {
+      "heading": "Sketch size and streaming space are different complexity measures",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 4,
+      "word_count": 44,
+      "evidence": "A sketch may be compact while the algorithm that constructs it requires more temporary memory.",
+      "paragraphs": [
+        "A sketch may be compact while the algorithm that constructs it requires more temporary memory.",
+        "Conversely, a low-space streaming algorithm may output a representation larger than its working memory.",
+        "A complete complexity statement should therefore distinguish:",
+        "working memory sketch size construction time recovery time"
+      ]
+    },
+    {
+      "heading": "Asymmetric streaming lower bounds",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 7,
+      "word_count": 67,
+      "evidence": "Streaming memory cannot always be reduced to:",
+      "paragraphs": [
+        "Streaming memory cannot always be reduced to:",
+        "polylog(n)",
+        "without weakening the output requirement.",
+        "Li and Zheng developed lower bounds for edit distance in the asymmetric streaming model and showed that edit distance can be substantially more demanding than Hamming distance in this setting.",
+        "Their work also developed improved approximation algorithms whose space depends on the true distance:",
+        "d = ED(X,Y)",
+        "rather than only the full string length."
+      ]
+    },
+    {
+      "heading": "Exactness versus sublinear streaming space",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 3,
+      "word_count": 39,
+      "evidence": "A recurring theme is:",
+      "paragraphs": [
+        "A recurring theme is:",
+        "exact all-distance output ↓ large information requirement small-distance promise ↓ poly(k)-type summaries become possible approximation ↓ still smaller space may become possible",
+        "This mirrors the exact-versus-approximate complexity separation discussed in Approximate Edit Distance Algorithms ."
+      ]
+    },
+    {
+      "heading": "Asymmetric streaming approximation in 2026",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 14,
+      "word_count": 83,
+      "evidence": "Recent work continues to sharpen this trade-off for streaming approximate pattern matching.",
+      "paragraphs": [
+        "Recent work continues to sharpen this trade-off for streaming approximate pattern matching.",
+        "Janczewski and Starikovskaya studied:",
+        "random-access pattern P + streaming text T",
+        "and showed a deterministic family of edit-distance approximation algorithms.",
+        "For any positive integer parameter:",
+        "r",
+        "one form of their result gives approximation factor:",
+        "2^r - 1 + ε",
+        "using approximately:",
+        "Õ( m^(1/r) )",
+        "space, where:",
+        "m = |P|",
+        "and ε > 0 is constant.",
+        "Here r is a trade-off parameter and should not be confused with a bounded edit-distance threshold."
+      ]
+    },
+    {
+      "heading": "The approximation-space trade-off",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 8,
+      "word_count": 30,
+      "evidence": "Increasing:",
+      "paragraphs": [
+        "Increasing:",
+        "r",
+        "decreases the memory exponent:",
+        "m^(1/r)",
+        "but worsens the approximation factor:",
+        "2^r - 1 + ε",
+        "This is a characteristic streaming trade-off:",
+        "less retained information ↓ weaker numerical guarantee"
+      ]
+    },
+    {
+      "heading": "Dynamic edit distance",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "The fully dynamic problem is fundamentally different.",
+      "paragraphs": [
+        "The fully dynamic problem is fundamentally different.",
+        "We begin with:",
+        "X and Y",
+        "and receive updates such as:",
+        "insert character at position i delete character at position i substitute character at position i",
+        "in either string.",
+        "After every update, the data structure must maintain:",
+        "ED(X,Y)",
+        "or an approximation to it."
+      ]
+    },
+    {
+      "heading": "A single update changes the distance by at most one",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 15,
+      "word_count": 42,
+      "evidence": "For unit-cost edit distance, suppose:",
+      "paragraphs": [
+        "For unit-cost edit distance, suppose:",
+        "X'",
+        "is obtained from:",
+        "X",
+        "by one primitive edit.",
+        "Then:",
+        "ED(X,X') = 1",
+        "By triangle inequality:",
+        "ED(X',Y) ≤ ED(X',X) + ED(X,Y)",
+        "so:",
+        "ED(X',Y) ≤ ED(X,Y)+1",
+        "and reversing the argument gives:",
+        "ED(X,Y) ≤ ED(X',Y)+1",
+        "Therefore:",
+        "|ED(X',Y)-ED(X,Y)| ≤ 1"
+      ]
+    },
+    {
+      "heading": "This does not make dynamic maintenance easy",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 10,
+      "word_count": 68,
+      "evidence": "The scalar answer changes only slightly:",
+      "paragraphs": [
+        "The scalar answer changes only slightly:",
+        "d → d-1 or d or d+1",
+        "but the optimal alignment itself can change globally .",
+        "For example, highly repetitive strings may contain many nearly optimal alignments:",
+        "abababababab... babababababa...",
+        "One insertion near the beginning can cause the optimal path to switch from one global alignment to another.",
+        "Thus:",
+        "small change in distance value",
+        "does not imply:",
+        "small local change in dynamic-programming structure"
+      ]
+    },
+    {
+      "heading": "The naive dynamic algorithm",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 10,
+      "word_count": 30,
+      "evidence": "After every update:",
+      "paragraphs": [
+        "After every update:",
+        "modify string ↓ recompute full DP ↓ return ED",
+        "costs:",
+        "O(N²)",
+        "per update.",
+        "A sequence of:",
+        "U",
+        "updates then costs:",
+        "O( U N² )",
+        "ignoring changing lengths."
+      ]
+    },
+    {
+      "heading": "Why recomputing one row is not enough",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 11,
+      "word_count": 54,
+      "evidence": "Suppose a substitution occurs at:",
+      "paragraphs": [
+        "Suppose a substitution occurs at:",
+        "X[i]",
+        "Every DP cell:",
+        "D[p][q]",
+        "with:",
+        "p ≥ i",
+        "can potentially depend on that changed symbol.",
+        "An insertion or deletion is even more disruptive because all subsequent string indices shift.",
+        "The affected region may therefore contain:",
+        "Θ(N²)",
+        "matrix states even though the final answer changes by at most one."
+      ]
+    },
+    {
+      "heading": "Dynamic String Alignment",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 11,
+      "word_count": 43,
+      "evidence": "Charalampopoulos, Kociumaka, and Mozes developed a dynamic framework for maintaining optimal string alignment under:",
+      "paragraphs": [
+        "Charalampopoulos, Kociumaka, and Mozes developed a dynamic framework for maintaining optimal string alignment under:",
+        "insertions;",
+        "deletions;",
+        "substitutions.",
+        "The formulation generalizes:",
+        "edit distance;",
+        "longest common subsequence;",
+        "weighted alignment with the stated restrictions.",
+        "For constant alignment weights, they obtain roughly:",
+        "Õ(N)",
+        "time per dynamic update."
+      ]
+    },
+    {
+      "heading": "Why Õ(N) is significant",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 6,
+      "word_count": 68,
+      "evidence": "It improves the naive:",
+      "paragraphs": [
+        "It improves the naive:",
+        "O(N²)",
+        "recomputation by almost a full polynomial factor.",
+        "At the same time, fine-grained lower bounds imply that a strongly sublinear update time for the general exact dynamic alignment problem would produce a strongly subquadratic static algorithm and contradict standard hypotheses such as SETH.",
+        "Thus the rough picture for unrestricted exact dynamic edit distance is:",
+        "update time: near linear and substantially sublinear update: conditionally unlikely"
+      ]
+    },
+    {
+      "heading": "The static-to-dynamic lower-bound intuition",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 13,
+      "word_count": 71,
+      "evidence": "Suppose a dynamic data structure had:",
+      "paragraphs": [
+        "Suppose a dynamic data structure had:",
+        "very cheap initialization",
+        "and update time:",
+        "O( N^(1-δ) )",
+        "for a fixed:",
+        "δ > 0",
+        "One could construct a target string through:",
+        "O(N)",
+        "updates and obtain the final edit distance in:",
+        "O( N · N^(1-δ) ) = O( N^(2-δ) )",
+        "time.",
+        "Therefore a sufficiently fast dynamic algorithm can imply a faster static algorithm.",
+        "This reduction principle explains why static fine-grained hardness constrains dynamic update time."
+      ]
+    },
+    {
+      "heading": "Dynamic edit distance becomes much easier when the distance is small",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 7,
+      "word_count": 37,
+      "evidence": "Now suppose:",
+      "paragraphs": [
+        "Now suppose:",
+        "k = ED(X,Y) ≪ N",
+        "An optimal alignment lies near a narrow diagonal corridor and contains only a small number of edit events.",
+        "This structure suggests dynamic update time based on:",
+        "k",
+        "rather than:",
+        "N"
+      ]
+    },
+    {
+      "heading": "From Õ(min(N,k²)) to Õ(k)",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 5,
+      "word_count": 47,
+      "evidence": "Before the newest results, combining general dynamic methods with bounded-edit-distance techniques produced update costs on the order of:",
+      "paragraphs": [
+        "Before the newest results, combining general dynamic methods with bounded-edit-distance techniques produced update costs on the order of:",
+        "Õ( min( N, k² ) )",
+        "in the relevant regimes.",
+        "This left a natural question:",
+        "Can exact dynamic unit-cost edit distance be maintained in approximately O(k) time per update?"
+      ]
+    },
+    {
+      "heading": "STOC 2025: dynamic update time Õ(k)",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 7,
+      "word_count": 59,
+      "evidence": "Gorbachev and Kociumaka answered this question affirmatively.",
+      "paragraphs": [
+        "Gorbachev and Kociumaka answered this question affirmatively.",
+        "For bounded unit-cost edit distance they obtain, after near-optimal preprocessing, a deterministic dynamic algorithm with worst-case update time:",
+        "Õ(k)",
+        "where the complexity is parameterized by the small edit-distance regime.",
+        "The corresponding static preprocessing is based on their bounded algorithm and is of the form:",
+        "Õ( N + k² )",
+        "for unit weights."
+      ]
+    },
+    {
+      "heading": "Why Õ(k) is a major structural result",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 7,
+      "word_count": 58,
+      "evidence": "A single edit update can only change the distance by one, but maintaining the optimal alignment seemed to require preserving a much richer:",
+      "paragraphs": [
+        "A single edit update can only change the distance by one, but maintaining the optimal alignment seemed to require preserving a much richer:",
+        "k × k",
+        "state.",
+        "The 2025 result shows that this quadratic dependence is not inherent to dynamic maintenance.",
+        "In the small-distance regime:",
+        "static: approximately N+k² dynamic update: approximately k",
+        "is achievable up to polylogarithmic factors."
+      ]
+    },
+    {
+      "heading": "Dynamic phase diagram",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 3,
+      "word_count": 55,
+      "evidence": "Current distance regime Representative exact dynamic behavior k = O(1) Polylogarithmic factors around constant parameter work k = O(log N) Roughly polylogarithmic parameter-dependent update k = √N About Õ(√N) bounded update k = Θ(N) Bound degrades to roughly Õ(N)",
+      "paragraphs": [
+        "Current distance regime Representative exact dynamic behavior k = O(1) Polylogarithmic factors around constant parameter work k = O(log N) Roughly polylogarithmic parameter-dependent update k = √N About Õ(√N) bounded update k = Θ(N) Bound degrades to roughly Õ(N)",
+        "Thus the bounded result smoothly reconnects with the near-linear general dynamic regime when:",
+        "k = Θ(N)"
+      ]
+    },
+    {
+      "heading": "Weighted dynamic edit distance",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "In weighted edit distance, each operation has cost:",
+      "paragraphs": [
+        "In weighted edit distance, each operation has cost:",
+        "w( operation, symbols )",
+        "rather than one.",
+        "For example:",
+        "substitute('i','l') = 0.3 substitute('i','q') = 1.2 insert('-') = 0.2",
+        "The weighted setting is treated mathematically in Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Why dynamic weighting is harder",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "With unit costs:",
+      "paragraphs": [
+        "With unit costs:",
+        "distance k ≈ k primitive edit events",
+        "With arbitrary weights:",
+        "distance k",
+        "does not directly bound the number of operations unless every nontrivial edit has a positive normalized minimum cost.",
+        "Moreover, algorithms cannot organize all relevant states merely by:",
+        "0 edits 1 edit 2 edits ... k edits"
+      ]
+    },
+    {
+      "heading": "Small integer weights",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 8,
+      "word_count": 42,
+      "evidence": "Suppose edit weights are integers bounded by:",
+      "paragraphs": [
+        "Suppose edit weights are integers bounded by:",
+        "W",
+        "The STOC 2025 framework extends to this setting.",
+        "The static distance can be computed in:",
+        "Õ( N + Wk² )",
+        "and dynamically maintained with update time:",
+        "Õ( W²k )",
+        "in the stated bounded regime."
+      ]
+    },
+    {
+      "heading": "Unit weights are recovered as W = 1",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 5,
+      "word_count": 21,
+      "evidence": "Set:",
+      "paragraphs": [
+        "Set:",
+        "W = 1",
+        "Then:",
+        "Õ( W²k ) = Õ(k)",
+        "so the standard Levenshtein result appears as the unit-weight special case."
+      ]
+    },
+    {
+      "heading": "Arbitrary weighted dynamic distance",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 10,
+      "word_count": 68,
+      "evidence": "Boneh, Gorbachev, and Kociumaka studied the more general problem in which weighted edit costs are normalized to be at least one but may otherwise be arbitrary.",
+      "paragraphs": [
+        "Boneh, Gorbachev, and Kociumaka studied the more general problem in which weighted edit costs are normalized to be at least one but may otherwise be arbitrary.",
+        "For a threshold:",
+        "k",
+        "fixed during preprocessing and a trade-off parameter:",
+        "γ ∈ [0,1]",
+        "their dynamic algorithm obtains preprocessing:",
+        "Õ( N k^γ )",
+        "and update time:",
+        "Õ( k^(3-γ) )",
+        "while returning an overflow value when the maintained weighted distance exceeds the threshold."
+      ]
+    },
+    {
+      "heading": "The preprocessing-update trade-off",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 6,
+      "word_count": 19,
+      "evidence": "Increasing:",
+      "paragraphs": [
+        "Increasing:",
+        "γ",
+        "spends more work before updates begin:",
+        "N k^γ",
+        "but decreases the exponent of the update cost:",
+        "k^(3-γ)"
+      ]
+    },
+    {
+      "heading": "γ = 0",
+      "level": 3,
+      "id": "ux-section-57",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "preprocessing: Õ(N) update: Õ(k³)",
+      "paragraphs": [
+        "preprocessing: Õ(N) update: Õ(k³)"
+      ]
+    },
+    {
+      "heading": "γ = 1",
+      "level": 3,
+      "id": "ux-section-58",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "preprocessing: Õ(Nk) update: Õ(k²)",
+      "paragraphs": [
+        "preprocessing: Õ(Nk) update: Õ(k²)",
+        "Intermediate values interpolate between these regimes."
+      ]
+    },
+    {
+      "heading": "Why arbitrary weights do not reach the unit-cost Õ(k) bound",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "The low-distance structure is weaker.",
+      "paragraphs": [
+        "The low-distance structure is weaker.",
+        "A unit-cost alignment is constrained simultaneously by:",
+        "total cost and number of edit events",
+        "whereas arbitrary weighting separates those quantities.",
+        "The best dynamic representation must therefore encode substantially more information about possible alignments."
+      ]
+    },
+    {
+      "heading": "Dynamic approximation",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "Exact dynamic maintenance is not the only possible objective.",
+      "paragraphs": [
+        "Exact dynamic maintenance is not the only possible objective.",
+        "A data structure may maintain:",
+        "D_hat(X,Y)",
+        "such that:",
+        "ED(X,Y) ≤ D_hat(X,Y) ≤ α · ED(X,Y)",
+        "or satisfy another stated approximation guarantee.",
+        "The hope is to obtain update times far below the near-linear exact barrier."
+      ]
+    },
+    {
+      "heading": "Static approximation does not automatically become dynamic",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "Suppose a static algorithm approximates edit distance in:",
+      "paragraphs": [
+        "Suppose a static algorithm approximates edit distance in:",
+        "N^(1+ε)",
+        "time.",
+        "Rerunning it after every update still costs:",
+        "N^(1+ε)",
+        "per update.",
+        "A true dynamic approximation algorithm must reuse information across successive versions of the strings."
+      ]
+    },
+    {
+      "heading": "FOCS 2023: fully dynamic approximation",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "Kociumaka, Mukherjee, and Saha developed the first fully dynamic framework achieving simultaneously:",
+      "paragraphs": [
+        "Kociumaka, Mukherjee, and Saha developed the first fully dynamic framework achieving simultaneously:",
+        "approximation factor: N^o(1) and amortized expected update time: N^o(1)",
+        "for edit distance.",
+        "This means both quantities are subpolynomial in:",
+        "N"
+      ]
+    },
+    {
+      "heading": "What N^o(1) means",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 10,
+      "word_count": 26,
+      "evidence": "A function:",
+      "paragraphs": [
+        "A function:",
+        "N^o(1)",
+        "grows more slowly than:",
+        "N^ε",
+        "for every fixed:",
+        "ε > 0",
+        "It does not necessarily mean:",
+        "polylog(N)",
+        "although every polylogarithmic function is:",
+        "N^o(1)"
+      ]
+    },
+    {
+      "heading": "The precision-sampling-tree idea",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 5,
+      "word_count": 67,
+      "evidence": "At a high level, the dynamic approximation uses hierarchical decomposition inspired by precision-sampling methods from static edit-distance approximation.",
+      "paragraphs": [
+        "At a high level, the dynamic approximation uses hierarchical decomposition inspired by precision-sampling methods from static edit-distance approximation.",
+        "The strings are represented through a hierarchy:",
+        "whole string ↓ large blocks ↓ smaller blocks ↓ local summaries",
+        "An update affects only a controlled collection of nodes in this hierarchy.",
+        "Instead of recomputing every local pairwise distance, the algorithm updates sampled and approximate information whose combined error remains bounded."
+      ]
+    },
+    {
+      "heading": "Exact versus approximate dynamic complexity",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 2,
+      "word_count": 45,
+      "evidence": "GENERAL EXACT dynamic edit distance │ └── Õ(N) update SMALL-DISTANCE EXACT │ └── Õ(k) update for unit costs GENERAL APPROXIMATE │ └── N^o(1) approximation with N^o(1) amortized expected update",
+      "paragraphs": [
+        "GENERAL EXACT dynamic edit distance │ └── Õ(N) update SMALL-DISTANCE EXACT │ └── Õ(k) update for unit costs GENERAL APPROXIMATE │ └── N^o(1) approximation with N^o(1) amortized expected update",
+        "These results solve different computational problems and should never be presented as directly interchangeable runtime improvements."
+      ]
+    },
+    {
+      "heading": "Worst-case versus amortized update time",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 8,
+      "word_count": 50,
+      "evidence": "Suppose updates have costs:",
+      "paragraphs": [
+        "Suppose updates have costs:",
+        "1 1 1 1 1000",
+        "The worst-case update time is:",
+        "1000",
+        "The average over five updates is approximately:",
+        "200.8",
+        "An amortized bound controls total work across a sequence of updates but may permit individual expensive updates.",
+        "The distinction matters for real-time systems with strict latency requirements."
+      ]
+    },
+    {
+      "heading": "Expected versus deterministic update time",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "An expected update bound averages over algorithmic randomness.",
+      "paragraphs": [
+        "An expected update bound averages over algorithmic randomness.",
+        "A deterministic worst-case bound such as the bounded exact:",
+        "Õ(k)",
+        "result provides a different guarantee from:",
+        "N^o(1)",
+        "expected amortized approximation.",
+        "A complete technical comparison therefore needs at least:",
+        "accuracy randomization worst-case/amortized update time preprocessing space"
+      ]
+    },
+    {
+      "heading": "Streaming and dynamic algorithms optimize different dimensions",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 8,
+      "word_count": 62,
+      "evidence": "A streaming algorithm asks:",
+      "paragraphs": [
+        "A streaming algorithm asks:",
+        "How little of the past must I remember?",
+        "A dynamic algorithm asks:",
+        "How quickly can I repair the maintained answer after arbitrary edits?",
+        "A streaming algorithm may have excellent memory usage but be useless for internal updates because discarded symbols cannot be recovered.",
+        "A dynamic data structure may support fast edits but retain:",
+        "Θ(N)",
+        "or more persistent state."
+      ]
+    },
+    {
+      "heading": "Persistent stream versus mutable sequence",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "STREAM: past ───────────────► present immutable history DYNAMIC STRING: a b c d e f g h ↑ ↑ edit anywhere",
+      "paragraphs": [
+        "STREAM: past ───────────────► present immutable history DYNAMIC STRING: a b c d e f g h ↑ ↑ edit anywhere",
+        "This is the cleanest conceptual distinction between the two models."
+      ]
+    },
+    {
+      "heading": "Sliding-window edit distance",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 10,
+      "word_count": 51,
+      "evidence": "Another hybrid model retains only the most recent:",
+      "paragraphs": [
+        "Another hybrid model retains only the most recent:",
+        "W",
+        "symbols from a stream.",
+        "At time:",
+        "t",
+        "the active text is:",
+        "T[ t-W+1 .. t ]",
+        "When a new symbol arrives:",
+        "one symbol enters and one old symbol expires",
+        "This resembles a dynamic sequence with highly constrained updates at the two ends."
+      ]
+    },
+    {
+      "heading": "Why sliding windows may be easier than full dynamics",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 5,
+      "word_count": 31,
+      "evidence": "Updates are not arbitrary:",
+      "paragraphs": [
+        "Updates are not arbitrary:",
+        "delete from left append on right",
+        "rather than:",
+        "edit any position",
+        "This preserves more order and can support specialized data structures unavailable in the fully dynamic model."
+      ]
+    },
+    {
+      "heading": "Streaming pattern matching versus streaming pairwise ED",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 2,
+      "word_count": 67,
+      "evidence": "Problem Question Pairwise streaming ED What is ED(X,Y) for two streamed sequences? Streaming pattern matching Which streamed substrings are within distance k of pattern P ? Online suffix distance What is the distance to a suffix ending at the current text position? Dynamic ED What is ED(X,Y) after arbitrary edits to either stored string?",
+      "paragraphs": [
+        "Problem Question Pairwise streaming ED What is ED(X,Y) for two streamed sequences? Streaming pattern matching Which streamed substrings are within distance k of pattern P ? Online suffix distance What is the distance to a suffix ending at the current text position? Dynamic ED What is ED(X,Y) after arbitrary edits to either stored string?",
+        "All four use edit distance, but the data structures and complexity measures differ."
+      ]
+    },
+    {
+      "heading": "Document exchange",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 11,
+      "word_count": 37,
+      "evidence": "Suppose Alice has:",
+      "paragraphs": [
+        "Suppose Alice has:",
+        "X",
+        "and Bob has:",
+        "Y",
+        "with:",
+        "ED(X,Y) ≤ k",
+        "The document-exchange problem asks how little information Alice must send so Bob can recover:",
+        "X",
+        "given:",
+        "Y",
+        "This problem is closely related to edit-distance sketching."
+      ]
+    },
+    {
+      "heading": "Why document exchange and sketches are connected",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 9,
+      "word_count": 36,
+      "evidence": "If Alice can compute:",
+      "paragraphs": [
+        "If Alice can compute:",
+        "sk(X)",
+        "and Bob can combine:",
+        "sk(X) + Y",
+        "to recover the edits, the sketch itself acts as a synchronization message.",
+        "Therefore improvements in:",
+        "edit-distance sketch size",
+        "often imply improvements in:",
+        "communication complexity"
+      ]
+    },
+    {
+      "heading": "Information-theoretic intuition for the k parameter",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 14,
+      "word_count": 63,
+      "evidence": "If two length- N strings differ by only:",
+      "paragraphs": [
+        "If two length- N strings differ by only:",
+        "k",
+        "edits, an edit script needs to specify roughly:",
+        "which edit types occurred;",
+        "their positions;",
+        "inserted or substituted symbols.",
+        "Ignoring details, positions alone require on the order of:",
+        "k log N",
+        "bits.",
+        "Thus one expects low-distance communication and sketches to depend on:",
+        "k",
+        "rather than linearly on:",
+        "N",
+        "up to representation overhead and subpolynomial factors."
+      ]
+    },
+    {
+      "heading": "Why edit scripts are harder than Hamming mismatch lists",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 10,
+      "word_count": 38,
+      "evidence": "For Hamming distance, a mismatch list can be:",
+      "paragraphs": [
+        "For Hamming distance, a mismatch list can be:",
+        "(position, replacement) (position, replacement) ...",
+        "because positions remain synchronized.",
+        "For edit distance:",
+        "insertions and deletions",
+        "change subsequent coordinate systems.",
+        "An edit script therefore describes both:",
+        "content differences",
+        "and:",
+        "alignment changes"
+      ]
+    },
+    {
+      "heading": "Why periodic strings are difficult",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 9,
+      "word_count": 51,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "X = abababababababab Y = babababababababa",
+        "There are many plausible low-cost ways to align long portions of these strings.",
+        "A short local fingerprint may not reveal which occurrence should align with which.",
+        "Periodic and repetitive regions therefore recur throughout research on:",
+        "streaming edit distance;",
+        "sketching;",
+        "dynamic maintenance;",
+        "approximate pattern matching."
+      ]
+    },
+    {
+      "heading": "Periodicity can also be exploited",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "The same repetition that creates ambiguity also permits compression.",
+      "paragraphs": [
+        "The same repetition that creates ambiguity also permits compression.",
+        "A run such as:",
+        "abcabcabcabcabcabc...",
+        "can be represented by:",
+        "period = \"abc\" repeat count = r",
+        "rather than retaining every symbol independently.",
+        "Modern algorithms frequently divide strings into:",
+        "highly repetitive regions and structurally irregular regions",
+        "and treat them differently."
+      ]
+    },
+    {
+      "heading": "Dynamic strings as composable objects",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 10,
+      "word_count": 54,
+      "evidence": "A common implementation abstraction represents a dynamic string as a balanced tree:",
+      "paragraphs": [
+        "A common implementation abstraction represents a dynamic string as a balanced tree:",
+        "root / \\ left right / \\ / \\ block block block block",
+        "The tree supports operations such as:",
+        "split;",
+        "concatenate;",
+        "insert;",
+        "delete;",
+        "substring hash;",
+        "longest-common-extension queries.",
+        "Dynamic edit-distance algorithms can build more sophisticated alignment summaries on top of such string primitives."
+      ]
+    },
+    {
+      "heading": "Longest Common Extension in dynamic algorithms",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "A query:",
+      "paragraphs": [
+        "A query:",
+        "LCE( X,i, Y,j )",
+        "asks for the largest:",
+        "ℓ",
+        "such that:",
+        "X[i..i+ℓ-1] = Y[j..j+ℓ-1]",
+        "Low-distance algorithms use LCE to jump across long exact matches:",
+        "edit ↓ ██████████████████ long exact match ↓ next edit",
+        "Dynamic data structures must support analogous comparisons even after the strings have changed."
+      ]
+    },
+    {
+      "heading": "Why hashing is tempting",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "Polynomial or randomized fingerprints can test substring equality quickly.",
+      "paragraphs": [
+        "Polynomial or randomized fingerprints can test substring equality quickly.",
+        "With dynamic hash trees, one can search for an LCE using:",
+        "binary search + substring equality tests",
+        "This can provide practical dynamic primitives with:",
+        "polylogarithmic",
+        "query cost."
+      ]
+    },
+    {
+      "heading": "Hash collisions change correctness guarantees",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 7,
+      "word_count": 37,
+      "evidence": "If substring equality relies on randomized hashing, the edit-distance structure becomes probabilistic.",
+      "paragraphs": [
+        "If substring equality relies on randomized hashing, the edit-distance structure becomes probabilistic.",
+        "A claimed:",
+        "exact",
+        "algorithm may in implementation actually be:",
+        "exact with high probability",
+        "unless collisions are eliminated by deterministic techniques.",
+        "The distinction should be documented."
+      ]
+    },
+    {
+      "heading": "Unicode in streaming and dynamic edit distance",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 5,
+      "word_count": 47,
+      "evidence": "A stream of bytes is not necessarily a stream of user-perceived characters.",
+      "paragraphs": [
+        "A stream of bytes is not necessarily a stream of user-perceived characters.",
+        "UTF-8 characters use variable numbers of bytes.",
+        "Unicode grapheme clusters may contain multiple code points.",
+        "Therefore the sequence unit must be decided before applying any streaming or dynamic algorithm.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "A UTF-8 streaming boundary problem",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 6,
+      "word_count": 49,
+      "evidence": "Suppose a byte buffer ends halfway through a multibyte code point.",
+      "paragraphs": [
+        "Suppose a byte buffer ends halfway through a multibyte code point.",
+        "A byte-level algorithm sees:",
+        "partial sequence element",
+        "whereas a code-point-level distance should not process anything until decoding completes.",
+        "A correct pipeline is:",
+        "byte stream ↓ incremental UTF decoder ↓ code-point stream ↓ optional grapheme segmenter ↓ edit-distance algorithm"
+      ]
+    },
+    {
+      "heading": "Grapheme segmentation itself is stateful",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 4,
+      "word_count": 47,
+      "evidence": "Whether a Unicode code point begins a new grapheme can depend on preceding code points.",
+      "paragraphs": [
+        "Whether a Unicode code point begins a new grapheme can depend on preceding code points.",
+        "Thus a grapheme-aware streaming implementation needs segmentation state in addition to edit-distance state.",
+        "The asymptotic memory may remain small, but the engineering model is no longer simply:",
+        "one byte = one symbol"
+      ]
+    },
+    {
+      "heading": "Normalization in an online stream",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 5,
+      "word_count": 51,
+      "evidence": "Unicode normalization may require buffering a small local sequence of combining marks before emitting normalized elements.",
+      "paragraphs": [
+        "Unicode normalization may require buffering a small local sequence of combining marks before emitting normalized elements.",
+        "If normalization policy differs between:",
+        "historical data and incoming stream",
+        "the computed edit distance becomes representation-dependent.",
+        "Normalization must therefore be defined as part of the data model, not added ad hoc after the streaming algorithm."
+      ]
+    },
+    {
+      "heading": "Token streams",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "The symbols need not be characters.",
+      "paragraphs": [
+        "The symbols need not be characters.",
+        "A stream may consist of:",
+        "log event IDs words API calls DNA bases AST tokens network states",
+        "The same dynamic and streaming theory applies to any discrete sequence, provided equality testing between symbols has the assumed complexity."
+      ]
+    },
+    {
+      "heading": "Event-stream example",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 7,
+      "word_count": 37,
+      "evidence": "reference: LOGIN LOAD SAVE LOGOUT observed: LOGIN LOAD ERROR SAVE LOGOUT",
+      "paragraphs": [
+        "reference: LOGIN LOAD SAVE LOGOUT observed: LOGIN LOAD ERROR SAVE LOGOUT",
+        "At event-token level:",
+        "ED = 1",
+        "if:",
+        "ERROR",
+        "is treated as one insertion.",
+        "At character level, the same textual records could have a much larger distance."
+      ]
+    },
+    {
+      "heading": "Online anomaly detection",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 3,
+      "word_count": 47,
+      "evidence": "A fixed reference workflow can be compared against the latest portion of a live event stream:",
+      "paragraphs": [
+        "A fixed reference workflow can be compared against the latest portion of a live event stream:",
+        "incoming event ↓ update online alignment state ↓ current edit distance ↓ threshold / alert",
+        "But one should not assume that small sequence distance means the system states are semantically equivalent."
+      ]
+    },
+    {
+      "heading": "Dynamic document comparison",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 8,
+      "word_count": 58,
+      "evidence": "Consider two collaboratively edited documents:",
+      "paragraphs": [
+        "Consider two collaboratively edited documents:",
+        "document A document B",
+        "Users continually perform:",
+        "character insertion;",
+        "deletion;",
+        "replacement.",
+        "A dynamic edit-distance structure can maintain a lexical divergence measure without recomputing the entire alignment after every keystroke.",
+        "For ordinary human text, however, character-level Levenshtein distance may still be the wrong editorial diff model because block moves and line-level operations are common."
+      ]
+    },
+    {
+      "heading": "Streaming ASR evaluation",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 8,
+      "word_count": 74,
+      "evidence": "Word Error Rate is based on token-level edit distance.",
+      "paragraphs": [
+        "Word Error Rate is based on token-level edit distance.",
+        "For a finalized transcript:",
+        "WER = (S + D + I) / N_ref",
+        "where:",
+        "S = substitutions D = deletions I = insertions",
+        "In live speech recognition, hypotheses may be revised rather than merely appended.",
+        "Therefore a system displaying continuously updated WER can move from an online model to a dynamic model if earlier words are rewritten.",
+        "See Word Error Rate and ASR Evaluation ."
+      ]
+    },
+    {
+      "heading": "Append-only hypothesis versus revisable hypothesis",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 2,
+      "word_count": 39,
+      "evidence": "APPEND-ONLY ASR: \"the quick\" → \"the quick brown\" → \"the quick brown fox\" online model REVISING ASR: \"the quick blue\" → \"the quick brown\" → \"the quick brown fox\" dynamic model",
+      "paragraphs": [
+        "APPEND-ONLY ASR: \"the quick\" → \"the quick brown\" → \"the quick brown fox\" online model REVISING ASR: \"the quick blue\" → \"the quick brown\" → \"the quick brown fox\" dynamic model",
+        "The distinction directly determines the appropriate algorithmic abstraction."
+      ]
+    },
+    {
+      "heading": "Space-time trade-offs",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 5,
+      "word_count": 46,
+      "evidence": "A streaming algorithm may deliberately store more information to reduce processing time:",
+      "paragraphs": [
+        "A streaming algorithm may deliberately store more information to reduce processing time:",
+        "more space ↓ more historical alignment state ↓ less recomputation",
+        "or use less space at the cost of:",
+        "more passes more approximation higher per-symbol time",
+        "There is therefore no single \"best\" streaming edit-distance algorithm."
+      ]
+    },
+    {
+      "heading": "Four resources should be reported",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 10,
+      "word_count": 32,
+      "evidence": "For streaming algorithms:",
+      "paragraphs": [
+        "For streaming algorithms:",
+        "working memory;",
+        "number of passes;",
+        "total processing time or time per symbol;",
+        "accuracy / probability of failure.",
+        "For dynamic algorithms:",
+        "preprocessing time;",
+        "space;",
+        "update time;",
+        "query time and accuracy."
+      ]
+    },
+    {
+      "heading": "Preprocessing is not free",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 11,
+      "word_count": 47,
+      "evidence": "Suppose a dynamic method requires:",
+      "paragraphs": [
+        "Suppose a dynamic method requires:",
+        "Õ(N+k²)",
+        "preprocessing and then:",
+        "Õ(k)",
+        "per update.",
+        "For only one update, preprocessing may dominate.",
+        "For:",
+        "U ≫ 1",
+        "updates, the amortized cost per operation becomes:",
+        "( preprocessing + U · update_cost ) / U",
+        "and the dynamic data structure becomes increasingly attractive."
+      ]
+    },
+    {
+      "heading": "Break-even analysis",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "recompute static: U · T_static",
+        "with:",
+        "dynamic: P + U · T_update",
+        "The dynamic method wins once:",
+        "P + U T_update < U T_static",
+        "or:",
+        "U > P / ( T_static - T_update )",
+        "This basic engineering calculation is often more useful than comparing update Big-O notation in isolation."
+      ]
+    },
+    {
+      "heading": "Query time may be hidden",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 11,
+      "word_count": 44,
+      "evidence": "Some dynamic data structures maintain enough state that:",
+      "paragraphs": [
+        "Some dynamic data structures maintain enough state that:",
+        "current distance",
+        "is available immediately after an update.",
+        "Others support separate:",
+        "update()",
+        "and:",
+        "query()",
+        "operations.",
+        "A complexity table should not silently merge:",
+        "update time + query time",
+        "unless that is explicitly how the theorem is formulated."
+      ]
+    },
+    {
+      "heading": "Outputting the edit script is harder than outputting the distance",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 8,
+      "word_count": 49,
+      "evidence": "Maintaining:",
+      "paragraphs": [
+        "Maintaining:",
+        "ED(X,Y) = 17",
+        "requires less output information than maintaining the complete optimal transformation:",
+        "DELETE x[13] INSERT 'a' at 28 SUBSTITUTE ... ...",
+        "An optimal script can contain:",
+        "Θ(N)",
+        "operations.",
+        "Even if the numerical distance can be queried rapidly, explicitly outputting a long alignment has an unavoidable output-size cost."
+      ]
+    },
+    {
+      "heading": "Sketches can sometimes recover edit scripts",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 4,
+      "word_count": 41,
+      "evidence": "A remarkable property of some bounded edit-distance sketches is that when:",
+      "paragraphs": [
+        "A remarkable property of some bounded edit-distance sketches is that when:",
+        "ED(X,Y) ≤ k",
+        "they can recover not only the numerical value but an optimal sequence of edits.",
+        "The communication object therefore encodes enough alignment information to reconstruct the transformation itself."
+      ]
+    },
+    {
+      "heading": "Dynamic metric property",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 10,
+      "word_count": 43,
+      "evidence": "For the standard unit-cost model:",
+      "paragraphs": [
+        "For the standard unit-cost model:",
+        "ED",
+        "is a metric.",
+        "The one-update Lipschitz property:",
+        "|ED(X',Y)-ED(X,Y)| ≤ ED(X,X')",
+        "is a direct consequence of the reverse triangle inequality:",
+        "|d(a,c)-d(b,c)| ≤ d(a,b)",
+        "For one unit-cost update:",
+        "ED(X,X') = 1",
+        "and the distance changes by at most one."
+      ]
+    },
+    {
+      "heading": "Weighted reverse-triangle bound",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 9,
+      "word_count": 34,
+      "evidence": "If a weighted edit function remains a metric and the update from:",
+      "paragraphs": [
+        "If a weighted edit function remains a metric and the update from:",
+        "X",
+        "to:",
+        "X'",
+        "has metric cost:",
+        "c",
+        "then:",
+        "|ED_w(X',Y)-ED_w(X,Y)| ≤ c",
+        "But arbitrary asymmetric or nonmetric weight systems may invalidate this argument."
+      ]
+    },
+    {
+      "heading": "Dynamic algorithms inherit the chosen edit model",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 8,
+      "word_count": 32,
+      "evidence": "A data structure built for:",
+      "paragraphs": [
+        "A data structure built for:",
+        "insert delete substitute",
+        "does not automatically support:",
+        "adjacent transpositions;",
+        "block moves;",
+        "affine gaps;",
+        "context-dependent edits.",
+        "Changing the primitive operations changes both the dynamic state and its complexity."
+      ]
+    },
+    {
+      "heading": "Damerau–Levenshtein updates",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 4,
+      "word_count": 34,
+      "evidence": "For Damerau–Levenshtein Distance , adjacent transposition is an additional primitive transformation.",
+      "paragraphs": [
+        "For Damerau–Levenshtein Distance , adjacent transposition is an additional primitive transformation.",
+        "Algorithms maintaining ordinary Levenshtein alignment summaries cannot simply add:",
+        "one transposition condition",
+        "to a complex dynamic data structure and retain the same theorem."
+      ]
+    },
+    {
+      "heading": "Dynamic versus changing cost model",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 8,
+      "word_count": 39,
+      "evidence": "Another distinction is:",
+      "paragraphs": [
+        "Another distinction is:",
+        "dynamic strings",
+        "versus:",
+        "dynamic edit weights",
+        "Most dynamic edit-distance results assume the cost function itself remains fixed while the strings change.",
+        "Changing:",
+        "w(a,b)",
+        "after preprocessing is a different dynamic problem and can invalidate precomputed alignment summaries."
+      ]
+    },
+    {
+      "heading": "Adversarial update sequences",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "Dynamic algorithms may be analyzed against:",
+      "paragraphs": [
+        "Dynamic algorithms may be analyzed against:",
+        "oblivious adversaries;",
+        "adaptive adversaries;",
+        "arbitrary deterministic update sequences.",
+        "For randomized structures, an adaptive adversary may choose future edits after observing previous outputs.",
+        "A high-probability guarantee under an oblivious update sequence does not automatically imply the same guarantee against a fully adaptive adversary."
+      ]
+    },
+    {
+      "heading": "Benchmarking online algorithms",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 6,
+      "word_count": 18,
+      "evidence": "Measure:",
+      "paragraphs": [
+        "Measure:",
+        "time per arriving symbol;",
+        "peak memory;",
+        "output latency;",
+        "number of symbols retained;",
+        "behavior under long alignment shifts."
+      ]
+    },
+    {
+      "heading": "Benchmarking streaming algorithms",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 8,
+      "word_count": 14,
+      "evidence": "Measure:",
+      "paragraphs": [
+        "Measure:",
+        "working memory;",
+        "passes;",
+        "total throughput;",
+        "sketch size;",
+        "recovery time;",
+        "failure probability;",
+        "distance dependence."
+      ]
+    },
+    {
+      "heading": "Benchmarking dynamic algorithms",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 8,
+      "word_count": 24,
+      "evidence": "Measure:",
+      "paragraphs": [
+        "Measure:",
+        "preprocessing time;",
+        "average update time;",
+        "p95 / p99 update latency;",
+        "worst observed update;",
+        "memory;",
+        "distance parameter k over time;",
+        "frequency of threshold overflow."
+      ]
+    },
+    {
+      "heading": "Do not benchmark only random edits",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 8,
+      "word_count": 34,
+      "evidence": "Uniformly random substitutions often produce easy and unrepresentative workloads.",
+      "paragraphs": [
+        "Uniformly random substitutions often produce easy and unrepresentative workloads.",
+        "Include:",
+        "insertions near the beginning;",
+        "alternating insert/delete operations;",
+        "long periodic strings;",
+        "repeated-character strings;",
+        "updates that shift an alignment repeatedly;",
+        "distance moving across the configured threshold."
+      ]
+    },
+    {
+      "heading": "Threshold-crossing tests",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 7,
+      "word_count": 42,
+      "evidence": "Suppose a bounded dynamic structure is configured for:",
+      "paragraphs": [
+        "Suppose a bounded dynamic structure is configured for:",
+        "k = 5",
+        "test:",
+        "ED: 4 → 5 → 6 → 5 → 4",
+        "The implementation must correctly enter and leave the:",
+        ">k",
+        "state if recovery after threshold overflow is part of its contract."
+      ]
+    },
+    {
+      "heading": "Why threshold overflow is subtle",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "If a structure discards alignment information as soon as:",
+      "paragraphs": [
+        "If a structure discards alignment information as soon as:",
+        "ED > k",
+        "then a later update may reduce the true distance back to:",
+        "≤ k",
+        "The algorithm must either:",
+        "retain enough information to recover;",
+        "rebuild;",
+        "or explicitly define that such recovery is unsupported."
+      ]
+    },
+    {
+      "heading": "Dynamic test invariant: one-edit Lipschitz property",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 6,
+      "word_count": 43,
+      "evidence": "For unit-cost updates:",
+      "paragraphs": [
+        "For unit-cost updates:",
+        "before = ED(X,Y) apply one edit after = ED(X',Y) assert abs(after-before) ≤ 1",
+        "Violation immediately proves either:",
+        "the maintained distance is wrong;",
+        "the update was not a single primitive edit;",
+        "or the distance model is not the standard unit-cost metric."
+      ]
+    },
+    {
+      "heading": "Differential testing",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "For manageable string lengths:",
+      "paragraphs": [
+        "For manageable string lengths:",
+        "dynamic_answer = data_structure.query() reference_answer = full_wagner_fischer( current_X, current_Y ) assert dynamic_answer == reference_answer",
+        "Repeat after every randomly or adversarially generated update."
+      ]
+    },
+    {
+      "heading": "Streaming sketch differential test",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "skX = stream_sketch(X,k) skY = stream_sketch(Y,k) result = recover(skX,skY,k) exact = full_edit_distance(X,Y) if exact ≤ k: assert result.distance == exact else: assert result == LARGE",
+      "paragraphs": [
+        "skX = stream_sketch(X,k) skY = stream_sketch(Y,k) result = recover(skX,skY,k) exact = full_edit_distance(X,Y) if exact ≤ k: assert result.distance == exact else: assert result == LARGE",
+        "Run over exhaustive small alphabets before large-scale randomized testing."
+      ]
+    },
+    {
+      "heading": "Historical development",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 1,
+      "word_count": 116,
+      "evidence": "CLASSICAL STATIC DP │ └── quadratic edit matrix │ 1980s–1990s │ bounded / farthest-reaching low-distance algorithms │ 2000s │ streaming and communication models become central │ 2013 │ asymmetric streaming ED space-efficient frameworks │ 2015 │ cell-probe lower/upper bounds for online edit distance │ 2016 │ streaming edit-distance embeddings and low-distance computation │ 2020 │ Dynamic String Alignment Õ(N) exact update │ 2021 │ streaming k-edit matching and Õ(k²)-scale sketches │ 2023 │ fully dynamic N^o(1)-approximation with N^o(1) update │ 2024 │ almost-linear-in-k bounded ED sketch │ 2025 │ exact bounded dynamic ED Õ(k) update │ └── small integer weights: Õ(W²k) │ 2025 │ arbitrary weighted dynamic trade-offs │ 2026 │ new asymmetric streaming approximation trade-offs",
+      "paragraphs": [
+        "CLASSICAL STATIC DP │ └── quadratic edit matrix │ 1980s–1990s │ bounded / farthest-reaching low-distance algorithms │ 2000s │ streaming and communication models become central │ 2013 │ asymmetric streaming ED space-efficient frameworks │ 2015 │ cell-probe lower/upper bounds for online edit distance │ 2016 │ streaming edit-distance embeddings and low-distance computation │ 2020 │ Dynamic String Alignment Õ(N) exact update │ 2021 │ streaming k-edit matching and Õ(k²)-scale sketches │ 2023 │ fully dynamic N^o(1)-approximation with N^o(1) update │ 2024 │ almost-linear-in-k bounded ED sketch │ 2025 │ exact bounded dynamic ED Õ(k) update │ └── small integer weights: Õ(W²k) │ 2025 │ arbitrary weighted dynamic trade-offs │ 2026 │ new asymmetric streaming approximation trade-offs"
+      ]
+    },
+    {
+      "heading": "Representative complexity table",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 1,
+      "word_count": 179,
+      "evidence": "Problem / result Representative bound Important qualification Static Wagner–Fischer O(mn) Exact general pairwise ED Simple online prefix DP O(m) per arriving symbol Fixed pattern, append-only text Online ED cell-probe upper bound O(log² n / w) probes/output Cell-probe model, not ordinary RAM runtime Asymmetric bounded streaming DP O(nk) time, roughly O(k) state One side random-accessible Low-distance streaming exact algorithms O(n+k²) or n+O(k³) Promised small distance; different constructions FOCS 2021 bounded ED sketch Õ(k²) sketch, Õ(k³) recovery Randomized bounded-distance sketch Streaming pattern matching with k edits Õ(k⁵) space, Õ(k⁸) amortized time/symbol Pattern matching, not one pairwise ED STOC 2024 ED sketch k·2^O(sqrt(log n log log n)) size Exact recovery up to threshold with ",
+      "paragraphs": [
+        "Problem / result Representative bound Important qualification Static Wagner–Fischer O(mn) Exact general pairwise ED Simple online prefix DP O(m) per arriving symbol Fixed pattern, append-only text Online ED cell-probe upper bound O(log² n / w) probes/output Cell-probe model, not ordinary RAM runtime Asymmetric bounded streaming DP O(nk) time, roughly O(k) state One side random-accessible Low-distance streaming exact algorithms O(n+k²) or n+O(k³) Promised small distance; different constructions FOCS 2021 bounded ED sketch Õ(k²) sketch, Õ(k³) recovery Randomized bounded-distance sketch Streaming pattern matching with k edits Õ(k⁵) space, Õ(k⁸) amortized time/symbol Pattern matching, not one pairwise ED STOC 2024 ED sketch k·2^O(sqrt(log n log log n)) size Exact recovery up to threshold with high probability General exact dynamic alignment Õ(N) per update Constant alignment weights Fully dynamic approximation N^o(1) approximation and amortized expected update FOCS 2023 randomized approximation Bounded unit-cost dynamic ED Õ(k) worst-case update STOC 2025 low-distance regime Small integer weighted dynamic ED Õ(W²k) update Weights bounded by integer W Arbitrary weighted bounded dynamic ED Õ(k^(3-γ)) update After Õ(Nk^γ) preprocessing CPM 2026 asymmetric streaming approximation Õ(m^(1/r)) space Approximation factor 2^r-1+ε"
+      ]
+    },
+    {
+      "heading": "Common misconception: online and streaming are synonyms",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Online means:",
+        "answer must be produced as input arrives",
+        "Streaming means:",
+        "input access and memory are severely restricted",
+        "An online algorithm can use linear memory. A streaming algorithm can delay its only answer until the stream ends."
+      ]
+    },
+    {
+      "heading": "Common misconception: streaming and dynamic are synonyms",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "A stream normally has immutable history.",
+        "A fully dynamic string permits:",
+        "editing the past",
+        "at arbitrary positions."
+      ]
+    },
+    {
+      "heading": "Common misconception: two-row Wagner–Fischer solves fully streaming ED",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 3,
+      "word_count": 34,
+      "evidence": "Not by itself.",
+      "paragraphs": [
+        "Not by itself.",
+        "Two rows reduce DP memory but normally still assume reusable access to one of the strings.",
+        "If both strings disappear after one pass, additional sketching, buffering, or structural machinery is required."
+      ]
+    },
+    {
+      "heading": "Common misconception: one update changes only one DP cell",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "A single changed symbol can influence:",
+        "Θ(N²)",
+        "potential downstream DP states.",
+        "Only the final metric value is guaranteed to move by at most one under a unit-cost update."
+      ]
+    },
+    {
+      "heading": "Common misconception: distance changes by one, so O(1) update should be possible",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "The new numerical answer belongs to:",
+      "paragraphs": [
+        "The new numerical answer belongs to:",
+        "{ d-1, d, d+1 }",
+        "but determining which value is correct may require understanding a globally changed optimum.",
+        "The difficulty lies in maintaining the proof of optimality, not merely in representing the new integer."
+      ]
+    },
+    {
+      "heading": "Common misconception: Õ(k) dynamic update gives a general sublinear exact algorithm",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 7,
+      "word_count": 21,
+      "evidence": "Only when:",
+      "paragraphs": [
+        "Only when:",
+        "k ≪ N",
+        "If:",
+        "k = Θ(N)",
+        "then:",
+        "Õ(k) = Õ(N)",
+        "and the general near-linear dynamic regime is recovered."
+      ]
+    },
+    {
+      "heading": "Common misconception: N^o(1) approximation is a constant-factor approximation",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "Not necessarily.",
+      "paragraphs": [
+        "Not necessarily.",
+        "An:",
+        "N^o(1)",
+        "factor may still grow without bound as:",
+        "N → ∞",
+        "It is subpolynomial, not automatically constant."
+      ]
+    },
+    {
+      "heading": "Common misconception: Õ hides only a constant",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 6,
+      "word_count": 17,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "The notation:",
+        "Õ(f(n))",
+        "normally hides polylogarithmic factors such as:",
+        "log^c n",
+        "for some constant c ."
+      ]
+    },
+    {
+      "heading": "Common misconception: a sketch is an approximation",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 8,
+      "word_count": 26,
+      "evidence": "Not necessarily.",
+      "paragraphs": [
+        "Not necessarily.",
+        "Some bounded edit-distance sketches recover:",
+        "the exact distance and an optimal edit script",
+        "when:",
+        "ED(X,Y) ≤ k",
+        "and return:",
+        "LARGE",
+        "outside the promised threshold."
+      ]
+    },
+    {
+      "heading": "Common misconception: a small sketch means fast construction",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 6,
+      "word_count": 10,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Sketch:",
+        "size",
+        "and:",
+        "construction time",
+        "are independent resource measures."
+      ]
+    },
+    {
+      "heading": "Common misconception: streaming pattern matching is pairwise edit distance",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Pattern matching must consider:",
+        "many candidate substrings",
+        "ending at many stream positions.",
+        "It contains a search problem in addition to the distance problem."
+      ]
+    },
+    {
+      "heading": "Common misconception: dynamic approximation follows automatically from static approximation",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "A static algorithm knows nothing about how to reuse work after the next internal insertion or deletion.",
+        "Dynamic algorithms require persistent structure that survives updates."
+      ]
+    },
+    {
+      "heading": "Common misconception: update time is the only relevant complexity",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 8,
+      "word_count": 14,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "One must also account for:",
+        "preprocessing;",
+        "space;",
+        "query time;",
+        "randomization;",
+        "accuracy;",
+        "threshold assumptions."
+      ]
+    },
+    {
+      "heading": "Algorithm-selection guide",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 1,
+      "word_count": 96,
+      "evidence": "Data model Strong starting point Two complete fixed strings Static exact algorithm Fixed reference, append-only sequence Online incremental DP Fixed pattern, every text position needs a match score Online / streaming approximate pattern matching One stream, one random-access reference Asymmetric streaming algorithm Both strings one-pass, small ED Low-distance sketches / kernelization Distributed strings, small ED Edit-distance sketches / document exchange Arbitrary updates, general exact ED Fully dynamic alignment structure Arbitrary updates, small unit-cost ED Bounded dynamic Õ(k) -type method Arbitrary updates, approximate answer acceptable Fully dynamic approximation framework Small integer weighted ED Weighted bounded dynamic algorithm",
+      "paragraphs": [
+        "Data model Strong starting point Two complete fixed strings Static exact algorithm Fixed reference, append-only sequence Online incremental DP Fixed pattern, every text position needs a match score Online / streaming approximate pattern matching One stream, one random-access reference Asymmetric streaming algorithm Both strings one-pass, small ED Low-distance sketches / kernelization Distributed strings, small ED Edit-distance sketches / document exchange Arbitrary updates, general exact ED Fully dynamic alignment structure Arbitrary updates, small unit-cost ED Bounded dynamic Õ(k) -type method Arbitrary updates, approximate answer acceptable Fully dynamic approximation framework Small integer weighted ED Weighted bounded dynamic algorithm"
+      ]
+    },
+    {
+      "heading": "A systems decision tree",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 1,
+      "word_count": 80,
+      "evidence": "Does historical input change? │ ├── NO │ │ │ ├── Must answer after every symbol? │ │ │ │ │ ├── YES → online │ │ │ │ │ └── NO │ │ │ └── Is memory severely limited? │ │ │ ├── YES → streaming │ │ │ └── NO → static/incremental │ └── YES │ └── arbitrary past edits ↓ dynamic │ ├── small k │ ↓ │ bounded dynamic │ └── general distance ↓ general dynamic",
+      "paragraphs": [
+        "Does historical input change? │ ├── NO │ │ │ ├── Must answer after every symbol? │ │ │ │ │ ├── YES → online │ │ │ │ │ └── NO │ │ │ └── Is memory severely limited? │ │ │ ├── YES → streaming │ │ │ └── NO → static/incremental │ └── YES │ └── arbitrary past edits ↓ dynamic │ ├── small k │ ↓ │ bounded dynamic │ └── general distance ↓ general dynamic"
+      ]
+    },
+    {
+      "heading": "The deeper theoretical lesson",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 5,
+      "word_count": 93,
+      "evidence": "Static edit distance asks for one shortest path through one edit graph.",
+      "paragraphs": [
+        "Static edit distance asks for one shortest path through one edit graph.",
+        "Online edit distance asks for a sequence of related shortest-path answers as the graph grows.",
+        "Streaming edit distance asks how much information about that graph must be retained when the input itself disappears.",
+        "Dynamic edit distance asks how a shortest-path structure can be repaired when vertices and edge weights induced by sequence positions effectively change after arbitrary edits.",
+        "The same mathematical metric therefore generates several distinct algorithmic problems depending only on how information arrives and how it is allowed to change."
+      ]
+    },
+    {
+      "heading": "The modern complexity picture",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 1,
+      "word_count": 117,
+      "evidence": "STATIC │ ├── general exact │ └── near quadratic │ └── bounded exact └── O(N+k²) ONLINE │ └── new symbol arrives ├── simple DP: │ O(m) per symbol │ └── theoretical online models: specialized upper/lower bounds STREAMING │ ├── asymmetric │ ├── one side random access │ └── memory is key resource │ ├── fully streaming │ └── sketches / kernels │ └── bounded k └── space can depend primarily on k DYNAMIC │ ├── general exact │ └── Õ(N) update │ ├── bounded exact │ └── Õ(k) update │ ├── small integer weighted │ └── Õ(W²k) │ ├── arbitrary weighted │ └── parameterized │ preprocessing/update │ trade-offs │ └── approximate └── subpolynomial approximation and update time",
+      "paragraphs": [
+        "STATIC │ ├── general exact │ └── near quadratic │ └── bounded exact └── O(N+k²) ONLINE │ └── new symbol arrives ├── simple DP: │ O(m) per symbol │ └── theoretical online models: specialized upper/lower bounds STREAMING │ ├── asymmetric │ ├── one side random access │ └── memory is key resource │ ├── fully streaming │ └── sketches / kernels │ └── bounded k └── space can depend primarily on k DYNAMIC │ ├── general exact │ └── Õ(N) update │ ├── bounded exact │ └── Õ(k) update │ ├── small integer weighted │ └── Õ(W²k) │ ├── arbitrary weighted │ └── parameterized │ preprocessing/update │ trade-offs │ └── approximate └── subpolynomial approximation and update time"
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 1,
+      "word_count": 140,
+      "evidence": "Question Answer Are online and streaming ED the same? No. Are streaming and dynamic ED the same? No. Can append-only ED be updated incrementally? Yes; a DP column can be updated as symbols arrive. Does two-row DP imply fully streaming computation? No. How much can one unit-cost dynamic edit change the distance? At most one. Can the optimal alignment still change globally? Yes. General exact dynamic update complexity? Roughly Õ(N) in the established dynamic-alignment framework. Small-distance exact dynamic update? Õ(k) for unit costs in the STOC 2025 result. Small integer weighted dynamic update? Õ(W²k) in the corresponding bounded regime. Can dynamic approximation be subpolynomial per update? Yes, with subpolynomial approximation in the fully dynamic randomized model. Can low-distance stri",
+      "paragraphs": [
+        "Question Answer Are online and streaming ED the same? No. Are streaming and dynamic ED the same? No. Can append-only ED be updated incrementally? Yes; a DP column can be updated as symbols arrive. Does two-row DP imply fully streaming computation? No. How much can one unit-cost dynamic edit change the distance? At most one. Can the optimal alignment still change globally? Yes. General exact dynamic update complexity? Roughly Õ(N) in the established dynamic-alignment framework. Small-distance exact dynamic update? Õ(k) for unit costs in the STOC 2025 result. Small integer weighted dynamic update? Õ(W²k) in the corresponding bounded regime. Can dynamic approximation be subpolynomial per update? Yes, with subpolynomial approximation in the fully dynamic randomized model. Can low-distance strings have sublinear sketches? Yes. Can a sketch recover an exact edit script? Yes, in bounded-distance schemes with their stated probabilistic guarantees."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 11,
+      "word_count": 665,
+      "evidence": "Dynamic, online, and streaming edit distance are not three names for the same incremental algorithm. They represent different input models. Online algorithms receive new data sequentially and must produce answers promptly. Streaming algorithms additionally operate under severe memory and access restrictions. Fully dynamic algorithms allow old sequence positions to be inserted, deleted, or substituted at arbitrary times.",
+      "paragraphs": [
+        "Dynamic, online, and streaming edit distance are not three names for the same incremental algorithm. They represent different input models. Online algorithms receive new data sequentially and must produce answers promptly. Streaming algorithms additionally operate under severe memory and access restrictions. Fully dynamic algorithms allow old sequence positions to be inserted, deleted, or substituted at arbitrary times.",
+        "The basic online setting follows naturally from Wagner–Fischer dynamic programming. When a new symbol is appended, one new DP column can be computed from the preceding column using O(m) time and O(m) state for a fixed pattern of length m . Online approximate pattern matching modifies the boundary conditions so that the pattern can align against any suffix ending at the current stream position. More specialized theoretical online models yield nontrivial cell-probe upper and lower bounds, showing that even one-symbol updates contain genuine information-transfer complexity.",
+        "Streaming computation introduces a different challenge. Two-row Wagner–Fischer reduces matrix memory but still normally requires repeated access to one input. If both strings disappear after one pass, insertions and deletions make it difficult to know which past positions should align. The small-distance regime resolves part of this uncertainty: when ED(X,Y)≤k , only a small number of exceptional edit regions exist, enabling kernelization, embeddings, sketches, and bounded-memory algorithms whose complexity depends primarily on k .",
+        "This led to low-distance streaming algorithms and edit-distance sketches. Kociumaka, Porat, and Starikovskaya developed Õ(k²) -scale sketches with bounded exact recovery and a fully streaming algorithm for pattern matching with k edits. Koucký and Saks later reduced the sketch-size dependence on k to essentially linear, up to a subpolynomial factor in the string length, while still permitting exact distance and edit-script recovery in the bounded regime.",
+        "Fully dynamic edit distance is structurally harder because an update can occur anywhere. Interestingly, a single unit-cost edit changes the numerical distance by at most one, a direct consequence of the triangle inequality. Yet the optimal alignment can reorganize globally, especially in repetitive strings. This explains why dynamic maintenance is difficult despite the small change in the answer itself.",
+        "The 2020 Dynamic String Alignment framework reduced general exact dynamic maintenance from quadratic recomputation to roughly Õ(N) time per update for constant alignment weights. Fine-grained lower bounds indicate that strongly sublinear general exact update time would imply unexpected strongly subquadratic static algorithms, so near-linear update time is closely tied to the known exact complexity barrier.",
+        "The small-distance regime again changes the picture. Gorbachev and Kociumaka showed in STOC 2025 that unit-cost bounded edit distance can be maintained dynamically in Õ(k) worst-case time per update after near-optimal bounded preprocessing. For small integer weights bounded by W , the update cost becomes Õ(W²k) . Thus an edit distance of ten can in principle support update complexity determined primarily by ten, even when the strings themselves are extremely long.",
+        "Arbitrary weighted costs remain harder. Recent dynamic algorithms introduce explicit preprocessing-versus-update trade-offs, with Boneh, Gorbachev, and Kociumaka obtaining Õ(Nk^γ) preprocessing and Õ(k^(3-γ)) update time for a fixed bounded weighted threshold. This demonstrates that the operation-cost model is not merely an implementation detail: it directly changes dynamic complexity.",
+        "Approximation opens another regime entirely. The fully dynamic algorithm of Kociumaka, Mukherjee, and Saha achieves both subpolynomial approximation and subpolynomial amortized expected update time. It therefore crosses the near-linear exact dynamic barrier by relaxing numerical accuracy, paralleling the exact-versus-approximate separation already known for static edit distance.",
+        "Streaming research continues to evolve as well. Recent asymmetric streaming work studies explicit memory-versus-approximation trade-offs for edit-distance pattern matching, while modern sketches approach information-theoretically efficient dependence on the number of edits. These results connect edit distance to communication complexity, document exchange, synchronization, and distributed computation.",
+        "The most important practical conclusion is that algorithm selection must begin with the data-access model , not with the phrase \"Levenshtein algorithm.\" A fixed pair, an append-only stream, a memory-limited stream, a sliding window, and a fully editable pair of strings may all use the same mathematical distance while requiring entirely different algorithms, state representations, complexity guarantees, and correctness assumptions."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 10,
+      "word_count": 123,
+      "evidence": "Bounded and Parameterized Edit Distance — why small edit distance changes exact complexity from quadratic toward linear.",
+      "paragraphs": [
+        "Bounded and Parameterized Edit Distance — why small edit distance changes exact complexity from quadratic toward linear.",
+        "Edit Distance Complexity — static upper bounds, fine-grained lower bounds, SETH and computational models.",
+        "Approximate Edit Distance Algorithms — approximation factors, gap problems and exact-versus-approximate complexity.",
+        "Landau–Vishkin Algorithm — farthest-reaching diagonals and the classical O(n+k²) low-distance regime.",
+        "Ukkonen Algorithm — threshold-aware and distance-sensitive dynamic programming.",
+        "Myers Bit-Vector Algorithm — machine-word parallelism for edit-distance computation.",
+        "Weighted Levenshtein Distance — nonuniform edit costs and their mathematical consequences.",
+        "Indexing and Filtering for Edit Distance — how pairwise verification fits into large-scale search.",
+        "Unicode and Grapheme-Safe Levenshtein — sequence representation for live human-text processing.",
+        "Edit Distance Research Frontiers — current open questions in exact, approximate, dynamic and streaming sequence algorithms."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 12,
+      "word_count": 287,
+      "evidence": "Michael E. Saks and C. Seshadhri, “Space Efficient Streaming Algorithms for the Distance to Monotonicity and Asymmetric Edit Distance,” SODA 2013 , 1698–1709. DOI record .",
+      "paragraphs": [
+        "Michael E. Saks and C. Seshadhri, “Space Efficient Streaming Algorithms for the Distance to Monotonicity and Asymmetric Edit Distance,” SODA 2013 , 1698–1709. DOI record .",
+        "Raphaël Clifford, Markus Jalsenius, and Benjamin Sach, “Cell-Probe Bounds for Online Edit Distance and Other Pattern Matching Problems,” SODA 2015 , 552–561. DOI record .",
+        "Diptarka Chakraborty, Elazar Goldenberg, and Michal Koucký, “Streaming Algorithms for Embedding and Computing Edit Distance in the Low Distance Regime,” STOC 2016 , 712–725. DOI record .",
+        "Panagiotis Charalampopoulos, Tomasz Kociumaka, and Shay Mozes, “Dynamic String Alignment,” 31st Annual Symposium on Combinatorial Pattern Matching , 2020. DOI record .",
+        "Xin Li and Yu Zheng, “Lower Bounds and Improved Algorithms for Asymmetric Streaming Edit Distance and Longest Common Subsequence,” FSTTCS 2021 . DOI record .",
+        "Kuan Cheng, Alireza Farhadi, MohammadTaghi Hajiaghayi, Zhengzhong Jin, Xin Li, Aviad Rubinstein, Saeed Seddighin, and Yu Zheng, “Streaming and Small Space Approximation Algorithms for Edit Distance and Longest Common Subsequence,” ICALP 2021 . DOI record .",
+        "Tomasz Kociumaka, Ely Porat, and Tatiana Starikovskaya, “Small-Space and Streaming Pattern Matching with k Edits,” FOCS 2021 , 885–896. DOI record .",
+        "Tomasz Kociumaka, Anish Mukherjee, and Barna Saha, “Approximating Edit Distance in the Fully Dynamic Model,” FOCS 2023 , 1628–1638. DOI record .",
+        "Michal Koucký and Michael E. Saks, “Almost Linear Size Edit Distance Sketch,” STOC 2024 , 956–967. DOI record .",
+        "Egor Gorbachev and Tomasz Kociumaka, “Bounded Edit Distance: Optimal Static and Dynamic Algorithms for Small Integer Weights,” STOC 2025 , 2157–2166. DOI record .",
+        "Itai Boneh, Egor Gorbachev, and Tomasz Kociumaka, “Bounded Weighted Edit Distance: Dynamic Algorithms and Matching Lower Bounds,” ESA 2025 . DOI record .",
+        "Wojciech Janczewski and Tatiana Starikovskaya, “Asymmetric Streaming Approximate Pattern Matching,” CPM 2026 . DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-edit-distance-algorithms",
+      "evidence": [
+        {
+          "section": "Exactness versus sublinear streaming space",
+          "anchor_id": "ux-section-35",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "This mirrors the exact-versus-approximate complexity separation discussed in Approximate Edit Distance Algorithms ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "Approximate Edit Distance Algorithms — approximation factors, gap problems and exact-versus-approximate complexity."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "A banded asymmetric streaming baseline",
+          "anchor_id": "ux-section-20",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "This is closely related to the theory developed in Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — why small edit distance changes exact complexity from quadratic toward linear."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Damerau–Levenshtein updates",
+          "anchor_id": "ux-section-103",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "For Damerau–Levenshtein Distance , adjacent transposition is an additional primitive transformation."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — static upper bounds, fine-grained lower bounds, SETH and computational models."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-research-frontiers",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "edit distance research frontiers",
+          "excerpt": "Edit Distance Research Frontiers — current open questions in exact, approximate, dynamic and streaming sequence algorithms."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Dynamic, Online and Streaming Edit Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Classical edit distance is a static problem: two complete sequences are available before computation begins, and an algorithm returns the minimum number or cost of edits required to transform one sequence into the other. Dynamic, online, and streaming edit distance ask what happens when this assumption is removed."
+        },
+        {
+          "section": "Notation",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "denote standard unit-cost edit distance:"
+        },
+        {
+          "section": "Online edit distance: the simplest incremental setting",
+          "anchor_id": "ux-section-6",
+          "alias": "edit distance",
+          "excerpt": "arrives, we may want the edit distance between the pattern and the current text prefix:"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — how pairwise verification fits into large-scale search."
+        }
+      ]
+    },
+    {
+      "target": "/landau-vishkin-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "Landau–Vishkin Algorithm — farthest-reaching diagonals and the classical O(n+k²) low-distance regime."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm — machine-word parallelism for edit-distance computation."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm — threshold-aware and distance-sensitive dynamic programming."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Unicode in streaming and dynamic edit distance",
+          "anchor_id": "ux-section-83",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "Unicode and Grapheme-Safe Levenshtein — sequence representation for live human-text processing."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "The static baseline",
+          "anchor_id": "ux-section-5",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "This gives the classical Wagner–Fischer algorithm :"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted dynamic edit distance",
+          "anchor_id": "ux-section-51",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "The weighted setting is treated mathematically in Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-136",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — nonuniform edit costs and their mathematical consequences."
+        }
+      ]
+    },
+    {
+      "target": "/word-error-rate-and-asr-evaluation",
+      "evidence": [
+        {
+          "section": "Streaming ASR evaluation",
+          "anchor_id": "ux-section-91",
+          "alias": "word error rate and asr evaluation",
+          "excerpt": "See Word Error Rate and ASR Evaluation ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#page",
+      "type": "WebPage",
+      "name": "Dynamic, Online and Streaming Edit Distance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "type": "TechArticle",
+      "name": "Dynamic, Online and Streaming Edit Distance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#dynamic-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#online-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept",
+      "type": "DefinedTerm",
+      "name": "Dynamic, Online and Streaming Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#dynamic-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Dynamic Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#online-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Online Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Streaming Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "hasPart",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#page",
+      "mainEntity",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#page",
+      "isPartOf",
+      "https://www.levenshtein.net/theory#collection"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#page",
+      "hasPart",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#dynamic-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#online-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "isPartOf",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1137/1.9781611973105.122"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1137/1.9781611973730.37"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/2897518.2897577"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.4230/LIPIcs.CPM.2020.9"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.4230/LIPIcs.FSTTCS.2021.27"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.4230/LIPIcs.ICALP.2021.54"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1109/FOCS52979.2021.00090"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1109/FOCS57990.2023.00098"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/3618260.3649783"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/3717823.3718168"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.4230/LIPIcs.ESA.2025.45"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#article",
+      "citation",
+      "https://doi.org/10.4230/LIPIcs.CPM.2026.19"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#dynamic-edit-distance",
+      "isPartOf",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#online-edit-distance",
+      "isPartOf",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance",
+      "isPartOf",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1137/1.9781611973105.122",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1137/1.9781611973730.37",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#online-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1145/2897518.2897577",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1145/2897518.2897577",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.4230/LIPIcs.CPM.2020.9",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#dynamic-edit-distance"
+    ],
+    [
+      "https://doi.org/10.4230/LIPIcs.FSTTCS.2021.27",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance"
+    ],
+    [
+      "https://doi.org/10.4230/LIPIcs.ICALP.2021.54",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance"
+    ],
+    [
+      "https://doi.org/10.4230/LIPIcs.ICALP.2021.54",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1109/FOCS52979.2021.00090",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1109/FOCS57990.2023.00098",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#dynamic-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1109/FOCS57990.2023.00098",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3618260.3649783",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1145/3717823.3718168",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#dynamic-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1145/3717823.3718168",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3717823.3718168",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.4230/LIPIcs.ESA.2025.45",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#dynamic-edit-distance"
+    ],
+    [
+      "https://doi.org/10.4230/LIPIcs.ESA.2025.45",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.4230/LIPIcs.CPM.2026.19",
+      "about",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#streaming-edit-distance"
+    ],
+    [
+      "https://doi.org/10.4230/LIPIcs.CPM.2026.19",
+      "about",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1137/1.9781611973105.122",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/1.9781611973730.37",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/2897518.2897577",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/LIPIcs.CPM.2020.9",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/LIPIcs.FSTTCS.2021.27",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/LIPIcs.ICALP.2021.54",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/FOCS52979.2021.00090",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/FOCS57990.2023.00098",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3618260.3649783",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3717823.3718168",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/LIPIcs.ESA.2025.45",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/LIPIcs.CPM.2026.19",
+      "anchor": "DOI record"
+    }
+  ]
+}

@@ -1,0 +1,2541 @@
+{
+  "url": "/masek-paterson-algorithm",
+  "title": "Masek–Paterson Algorithm: Four Russians Edit Distance",
+  "h1": [
+    "Masek–Paterson Algorithm: Four Russians Edit Distance"
+  ],
+  "group": "Algorithms",
+  "provisional_mission": "Four Russians",
+  "content_sha256": "7526cd32e91beab677db1c0aa2ca227d7b94bfc5ac1d420f370e6694b11a1203",
+  "canonical": "https://www.levenshtein.net/masek-paterson-algorithm",
+  "primary_entity_candidate": "Masek–Paterson Algorithm: Four Russians Edit Distance",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Masek–Paterson Algorithm",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 7,
+      "word_count": 189,
+      "evidence": "The Masek–Paterson algorithm is a landmark subquadratic method for computing edit distance by applying the Four Russians technique to the dynamic-programming matrix. Instead of evaluating every edit-distance cell independently, the algorithm partitions the matrix into logarithmic-size blocks, precomputes the possible behavior of those blocks, and then reconstructs the complete computation through table lookups and compact boundary information.",
+      "paragraphs": [
+        "The Masek–Paterson algorithm is a landmark subquadratic method for computing edit distance by applying the Four Russians technique to the dynamic-programming matrix. Instead of evaluating every edit-distance cell independently, the algorithm partitions the matrix into logarithmic-size blocks, precomputes the possible behavior of those blocks, and then reconstructs the complete computation through table lookups and compact boundary information.",
+        "For two equal-length strings of length n , the method reduces the classical quadratic running time from:",
+        "O(n²)",
+        "to:",
+        "O(n² / log n)",
+        "under specific assumptions: the alphabet must be finite and the edit-operation costs must form a discrete set, equivalently in the formulation of Masek and Paterson, the costs are integral multiples of a common positive real number.",
+        "The algorithm is historically important because it demonstrates that the dynamic-programming structure underlying Levenshtein distance and more general edit distances contains repeated local computations that can be compressed and reused. Its significance is primarily theoretical rather than practical: the preprocessing constants and table complexity make the original method unattractive for most modern implementations, but the central idea has deeply influenced block-based dynamic programming, string algorithms, sequence comparison, and the study of edit-distance complexity."
+      ]
+    },
+    {
+      "heading": "The result of Masek and Paterson",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 21,
+      "word_count": 117,
+      "evidence": "Let two strings be:",
+      "paragraphs": [
+        "Let two strings be:",
+        "A = a₁a₂...aₙ B = b₁b₂...bₘ",
+        "with:",
+        "n ≥ m",
+        "Masek and Paterson consider edit distance defined using single-symbol:",
+        "insertions;",
+        "deletions;",
+        "replacements.",
+        "The costs may depend on the involved symbols. Under their discreteness and finite-alphabet assumptions, they obtain running time:",
+        "O( n · max( 1, m / log n ) )",
+        "For:",
+        "m = n",
+        "this becomes:",
+        "O(n² / log n)",
+        "For a second string shorter than logarithmic size:",
+        "m = O(log n)",
+        "the bound becomes:",
+        "O(n)",
+        "The standard unit-cost Levenshtein model satisfies the required cost condition because:",
+        "insertion cost = 1 deletion cost = 1 substitution cost = 1 match cost = 0",
+        "are all integer multiples of a common positive unit."
+      ]
+    },
+    {
+      "heading": "The classical dynamic-programming baseline",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 17,
+      "word_count": 95,
+      "evidence": "The starting point is the Wagner–Fischer algorithm .",
+      "paragraphs": [
+        "The starting point is the Wagner–Fischer algorithm .",
+        "Define:",
+        "D[i][j]",
+        "as the minimum cost required to transform:",
+        "A[1..i]",
+        "into:",
+        "B[1..j]",
+        "For the standard unit-cost Levenshtein model:",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + cost(aᵢ,bⱼ) ) cost(aᵢ,bⱼ) = 0 if aᵢ = bⱼ 1 otherwise",
+        "with boundary conditions:",
+        "D[i][0] = i D[0][j] = j",
+        "The matrix contains:",
+        "(n+1)(m+1)",
+        "cells, and each interior cell takes constant time to compute.",
+        "Thus:",
+        "Time: O(nm)",
+        "The obvious question is whether the computation of all these cells contains enough repeated structure to avoid treating every cell independently."
+      ]
+    },
+    {
+      "heading": "The Four Russians idea",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 8,
+      "word_count": 76,
+      "evidence": "The Four Russians technique is a general algorithmic strategy for accelerating dynamic programs and other dense computations by replacing many small repeated computations with precomputed table lookups.",
+      "paragraphs": [
+        "The Four Russians technique is a general algorithmic strategy for accelerating dynamic programs and other dense computations by replacing many small repeated computations with precomputed table lookups.",
+        "The high-level pattern is:",
+        "large computation ↓ divide into small blocks ↓ classify all possible block inputs ↓ precompute block outputs ↓ solve large instance by table lookup",
+        "The technique trades:",
+        "preprocessing + memory",
+        "for:",
+        "fewer runtime operations",
+        "Masek and Paterson apply this principle directly to the edit-distance matrix."
+      ]
+    },
+    {
+      "heading": "Partitioning the edit matrix",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 17,
+      "word_count": 107,
+      "evidence": "Choose a block side length:",
+      "paragraphs": [
+        "Choose a block side length:",
+        "t",
+        "and divide the dynamic-programming matrix into blocks containing approximately:",
+        "t × t",
+        "interior cells.",
+        "A block therefore spans:",
+        "t characters of A × t characters of B",
+        "and has:",
+        "(t+1) × (t+1)",
+        "boundary-inclusive DP cells.",
+        "Conceptually:",
+        "B block block block ┌───────┬───────┬───────┐ │ │ │ │ │ │ │ │ ├───────┼───────┼───────┤ A │ │ │ │ │ │ │ │ ├───────┼───────┼───────┤ │ │ │ │ │ │ │ │ └───────┴───────┴───────┘",
+        "The objective is no longer:",
+        "compute one cell in O(1)",
+        "but:",
+        "compute one t × t block much faster than O(t²)",
+        "once the behavior of all relevant block types has been precomputed."
+      ]
+    },
+    {
+      "heading": "What determines one block?",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 14,
+      "word_count": 124,
+      "evidence": "Consider one block whose corresponding substrings are:",
+      "paragraphs": [
+        "Consider one block whose corresponding substrings are:",
+        "X = A[i+1 .. i+t] Y = B[j+1 .. j+t]",
+        "To compute every interior cell of the block, it is sufficient to know:",
+        "the substring X ;",
+        "the substring Y ;",
+        "the DP values along the block's top boundary;",
+        "the DP values along the block's left boundary.",
+        "The recurrence then determines the entire block.",
+        "Once the block is solved, the only information required by neighboring blocks is:",
+        "the bottom boundary;",
+        "the right boundary.",
+        "Thus a block can be regarded as a function:",
+        "F( X, Y, top boundary, left boundary ) = ( bottom boundary, right boundary )",
+        "If every possible argument to F can be enumerated in advance, the block can later be solved through table lookup."
+      ]
+    },
+    {
+      "heading": "The problem with absolute boundary values",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 9,
+      "word_count": 75,
+      "evidence": "At first this appears impossible.",
+      "paragraphs": [
+        "At first this appears impossible.",
+        "Absolute edit-distance values grow with position in the global matrix.",
+        "For example, top boundaries might look like:",
+        "781 782 782 783 784 ...",
+        "or:",
+        "12847 12848 12848 12849 ...",
+        "Even if these boundaries have the same local shape, the absolute numbers differ.",
+        "Trying to precompute every possible vector of absolute DP values would produce far too many table entries.",
+        "The crucial Masek–Paterson transformation is therefore to stop storing absolute values."
+      ]
+    },
+    {
+      "heading": "Step vectors",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 6,
+      "word_count": 45,
+      "evidence": "Define a step as the difference between two horizontally or vertically adjacent edit-matrix cells.",
+      "paragraphs": [
+        "Define a step as the difference between two horizontally or vertically adjacent edit-matrix cells.",
+        "For horizontal neighbors:",
+        "H[i][j] = D[i][j] - D[i][j-1]",
+        "For vertical neighbors:",
+        "V[i][j] = D[i][j] - D[i-1][j]",
+        "A boundary can now be represented by a sequence of differences rather than absolute values."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-9",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "Absolute boundary:",
+      "paragraphs": [
+        "Absolute boundary:",
+        "31 32 32 33 34 33",
+        "Step vector:",
+        "+1 0 +1 +1 -1",
+        "Another boundary:",
+        "931 932 932 933 934 933",
+        "has exactly the same step vector:",
+        "+1 0 +1 +1 -1",
+        "The absolute offset has disappeared."
+      ]
+    },
+    {
+      "heading": "Translation invariance of a block",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 10,
+      "word_count": 78,
+      "evidence": "Suppose every input boundary value of one block is increased by a constant:",
+      "paragraphs": [
+        "Suppose every input boundary value of one block is increased by a constant:",
+        "c",
+        "Because the edit-distance recurrence consists only of adding fixed edit costs and taking minima, every value inside the block also increases by:",
+        "c",
+        "The local differences remain unchanged.",
+        "Therefore:",
+        "block behavior does not depend on absolute DP offset",
+        "It depends only on:",
+        "boundary differences + local substrings + edit cost function",
+        "This is the key reason step vectors can serve as finite table keys."
+      ]
+    },
+    {
+      "heading": "Bounding adjacent differences",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 18,
+      "word_count": 102,
+      "evidence": "Why should the number of possible step values be small?",
+      "paragraphs": [
+        "Why should the number of possible step values be small?",
+        "Consider the vertical difference:",
+        "D[i][j] - D[i-1][j]",
+        "Let:",
+        "I_max = maximum insertion cost D_max = maximum deletion cost",
+        "under the finite alphabet and fixed cost function.",
+        "To transform:",
+        "A[1..i]",
+        "into:",
+        "B[1..j]",
+        "one possible strategy is:",
+        "delete aᵢ + optimally transform A[1..i-1] to B[1..j]",
+        "so:",
+        "D[i][j] ≤ D[i-1][j] + delete_cost(aᵢ)",
+        "and therefore:",
+        "D[i][j] - D[i-1][j] ≤ D_max",
+        "Conversely, transforming the shorter prefix through the longer one gives a corresponding lower bound related to insertion cost.",
+        "Thus adjacent differences lie inside a bounded interval determined only by the edit-cost function, not by string length."
+      ]
+    },
+    {
+      "heading": "Unit-cost Levenshtein is especially simple",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 6,
+      "word_count": 52,
+      "evidence": "For standard Levenshtein distance:",
+      "paragraphs": [
+        "For standard Levenshtein distance:",
+        "insert = 1 delete = 1 substitute = 1",
+        "neighboring DP cells differ only by:",
+        "-1 0 +1",
+        "This is the same bounded-difference structure later exploited in a different way by the Myers Bit-Vector Algorithm .",
+        "Masek–Paterson use the finite set of differences to make block types enumerable."
+      ]
+    },
+    {
+      "heading": "Discreteness of edit costs",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 14,
+      "word_count": 91,
+      "evidence": "Boundedness alone is not sufficient.",
+      "paragraphs": [
+        "Boundedness alone is not sufficient.",
+        "Suppose possible step values lie in:",
+        "[-10,10]",
+        "but arbitrary real values can occur inside that interval.",
+        "There are still infinitely many possibilities.",
+        "Masek and Paterson therefore require the edit costs to belong to a discrete additive domain.",
+        "A convenient formulation is that every edit cost is an integral multiple of some positive real:",
+        "r > 0",
+        "so every cost has the form:",
+        "z · r for integer z",
+        "Because every step is:",
+        "bounded;",
+        "a multiple of r ;",
+        "only finitely many distinct step values can exist."
+      ]
+    },
+    {
+      "heading": "Finite step alphabet",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 9,
+      "word_count": 52,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "S = set of all possible horizontal or vertical step values",
+        "Under the required assumptions:",
+        "|S| = constant",
+        "with respect to the input lengths.",
+        "For standard Levenshtein distance:",
+        "S ⊆ {-1,0,+1}",
+        "so the step alphabet is extremely small.",
+        "This converts each length- t boundary into a word over a finite alphabet."
+      ]
+    },
+    {
+      "heading": "The four ingredients of a block type",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 14,
+      "word_count": 119,
+      "evidence": "A block can now be classified by:",
+      "paragraphs": [
+        "A block can now be classified by:",
+        "1. length-t substring X from A 2. length-t substring Y from B 3. top step vector of length t 4. left step vector of length t",
+        "Each of these belongs to a finite set.",
+        "If:",
+        "|Σ| = alphabet size |S| = step alphabet size",
+        "then the number of possible pairs of character blocks is:",
+        "|Σ|^(2t)",
+        "and the number of possible pairs of boundary step vectors is:",
+        "|S|^(2t)",
+        "so a rough upper bound on the number of block descriptions is:",
+        "(|Σ| · |S|)^(2t)",
+        "up to constant-factor and representation details.",
+        "This is exponential in t , which initially appears disastrous.",
+        "The Four Russians trick is to choose t logarithmically in the full input size."
+      ]
+    },
+    {
+      "heading": "Why the block size is logarithmic",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 20,
+      "word_count": 102,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "C > 1",
+        "be a constant determined by the finite alphabet and finite set of step values.",
+        "The number of possible block descriptions behaves like:",
+        "C^t",
+        "or another exponential expression differing only by a constant in the exponent.",
+        "Choose:",
+        "t = Θ(log n)",
+        "with a sufficiently small constant factor.",
+        "Then:",
+        "C^t = n^O(1)",
+        "and the preprocessing table remains polynomially bounded and can be kept below the dominant runtime term.",
+        "At the same time, every block replaces:",
+        "Θ(t²)",
+        "cell-level DP work with roughly:",
+        "Θ(t)",
+        "work to fetch and process its boundary vectors.",
+        "With:",
+        "t = Θ(log n)",
+        "this produces the logarithmic speedup."
+      ]
+    },
+    {
+      "heading": "Precomputation phase",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 9,
+      "word_count": 68,
+      "evidence": "For every valid combination:",
+      "paragraphs": [
+        "For every valid combination:",
+        "( X, Y, top_steps, left_steps )",
+        "the preprocessing algorithm computes the corresponding:",
+        "( bottom_steps, right_steps )",
+        "using an ordinary local dynamic-programming computation.",
+        "Conceptually:",
+        "TABLE[ X, Y, top_steps, left_steps ] = ( bottom_steps, right_steps )",
+        "The expensive block computation is therefore performed once for each possible block type.",
+        "During the actual input computation, any repeated occurrence of the same block type reuses the stored result."
+      ]
+    },
+    {
+      "heading": "Precomputation pseudocode",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 4,
+      "word_count": 87,
+      "evidence": "for every X in Σ^t: for every Y in Σ^t: for every top_steps in S^t: for every left_steps in S^t: reconstruct normalized top and left boundaries run ordinary DP inside the t × t block bottom_steps = differences along bottom edge right_steps = differences along right edge TABLE[ X, Y, top_steps, left_steps ] = ( bottom_steps, right_steps )",
+      "paragraphs": [
+        "for every X in Σ^t: for every Y in Σ^t: for every top_steps in S^t: for every left_steps in S^t: reconstruct normalized top and left boundaries run ordinary DP inside the t × t block bottom_steps = differences along bottom edge right_steps = differences along right edge TABLE[ X, Y, top_steps, left_steps ] = ( bottom_steps, right_steps )",
+        "The boundaries can be normalized by assigning the upper-left corner an arbitrary value such as:",
+        "0",
+        "because translation invariance makes the absolute offset irrelevant to the block's step behavior."
+      ]
+    },
+    {
+      "heading": "Normalized block example",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 16,
+      "word_count": 79,
+      "evidence": "Suppose a block receives:",
+      "paragraphs": [
+        "Suppose a block receives:",
+        "top step vector: +1 0 -1 +1",
+        "and:",
+        "left step vector: 0 +1 +1 -1",
+        "Set the upper-left cell to:",
+        "0",
+        "The top boundary becomes:",
+        "0 1 1 0 1",
+        "and the left boundary becomes:",
+        "0 0 1 2 1",
+        "The block can then be computed normally.",
+        "If the actual block in the full matrix begins at value:",
+        "847",
+        "all its absolute values are simply:",
+        "normalized value + 847",
+        "while its step vectors remain identical."
+      ]
+    },
+    {
+      "heading": "Main computation phase",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 9,
+      "word_count": 77,
+      "evidence": "After the universal block table has been constructed, the actual edit-distance matrix is processed block by block.",
+      "paragraphs": [
+        "After the universal block table has been constructed, the actual edit-distance matrix is processed block by block.",
+        "For each block:",
+        "read the corresponding substring of A ;",
+        "read the corresponding substring of B ;",
+        "obtain the top step vector from the block above;",
+        "obtain the left step vector from the block to the left;",
+        "look up the block result;",
+        "store its bottom and right step vectors for neighboring blocks.",
+        "No interior cell needs to be recomputed individually."
+      ]
+    },
+    {
+      "heading": "Block-level dynamic programming",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 3,
+      "word_count": 70,
+      "evidence": "for block_row = 0 .. ceil(n/t)-1: for block_col = 0 .. ceil(m/t)-1: X = substring of A for block_row Y = substring of B for block_col top = output boundary of block above left = output boundary of block to left (bottom, right) = TABLE[X,Y,top,left] save bottom save right",
+      "paragraphs": [
+        "for block_row = 0 .. ceil(n/t)-1: for block_col = 0 .. ceil(m/t)-1: X = substring of A for block_row Y = substring of B for block_col top = output boundary of block above left = output boundary of block to left (bottom, right) = TABLE[X,Y,top,left] save bottom save right",
+        "The dependency graph remains dynamic programming, but its atomic unit has changed:",
+        "Wagner–Fischer: one DP cell Masek–Paterson: one logarithmic-size DP block"
+      ]
+    },
+    {
+      "heading": "How many blocks are there?",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "Ignoring rounding:",
+      "paragraphs": [
+        "Ignoring rounding:",
+        "number of block rows ≈ n / t",
+        "and:",
+        "number of block columns ≈ m / t",
+        "so the total number of blocks is:",
+        "Θ( nm / t² )"
+      ]
+    },
+    {
+      "heading": "Cost per block",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 14,
+      "word_count": 81,
+      "evidence": "Even though the internal t² values have already been precomputed, the algorithm still needs to manipulate boundary vectors of length:",
+      "paragraphs": [
+        "Even though the internal t² values have already been precomputed, the algorithm still needs to manipulate boundary vectors of length:",
+        "Θ(t)",
+        "and perform the relevant table lookup.",
+        "Thus the runtime contribution per block is approximately:",
+        "O(t)",
+        "under the computational model used in the analysis.",
+        "Total runtime is therefore:",
+        "O( (nm / t²) · t ) = O( nm / t )",
+        "Choosing:",
+        "t = Θ(log n)",
+        "gives:",
+        "O( nm / log n )",
+        "in the regime where:",
+        "m = Ω(log n)"
+      ]
+    },
+    {
+      "heading": "The full asymmetric bound",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "Masek and Paterson express the result for:",
+      "paragraphs": [
+        "Masek and Paterson express the result for:",
+        "n ≥ m",
+        "as:",
+        "O( n · max( 1, m/log n ) )",
+        "This neatly handles both regimes."
+      ]
+    },
+    {
+      "heading": "When m is large",
+      "level": 3,
+      "id": "ux-section-25",
+      "paragraph_count": 3,
+      "word_count": 9,
+      "evidence": "m ≥ log n",
+      "paragraphs": [
+        "m ≥ log n",
+        "then:",
+        "Time = O(nm/log n)"
+      ]
+    },
+    {
+      "heading": "When m is small",
+      "level": 3,
+      "id": "ux-section-26",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "m < log n",
+      "paragraphs": [
+        "m < log n",
+        "then:",
+        "Time = O(n)",
+        "because the shorter dimension can effectively fit within one logarithmic-scale block."
+      ]
+    },
+    {
+      "heading": "Equal-length strings",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 7,
+      "word_count": 22,
+      "evidence": "The famous special case is:",
+      "paragraphs": [
+        "The famous special case is:",
+        "|A| = |B| = n",
+        "which yields:",
+        "O(n²/log n)",
+        "rather than:",
+        "O(n²)",
+        "for classical cell-by-cell dynamic programming."
+      ]
+    },
+    {
+      "heading": "Where the logarithmic speedup comes from",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 8,
+      "word_count": 66,
+      "evidence": "It is useful to isolate the accounting:",
+      "paragraphs": [
+        "It is useful to isolate the accounting:",
+        "classical DP: n² cells × O(1) per cell = O(n²) Four Russians DP: n² / t² blocks × O(t) per block = O(n²/t) choose: t = Θ(log n) therefore: O(n²/log n)",
+        "The improvement is not because each block is somehow computed in constant time.",
+        "It is because:",
+        "t² scalar cell computations",
+        "are replaced by:",
+        "O(t) boundary-processing work",
+        "after preprocessing."
+      ]
+    },
+    {
+      "heading": "Why constant-time block lookup is not the complete story",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 11,
+      "word_count": 60,
+      "evidence": "Simplified explanations sometimes claim:",
+      "paragraphs": [
+        "Simplified explanations sometimes claim:",
+        "one block = one O(1) lookup",
+        "and therefore derive:",
+        "O(n²/log² n)",
+        "This is not the Masek–Paterson bound.",
+        "The output of a block contains boundary vectors of length:",
+        "Θ(log n)",
+        "and manipulating or retrieving them has nonconstant cost in the computational model analyzed by the paper.",
+        "The final improvement is one factor of:",
+        "log n",
+        "not two."
+      ]
+    },
+    {
+      "heading": "The computational model matters",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 10,
+      "word_count": 66,
+      "evidence": "Masek and Paterson explicitly analyze more than abstract unit-cost arithmetic.",
+      "paragraphs": [
+        "Masek and Paterson explicitly analyze more than abstract unit-cost arithmetic.",
+        "The representation and addressing cost of stored block descriptions and boundary vectors matters.",
+        "This is important historically because Four Russians results can look different under different machine models:",
+        "unit-cost RAM;",
+        "word-RAM;",
+        "logarithmic-cost RAM;",
+        "Turing-machine models.",
+        "A statement such as:",
+        "O(n²/log n)",
+        "should therefore always be interpreted together with the assumptions of the algorithm and computational model."
+      ]
+    },
+    {
+      "heading": "Why the alphabet must be finite",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 11,
+      "word_count": 72,
+      "evidence": "The table key includes:",
+      "paragraphs": [
+        "The table key includes:",
+        "X ∈ Σ^t Y ∈ Σ^t",
+        "If:",
+        "|Σ|",
+        "is a fixed constant, the number of possible length- t blocks is exponential only in t with a constant base:",
+        "|Σ|^t",
+        "For:",
+        "t = Θ(log n)",
+        "this becomes polynomial in n .",
+        "If the effective alphabet can grow arbitrarily with the input, this finite-pattern enumeration argument no longer gives the same bound.",
+        "The finite-alphabet assumption is therefore structural, not cosmetic."
+      ]
+    },
+    {
+      "heading": "Finite alphabet does not mean only ASCII",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 7,
+      "word_count": 66,
+      "evidence": "The theoretical assumption is:",
+      "paragraphs": [
+        "The theoretical assumption is:",
+        "|Σ| = O(1)",
+        "independent of the input length.",
+        "Examples include:",
+        "binary alphabet: {0,1} DNA: {A,C,G,T} lowercase Latin letters: 26 symbols",
+        "A fixed Unicode code-point universe is technically finite, but treating more than a million possible symbols as a practical constant in a giant precomputation table would make the constants unusable.",
+        "The theoretical finite-alphabet condition should therefore not be mistaken for practical feasibility."
+      ]
+    },
+    {
+      "heading": "Why discrete costs are essential to the original method",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 14,
+      "word_count": 72,
+      "evidence": "The boundary encoding depends on the existence of a finite step alphabet.",
+      "paragraphs": [
+        "The boundary encoding depends on the existence of a finite step alphabet.",
+        "Assume step values are bounded:",
+        "-C ≤ step ≤ C",
+        "If every step is also a multiple of:",
+        "r > 0",
+        "then there are at most approximately:",
+        "2C/r + 1",
+        "possible values.",
+        "Without discreteness, an interval such as:",
+        "[-C,C]",
+        "may contain infinitely many possible step values.",
+        "Then:",
+        "S^t",
+        "is no longer a fixed finite collection suitable for universal block precomputation."
+      ]
+    },
+    {
+      "heading": "Rational costs",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 9,
+      "word_count": 58,
+      "evidence": "For a finite alphabet, any finite set of rational edit costs can be scaled into integers.",
+      "paragraphs": [
+        "For a finite alphabet, any finite set of rational edit costs can be scaled into integers.",
+        "For example:",
+        "insert = 1/2 delete = 3/4 substitute = 5/4",
+        "multiplying all costs by:",
+        "4",
+        "produces:",
+        "insert = 2 delete = 3 substitute = 5",
+        "without changing which edit sequence is optimal.",
+        "Thus finite rational cost systems satisfy the discreteness requirement."
+      ]
+    },
+    {
+      "heading": "Arbitrary real costs",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 5,
+      "word_count": 62,
+      "evidence": "If costs contain incompatible irrational quantities, there may be no common positive unit:",
+      "paragraphs": [
+        "If costs contain incompatible irrational quantities, there may be no common positive unit:",
+        "r",
+        "such that every cost is an integer multiple of r .",
+        "Masek and Paterson explicitly demonstrate that under nondiscrete cost systems the number of possible adjacent step values can grow with input length, destroying the finite-state block-table argument.",
+        "The condition is therefore essential to their specific preprocessing scheme."
+      ]
+    },
+    {
+      "heading": "What the discreteness limitation does not mean",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "It does not mean:",
+      "paragraphs": [
+        "It does not mean:",
+        "edit distance with real costs cannot be computed",
+        "Ordinary dynamic programming continues to work.",
+        "It means:",
+        "the Masek–Paterson finite precomputed block classification no longer has the required bounded number of step-vector types",
+        "This distinction is important."
+      ]
+    },
+    {
+      "heading": "General edit costs",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "The paper is more general than the standard textbook unit-cost Levenshtein problem.",
+      "paragraphs": [
+        "The paper is more general than the standard textbook unit-cost Levenshtein problem.",
+        "It allows costs such as:",
+        "delete(a) insert(b) replace(a,b)",
+        "that can depend on the symbols involved, provided the overall finite/discrete conditions hold.",
+        "The corresponding recurrence is:",
+        "D[i][j] = min( D[i-1][j] + delete(aᵢ), D[i][j-1] + insert(bⱼ), D[i-1][j-1] + replace(aᵢ,bⱼ) )",
+        "where:",
+        "replace(a,a) = 0",
+        "under the usual normalized cost interpretation."
+      ]
+    },
+    {
+      "heading": "Relationship to weighted Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 4,
+      "word_count": 38,
+      "evidence": "The Masek–Paterson framework therefore supports an important class of weighted edit distances .",
+      "paragraphs": [
+        "The Masek–Paterson framework therefore supports an important class of weighted edit distances .",
+        "However:",
+        "weighted does not automatically mean Masek–Paterson-compatible",
+        "The cost system must still admit only finitely many relevant boundary differences under a common discrete cost unit."
+      ]
+    },
+    {
+      "heading": "A block as a finite transducer",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 11,
+      "word_count": 80,
+      "evidence": "There is a useful modern way to interpret the precomputed table.",
+      "paragraphs": [
+        "There is a useful modern way to interpret the precomputed table.",
+        "For fixed:",
+        "X and Y",
+        "a block maps:",
+        "incoming boundary state",
+        "to:",
+        "outgoing boundary state",
+        "Thus each pair of local substrings behaves like a finite transducer:",
+        "( top_steps, left_steps ) ↓ BLOCK TRANSITION ↓ ( bottom_steps, right_steps )",
+        "The complete edit-distance computation is then a composition of many such local state transitions.",
+        "This perspective helps explain the conceptual connection between Masek–Paterson and later finite-state, bit-parallel, and block-compressed dynamic-programming methods."
+      ]
+    },
+    {
+      "heading": "Relation to Myers' bit-vector algorithm",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 7,
+      "word_count": 82,
+      "evidence": "Masek–Paterson and Myers exploit a related mathematical fact but in radically different ways.",
+      "paragraphs": [
+        "Masek–Paterson and Myers exploit a related mathematical fact but in radically different ways.",
+        "Both recognize that absolute DP cell values contain more information than necessary.",
+        "Masek–Paterson stores:",
+        "differences along block boundaries",
+        "while Myers stores:",
+        "vertical and horizontal neighbor differences as bit vectors",
+        "Property Masek–Paterson Myers Main compression unit DP blocks Machine-word bit vectors Uses neighboring differences? Yes Yes Main speed mechanism Precomputed block lookup Word-level parallel arithmetic Heavy preprocessing Yes No comparable universal block table Typical practical status Mainly theoretical Widely practical"
+      ]
+    },
+    {
+      "heading": "Relation to Ukkonen",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 4,
+      "word_count": 82,
+      "evidence": "The Ukkonen algorithm attacks a different source of wasted work.",
+      "paragraphs": [
+        "The Ukkonen algorithm attacks a different source of wasted work.",
+        "Masek–Paterson: full matrix but process cells in reusable blocks Ukkonen: avoid computing matrix regions that cannot belong to a low-distance solution",
+        "Their performance advantages occur in different regimes.",
+        "Property Masek–Paterson Ukkonen Main parameter exploited Repeated finite local block configurations Small edit distance / threshold Worst-case improvement Logarithmic factor under assumptions No general worst-case subquadratic guarantee when distance is large Small k required? No For major speedup, yes Preprocessing table Central Not central"
+      ]
+    },
+    {
+      "heading": "Relation to Levenshtein automata",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 4,
+      "word_count": 52,
+      "evidence": "Levenshtein automata compile a bounded edit neighborhood into finite-state transitions.",
+      "paragraphs": [
+        "Levenshtein automata compile a bounded edit neighborhood into finite-state transitions.",
+        "Masek–Paterson compile local DP blocks into finite table transitions.",
+        "Levenshtein automaton: compile bounded alignment states Masek–Paterson: compile local matrix blocks",
+        "Both approaches replace repeated runtime dynamic programming with reusable precomputed state transitions, but their state spaces and intended workloads are fundamentally different."
+      ]
+    },
+    {
+      "heading": "Why Masek–Paterson is not a bounded-distance algorithm",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 7,
+      "word_count": 53,
+      "evidence": "The algorithm does not assume:",
+      "paragraphs": [
+        "The algorithm does not assume:",
+        "d(A,B) ≤ k",
+        "for a small k .",
+        "It computes the full exact edit distance, including cases where:",
+        "d(A,B) = Θ(n)",
+        "The speedup derives from block reuse rather than from a small output distance.",
+        "This distinguishes it from parameterized methods studied in Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Recovering the absolute final distance",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 7,
+      "word_count": 70,
+      "evidence": "Because the matrix is represented largely through step vectors, the final absolute value is recovered by accumulating differences along a path whose starting value is known.",
+      "paragraphs": [
+        "Because the matrix is represented largely through step vectors, the final absolute value is recovered by accumulating differences along a path whose starting value is known.",
+        "For example, starting from:",
+        "D[0][0] = 0",
+        "one can follow known boundary steps to the bottom-right corner:",
+        "D[n][m] = sum of appropriate boundary steps",
+        "together with the known initialized edges.",
+        "The block representation therefore discards redundant absolute offsets without losing the final edit distance."
+      ]
+    },
+    {
+      "heading": "Edit-script reconstruction",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 5,
+      "word_count": 59,
+      "evidence": "Computing the numerical distance is not the same as recovering the actual optimal edit sequence.",
+      "paragraphs": [
+        "Computing the numerical distance is not the same as recovering the actual optimal edit sequence.",
+        "Ordinary Wagner–Fischer reconstruction walks backward through the DP matrix:",
+        "(n,m) ↓ optimal predecessor ↓ ... ↓ (0,0)",
+        "and identifies each insertion, deletion, replacement, or match.",
+        "Masek–Paterson does not normally store every interior cell of every used block, so direct cell-by-cell backtracking information is absent."
+      ]
+    },
+    {
+      "heading": "Recomputing blocks on the edit path",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 14,
+      "word_count": 78,
+      "evidence": "One reconstruction strategy is:",
+      "paragraphs": [
+        "One reconstruction strategy is:",
+        "identify which logarithmic-size blocks are crossed by an optimal edit path;",
+        "regenerate the internal DP cells of those blocks;",
+        "perform conventional backtracking inside each regenerated block.",
+        "For equal-length strings, an optimal monotone path crosses only on the order of:",
+        "O(n / log n)",
+        "blocks.",
+        "Recomputing each relevant:",
+        "Θ(log n) × Θ(log n)",
+        "block costs:",
+        "Θ(log² n)",
+        "so path reconstruction by regeneration can be performed in:",
+        "O(n log n)",
+        "additional time in the original analysis."
+      ]
+    },
+    {
+      "heading": "Linear-time path recovery with more storage",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 7,
+      "word_count": 58,
+      "evidence": "Masek and Paterson also describe a time-space trade-off.",
+      "paragraphs": [
+        "Masek and Paterson also describe a time-space trade-off.",
+        "If preprocessing stores the complete contents of block types and the main computation stores sufficient references to the block instances used, an optimal edit sequence can be reconstructed in:",
+        "O(n)",
+        "time for equal-length inputs.",
+        "The cost is substantially greater memory, on the order of:",
+        "O(n²/log n)",
+        "in their corresponding construction."
+      ]
+    },
+    {
+      "heading": "Distance-only space",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 5,
+      "word_count": 48,
+      "evidence": "If only:",
+      "paragraphs": [
+        "If only:",
+        "D[n][m]",
+        "is needed, the complete block grid need not be retained.",
+        "Just as ordinary dynamic programming can overwrite previous rows, a row of Masek–Paterson blocks depends only on a limited preceding frontier.",
+        "Using a Hirschberg-style observation, the distance computation can therefore be implemented using linear space."
+      ]
+    },
+    {
+      "heading": "Time-space trade-off",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 1,
+      "word_count": 28,
+      "evidence": "Goal Possible strategy Distance only Overwrite previous block rows; linear space Edit path with recomputation Regenerate blocks along optimal path Fast edit-path output Store substantially more block information",
+      "paragraphs": [
+        "Goal Possible strategy Distance only Overwrite previous block rows; linear space Edit path with recomputation Regenerate blocks along optimal path Fast edit-path output Store substantially more block information"
+      ]
+    },
+    {
+      "heading": "Longest Common Subsequence",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 11,
+      "word_count": 97,
+      "evidence": "The Masek–Paterson result also applies to the Longest Common Subsequence problem.",
+      "paragraphs": [
+        "The Masek–Paterson result also applies to the Longest Common Subsequence problem.",
+        "Let:",
+        "L = |LCS(A,B)|",
+        "Use edit costs:",
+        "match: 0 insertion: 1 deletion: 1 replacement of unequal symbols: 2",
+        "Because replacing an unequal symbol costs exactly the same as deleting it and inserting another symbol, an optimal transformation can be interpreted in terms of retaining a maximum common subsequence.",
+        "Then:",
+        "D(A,B) = |A| + |B| - 2L",
+        "so:",
+        "L = ( |A| + |B| - D(A,B) ) / 2",
+        "Consequently, for a fixed finite alphabet, the same Four Russians technique gives the corresponding logarithmic improvement for LCS."
+      ]
+    },
+    {
+      "heading": "Why replacement cost must be 2 in the LCS reduction",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 8,
+      "word_count": 59,
+      "evidence": "Suppose unequal replacement cost were:",
+      "paragraphs": [
+        "Suppose unequal replacement cost were:",
+        "1",
+        "Then a mismatch could be resolved more cheaply by substitution than by:",
+        "delete + insert = 2",
+        "and the edit distance would no longer directly encode the number of symbols excluded from a longest common subsequence.",
+        "Setting:",
+        "replacement mismatch = 2",
+        "makes substitution equivalent in cost to delete-plus-insert and restores the LCS identity."
+      ]
+    },
+    {
+      "heading": "Block reuse and repeated local structure",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 12,
+      "word_count": 61,
+      "evidence": "Consider a binary alphabet:",
+      "paragraphs": [
+        "Consider a binary alphabet:",
+        "Σ = {0,1}",
+        "and block length:",
+        "t = 4",
+        "There are only:",
+        "2⁴ = 16",
+        "possible four-character substrings.",
+        "Therefore there are only:",
+        "16 × 16 = 256",
+        "possible substring pairs before boundary states are considered.",
+        "For large strings, the same local substring pairs recur again and again.",
+        "The Four Russians method converts this repetition into computational reuse."
+      ]
+    },
+    {
+      "heading": "Why longer blocks are not always better",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 8,
+      "word_count": 46,
+      "evidence": "Increasing t decreases the number of runtime blocks:",
+      "paragraphs": [
+        "Increasing t decreases the number of runtime blocks:",
+        "nm/t²",
+        "which appears desirable.",
+        "But the number of possible precomputed block types grows exponentially:",
+        "C^t",
+        "Therefore:",
+        "small t: cheap preprocessing, weak runtime speedup large t: strong runtime compression, explosive preprocessing",
+        "The logarithmic block size balances these opposing forces."
+      ]
+    },
+    {
+      "heading": "The central asymptotic balance",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 2,
+      "word_count": 36,
+      "evidence": "PRECOMPUTATION ≈ exponential in t MAIN DP ≈ nm/t choose t = Θ(log n) so that precomputation remains manageable while main computation gains a Θ(log n) factor",
+      "paragraphs": [
+        "PRECOMPUTATION ≈ exponential in t MAIN DP ≈ nm/t choose t = Θ(log n) so that precomputation remains manageable while main computation gains a Θ(log n) factor",
+        "This balancing argument is characteristic of Four Russians algorithms."
+      ]
+    },
+    {
+      "heading": "Why the method is mostly theoretical today",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 9,
+      "word_count": 56,
+      "evidence": "The asymptotic improvement is real, but asymptotic notation hides extremely important constants.",
+      "paragraphs": [
+        "The asymptotic improvement is real, but asymptotic notation hides extremely important constants.",
+        "The original method requires:",
+        "enumerating many character blocks;",
+        "enumerating many boundary step vectors;",
+        "constructing a large lookup structure;",
+        "encoding and decoding block keys;",
+        "reading and writing boundary vectors;",
+        "performing nontrivial random memory accesses.",
+        "For realistic input sizes, these costs can dominate the saved arithmetic."
+      ]
+    },
+    {
+      "heading": "Memory locality",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 10,
+      "word_count": 64,
+      "evidence": "Classical two-row Wagner–Fischer has excellent streaming behavior:",
+      "paragraphs": [
+        "Classical two-row Wagner–Fischer has excellent streaming behavior:",
+        "read previous row write current row sequentially",
+        "Modern CPUs handle this very efficiently.",
+        "Masek–Paterson instead introduces large precomputed tables accessed according to data-dependent block descriptions.",
+        "Large lookup tables can suffer from:",
+        "cache misses;",
+        "TLB pressure;",
+        "pointer or index overhead;",
+        "poor locality.",
+        "A logarithmic asymptotic speedup can therefore lose to a simpler quadratic algorithm over practical problem sizes."
+      ]
+    },
+    {
+      "heading": "Why Myers often wins in practical unit-cost workloads",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 7,
+      "word_count": 62,
+      "evidence": "For classical Levenshtein distance, modern processors provide fixed-width bit operations over:",
+      "paragraphs": [
+        "For classical Levenshtein distance, modern processors provide fixed-width bit operations over:",
+        "32 64 128 256 or more bits",
+        "depending on the implementation and SIMD strategy.",
+        "Myers-style algorithms exploit this hardware directly, without constructing the enormous universal block table required by the original Four Russians method.",
+        "Thus:",
+        "Masek–Paterson: asymptotic block tabulation Myers: hardware word parallelism",
+        "and the latter is commonly much more practical."
+      ]
+    },
+    {
+      "heading": "Why Masek–Paterson remains scientifically important",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Practical obsolescence does not diminish theoretical importance.",
+      "paragraphs": [
+        "Practical obsolescence does not diminish theoretical importance.",
+        "The algorithm established several durable ideas."
+      ]
+    },
+    {
+      "heading": "1. Quadratic dynamic programming is not always indivisible",
+      "level": 3,
+      "id": "ux-section-59",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "A matrix containing:",
+      "paragraphs": [
+        "A matrix containing:",
+        "Θ(n²)",
+        "cells does not automatically imply:",
+        "Θ(n²)",
+        "independent computational work."
+      ]
+    },
+    {
+      "heading": "2. Boundary states can summarize subproblems",
+      "level": 3,
+      "id": "ux-section-60",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "A block's interior need not remain visible once its effect on neighboring blocks has been summarized.",
+      "paragraphs": [
+        "A block's interior need not remain visible once its effect on neighboring blocks has been summarized."
+      ]
+    },
+    {
+      "heading": "3. Absolute DP values may be unnecessary",
+      "level": 3,
+      "id": "ux-section-61",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Local differences can be enough to describe computation.",
+      "paragraphs": [
+        "Local differences can be enough to describe computation."
+      ]
+    },
+    {
+      "heading": "4. Finite local configuration spaces enable tabulation",
+      "level": 3,
+      "id": "ux-section-62",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "If a subproblem has only finitely many normalized input states, all of them can potentially be solved in advance.",
+      "paragraphs": [
+        "If a subproblem has only finitely many normalized input states, all of them can potentially be solved in advance."
+      ]
+    },
+    {
+      "heading": "5. Logarithmic blocking can yield subquadratic algorithms",
+      "level": 3,
+      "id": "ux-section-63",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Choosing a block scale based on the logarithm of total input size is a recurring algorithm-design pattern.",
+      "paragraphs": [
+        "Choosing a block scale based on the logarithm of total input size is a recurring algorithm-design pattern."
+      ]
+    },
+    {
+      "heading": "A deeper information-compression interpretation",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 10,
+      "word_count": 65,
+      "evidence": "The ordinary DP matrix appears to contain:",
+      "paragraphs": [
+        "The ordinary DP matrix appears to contain:",
+        "Θ(n²)",
+        "integer values.",
+        "But neighboring values are highly correlated.",
+        "A region does not need to be described by all of its internal numbers.",
+        "It can instead be summarized by:",
+        "local symbols + incoming boundary differences + outgoing boundary differences",
+        "The Four Russians method exploits this structural redundancy algorithmically.",
+        "From this viewpoint:",
+        "Masek–Paterson = compression of repeated dynamic-programming computation"
+      ]
+    },
+    {
+      "heading": "Relationship to edit graphs",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 10,
+      "word_count": 71,
+      "evidence": "The Wagner–Fischer matrix can also be interpreted as a shortest-path DAG.",
+      "paragraphs": [
+        "The Wagner–Fischer matrix can also be interpreted as a shortest-path DAG.",
+        "Each cell:",
+        "(i,j)",
+        "is a graph vertex.",
+        "Edges represent:",
+        "deletion insertion replacement/match",
+        "Masek–Paterson groups many vertices into a macro-node-like block.",
+        "The precomputed table effectively summarizes:",
+        "Given shortest-path distances arriving along two sides of this local edit graph, what shortest-path differences leave through the other two sides?",
+        "Thus the method can be viewed as shortest-path computation through precompiled local graph gadgets."
+      ]
+    },
+    {
+      "heading": "Relationship to min-plus computation",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 4,
+      "word_count": 66,
+      "evidence": "Edit-distance dynamic programming belongs to the broader family of min-plus recurrences:",
+      "paragraphs": [
+        "Edit-distance dynamic programming belongs to the broader family of min-plus recurrences:",
+        "new value = minimum of (previous value + local cost)",
+        "Masek–Paterson does not explicitly express the entire algorithm as generic min-plus matrix multiplication, but its block philosophy is closely related to the idea of replacing repeated local shortest-path calculations with reusable summaries.",
+        "This perspective connects the algorithm to a much broader area of dynamic-programming acceleration."
+      ]
+    },
+    {
+      "heading": "Padding incomplete blocks",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 8,
+      "word_count": 80,
+      "evidence": "If the string lengths are not exact multiples of the block size:",
+      "paragraphs": [
+        "If the string lengths are not exact multiples of the block size:",
+        "t",
+        "the final block row or column is incomplete.",
+        "One strategy is to handle the boundary region separately using conventional dynamic programming.",
+        "Masek and Paterson describe a padding construction using a dummy symbol whose edit costs are chosen so that padding does not change the intended result.",
+        "The general engineering lesson is:",
+        "block decomposition must preserve the semantics of incomplete boundaries",
+        "rather than simply appending arbitrary ordinary characters."
+      ]
+    },
+    {
+      "heading": "Implementation architecture",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "A conceptual implementation consists of four major layers.",
+      "paragraphs": [
+        "A conceptual implementation consists of four major layers.",
+        "1. COST NORMALIZATION ↓ 2. BLOCK-TABLE PRECOMPUTATION ↓ 3. BLOCKWISE MATRIX EXECUTION ↓ 4. DISTANCE / PATH RECONSTRUCTION"
+      ]
+    },
+    {
+      "heading": "1. Cost normalization",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 8,
+      "word_count": 53,
+      "evidence": "If all costs are rational, scale them to a common integer unit.",
+      "paragraphs": [
+        "If all costs are rational, scale them to a common integer unit.",
+        "Example:",
+        "insert = 0.5 delete = 1.0 substitution = 1.5",
+        "multiply by:",
+        "2",
+        "to obtain:",
+        "insert = 1 delete = 2 substitution = 3",
+        "After computing the scaled distance, divide by the same factor if the original numerical scale is required."
+      ]
+    },
+    {
+      "heading": "2. Determine the step alphabet",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "Using the edit costs, determine the finite set of possible adjacent differences or at least a finite encoding range sufficient for all possible block boundaries.",
+      "paragraphs": [
+        "Using the edit costs, determine the finite set of possible adjacent differences or at least a finite encoding range sufficient for all possible block boundaries.",
+        "For unit-cost Levenshtein:",
+        "S = {-1,0,+1}",
+        "is enough."
+      ]
+    },
+    {
+      "heading": "3. Choose the block width",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 10,
+      "word_count": 34,
+      "evidence": "The theoretical choice has:",
+      "paragraphs": [
+        "The theoretical choice has:",
+        "t = Θ(log n)",
+        "but an implementation must choose the constant carefully.",
+        "The useful value depends on:",
+        "alphabet size;",
+        "step alphabet size;",
+        "available memory;",
+        "word size;",
+        "cache size;",
+        "table-key encoding."
+      ]
+    },
+    {
+      "heading": "4. Encode block keys",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 8,
+      "word_count": 53,
+      "evidence": "A block key contains:",
+      "paragraphs": [
+        "A block key contains:",
+        "substring X substring Y top step vector left step vector",
+        "For a small alphabet, these can be packed into integers.",
+        "For example, a DNA alphabet needs:",
+        "2 bits per base",
+        "and a unit-cost Levenshtein step needs only enough encoding for:",
+        "-1 0 +1",
+        "so compact block identifiers are possible."
+      ]
+    },
+    {
+      "heading": "5. Build block outputs",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "For every possible key:",
+      "paragraphs": [
+        "For every possible key:",
+        "key ↓ reconstruct normalized boundaries ↓ fill local t × t DP ↓ extract bottom/right steps ↓ store result"
+      ]
+    },
+    {
+      "heading": "6. Execute the real matrix",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "The real strings are divided into length- t segments.",
+      "paragraphs": [
+        "The real strings are divided into length- t segments.",
+        "Blocks are evaluated in dependency order:",
+        "left to right and top to bottom",
+        "or any topological order respecting:",
+        "top dependency + left dependency"
+      ]
+    },
+    {
+      "heading": "7. Recover the answer",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "The final boundary steps and known initial value determine:",
+      "paragraphs": [
+        "The final boundary steps and known initial value determine:",
+        "D[n][m]",
+        "If an edit script is needed, preserve or regenerate sufficient block interiors for backtracking."
+      ]
+    },
+    {
+      "heading": "High-level pseudocode",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 1,
+      "word_count": 106,
+      "evidence": "function masek_paterson(A, B): normalize edit costs verify finite/discrete model n = length(A) m = length(B) if n < m: swap roles as appropriate t = choose Θ(log n) block size step_alphabet = determine possible boundary step values TABLE = precompute_all_block_types( alphabet, step_alphabet, edit_costs, t ) initialize outer matrix boundary vectors for each block row r: for each block column c: X = A block at r Y = B block at c top_steps = boundary from block above left_steps = boundary from block left ( bottom_steps, right_steps ) = TABLE[ X, Y, top_steps, left_steps ] save bottom_steps save right_steps reconstruct final absolute edit cost return distance",
+      "paragraphs": [
+        "function masek_paterson(A, B): normalize edit costs verify finite/discrete model n = length(A) m = length(B) if n < m: swap roles as appropriate t = choose Θ(log n) block size step_alphabet = determine possible boundary step values TABLE = precompute_all_block_types( alphabet, step_alphabet, edit_costs, t ) initialize outer matrix boundary vectors for each block row r: for each block column c: X = A block at r Y = B block at c top_steps = boundary from block above left_steps = boundary from block left ( bottom_steps, right_steps ) = TABLE[ X, Y, top_steps, left_steps ] save bottom_steps save right_steps reconstruct final absolute edit cost return distance"
+      ]
+    },
+    {
+      "heading": "Why this pseudocode hides the difficult part",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 10,
+      "word_count": 71,
+      "evidence": "The line:",
+      "paragraphs": [
+        "The line:",
+        "TABLE = precompute_all_block_types(...)",
+        "contains most of the theoretical complexity.",
+        "A correct implementation must prove that:",
+        "the alphabet of local strings is finite;",
+        "the alphabet of boundary steps is finite;",
+        "every possible real block corresponds to one precomputed type;",
+        "the table can be constructed within the desired preprocessing bound;",
+        "lookup keys can be encoded and retrieved efficiently.",
+        "Without these properties, merely partitioning a matrix into blocks gives no asymptotic improvement."
+      ]
+    },
+    {
+      "heading": "Correctness argument",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 1,
+      "word_count": 22,
+      "evidence": "Correctness follows from the fact that each table entry reproduces exactly the result that ordinary dynamic programming would compute inside that block.",
+      "paragraphs": [
+        "Correctness follows from the fact that each table entry reproduces exactly the result that ordinary dynamic programming would compute inside that block."
+      ]
+    },
+    {
+      "heading": "Lemma 1: block determinism",
+      "level": 3,
+      "id": "ux-section-79",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "Given:",
+      "paragraphs": [
+        "Given:",
+        "X Y top boundary left boundary",
+        "the Wagner–Fischer recurrence uniquely determines every interior DP value and therefore the bottom and right boundaries."
+      ]
+    },
+    {
+      "heading": "Lemma 2: normalization",
+      "level": 3,
+      "id": "ux-section-80",
+      "paragraph_count": 2,
+      "word_count": 33,
+      "evidence": "Adding a constant to every incoming absolute boundary value adds the same constant to every block value but leaves all step vectors unchanged.",
+      "paragraphs": [
+        "Adding a constant to every incoming absolute boundary value adds the same constant to every block value but leaves all step vectors unchanged.",
+        "Therefore step-vector behavior is independent of the absolute upper-left value."
+      ]
+    },
+    {
+      "heading": "Lemma 3: table completeness",
+      "level": 3,
+      "id": "ux-section-81",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "Under a finite alphabet and finite step alphabet, every block encountered in the real matrix belongs to one of the precomputed block classes.",
+      "paragraphs": [
+        "Under a finite alphabet and finite step alphabet, every block encountered in the real matrix belongs to one of the precomputed block classes."
+      ]
+    },
+    {
+      "heading": "Induction over blocks",
+      "level": 3,
+      "id": "ux-section-82",
+      "paragraph_count": 6,
+      "word_count": 75,
+      "evidence": "Assume every completed block before the current block has produced exactly the same boundary values as ordinary dynamic programming.",
+      "paragraphs": [
+        "Assume every completed block before the current block has produced exactly the same boundary values as ordinary dynamic programming.",
+        "Then the current block receives the correct:",
+        "top boundary and left boundary",
+        "The table entry for its normalized description was computed using the exact Wagner–Fischer recurrence.",
+        "Therefore it produces the same bottom and right boundaries as the full DP computation.",
+        "By induction, every block boundary is correct and the bottom-right value equals the exact edit distance."
+      ]
+    },
+    {
+      "heading": "The algorithm does not approximate edit distance",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 9,
+      "word_count": 45,
+      "evidence": "Despite using table compression, the Masek–Paterson algorithm is exact.",
+      "paragraphs": [
+        "Despite using table compression, the Masek–Paterson algorithm is exact.",
+        "It does not:",
+        "round distances;",
+        "drop candidate paths;",
+        "estimate the score;",
+        "sample matrix cells.",
+        "It computes exactly the same dynamic-programming result as the underlying edit-distance recurrence.",
+        "The transformation is:",
+        "same mathematical DP + different computational granularity"
+      ]
+    },
+    {
+      "heading": "Masek–Paterson and modern fine-grained complexity",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 16,
+      "word_count": 81,
+      "evidence": "The algorithm is an important reference point in the modern theory of edit distance because:",
+      "paragraphs": [
+        "The algorithm is an important reference point in the modern theory of edit distance because:",
+        "O(n²/log n)",
+        "is asymptotically below quadratic but only by a logarithmic factor.",
+        "This distinction matters when modern literature discusses strongly subquadratic algorithms.",
+        "A strongly subquadratic algorithm would have running time:",
+        "O(n^(2-ε))",
+        "for some constant:",
+        "ε > 0",
+        "By contrast:",
+        "n²/log n",
+        "cannot be written as:",
+        "O(n^(2-ε))",
+        "for any fixed positive ε .",
+        "Thus Masek–Paterson is subquadratic in the literal asymptotic sense:",
+        "o(n²)",
+        "but not strongly subquadratic."
+      ]
+    },
+    {
+      "heading": "Why this distinction became important later",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 8,
+      "word_count": 49,
+      "evidence": "Modern conditional lower-bound research asks whether general exact edit distance admits:",
+      "paragraphs": [
+        "Modern conditional lower-bound research asks whether general exact edit distance admits:",
+        "O(n^(2-ε))",
+        "algorithms.",
+        "Results connected to the Strong Exponential Time Hypothesis provide evidence against such an improvement for the general problem.",
+        "This does not conflict with Masek–Paterson because:",
+        "O(n²/log n)",
+        "is not strongly subquadratic.",
+        "See Edit Distance Complexity ."
+      ]
+    },
+    {
+      "heading": "Historical versus modern complexity perspective",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 2,
+      "word_count": 41,
+      "evidence": "Wagner–Fischer 1974 O(n²) ↓ Masek–Paterson 1980 O(n²/log n) under finite/discrete assumptions ↓ parameterized, word-parallel, approximation, and specialized algorithms ↓ modern fine-grained complexity and conditional lower bounds",
+      "paragraphs": [
+        "Wagner–Fischer 1974 O(n²) ↓ Masek–Paterson 1980 O(n²/log n) under finite/discrete assumptions ↓ parameterized, word-parallel, approximation, and specialized algorithms ↓ modern fine-grained complexity and conditional lower bounds",
+        "Masek–Paterson therefore occupies a crucial position between classical dynamic programming and modern edit-distance complexity theory."
+      ]
+    },
+    {
+      "heading": "The assumptions matter when comparing algorithms",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 10,
+      "word_count": 51,
+      "evidence": "It would be misleading to write simply:",
+      "paragraphs": [
+        "It would be misleading to write simply:",
+        "Masek–Paterson is faster than Wagner–Fischer",
+        "without qualification.",
+        "The asymptotic improvement relies on:",
+        "a finite alphabet;",
+        "a discrete edit-cost domain;",
+        "substantial preprocessing;",
+        "a specific random-access computational model;",
+        "sufficiently large inputs for asymptotics to dominate constants.",
+        "Wagner–Fischer has far fewer restrictions and a dramatically simpler implementation."
+      ]
+    },
+    {
+      "heading": "Algorithm-selection comparison",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 1,
+      "word_count": 73,
+      "evidence": "Algorithm Main idea Best conceptual regime Wagner–Fischer Full scalar dynamic programming General exact reference computation Ukkonen Restrict DP to a distance-sensitive region Small edit distance or threshold Masek–Paterson Precompute logarithmic DP blocks Theoretical exact subquadratic computation under finite/discrete assumptions Myers Pack DP differences into machine words Fast unit-cost practical matching Levenshtein automata Compile bounded edit neighborhoods into finite state Fuzzy dictionary/trie search Landau–Vishkin Exploit diagonals and a small error parameter k-dependent approximate matching",
+      "paragraphs": [
+        "Algorithm Main idea Best conceptual regime Wagner–Fischer Full scalar dynamic programming General exact reference computation Ukkonen Restrict DP to a distance-sensitive region Small edit distance or threshold Masek–Paterson Precompute logarithmic DP blocks Theoretical exact subquadratic computation under finite/discrete assumptions Myers Pack DP differences into machine words Fast unit-cost practical matching Levenshtein automata Compile bounded edit neighborhoods into finite state Fuzzy dictionary/trie search Landau–Vishkin Exploit diagonals and a small error parameter k-dependent approximate matching"
+      ]
+    },
+    {
+      "heading": "Practical benchmarking would be misleading without preprocessing",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 7,
+      "word_count": 64,
+      "evidence": "If one were to benchmark a Masek–Paterson implementation, at least two times must be reported separately:",
+      "paragraphs": [
+        "If one were to benchmark a Masek–Paterson implementation, at least two times must be reported separately:",
+        "table preprocessing time and per-instance edit-distance time",
+        "Ignoring preprocessing can make the algorithm appear unrealistically fast.",
+        "Conversely, charging the complete universal precomputation against every single pairwise comparison can make it appear unrealistically slow when the same table is reusable across many comparisons sharing:",
+        "alphabet;",
+        "cost function;",
+        "block size."
+      ]
+    },
+    {
+      "heading": "Reusable preprocessing",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "The table depends on:",
+      "paragraphs": [
+        "The table depends on:",
+        "alphabet Σ edit cost system block size t",
+        "rather than on one complete input pair.",
+        "Therefore:",
+        "one precomputed table",
+        "can theoretically be reused across:",
+        "many different A,B pairs",
+        "of compatible size and model.",
+        "This amortization is one of the conceptual attractions of the technique."
+      ]
+    },
+    {
+      "heading": "Why changing the cost function invalidates the table",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 7,
+      "word_count": 61,
+      "evidence": "Suppose a table was built for:",
+      "paragraphs": [
+        "Suppose a table was built for:",
+        "insert = 1 delete = 1 substitute = 1",
+        "and the application changes to:",
+        "insert = 1 delete = 1 substitute = 2",
+        "The local DP block outcomes can change.",
+        "The existing table can therefore no longer be assumed valid.",
+        "A block table is tied to the exact edit model under which it was constructed."
+      ]
+    },
+    {
+      "heading": "Why preprocessing becomes difficult for rich linguistic models",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 11,
+      "word_count": 71,
+      "evidence": "Suppose substitution cost depends on:",
+      "paragraphs": [
+        "Suppose substitution cost depends on:",
+        "keyboard position;",
+        "language context;",
+        "preceding characters;",
+        "phonetic class;",
+        "probability learned from data.",
+        "The local state required to determine a block may no longer consist solely of:",
+        "two substrings + two step vectors",
+        "Additional contextual state can dramatically increase the number of possible block types.",
+        "This illustrates a general limitation of aggressive precomputation:",
+        "It works best when the local computational state is small, discrete, and highly reusable."
+      ]
+    },
+    {
+      "heading": "Unicode and alphabet modeling",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "The original theory assumes a fixed finite alphabet.",
+      "paragraphs": [
+        "The original theory assumes a fixed finite alphabet.",
+        "Real Unicode text complicates this in two ways."
+      ]
+    },
+    {
+      "heading": "Large symbol universe",
+      "level": 3,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Code-point space is far larger than the small alphabets for which exhaustive block preprocessing is plausible.",
+      "paragraphs": [
+        "Code-point space is far larger than the small alphabets for which exhaustive block preprocessing is plausible."
+      ]
+    },
+    {
+      "heading": "Sequence-unit ambiguity",
+      "level": 3,
+      "id": "ux-section-95",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "One user-perceived character can contain multiple code points.",
+      "paragraphs": [
+        "One user-perceived character can contain multiple code points.",
+        "Therefore a scientifically correct comparison may require:",
+        "Unicode normalization ↓ grapheme segmentation ↓ symbol remapping ↓ edit-distance algorithm",
+        "Masek–Paterson does not solve these representation questions.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Alphabet remapping",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 4,
+      "word_count": 73,
+      "evidence": "In some workloads, a large nominal alphabet can be remapped locally to equivalence classes.",
+      "paragraphs": [
+        "In some workloads, a large nominal alphabet can be remapped locally to equivalence classes.",
+        "For example, a block only depends on equality and cost relationships among the symbols appearing in its two local substrings.",
+        "This observation motivates later algorithmic refinements, but such remapping must preserve every property required by the edit-cost model.",
+        "It should not be assumed that arbitrary Unicode or weighted-edit inputs automatically satisfy the finite-alphabet preprocessing assumptions of the original algorithm."
+      ]
+    },
+    {
+      "heading": "Why the algorithm matters beyond edit distance",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 11,
+      "word_count": 50,
+      "evidence": "The Four Russians strategy applies whenever a dynamic program has:",
+      "paragraphs": [
+        "The Four Russians strategy applies whenever a dynamic program has:",
+        "a regular grid-like dependency structure;",
+        "small local input alphabets;",
+        "a finite normalized boundary state;",
+        "many repeated small subcomputations.",
+        "The same intellectual pattern appears in algorithms for:",
+        "Longest Common Subsequence;",
+        "transitive closure;",
+        "sequence alignment;",
+        "Boolean matrix computation;",
+        "various finite-state dynamic programs."
+      ]
+    },
+    {
+      "heading": "A general Four Russians template",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 2,
+      "word_count": 61,
+      "evidence": "PROBLEM DP table with N² states ↓ identify block size t ↓ describe each block using finite boundary state ↓ enumerate all possible normalized block types ↓ precompute transition table ↓ process N²/t² blocks ↓ spend O(t) per block ↓ O(N²/t) ↓ choose t = Θ(log N) ↓ O(N²/log N)",
+      "paragraphs": [
+        "PROBLEM DP table with N² states ↓ identify block size t ↓ describe each block using finite boundary state ↓ enumerate all possible normalized block types ↓ precompute transition table ↓ process N²/t² blocks ↓ spend O(t) per block ↓ O(N²/t) ↓ choose t = Θ(log N) ↓ O(N²/log N)",
+        "Masek–Paterson is one of the canonical string-algorithm realizations of this template."
+      ]
+    },
+    {
+      "heading": "What the algorithm teaches about dynamic programming",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 10,
+      "word_count": 80,
+      "evidence": "The most profound lesson is that the apparent unit of a dynamic program is not necessarily its natural computational unit.",
+      "paragraphs": [
+        "The most profound lesson is that the apparent unit of a dynamic program is not necessarily its natural computational unit.",
+        "The recurrence is defined cell by cell:",
+        "D[i][j]",
+        "but the algorithm can be executed block by block:",
+        "D[ i..i+t, j..j+t ]",
+        "if a block can be summarized by a sufficiently small interface.",
+        "This is analogous to software abstraction:",
+        "internal implementation hidden interface retained",
+        "For Masek–Paterson:",
+        "internal implementation = t² DP cells interface = top/left input steps + bottom/right output steps"
+      ]
+    },
+    {
+      "heading": "Boundary vectors are sufficient statistics for the block",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 8,
+      "word_count": 72,
+      "evidence": "Once:",
+      "paragraphs": [
+        "Once:",
+        "X Y top boundary left boundary",
+        "are fixed, no matrix cell outside the block is needed to determine its interior.",
+        "Thus the boundary values are a complete interface between neighboring subproblems.",
+        "Replacing absolute boundaries with step vectors further removes information that is irrelevant to local computation.",
+        "In information terms:",
+        "absolute DP state ↓ remove global additive offset ↓ finite local boundary state",
+        "This compression is the structural heart of the algorithm."
+      ]
+    },
+    {
+      "heading": "1. The alphabet assumption is restrictive",
+      "level": 3,
+      "id": "ux-section-102",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "The asymptotic table-size argument relies on a fixed finite alphabet.",
+      "paragraphs": [
+        "The asymptotic table-size argument relies on a fixed finite alphabet."
+      ]
+    },
+    {
+      "heading": "2. The cost domain must be discrete",
+      "level": 3,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Arbitrary real-valued cost systems can generate too many distinct boundary differences.",
+      "paragraphs": [
+        "Arbitrary real-valued cost systems can generate too many distinct boundary differences."
+      ]
+    },
+    {
+      "heading": "3. Preprocessing constants are large",
+      "level": 3,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "All possible combinations of local strings and boundary states must be represented.",
+      "paragraphs": [
+        "All possible combinations of local strings and boundary states must be represented."
+      ]
+    },
+    {
+      "heading": "4. Random-access memory behavior can be poor",
+      "level": 3,
+      "id": "ux-section-105",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Large precomputed tables can be unfriendly to modern memory hierarchies.",
+      "paragraphs": [
+        "Large precomputed tables can be unfriendly to modern memory hierarchies."
+      ]
+    },
+    {
+      "heading": "5. The speedup is logarithmic",
+      "level": 3,
+      "id": "ux-section-106",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "The improvement:",
+      "paragraphs": [
+        "The improvement:",
+        "n² → n²/log n",
+        "is asymptotically meaningful but relatively modest compared with the preprocessing complexity."
+      ]
+    },
+    {
+      "heading": "6. It is not strongly subquadratic",
+      "level": 3,
+      "id": "ux-section-107",
+      "paragraph_count": 4,
+      "word_count": 13,
+      "evidence": "There is no fixed:",
+      "paragraphs": [
+        "There is no fixed:",
+        "ε > 0",
+        "for which:",
+        "n²/log n = O(n^(2-ε))"
+      ]
+    },
+    {
+      "heading": "7. It does not exploit small edit distance",
+      "level": 3,
+      "id": "ux-section-108",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "A pair with distance 1 and a pair with distance proportional to n are processed using the same full block-grid framework.",
+      "paragraphs": [
+        "A pair with distance 1 and a pair with distance proportional to n are processed using the same full block-grid framework."
+      ]
+    },
+    {
+      "heading": "8. It does not directly solve semantic similarity",
+      "level": 3,
+      "id": "ux-section-109",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "The algorithm accelerates an edit-distance model; it does not change what that model means.",
+      "paragraphs": [
+        "The algorithm accelerates an edit-distance model; it does not change what that model means."
+      ]
+    },
+    {
+      "heading": "\"Masek–Paterson computes Levenshtein distance only\"",
+      "level": 3,
+      "id": "ux-section-111",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "No. The paper treats a broader edit-distance model with symbol-dependent insertion, deletion, and replacement costs under specific discreteness conditions.",
+      "paragraphs": [
+        "No. The paper treats a broader edit-distance model with symbol-dependent insertion, deletion, and replacement costs under specific discreteness conditions."
+      ]
+    },
+    {
+      "heading": "\"Its complexity is always O(n²/log n)\"",
+      "level": 3,
+      "id": "ux-section-112",
+      "paragraph_count": 4,
+      "word_count": 23,
+      "evidence": "That is the familiar equal-length special case. For:",
+      "paragraphs": [
+        "That is the familiar equal-length special case. For:",
+        "n ≥ m",
+        "the paper gives:",
+        "O( n · max( 1, m/log n ) )"
+      ]
+    },
+    {
+      "heading": "\"The algorithm computes each logarithmic block in O(1)\"",
+      "level": 3,
+      "id": "ux-section-113",
+      "paragraph_count": 1,
+      "word_count": 31,
+      "evidence": "The table lookup avoids recomputing its interior, but manipulating the boundary vectors still incurs logarithmic-scale work in the analyzed model. The final bound is O(n²/log n) , not O(n²/log² n) .",
+      "paragraphs": [
+        "The table lookup avoids recomputing its interior, but manipulating the boundary vectors still incurs logarithmic-scale work in the analyzed model. The final bound is O(n²/log n) , not O(n²/log² n) ."
+      ]
+    },
+    {
+      "heading": "\"The algorithm works for arbitrary real edit costs\"",
+      "level": 3,
+      "id": "ux-section-114",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "No. Discreteness of the edit-cost domain is a central condition of the original method.",
+      "paragraphs": [
+        "No. Discreteness of the edit-cost domain is a central condition of the original method."
+      ]
+    },
+    {
+      "heading": "\"A finite Unicode universe makes the algorithm practical for Unicode\"",
+      "level": 3,
+      "id": "ux-section-115",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "No. Theoretical finiteness and practical precomputation size are very different concepts.",
+      "paragraphs": [
+        "No. Theoretical finiteness and practical precomputation size are very different concepts."
+      ]
+    },
+    {
+      "heading": "\"Subquadratic means strongly subquadratic\"",
+      "level": 3,
+      "id": "ux-section-116",
+      "paragraph_count": 5,
+      "word_count": 16,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "n²/log n = o(n²)",
+        "but it is not:",
+        "O(n^(2-ε))",
+        "for any fixed positive ε ."
+      ]
+    },
+    {
+      "heading": "\"Masek–Paterson contradicts modern edit-distance lower bounds\"",
+      "level": 3,
+      "id": "ux-section-117",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "No. Modern conditional barriers concern strongly subquadratic algorithms for more general settings. A logarithmic-factor improvement is compatible with those results.",
+      "paragraphs": [
+        "No. Modern conditional barriers concern strongly subquadratic algorithms for more general settings. A logarithmic-factor improvement is compatible with those results."
+      ]
+    },
+    {
+      "heading": "Implementation checklist",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 14,
+      "word_count": 106,
+      "evidence": "Define the exact edit-cost model.",
+      "paragraphs": [
+        "Define the exact edit-cost model.",
+        "Verify that the alphabet is fixed and finite for the intended theoretical model.",
+        "Verify cost discreteness. Find a positive common unit or scale rational costs to integers.",
+        "Determine the finite adjacent-step alphabet.",
+        "Choose a logarithmic block size with a practical constant.",
+        "Define a canonical encoding for character blocks.",
+        "Define a canonical encoding for top and left step vectors.",
+        "Normalize the block's upper-left value.",
+        "Precompute exact bottom and right step vectors.",
+        "Validate every table entry against scalar Wagner–Fischer.",
+        "Process real blocks in dependency order.",
+        "Handle incomplete final blocks correctly.",
+        "Distinguish distance-only storage from edit-path reconstruction storage.",
+        "Benchmark preprocessing separately from query computation."
+      ]
+    },
+    {
+      "heading": "Differential testing",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 11,
+      "word_count": 58,
+      "evidence": "The safest validation strategy is to compare against a simple scalar dynamic-programming reference.",
+      "paragraphs": [
+        "The safest validation strategy is to compare against a simple scalar dynamic-programming reference.",
+        "expected = wagner_fischer(A,B) actual = masek_paterson(A,B) assert expected == actual",
+        "Tests should include:",
+        "identical strings;",
+        "completely different strings;",
+        "unequal lengths;",
+        "empty strings;",
+        "repeated characters;",
+        "all valid boundary step patterns for small blocks;",
+        "weighted discrete costs;",
+        "strings whose lengths are not multiples of the block size."
+      ]
+    },
+    {
+      "heading": "Testing block-table correctness",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 3,
+      "word_count": 53,
+      "evidence": "A stronger local invariant is:",
+      "paragraphs": [
+        "A stronger local invariant is:",
+        "for every precomputed block type: build normalized input boundaries compute block with scalar dynamic programming compare extracted bottom/right step vectors against stored table output",
+        "Because the global algorithm consists entirely of composing these block transitions, exhaustive validation of all small block types provides unusually strong assurance about correctness."
+      ]
+    },
+    {
+      "heading": "Historical significance",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 7,
+      "word_count": 116,
+      "evidence": "William J. Masek and Michael S. Paterson published A Faster Algorithm Computing String Edit Distances in the Journal of Computer and System Sciences in 1980.",
+      "paragraphs": [
+        "William J. Masek and Michael S. Paterson published A Faster Algorithm Computing String Edit Distances in the Journal of Computer and System Sciences in 1980.",
+        "Their work explicitly builds upon the Wagner–Fischer string-to-string correction dynamic program and adapts the Four Russians technique—originally associated with accelerated transitive-closure computation—to edit-distance matrices.",
+        "The paper demonstrates three major points:",
+        "edit distance can be computed asymptotically faster than ordinary cell-by-cell quadratic dynamic programming under suitable assumptions;",
+        "boundary differences provide a finite normalized representation of logarithmic matrix blocks when costs are discrete;",
+        "the finite-alphabet and discreteness conditions are essential to their tabulation strategy.",
+        "The authors also show how the same method applies to Longest Common Subsequence and discuss reconstruction and storage trade-offs."
+      ]
+    },
+    {
+      "heading": "The algorithm in one diagram",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 1,
+      "word_count": 105,
+      "evidence": "WAGNER–FISCHER MATRIX │ │ Θ(nm) cells ▼ DIVIDE INTO t × t BLOCKS │ ▼ FOR EACH BLOCK, KEEP ONLY │ ├── local substring X ├── local substring Y ├── top step vector └── left step vector │ ▼ FINITE LOCAL STATE because: │ ├── finite alphabet └── discrete bounded step values │ ▼ PRECOMPUTE ALL BLOCK TRANSITIONS │ ▼ ( X, Y, top_steps, left_steps ) │ ▼ TABLE LOOKUP │ ▼ ( bottom_steps, right_steps ) │ ▼ PROCESS Θ(nm/t²) BLOCKS │ ▼ O(t) WORK PER BLOCK │ ▼ O(nm/t) │ ▼ CHOOSE t = Θ(log n) │ ▼ O(nm/log n) equal lengths: O(n²/log n)",
+      "paragraphs": [
+        "WAGNER–FISCHER MATRIX │ │ Θ(nm) cells ▼ DIVIDE INTO t × t BLOCKS │ ▼ FOR EACH BLOCK, KEEP ONLY │ ├── local substring X ├── local substring Y ├── top step vector └── left step vector │ ▼ FINITE LOCAL STATE because: │ ├── finite alphabet └── discrete bounded step values │ ▼ PRECOMPUTE ALL BLOCK TRANSITIONS │ ▼ ( X, Y, top_steps, left_steps ) │ ▼ TABLE LOOKUP │ ▼ ( bottom_steps, right_steps ) │ ▼ PROCESS Θ(nm/t²) BLOCKS │ ▼ O(t) WORK PER BLOCK │ ▼ O(nm/t) │ ▼ CHOOSE t = Θ(log n) │ ▼ O(nm/log n) equal lengths: O(n²/log n)"
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 110,
+      "evidence": "Property Masek–Paterson algorithm Authors William J. Masek and Michael S. Paterson Publication year 1980 Paper A Faster Algorithm Computing String Edit Distances Core technique Four Russians block tabulation Baseline Wagner–Fischer dynamic programming Block side length Θ(log n) Boundary representation Adjacent-value step vectors Equal-length time O(n²/log n) General n ≥ m time O(n · max(1,m/log n)) Exact? Yes Finite alphabet required? Yes for the stated Four Russians bound Discrete edit costs required? Yes for the stated method Unit-cost Levenshtein supported? Yes Weighted costs supported? Yes, when the discrete-cost assumptions hold LCS supported? Yes through an edit-cost reduction Strongly subquadratic? No Primary modern significance Theoretical foundation for block-based acceleration of",
+      "paragraphs": [
+        "Property Masek–Paterson algorithm Authors William J. Masek and Michael S. Paterson Publication year 1980 Paper A Faster Algorithm Computing String Edit Distances Core technique Four Russians block tabulation Baseline Wagner–Fischer dynamic programming Block side length Θ(log n) Boundary representation Adjacent-value step vectors Equal-length time O(n²/log n) General n ≥ m time O(n · max(1,m/log n)) Exact? Yes Finite alphabet required? Yes for the stated Four Russians bound Discrete edit costs required? Yes for the stated method Unit-cost Levenshtein supported? Yes Weighted costs supported? Yes, when the discrete-cost assumptions hold LCS supported? Yes through an edit-cost reduction Strongly subquadratic? No Primary modern significance Theoretical foundation for block-based acceleration of edit-distance DP"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 5,
+      "word_count": 282,
+      "evidence": "The Masek–Paterson algorithm accelerates exact edit-distance computation by changing the basic unit of dynamic programming from a single matrix cell to a logarithmic-size block. Each block is determined by two local substrings and the values entering along its top and left boundaries. Absolute boundary values cannot be enumerated efficiently, so Masek and Paterson replace them with adjacent differences, or step vectors.",
+      "paragraphs": [
+        "The Masek–Paterson algorithm accelerates exact edit-distance computation by changing the basic unit of dynamic programming from a single matrix cell to a logarithmic-size block. Each block is determined by two local substrings and the values entering along its top and left boundaries. Absolute boundary values cannot be enumerated efficiently, so Masek and Paterson replace them with adjacent differences, or step vectors.",
+        "Under a fixed finite alphabet and a discrete edit-cost domain, the possible adjacent differences form a finite set independent of the input lengths. Consequently, all possible normalized block behaviors can be precomputed. During the real edit-distance computation, a block's interior is no longer evaluated cell by cell; its bottom and right boundary vectors are retrieved from the precomputed table.",
+        "With block width t = Θ(log n) , the matrix contains approximately nm/t² blocks and each requires O(t) boundary-processing work. This yields O(nm/log n) time when the shorter dimension is at least logarithmic, and the paper's general bound O(n · max(1,m/log n)) . For equal-length strings the familiar result is O(n²/log n) .",
+        "The algorithm is exact and supports a broader class of edit costs than unit-cost Levenshtein distance, but its asymptotic improvement depends critically on finite-alphabet and discrete-cost assumptions. Large preprocessing tables and poor practical constants have limited its use in production software, where bit-parallel, bounded, and hardware-aware methods are usually more attractive.",
+        "Its lasting importance is conceptual. Masek–Paterson showed that a quadratic dynamic-programming matrix can contain enough repeated local structure to permit asymptotically faster exact computation. The use of boundary differences, finite block states, logarithmic decomposition, and precomputed local transitions became a foundational example of how dynamic programs can be compressed and accelerated without changing the mathematical problem they solve."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 7,
+      "word_count": 101,
+      "evidence": "Wagner–Fischer Algorithm — the classical cell-by-cell dynamic program accelerated by Masek–Paterson.",
+      "paragraphs": [
+        "Wagner–Fischer Algorithm — the classical cell-by-cell dynamic program accelerated by Masek–Paterson.",
+        "Myers Bit-Vector Algorithm — a later method that also exploits bounded neighboring DP differences, using machine-word parallelism instead of universal block tables.",
+        "Ukkonen Algorithm — distance-sensitive computation that reduces the number of DP states rather than tabulating blocks.",
+        "Landau–Vishkin Algorithm — another parameter-sensitive approach to approximate string matching.",
+        "Edit Distance Complexity — quadratic algorithms, logarithmic improvements, fine-grained lower bounds, and modern complexity results.",
+        "Weighted Levenshtein Distance — the role of edit-operation cost functions and metric properties.",
+        "Masek–Paterson 1980 Paper — detailed analysis of the original publication and its historical significance."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 6,
+      "word_count": 161,
+      "evidence": "William J. Masek and Michael S. Paterson, “A Faster Algorithm Computing String Edit Distances,” Journal of Computer and System Sciences , 20(1), 18–31, 1980. DOI: 10.1016/0022-0000(80)90002-1. DOI record .",
+      "paragraphs": [
+        "William J. Masek and Michael S. Paterson, “A Faster Algorithm Computing String Edit Distances,” Journal of Computer and System Sciences , 20(1), 18–31, 1980. DOI: 10.1016/0022-0000(80)90002-1. DOI record .",
+        "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI: 10.1145/321796.321811. DOI record .",
+        "David S. Hirschberg, “A Linear Space Algorithm for Computing Maximal Common Subsequences,” Communications of the ACM , 18(6), 341–343, 1975. DOI: 10.1145/360825.360861. DOI record .",
+        "V. L. Arlazarov, E. A. Dinic, M. A. Kronrod, and I. A. Faradzev, “On Economical Construction of the Transitive Closure of a Directed Graph,” Soviet Mathematics Doklady , 11(5), 1209–1210, 1970.",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI: 10.1145/375360.375365. DOI record .",
+        "Arturs Backurs and Piotr Indyk, “Edit Distance Cannot Be Computed in Strongly Subquadratic Time (Unless SETH Is False),” SIAM Journal on Computing , 47(3), 1087–1097, 2018. DOI: 10.1137/15M1053128. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-125",
+          "alias": "approximate string matching",
+          "excerpt": "Landau–Vishkin Algorithm — another parameter-sensitive approach to approximate string matching."
+        },
+        {
+          "section": "References",
+          "anchor_id": "ux-section-126",
+          "alias": "approximate string matching",
+          "excerpt": "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI: 10.1145/375360.375365. DOI record ."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Why Masek–Paterson is not a bounded-distance algorithm",
+          "anchor_id": "ux-section-43",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "This distinguishes it from parameterized methods studied in Bounded and Parameterized Edit Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Masek–Paterson Algorithm",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance complexity",
+          "excerpt": "The algorithm is historically important because it demonstrates that the dynamic-programming structure underlying Levenshtein distance and more general edit distances contains repeated local computations that can be compressed and reused. Its significance is primarily theoretical rather than practical: the preprocessing constants and table complexity make the original method unattractive for most modern implementations, but the central idea has deeply influenced block-based dynamic programming, string algorithms, sequence comparison, and the study of edit-distance complexity."
+        },
+        {
+          "section": "Why this distinction became important later",
+          "anchor_id": "ux-section-85",
+          "alias": "edit distance complexity",
+          "excerpt": "See Edit Distance Complexity ."
+        },
+        {
+          "section": "Historical versus modern complexity perspective",
+          "anchor_id": "ux-section-86",
+          "alias": "edit distance complexity",
+          "excerpt": "Masek–Paterson therefore occupies a crucial position between classical dynamic programming and modern edit-distance complexity theory."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Masek–Paterson Algorithm",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "The Masek–Paterson algorithm is a landmark subquadratic method for computing edit distance by applying the Four Russians technique to the dynamic-programming matrix. Instead of evaluating every edit-distance cell independently, the algorithm partitions the matrix into logarithmic-size blocks, precomputes the possible behavior of those blocks, and then reconstructs the complete computation through table lookups and compact boundary information."
+        },
+        {
+          "section": "The result of Masek and Paterson",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "Masek and Paterson consider edit distance defined using single-symbol:"
+        },
+        {
+          "section": "The Four Russians idea",
+          "anchor_id": "ux-section-4",
+          "alias": "edit distance",
+          "excerpt": "Masek and Paterson apply this principle directly to the edit-distance matrix."
+        }
+      ]
+    },
+    {
+      "target": "/landau-vishkin-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-125",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "Landau–Vishkin Algorithm — another parameter-sensitive approach to approximate string matching."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "Relation to Levenshtein automata",
+          "anchor_id": "ux-section-42",
+          "alias": "levenshtein automata",
+          "excerpt": "Levenshtein automata compile a bounded edit neighborhood into finite-state transitions."
+        },
+        {
+          "section": "Algorithm-selection comparison",
+          "anchor_id": "ux-section-88",
+          "alias": "levenshtein automata",
+          "excerpt": "Algorithm Main idea Best conceptual regime Wagner–Fischer Full scalar dynamic programming General exact reference computation Ukkonen Restrict DP to a distance-sensitive region Small edit distance or threshold Masek–Paterson Precompute logarithmic DP blocks Theoretical exact subquadratic computation under finite/discrete assumptions Myers Pack DP differences into machine words Fast unit-cost practical matching Levenshtein automata Compile bounded edit neighborhoods into finite state Fuzzy dictionary/trie search Landau–Vishkin Exploit diagonals and a small error parameter k-dependent approximate matching"
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Unit-cost Levenshtein is especially simple",
+          "anchor_id": "ux-section-12",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "This is the same bounded-difference structure later exploited in a different way by the Myers Bit-Vector Algorithm ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-125",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm — a later method that also exploits bounded neighboring DP differences, using machine-word parallelism instead of universal block tables."
+        }
+      ]
+    },
+    {
+      "target": "/paper-masek-paterson-1980",
+      "evidence": [
+        {
+          "section": "Historical versus modern complexity perspective",
+          "anchor_id": "ux-section-86",
+          "alias": "masek paterson 1980",
+          "excerpt": "Wagner–Fischer 1974 O(n²) ↓ Masek–Paterson 1980 O(n²/log n) under finite/discrete assumptions ↓ parameterized, word-parallel, approximation, and specialized algorithms ↓ modern fine-grained complexity and conditional lower bounds"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-125",
+          "alias": "masek paterson 1980",
+          "excerpt": "Masek–Paterson 1980 Paper — detailed analysis of the original publication and its historical significance."
+        }
+      ]
+    },
+    {
+      "target": "/paper-wagner-fischer-1974",
+      "evidence": [
+        {
+          "section": "Historical versus modern complexity perspective",
+          "anchor_id": "ux-section-86",
+          "alias": "wagner fischer 1974",
+          "excerpt": "Wagner–Fischer 1974 O(n²) ↓ Masek–Paterson 1980 O(n²/log n) under finite/discrete assumptions ↓ parameterized, word-parallel, approximation, and specialized algorithms ↓ modern fine-grained complexity and conditional lower bounds"
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Relation to Ukkonen",
+          "anchor_id": "ux-section-41",
+          "alias": "ukkonen algorithm",
+          "excerpt": "The Ukkonen algorithm attacks a different source of wasted work."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-125",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm — distance-sensitive computation that reduces the number of DP states rather than tabulating blocks."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Sequence-unit ambiguity",
+          "anchor_id": "ux-section-95",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "The classical dynamic-programming baseline",
+          "anchor_id": "ux-section-3",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "The starting point is the Wagner–Fischer algorithm ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-125",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "Wagner–Fischer Algorithm — the classical cell-by-cell dynamic program accelerated by Masek–Paterson."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-125",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — the role of edit-operation cost functions and metric properties."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/masek-paterson-algorithm#page",
+      "type": "WebPage",
+      "name": "Masek–Paterson Algorithm",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/masek-paterson-algorithm#algorithm"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/masek-paterson-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "type": "TechArticle",
+      "name": "Masek–Paterson Algorithm",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/masek-paterson-algorithm#algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/masek-paterson-algorithm#algorithm",
+      "type": "DefinedTerm",
+      "name": "Masek–Paterson Algorithm",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/masek-paterson-algorithm#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/algorithms#collection",
+      "hasPart",
+      "https://www.levenshtein.net/masek-paterson-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/masek-paterson-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#page",
+      "mainEntity",
+      "https://www.levenshtein.net/masek-paterson-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#page",
+      "isPartOf",
+      "https://www.levenshtein.net/algorithms#collection"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#page",
+      "hasPart",
+      "https://www.levenshtein.net/masek-paterson-algorithm#article"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/masek-paterson-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "isPartOf",
+      "https://www.levenshtein.net/masek-paterson-algorithm#page"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "citation",
+      "https://doi.org/10.1016/0022-0000(80)90002-1"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/321796.321811"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/360825.360861"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ],
+    [
+      "https://www.levenshtein.net/masek-paterson-algorithm#article",
+      "citation",
+      "https://doi.org/10.1137/15M1053128"
+    ],
+    [
+      "https://doi.org/10.1016/0022-0000(80)90002-1",
+      "about",
+      "https://www.levenshtein.net/masek-paterson-algorithm#algorithm"
+    ],
+    [
+      "https://doi.org/10.1016/0022-0000(80)90002-1",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1016/0022-0000(80)90002-1",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/360825.360861",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/15M1053128",
+      "anchor": "DOI record"
+    }
+  ]
+}

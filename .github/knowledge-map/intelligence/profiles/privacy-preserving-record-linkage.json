@@ -1,0 +1,3115 @@
+{
+  "url": "/privacy-preserving-record-linkage",
+  "title": "Privacy-Preserving Record Linkage: Bloom Filters, PSI, Secure Computation & Attacks",
+  "h1": [
+    "Privacy-Preserving Record Linkage: Bloom Filters, PSI, Secure Computation & Attacks"
+  ],
+  "group": "DataMatching",
+  "provisional_mission": "Bảo vệ riêng tư khi liên kết bản ghi",
+  "content_sha256": "9ff00dbdd2cec92de2e93b05ee3d77ab101a199e27ba345cf1703b5e13fe1276",
+  "canonical": "https://www.levenshtein.net/privacy-preserving-record-linkage",
+  "primary_entity_candidate": "Privacy-Preserving Record Linkage: Bloom Filters, PSI, Secure Computation & Attacks",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Privacy-Preserving Record Linkage",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 19,
+      "word_count": 215,
+      "evidence": "Privacy-preserving record linkage, usually abbreviated PPRL , is the problem of identifying records that refer to the same real-world entity across separately held databases while limiting disclosure of the sensitive identifying information required to perform that linkage.",
+      "paragraphs": [
+        "Privacy-preserving record linkage, usually abbreviated PPRL , is the problem of identifying records that refer to the same real-world entity across separately held databases while limiting disclosure of the sensitive identifying information required to perform that linkage.",
+        "The underlying record-linkage problem is already difficult:",
+        "DATABASE A Jonathan A. Smith 1984-07-16 42 West Harrison Street DATABASE B Jonathon Smith 16/07/1984 42 W Harrison St",
+        "A conventional entity-resolution and record-linkage system can inspect these values directly, normalize them, compare them with several string and field-specific comparators, and combine the resulting evidence.",
+        "A privacy-preserving system faces an additional constraint:",
+        "perform useful linkage WITHOUT unnecessarily revealing the underlying identifiers",
+        "This creates a fundamental tension.",
+        "The attributes that make records linkable are often the same attributes that make individuals identifiable:",
+        "names;",
+        "addresses;",
+        "dates of birth;",
+        "telephone numbers;",
+        "email addresses;",
+        "government or organizational identifiers;",
+        "combinations of quasi-identifying attributes.",
+        "At the same time, simply replacing every value with an ordinary cryptographic digest eliminates much of the error tolerance required for realistic record linkage.",
+        "The central PPRL problem can therefore be stated as:",
+        "How much information about similarity must a protocol preserve in order to link noisy records, and how much privacy is lost by preserving that information?",
+        "That trade-off—between linkage quality, privacy, and scalability —is the organizing principle of privacy-preserving record linkage."
+      ]
+    },
+    {
+      "heading": "The basic two-party problem",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 18,
+      "word_count": 73,
+      "evidence": "Suppose organization A owns:",
+      "paragraphs": [
+        "Suppose organization A owns:",
+        "D_A",
+        "and organization B owns:",
+        "D_B",
+        "Each database contains records about people.",
+        "The organizations want to determine:",
+        "M = { (a,b) : a ∈ D_A, b ∈ D_B, a and b refer to the same person }",
+        "without simply exchanging:",
+        "names addresses dates of birth telephone numbers ...",
+        "in clear text.",
+        "This may arise in:",
+        "health research;",
+        "patient matching;",
+        "population statistics;",
+        "administrative-data integration;",
+        "social-science research;",
+        "fraud detection;",
+        "cross-organizational analytics."
+      ]
+    },
+    {
+      "heading": "PPRL is still record linkage",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 5,
+      "word_count": 45,
+      "evidence": "Privacy technology does not remove the underlying matching problem.",
+      "paragraphs": [
+        "Privacy technology does not remove the underlying matching problem.",
+        "A complete system still needs:",
+        "representation ↓ normalization ↓ candidate generation ↓ field comparison ↓ evidence combination ↓ match classification",
+        "PPRL adds another requirement:",
+        "protect sensitive information at every stage where information crosses a trust boundary"
+      ]
+    },
+    {
+      "heading": "Privacy-preserving does not mean information-free",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 9,
+      "word_count": 95,
+      "evidence": "A linkage system cannot generally reveal nothing.",
+      "paragraphs": [
+        "A linkage system cannot generally reveal nothing.",
+        "At minimum, useful linkage produces some output such as:",
+        "record A17 matches record B901",
+        "That result itself reveals information.",
+        "For example, if database B represents:",
+        "patients at a specialist clinic",
+        "then learning that a person appears in B may disclose something about that person's relationship with the clinic.",
+        "Therefore a rigorous privacy analysis must distinguish:",
+        "INPUT PRIVACY What can parties learn about raw identifiers? INTERMEDIATE LEAKAGE What can be inferred from encodings, blocks, scores, frequencies, or protocol messages? OUTPUT LEAKAGE What does the final linkage result itself reveal?"
+      ]
+    },
+    {
+      "heading": "There is no meaningful privacy claim without a threat model",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 10,
+      "word_count": 52,
+      "evidence": "Statements such as:",
+      "paragraphs": [
+        "Statements such as:",
+        "\"the identifiers are encrypted\" or \"the linkage is privacy preserving\"",
+        "are incomplete unless they specify:",
+        "which parties are trusted;",
+        "what information each party sees;",
+        "which parties may collude;",
+        "what auxiliary information an attacker possesses;",
+        "whether participants follow the protocol;",
+        "which outputs are revealed;",
+        "what computational assumptions protect the protocol."
+      ]
+    },
+    {
+      "heading": "Honest-but-curious or semi-honest",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 3,
+      "word_count": 48,
+      "evidence": "A semi-honest participant follows the prescribed protocol but tries to infer additional information from everything it legitimately observes.",
+      "paragraphs": [
+        "A semi-honest participant follows the prescribed protocol but tries to infer additional information from everything it legitimately observes.",
+        "follow protocol + inspect all available messages and outputs",
+        "Many secure-computation protocols are first analyzed under this model because it is substantially easier to protect against than arbitrary malicious behavior."
+      ]
+    },
+    {
+      "heading": "Malicious adversary",
+      "level": 3,
+      "id": "ux-section-8",
+      "paragraph_count": 8,
+      "word_count": 40,
+      "evidence": "A malicious party can deviate from the protocol.",
+      "paragraphs": [
+        "A malicious party can deviate from the protocol.",
+        "It might:",
+        "construct adversarial inputs;",
+        "send malformed messages;",
+        "repeat queries strategically;",
+        "attempt to manipulate candidate sets;",
+        "collude with another participant.",
+        "Security against malicious behavior generally requires stronger cryptographic protocols and additional computation."
+      ]
+    },
+    {
+      "heading": "External attacker",
+      "level": 3,
+      "id": "ux-section-9",
+      "paragraph_count": 7,
+      "word_count": 29,
+      "evidence": "An external adversary may obtain:",
+      "paragraphs": [
+        "An external adversary may obtain:",
+        "encoded linkage records;",
+        "configuration information;",
+        "public population statistics;",
+        "candidate dictionaries;",
+        "known plaintext examples.",
+        "The attacker does not necessarily need access to the original organizations."
+      ]
+    },
+    {
+      "heading": "Curious linkage unit",
+      "level": 3,
+      "id": "ux-section-10",
+      "paragraph_count": 2,
+      "word_count": 31,
+      "evidence": "Some architectures send protected records to a third-party linkage service.",
+      "paragraphs": [
+        "Some architectures send protected records to a third-party linkage service.",
+        "That service may follow the protocol faithfully yet still have incentives or opportunities to infer underlying identifiers from the supplied representations."
+      ]
+    },
+    {
+      "heading": "The parties matter as much as the encoding",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 5,
+      "word_count": 54,
+      "evidence": "A typical architecture may contain:",
+      "paragraphs": [
+        "A typical architecture may contain:",
+        "DATA CUSTODIAN A │ ▼ encoded identifiers │ │ ▼ LINKAGE UNIT ▲ │ encoded identifiers │ DATA CUSTODIAN B",
+        "Another architecture may avoid a central linkage unit:",
+        "PARTY A │ │ secure protocol │ ▼ cryptographic computation ▲ │ │ PARTY B",
+        "The security properties are fundamentally different."
+      ]
+    },
+    {
+      "heading": "Pseudonymization is not the same as anonymization",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "Suppose an identifier is replaced with:",
+      "paragraphs": [
+        "Suppose an identifier is replaced with:",
+        "patient_91b7023",
+        "This may reduce direct exposure, but the value can still support:",
+        "longitudinal tracking;",
+        "linkage across databases;",
+        "association with sensitive attributes;",
+        "reidentification when auxiliary data are available.",
+        "PPRL encodings should therefore not automatically be described as anonymous simply because the original name is no longer readable."
+      ]
+    },
+    {
+      "heading": "Exact cryptographic matching is the easy case",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "Suppose both organizations contain an exact stable identifier:",
+      "paragraphs": [
+        "Suppose both organizations contain an exact stable identifier:",
+        "987654321",
+        "and both can compute a keyed cryptographic representation:",
+        "HMAC_K( \"987654321\" )",
+        "Then equality testing is straightforward:",
+        "HMAC_K(x) = HMAC_K(y) ⇒ x = y with overwhelming probability under the cryptographic construction",
+        "assuming both sides use the same canonical input representation and secret key."
+      ]
+    },
+    {
+      "heading": "But exact cryptographic equality is brittle",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 10,
+      "word_count": 53,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "Jonathan Smith Jonathon Smith",
+        "A cryptographic hash deliberately exhibits an avalanche effect:",
+        "small input change ↓ unrelated-looking digest",
+        "Therefore:",
+        "H(x) and H(y)",
+        "do not preserve the fact that:",
+        "Levenshtein(x,y) = 1",
+        "or that the names are otherwise similar.",
+        "This is one of the core reasons PPRL is more difficult than ordinary pseudonymization."
+      ]
+    },
+    {
+      "heading": "The privacy-utility contradiction",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "Cryptography often tries to make:",
+      "paragraphs": [
+        "Cryptography often tries to make:",
+        "similar plaintexts → unrelated ciphertexts",
+        "while approximate record linkage wants:",
+        "similar identifiers → recognizably similar comparison representations",
+        "Those goals pull in opposite directions."
+      ]
+    },
+    {
+      "heading": "Bloom-filter PPRL",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "One of the most influential approximate PPRL approaches was introduced by Schnell, Bachteler, and Reiher in 2009.",
+      "paragraphs": [
+        "One of the most influential approximate PPRL approaches was introduced by Schnell, Bachteler, and Reiher in 2009.",
+        "Their method represents q-grams from identifying strings using Bloom filters, allowing approximate comparison after the original identifiers have been transformed.",
+        "Schnell, Bachteler and Reiher, 2009 ."
+      ]
+    },
+    {
+      "heading": "What is a Bloom filter?",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "A Bloom filter is a bit array:",
+      "paragraphs": [
+        "A Bloom filter is a bit array:",
+        "B = [b₀,b₁,...,bₗ₋₁] where bᵢ ∈ {0,1}",
+        "Initially:",
+        "B = 000000000000...",
+        "Elements are mapped through several hash functions to positions in the array.",
+        "Those positions are set to:",
+        "1"
+      ]
+    },
+    {
+      "heading": "q-gram encoding",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "s = \"SMITH\" q = 2",
+        "Then a simple bigram decomposition may contain:",
+        "SM MI IT TH",
+        "For each q-gram:",
+        "g",
+        "several keyed hash outputs determine bit positions:",
+        "h₁(g) h₂(g) ... hₖ(g)",
+        "The resulting Bloom filter represents the set of encoded q-grams indirectly through its bit pattern."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "Conceptually:",
+      "paragraphs": [
+        "Conceptually:",
+        "\"SMITH\" SM ─┐ MI ─┼──► keyed hashing ──► bit positions IT ─┤ TH ─┘ ↓ B = 001010001101001...",
+        "A similar name:",
+        "\"SMYTH\"",
+        "shares some q-grams and therefore tends to share some encoded bit positions."
+      ]
+    },
+    {
+      "heading": "This is not ordinary encryption",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 5,
+      "word_count": 47,
+      "evidence": "Bloom-filter PPRL is frequently described in older literature using terms such as:",
+      "paragraphs": [
+        "Bloom-filter PPRL is frequently described in older literature using terms such as:",
+        "encrypted identifiers",
+        "But a similarity-preserving Bloom-filter representation should not be confused with semantically secure encryption.",
+        "Its usefulness depends precisely on preserving structural information about the input.",
+        "That structural information is also what creates privacy risk."
+      ]
+    },
+    {
+      "heading": "Bloom-filter similarity",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 9,
+      "word_count": 53,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "A = set of 1-bit positions in Bloom filter A B = set of 1-bit positions in Bloom filter B",
+        "A common similarity measure is the Sørensen-Dice coefficient:",
+        "Dice(A,B) = 2|A ∩ B| ───────── |A| + |B|",
+        "with:",
+        "0 ≤ Dice ≤ 1",
+        "A value closer to:",
+        "1",
+        "indicates greater Bloom-filter overlap."
+      ]
+    },
+    {
+      "heading": "Bloom-filter similarity is not Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "This distinction is essential.",
+      "paragraphs": [
+        "This distinction is essential.",
+        "A Bloom-filter q-gram comparison measures:",
+        "overlap in encoded local substrings",
+        "whereas Levenshtein distance measures:",
+        "minimum insertion, deletion, and substitution edit cost",
+        "between ordered sequences.",
+        "The two measures can correlate for typographical variation, but:",
+        "Bloom Dice similarity ≠ Levenshtein distance"
+      ]
+    },
+    {
+      "heading": "Why q-grams provide error tolerance",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 5,
+      "word_count": 31,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "SMITH SMYTH",
+        "Only part of the local q-gram structure changes.",
+        "Several q-grams survive unchanged, producing overlap in their encoded representations.",
+        "This allows approximate matching without revealing the clear-text names directly."
+      ]
+    },
+    {
+      "heading": "Attribute-level Bloom filters",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "One architecture creates a separate Bloom filter for each field:",
+      "paragraphs": [
+        "One architecture creates a separate Bloom filter for each field:",
+        "first_name ↓ BF_first last_name ↓ BF_last address ↓ BF_address",
+        "This makes field-specific comparison easy.",
+        "It also exposes more field-specific structure to a linkage party or attacker."
+      ]
+    },
+    {
+      "heading": "Cryptographic long-term keys",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 4,
+      "word_count": 50,
+      "evidence": "A cryptographic long-term key, or CLK, combines information from several identifying fields into one composite Bloom-filter representation.",
+      "paragraphs": [
+        "A cryptographic long-term key, or CLK, combines information from several identifying fields into one composite Bloom-filter representation.",
+        "Conceptually:",
+        "first name ─┐ surname ────┤ DOB ────────┼──► q-grams / encoding address ────┤ postcode ───┘ ↓ ONE BIT ARRAY",
+        "This reduces some of the directly separable field-level structure found in attribute-level Bloom filters."
+      ]
+    },
+    {
+      "heading": "Record-level Bloom filters",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "Record-level Bloom filters similarly combine information from several attributes into one representation, often while allocating different contributions to different fields.",
+      "paragraphs": [
+        "Record-level Bloom filters similarly combine information from several attributes into one representation, often while allocating different contributions to different fields.",
+        "The broad design idea is:",
+        "multiple attributes ↓ weighted / sampled bit contributions ↓ record-level encoding"
+      ]
+    },
+    {
+      "heading": "Composite representations improve some privacy properties but complicate interpretation",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "Once many fields are combined into a single vector, it becomes harder to say:",
+      "paragraphs": [
+        "Once many fields are combined into a single vector, it becomes harder to say:",
+        "surname matched strongly but address disagreed",
+        "because field-specific evidence has been compressed together.",
+        "Privacy and interpretability can therefore conflict."
+      ]
+    },
+    {
+      "heading": "Bloom-filter parameters matter",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "Important parameters include:",
+      "paragraphs": [
+        "Important parameters include:",
+        "q = q-gram size l = Bloom-filter length k = number of hash mappings encoding scheme normalization rules field composition secret key / key derivation hardening mechanism",
+        "These parameters affect:",
+        "collision rates;",
+        "similarity behavior;",
+        "linkage quality;",
+        "privacy leakage;",
+        "computational cost."
+      ]
+    },
+    {
+      "heading": "Bloom collisions complicate similarity",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "Two distinct q-grams can set the same bit positions.",
+      "paragraphs": [
+        "Two distinct q-grams can set the same bit positions.",
+        "Therefore observed overlap includes:",
+        "true shared q-gram structure + hash collisions",
+        "This is one reason encoded similarity is not identical to clear-text similarity."
+      ]
+    },
+    {
+      "heading": "Normalization still happens before privacy encoding",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 12,
+      "word_count": 55,
+      "evidence": "Suppose party A encodes:",
+      "paragraphs": [
+        "Suppose party A encodes:",
+        "José García",
+        "while party B encodes a different Unicode representation of the same visible text.",
+        "If preprocessing differs, privacy encoding does not repair the inconsistency.",
+        "Both parties need compatible:",
+        "Unicode normalization;",
+        "case rules;",
+        "whitespace rules;",
+        "tokenization;",
+        "address standards;",
+        "transliteration policy.",
+        "See Unicode and Grapheme-Safe Levenshtein and Text Normalization and Transliteration ."
+      ]
+    },
+    {
+      "heading": "Bloom-filter PPRL can preserve substantial linkage quality",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 8,
+      "word_count": 83,
+      "evidence": "Operational research has shown that Bloom-filter methods can approach clear-text linkage quality under suitable configurations.",
+      "paragraphs": [
+        "Operational research has shown that Bloom-filter methods can approach clear-text linkage quality under suitable configurations.",
+        "A blinded Western Australian evaluation published in 2022 compared Bloom-filter PPRL with conventional unencoded linkage using the same blocking criteria.",
+        "The study reported that:",
+        "99.3%",
+        "of the resulting record groupings were identical between the privacy-preserving and clear-text linkage in that specific experiment.",
+        "Randall et al., 2022 .",
+        "This is strong evidence that approximate PPRL can be operationally useful.",
+        "It is not evidence that every Bloom-filter construction is secure."
+      ]
+    },
+    {
+      "heading": "Similarity preservation creates an attack surface",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "The central security problem can be stated simply:",
+      "paragraphs": [
+        "The central security problem can be stated simply:",
+        "if encoded records retain useful patterns for matching then those patterns may also be useful for inference"
+      ]
+    },
+    {
+      "heading": "Frequency leakage",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "Real identifiers are not uniformly distributed.",
+      "paragraphs": [
+        "Real identifiers are not uniformly distributed.",
+        "Examples:",
+        "Smith occurs much more often than a rare surname",
+        "and:",
+        "common q-grams occur more frequently than rare q-grams",
+        "If repeated plaintext structures generate repeated or statistically related encoded structures, an adversary may compare:",
+        "encoded frequency distribution with known population frequency distribution",
+        "to infer likely mappings."
+      ]
+    },
+    {
+      "heading": "Dictionary attacks",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 7,
+      "word_count": 56,
+      "evidence": "Suppose an attacker possesses:",
+      "paragraphs": [
+        "Suppose an attacker possesses:",
+        "the encoding algorithm;",
+        "a candidate name dictionary;",
+        "relevant population information;",
+        "some knowledge of configuration parameters.",
+        "The attacker may attempt to encode candidate values and compare structural patterns with the target data.",
+        "A keyed hash makes direct reproduction harder when the key remains secret, but key management and protocol design then become critical."
+      ]
+    },
+    {
+      "heading": "Constraint and pattern attacks",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 4,
+      "word_count": 56,
+      "evidence": "Kuzu, Kantarcioglu, Durham, and Malin showed that Bloom-filter representations used for private record linkage could be attacked by exploiting structural constraints and frequency information.",
+      "paragraphs": [
+        "Kuzu, Kantarcioglu, Durham, and Malin showed that Bloom-filter representations used for private record linkage could be attacked by exploiting structural constraints and frequency information.",
+        "Kuzu et al., 2011 .",
+        "The important lesson is broader than one attack:",
+        "A representation does not become cryptographically safe merely because a human cannot visually read the original identifier from it."
+      ]
+    },
+    {
+      "heading": "Attack knowledge can be surprisingly weak",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 9,
+      "word_count": 31,
+      "evidence": "An adversary may not need:",
+      "paragraphs": [
+        "An adversary may not need:",
+        "full plaintext database",
+        "if publicly available or externally obtainable information provides:",
+        "common surname frequencies;",
+        "common q-gram distributions;",
+        "typical address patterns;",
+        "name dictionaries;",
+        "known records;",
+        "population structure."
+      ]
+    },
+    {
+      "heading": "Similarity neighborhoods can leak information",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 13,
+      "word_count": 51,
+      "evidence": "Suppose encoded record:",
+      "paragraphs": [
+        "Suppose encoded record:",
+        "E₁",
+        "is highly similar to:",
+        "E₂ E₃ E₄ ...",
+        "The structure of that neighborhood can itself reveal something about the underlying value.",
+        "Modern vulnerability analyses therefore examine more than raw frequency.",
+        "They can consider:",
+        "value frequency;",
+        "value length;",
+        "co-occurrence;",
+        "similarity structure;",
+        "similarity neighborhoods.",
+        "Vidanage et al., 2023 ."
+      ]
+    },
+    {
+      "heading": "Attack taxonomies are necessary",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "Different PPRL methods leak different types of structure.",
+      "paragraphs": [
+        "Different PPRL methods leak different types of structure.",
+        "Vidanage, Ranbaduge, Christen, and Schnell developed a taxonomy of PPRL attacks to classify adversaries, available information, attack objectives, and vulnerabilities.",
+        "Vidanage et al., 2022 ."
+      ]
+    },
+    {
+      "heading": "Security must be evaluated against attacks, not intuition",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 5,
+      "word_count": 21,
+      "evidence": "A representation that:",
+      "paragraphs": [
+        "A representation that:",
+        "\"looks random\"",
+        "to its designer may still expose:",
+        "frequency length co-occurrence similarity neighborhood structure",
+        "to a statistical attacker."
+      ]
+    },
+    {
+      "heading": "Hardening Bloom-filter encodings",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 9,
+      "word_count": 38,
+      "evidence": "A large literature has developed countermeasures intended to reduce exploitable structure.",
+      "paragraphs": [
+        "A large literature has developed countermeasures intended to reduce exploitable structure.",
+        "Examples include:",
+        "randomized hashing strategies;",
+        "salting;",
+        "combining several attributes into one representation;",
+        "balancing;",
+        "XOR-based transformations;",
+        "controlled randomization of bits;",
+        "other transformation schemes designed against specific attack families."
+      ]
+    },
+    {
+      "heading": "Salting",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 6,
+      "word_count": 39,
+      "evidence": "A salt modifies the representation process using additional information:",
+      "paragraphs": [
+        "A salt modifies the representation process using additional information:",
+        "encode( qgram, secret, salt )",
+        "rather than:",
+        "encode( qgram, secret )",
+        "If appropriately constructed, identical q-grams need not generate globally identical patterns across every record.",
+        "This disrupts simple frequency alignment."
+      ]
+    },
+    {
+      "heading": "Salting creates an alignment problem",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "For two records to remain comparable, their encoding transformations must still be compatible in whatever way the protocol requires.",
+      "paragraphs": [
+        "For two records to remain comparable, their encoding transformations must still be compatible in whatever way the protocol requires.",
+        "Therefore salting cannot simply be:",
+        "choose independent random salt for every record",
+        "without considering how candidate records will later be compared."
+      ]
+    },
+    {
+      "heading": "Hardening changes utility",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "Privacy hardening frequently changes:",
+      "paragraphs": [
+        "Privacy hardening frequently changes:",
+        "bit distributions similarity behavior collision behavior comparability",
+        "and can therefore affect linkage quality.",
+        "Franke and colleagues systematically evaluated several Bloom-filter hardening methods and emphasized precisely this privacy-versus-linkage-quality trade-off.",
+        "Franke et al., 2021 ."
+      ]
+    },
+    {
+      "heading": "Hardening is not a substitute for a security proof",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 5,
+      "word_count": 41,
+      "evidence": "A statement such as:",
+      "paragraphs": [
+        "A statement such as:",
+        "\"no known attack works against our current configuration\"",
+        "is much weaker than:",
+        "\"this protocol satisfies a formal security definition under stated cryptographic assumptions\"",
+        "Both kinds of systems can be useful, but their guarantees must not be confused."
+      ]
+    },
+    {
+      "heading": "The limits of reusable privacy encodings",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 8,
+      "word_count": 40,
+      "evidence": "A persistent identifier representation can become risky when reused across:",
+      "paragraphs": [
+        "A persistent identifier representation can become risky when reused across:",
+        "many linkage projects;",
+        "many organizations;",
+        "long periods of time;",
+        "different data releases.",
+        "Repeated observations can allow an attacker to accumulate:",
+        "co-occurrence + frequency + linkage + auxiliary information",
+        "over time."
+      ]
+    },
+    {
+      "heading": "Project-specific encodings reduce cross-project linkability",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "One defensive principle is to avoid creating a universal stable encoding that allows arbitrary parties to correlate the same individual across unrelated projects.",
+      "paragraphs": [
+        "One defensive principle is to avoid creating a universal stable encoding that allows arbitrary parties to correlate the same individual across unrelated projects.",
+        "Conceptually:",
+        "PROJECT A KEY ↓ encoding A PROJECT B KEY ↓ different encoding B",
+        "even for the same underlying identifier."
+      ]
+    },
+    {
+      "heading": "Key separation",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 4,
+      "word_count": 25,
+      "evidence": "Different functions should ideally not reuse one secret indiscriminately.",
+      "paragraphs": [
+        "Different functions should ideally not reuse one secret indiscriminately.",
+        "For example:",
+        "blocking key comparison encoding key output pseudonym key",
+        "can be separated cryptographically and operationally."
+      ]
+    },
+    {
+      "heading": "Key management is part of PPRL",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 10,
+      "word_count": 30,
+      "evidence": "A technically sophisticated encoding fails if:",
+      "paragraphs": [
+        "A technically sophisticated encoding fails if:",
+        "secret key is emailed to participants or stored beside encoded data",
+        "Security architecture must define:",
+        "key generation;",
+        "storage;",
+        "distribution;",
+        "rotation;",
+        "revocation;",
+        "audit;",
+        "project termination."
+      ]
+    },
+    {
+      "heading": "Private set intersection",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "Private set intersection, or PSI, takes a different cryptographic approach.",
+      "paragraphs": [
+        "Private set intersection, or PSI, takes a different cryptographic approach.",
+        "Suppose:",
+        "A = {a₁,a₂,...,aₙ} B = {b₁,b₂,...,bₘ}",
+        "PSI allows parties to learn:",
+        "A ∩ B",
+        "or some defined function of that intersection while limiting disclosure of nonmatching elements."
+      ]
+    },
+    {
+      "heading": "Exact PSI is naturally suited to exact identifiers",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "A contains: person-identity-token-123 B contains: person-identity-token-123",
+        "Then PSI can detect the common token without either side necessarily revealing all nonmatching tokens."
+      ]
+    },
+    {
+      "heading": "But ordinary PSI does not solve fuzzy record linkage",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 7,
+      "word_count": 31,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "Jonathan Smith Jonathon Smith",
+        "The strings are:",
+        "not equal",
+        "so ordinary exact PSI sees two different set elements.",
+        "The fundamental mismatch is:",
+        "PSI: set equality record linkage: approximate identity evidence"
+      ]
+    },
+    {
+      "heading": "Approximate PSI requires additional machinery",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "Potential strategies include:",
+      "paragraphs": [
+        "Potential strategies include:",
+        "generating multiple robust representations;",
+        "locality-sensitive hashing;",
+        "private threshold matching;",
+        "secure computation of similarity functions;",
+        "hybrid PSI and approximate-retrieval constructions."
+      ]
+    },
+    {
+      "heading": "LSH plus PSI",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 3,
+      "word_count": 54,
+      "evidence": "Adir and colleagues proposed combining locality-sensitive hashing with private set intersection so that approximately similar records can be mapped into candidate representations before secure intersection.",
+      "paragraphs": [
+        "Adir and colleagues proposed combining locality-sensitive hashing with private set intersection so that approximately similar records can be mapped into candidate representations before secure intersection.",
+        "Their system was designed to preserve much of PSI's privacy structure while allowing variation such as spelling or address changes that defeats exact intersection.",
+        "Adir et al., 2022 ."
+      ]
+    },
+    {
+      "heading": "Approximate representation introduces a new failure layer",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "When a fuzzy mapping:",
+      "paragraphs": [
+        "When a fuzzy mapping:",
+        "F(x)",
+        "is applied before PSI, end-to-end behavior depends on:",
+        "quality of F + privacy of F + security of PSI",
+        "A cryptographically secure PSI cannot recover true matches lost by a poor approximate representation."
+      ]
+    },
+    {
+      "heading": "Secure multiparty computation",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "Secure multiparty computation, or MPC, takes a more general approach.",
+      "paragraphs": [
+        "Secure multiparty computation, or MPC, takes a more general approach.",
+        "Instead of publishing a similarity-preserving representation, the parties jointly compute:",
+        "f(x,y)",
+        "without directly revealing:",
+        "x or y",
+        "beyond the information permitted by the protocol and output."
+      ]
+    },
+    {
+      "heading": "Ideal functionality",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 6,
+      "word_count": 59,
+      "evidence": "Conceptually, imagine a perfectly trusted black box:",
+      "paragraphs": [
+        "Conceptually, imagine a perfectly trusted black box:",
+        "PARTY A │ │ x ▼ ┌──────────────┐ │ trusted box │ │ │ │ compute │ │ f(x,y) │ └──────────────┘ ▲ │ y │ PARTY B",
+        "The box reveals only:",
+        "f(x,y)",
+        "and nothing else.",
+        "Secure computation tries to emulate this behavior cryptographically without requiring the parties to trust a real central box."
+      ]
+    },
+    {
+      "heading": "Possible secure linkage function",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 5,
+      "word_count": 36,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "f(a,b) = w_name × similarity(name_a,name_b) + w_dob × agreement(dob_a,dob_b) + w_address × similarity(address_a,address_b)",
+        "followed by:",
+        "return score ≥ threshold",
+        "The parties can potentially learn only the allowed result rather than each other's raw identifiers."
+      ]
+    },
+    {
+      "heading": "Garbled circuits",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 3,
+      "word_count": 50,
+      "evidence": "Yao-style garbled circuits provide one major secure two-party computation technique.",
+      "paragraphs": [
+        "Yao-style garbled circuits provide one major secure two-party computation technique.",
+        "A computation is represented as a Boolean circuit, and cryptographic techniques allow the parties to evaluate it without learning the private wire values corresponding to the other party's input.",
+        "Approximate record linkage can therefore be implemented as a secure circuit."
+      ]
+    },
+    {
+      "heading": "Secure computation preserves error tolerance directly",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "Unlike exact PSI, secure computation can evaluate a fuzzy comparator:",
+      "paragraphs": [
+        "Unlike exact PSI, secure computation can evaluate a fuzzy comparator:",
+        "string similarity field weights threshold logic missingness candidate decisions",
+        "without first turning the problem into exact equality."
+      ]
+    },
+    {
+      "heading": "MainSEL",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 4,
+      "word_count": 54,
+      "evidence": "The Mainzelliste SecureEpiLinker, or MainSEL, provides an important healthcare example.",
+      "paragraphs": [
+        "The Mainzelliste SecureEpiLinker, or MainSEL, provides an important healthcare example.",
+        "It implements fault-tolerant PPRL using secure multiparty computation and is designed to avoid sending personal identifying data—even in an encoded Bloom-filter form—to a central linkage party.",
+        "The authors describe security under explicit cryptographic assumptions and a semi-honest adversary model.",
+        "Stammler et al., 2022 ."
+      ]
+    },
+    {
+      "heading": "Cryptographic security has a computational cost",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 8,
+      "word_count": 33,
+      "evidence": "Secure computation can require:",
+      "paragraphs": [
+        "Secure computation can require:",
+        "substantially more CPU work;",
+        "additional network communication;",
+        "multiple protocol rounds;",
+        "specialized implementations;",
+        "careful threat-model analysis.",
+        "The general trade-off becomes:",
+        "stronger cryptographic privacy guarantees ↕ more computational and operational complexity"
+      ]
+    },
+    {
+      "heading": "Network latency matters in MPC",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "Two implementations with identical CPU performance can behave very differently when deployed across:",
+      "paragraphs": [
+        "Two implementations with identical CPU performance can behave very differently when deployed across:",
+        "same data center",
+        "versus:",
+        "organizations separated by high-latency networks",
+        "because cryptographic protocols can involve substantial communication."
+      ]
+    },
+    {
+      "heading": "Secure computation does not automatically solve candidate generation",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "|D_A| = 10,000,000 |D_B| = 10,000,000",
+        "The full Cartesian product contains:",
+        "10^14 record pairs",
+        "Even an excellent cryptographic comparison protocol cannot afford to evaluate all pairs.",
+        "PPRL therefore still needs scalable candidate generation."
+      ]
+    },
+    {
+      "heading": "Privacy-preserving blocking",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "Blocking attempts to reduce:",
+      "paragraphs": [
+        "Blocking attempts to reduce:",
+        "|D_A| × |D_B|",
+        "to a much smaller candidate relation:",
+        "C ⊂ D_A × D_B",
+        "while keeping most or all true matches.",
+        "See Indexing and Filtering for Edit Distance for the general candidate-reduction principle."
+      ]
+    },
+    {
+      "heading": "But blocking keys can leak sensitive information",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "Suppose parties reveal:",
+      "paragraphs": [
+        "Suppose parties reveal:",
+        "year of birth + postcode prefix",
+        "to create blocks.",
+        "The secure comparison stage may protect names perfectly while the blocking layer reveals:",
+        "birth year and approximate location",
+        "for every participating record.",
+        "Privacy therefore has to be analyzed end-to-end."
+      ]
+    },
+    {
+      "heading": "Block sizes leak information",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "Even if block labels are hidden, an adversary may observe:",
+      "paragraphs": [
+        "Even if block labels are hidden, an adversary may observe:",
+        "one block contains 3 records another contains 100,000 records",
+        "The distribution of block sizes can correlate with:",
+        "rare attributes;",
+        "geographic regions;",
+        "name frequencies;",
+        "population characteristics."
+      ]
+    },
+    {
+      "heading": "Candidate relations themselves leak similarity",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "If record:",
+      "paragraphs": [
+        "If record:",
+        "A17",
+        "is compared only with:",
+        "B4 B91 B120",
+        "then simply knowing those candidate relationships reveals that the records share whatever structural criteria were used for blocking."
+      ]
+    },
+    {
+      "heading": "Privacy-preserving blocking is part of the protocol",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 3,
+      "word_count": 27,
+      "evidence": "A secure PPRL architecture must consider:",
+      "paragraphs": [
+        "A secure PPRL architecture must consider:",
+        "candidate generation leakage + comparison leakage + classification leakage + final result leakage",
+        "rather than evaluating only the central similarity function."
+      ]
+    },
+    {
+      "heading": "Candidate recall remains an upper bound",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "T = all true matching pairs C = candidate pairs",
+        "Then:",
+        "blocking recall = |T ∩ C| ─────── |T|",
+        "and:",
+        "end-to-end recall ≤ blocking recall",
+        "Privacy mechanisms do not change this mathematical fact."
+      ]
+    },
+    {
+      "heading": "The privacy-accuracy-scalability triangle",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 6,
+      "word_count": 72,
+      "evidence": "PRIVACY /\\ / \\ / \\ / \\ / \\ /__________\\ ACCURACY SCALE",
+      "paragraphs": [
+        "PRIVACY /\\ / \\ / \\ / \\ / \\ /__________\\ ACCURACY SCALE",
+        "Many PPRL methods improve two dimensions at the expense of the third.",
+        "Examples:",
+        "simple exact hashes privacy / scalability: good fuzzy linkage quality: poor when data contain errors",
+        "similarity-preserving Bloom encodings fuzzy linkage: good scalability: good formal privacy: weaker / attack-dependent",
+        "secure MPC cryptographic privacy: stronger under threat model fuzzy linkage: can be strong cost: higher computation and communication"
+      ]
+    },
+    {
+      "heading": "Technique comparison",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 1,
+      "word_count": 107,
+      "evidence": "Approach Error Tolerance Main Privacy Property Main Limitation Exact keyed hash Very low Does not expose clear text directly One-character error destroys equality Bloom-filter PPRL High for suitable textual errors Obscures raw q-grams while preserving similarity Similarity-preserving structure can be attacked CLK / record-level Bloom filter High Combines several attributes into one representation Still requires vulnerability analysis and hardening Exact PSI Low Formal cryptographic set-intersection protocols Exact equality does not handle noisy identifiers LSH + PSI Approximate Combines fuzzy representation with secure intersection Security and recall depend on fuzzy representation Secure MPC Can support rich fuzzy comparison Formal protocol security under specified model Computational and",
+      "paragraphs": [
+        "Approach Error Tolerance Main Privacy Property Main Limitation Exact keyed hash Very low Does not expose clear text directly One-character error destroys equality Bloom-filter PPRL High for suitable textual errors Obscures raw q-grams while preserving similarity Similarity-preserving structure can be attacked CLK / record-level Bloom filter High Combines several attributes into one representation Still requires vulnerability analysis and hardening Exact PSI Low Formal cryptographic set-intersection protocols Exact equality does not handle noisy identifiers LSH + PSI Approximate Combines fuzzy representation with secure intersection Security and recall depend on fuzzy representation Secure MPC Can support rich fuzzy comparison Formal protocol security under specified model Computational and communication cost"
+      ]
+    },
+    {
+      "heading": "Reference-set-based encoding",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "PPRL encoding research continues to move beyond classical Bloom filters.",
+      "paragraphs": [
+        "PPRL encoding research continues to move beyond classical Bloom filters.",
+        "A 2025 approach by Ziyad and colleagues encodes sensitive values using similarity to reference q-gram sets.",
+        "The method was designed to address several known vulnerabilities involving:",
+        "frequency;",
+        "length;",
+        "patterns;",
+        "while reducing parameter complexity.",
+        "Ziyad et al., 2025 ."
+      ]
+    },
+    {
+      "heading": "Modern PPRL must be vulnerability-aware",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 2,
+      "word_count": 38,
+      "evidence": "The evolution of PPRL can be summarized roughly as:",
+      "paragraphs": [
+        "The evolution of PPRL can be summarized roughly as:",
+        "hide clear-text identifiers ↓ preserve approximate similarity ↓ discover structural leakage ↓ develop cryptanalytic attacks ↓ harden encodings ↓ formalize vulnerability assessment ↓ develop stronger encodings and secure computation"
+      ]
+    },
+    {
+      "heading": "Output leakage cannot be cryptographically wished away",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 13,
+      "word_count": 60,
+      "evidence": "Suppose party A learns:",
+      "paragraphs": [
+        "Suppose party A learns:",
+        "17,804 of its people also occur in dataset B",
+        "That cardinality may itself be sensitive.",
+        "If A also learns exactly which records overlap:",
+        "A17 ↔ B4 A29 ↔ B81 ...",
+        "even more information has been disclosed.",
+        "Therefore protocols must define whether they reveal:",
+        "intersection cardinality only;",
+        "matched identifiers;",
+        "pair mappings;",
+        "similarity scores;",
+        "nonmatch information;",
+        "aggregate statistics."
+      ]
+    },
+    {
+      "heading": "Minimum necessary output",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "A good privacy design asks:",
+      "paragraphs": [
+        "A good privacy design asks:",
+        "What is the minimum linkage result required for the downstream task?",
+        "If a study needs only:",
+        "number of shared patients",
+        "it may not need:",
+        "identity of every shared patient"
+      ]
+    },
+    {
+      "heading": "Secure intersection cardinality",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "Secure computation can sometimes reveal:",
+      "paragraphs": [
+        "Secure computation can sometimes reveal:",
+        "|A ∩ B|",
+        "without revealing the members of:",
+        "A ∩ B",
+        "This can support feasibility studies in which researchers need to know whether enough shared cases exist before establishing a full data-linkage project."
+      ]
+    },
+    {
+      "heading": "Data minimization should operate at every layer",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "Do not transmit:",
+      "paragraphs": [
+        "Do not transmit:",
+        "full date of birth",
+        "when the protocol demonstrably requires only:",
+        "birth year",
+        "unless full date is needed for linkage quality.",
+        "But minimization has a cost:",
+        "less information ↓ less discriminative linkage",
+        "The right balance must be measured rather than assumed."
+      ]
+    },
+    {
+      "heading": "Linkage quality metrics",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "PPRL still needs conventional linkage evaluation.",
+      "paragraphs": [
+        "PPRL still needs conventional linkage evaluation."
+      ]
+    },
+    {
+      "heading": "Precision",
+      "level": 3,
+      "id": "ux-section-79",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "precision = TP ─────── TP + FP",
+      "paragraphs": [
+        "precision = TP ─────── TP + FP",
+        "This measures:",
+        "Of predicted links, how many are correct?"
+      ]
+    },
+    {
+      "heading": "Recall",
+      "level": 3,
+      "id": "ux-section-80",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "recall = TP ─────── TP + FN",
+      "paragraphs": [
+        "recall = TP ─────── TP + FN",
+        "This measures:",
+        "Of all true links, how many were recovered?"
+      ]
+    },
+    {
+      "heading": "F1",
+      "level": 3,
+      "id": "ux-section-81",
+      "paragraph_count": 3,
+      "word_count": 14,
+      "evidence": "F1 = 2PR ───── P + R",
+      "paragraphs": [
+        "F1 = 2PR ───── P + R",
+        "where:",
+        "P = precision R = recall"
+      ]
+    },
+    {
+      "heading": "Privacy needs its own evaluation",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 9,
+      "word_count": 59,
+      "evidence": "High precision and recall say nothing about whether identities can be reconstructed.",
+      "paragraphs": [
+        "High precision and recall say nothing about whether identities can be reconstructed.",
+        "A PPRL evaluation should separately ask:",
+        "Can encoded values be reidentified?",
+        "Can attributes be inferred?",
+        "Can records be linked across unauthorized projects?",
+        "How much structural information leaks?",
+        "What can each protocol party learn?",
+        "What auxiliary data make attacks stronger?",
+        "What happens if one party colludes with another?"
+      ]
+    },
+    {
+      "heading": "Privacy risk is data dependent",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "The same encoding can expose different risks on different populations.",
+      "paragraphs": [
+        "The same encoding can expose different risks on different populations.",
+        "A rare name such as:",
+        "one occurrence in the entire database",
+        "has a different disclosure profile from:",
+        "Smith appearing 50,000 times",
+        "Likewise:",
+        "unique address + rare birth date + rare surname",
+        "can create a nearly unique identity signature even when each field has been transformed."
+      ]
+    },
+    {
+      "heading": "Privacy should be assessed before encoding",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 7,
+      "word_count": 37,
+      "evidence": "A modern vulnerability workflow can examine the clear-text source data locally for:",
+      "paragraphs": [
+        "A modern vulnerability workflow can examine the clear-text source data locally for:",
+        "rare values;",
+        "unique combinations;",
+        "length patterns;",
+        "co-occurrence;",
+        "similarity neighborhoods.",
+        "This allows data custodians to identify which attributes are intrinsically vulnerable before sharing any encoded representation."
+      ]
+    },
+    {
+      "heading": "Do not benchmark privacy using only random guessing",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "A realistic attacker may have:",
+      "paragraphs": [
+        "A realistic attacker may have:",
+        "population name list address directory external public records known samples encoding configuration frequency statistics",
+        "Security should be tested against adversaries with plausible auxiliary knowledge."
+      ]
+    },
+    {
+      "heading": "Attack success should be measured explicitly",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "Possible attack metrics include:",
+      "paragraphs": [
+        "Possible attack metrics include:",
+        "fraction of records reidentified fraction of attributes recovered precision of recovered mappings top-k candidate recovery information gain",
+        "rather than simply:",
+        "\"the encoded data look unintelligible\""
+      ]
+    },
+    {
+      "heading": "Linkage-quality loss from privacy protection",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 13,
+      "word_count": 37,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "Q_clear",
+        "be linkage quality using clear text and:",
+        "Q_private",
+        "be linkage quality using the privacy-preserving representation.",
+        "A useful empirical quantity is:",
+        "ΔQ = Q_clear - Q_private",
+        "measured separately for:",
+        "precision;",
+        "recall;",
+        "F1;",
+        "cluster quality;",
+        "population subgroups."
+      ]
+    },
+    {
+      "heading": "Stratified linkage evaluation is essential",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 9,
+      "word_count": 37,
+      "evidence": "PPRL can behave differently for:",
+      "paragraphs": [
+        "PPRL can behave differently for:",
+        "short versus long names;",
+        "common versus rare names;",
+        "different languages;",
+        "different scripts;",
+        "complete versus sparse records;",
+        "old versus current addresses;",
+        "records with many typographical errors.",
+        "See Name, Address and Place Matching ."
+      ]
+    },
+    {
+      "heading": "Healthcare makes PPRL particularly consequential",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 6,
+      "word_count": 65,
+      "evidence": "Healthcare organizations frequently want to determine whether records refer to the same patient while limiting the exchange of direct personal identifiers.",
+      "paragraphs": [
+        "Healthcare organizations frequently want to determine whether records refer to the same patient while limiting the exchange of direct personal identifiers.",
+        "The consequences involve both:",
+        "privacy and identity accuracy",
+        "A privacy-preserving system that generates excessive false links can associate the wrong medical records with one person.",
+        "A highly private system that misses many true links can fragment longitudinal health information.",
+        "See Patient Identity Matching ."
+      ]
+    },
+    {
+      "heading": "PPRL does not automatically make data-sharing lawful or ethical",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 5,
+      "word_count": 55,
+      "evidence": "Technical privacy mechanisms answer questions such as:",
+      "paragraphs": [
+        "Technical privacy mechanisms answer questions such as:",
+        "what information can this protocol reveal?",
+        "They do not by themselves answer:",
+        "Should these organizations link these records? For what purpose? With what governance? For how long? Who may access the linkage output?",
+        "Those questions require appropriate legal, ethical, institutional, and governance analysis for the jurisdiction and project."
+      ]
+    },
+    {
+      "heading": "The protocol around the algorithm matters",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 5,
+      "word_count": 64,
+      "evidence": "Recent PPRL research increasingly emphasizes that even a strong encoding algorithm can sit inside a weak operational protocol.",
+      "paragraphs": [
+        "Recent PPRL research increasingly emphasizes that even a strong encoding algorithm can sit inside a weak operational protocol.",
+        "A 2026 analysis by Christen, Schnell, and Vidanage examined information leakage across the complete practical linkage process, including the parties, protocol steps, and adversary incentives.",
+        "Their central implication is crucial:",
+        "Privacy cannot be evaluated solely by examining the encoding function.",
+        "Christen, Schnell and Vidanage, 2026 ."
+      ]
+    },
+    {
+      "heading": "End-to-end protocol analysis",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 2,
+      "word_count": 36,
+      "evidence": "For every stage, ask:",
+      "paragraphs": [
+        "For every stage, ask:",
+        "WHO receives data? WHAT do they receive? WHY do they need it? HOW long is it retained? WHAT auxiliary information do they possess? WHAT can they infer? WITH WHOM can they collude?"
+      ]
+    },
+    {
+      "heading": "Example protocol inventory",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 55,
+      "evidence": "Stage Information Potential Leakage Preprocessing Clear identifiers locally Local access / logging Encoding q-grams, keys, parameters Configuration and key exposure Blocking Block keys or signatures Frequency and group structure Comparison Encoded records or secure messages Pattern or protocol leakage Classification Scores or match decisions Similarity information Output Linked pairs / entities Membership and relationship disclosure",
+      "paragraphs": [
+        "Stage Information Potential Leakage Preprocessing Clear identifiers locally Local access / logging Encoding q-grams, keys, parameters Configuration and key exposure Blocking Block keys or signatures Frequency and group structure Comparison Encoded records or secure messages Pattern or protocol leakage Classification Scores or match decisions Similarity information Output Linked pairs / entities Membership and relationship disclosure"
+      ]
+    },
+    {
+      "heading": "Differential privacy and PPRL",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 5,
+      "word_count": 66,
+      "evidence": "Differential privacy, or DP, provides formal guarantees for statistical outputs by limiting how much the presence or absence of one individual's data can influence the distribution of released results.",
+      "paragraphs": [
+        "Differential privacy, or DP, provides formal guarantees for statistical outputs by limiting how much the presence or absence of one individual's data can influence the distribution of released results.",
+        "This is conceptually different from ordinary record linkage.",
+        "Record linkage wants to determine:",
+        "THIS specific record matches THAT specific record",
+        "while classical differential privacy is designed to make conclusions about individual contributions difficult when releasing statistical information."
+      ]
+    },
+    {
+      "heading": "The objectives can conflict",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 5,
+      "word_count": 23,
+      "evidence": "PPRL seeks accurate pair-specific identity decisions:",
+      "paragraphs": [
+        "PPRL seeks accurate pair-specific identity decisions:",
+        "A17 ↔ B491",
+        "Differential privacy often introduces uncertainty deliberately:",
+        "true information + randomized perturbation",
+        "to protect individuals."
+      ]
+    },
+    {
+      "heading": "DP at the blocking layer is not end-to-end privacy",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 5,
+      "word_count": 21,
+      "evidence": "Differentially privatizing:",
+      "paragraphs": [
+        "Differentially privatizing:",
+        "block sizes",
+        "or:",
+        "blocking statistics",
+        "does not protect later individual record encodings if those encodings remain vulnerable to inference."
+      ]
+    },
+    {
+      "heading": "DP on record encodings can reduce linkage utility",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "If encoded bits are randomly perturbed:",
+      "paragraphs": [
+        "If encoded bits are randomly perturbed:",
+        "0 → 1 or 1 → 0",
+        "then privacy may improve under a particular formal mechanism, but record similarity is also corrupted.",
+        "Too much perturbation creates:",
+        "false negatives;",
+        "false positives;",
+        "unstable similarity scores."
+      ]
+    },
+    {
+      "heading": "A 2026 critique of DP for PPRL",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 6,
+      "word_count": 80,
+      "evidence": "Ziyad, Christen, Schnell, Lange, and Vidanage systematically reviewed the use of differential privacy within PPRL.",
+      "paragraphs": [
+        "Ziyad, Christen, Schnell, Lange, and Vidanage systematically reviewed the use of differential privacy within PPRL.",
+        "They argue that several current applications protect intermediate structures such as blocks or bits without adequately protecting the actual real-world people being linked, while potentially degrading linkage quality.",
+        "Their point is not that differential privacy lacks formal privacy guarantees.",
+        "The point is that:",
+        "formal guarantee for the wrong object or stage does not necessarily provide the desired end-to-end PPRL privacy",
+        "Ziyad et al., 2026 ."
+      ]
+    },
+    {
+      "heading": "Do not compose privacy claims informally",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "A system containing:",
+      "paragraphs": [
+        "A system containing:",
+        "hashed identifiers + differentially private blocking + encrypted transport",
+        "does not automatically become:",
+        "\"fully anonymous\"",
+        "Each component protects against different risks."
+      ]
+    },
+    {
+      "heading": "Transport encryption is necessary but different",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "TLS protects data:",
+      "paragraphs": [
+        "TLS protects data:",
+        "while moving between systems",
+        "It does not prevent:",
+        "the receiving system from analyzing the encoded records it receives",
+        "Transport security and PPRL privacy are separate layers."
+      ]
+    },
+    {
+      "heading": "Encryption at rest is also different",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "Disk encryption protects:",
+      "paragraphs": [
+        "Disk encryption protects:",
+        "stored files when storage media or keys are unavailable",
+        "but once the linkage application decrypts the data for processing, that protection does not restrict what the application or authorized operator can infer."
+      ]
+    },
+    {
+      "heading": "Secure enclaves and trusted execution",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 10,
+      "word_count": 50,
+      "evidence": "Another design family places sensitive computation inside a hardware-protected execution environment.",
+      "paragraphs": [
+        "Another design family places sensitive computation inside a hardware-protected execution environment.",
+        "Conceptually:",
+        "encrypted input ↓ trusted execution boundary ↓ clear computation inside boundary ↓ restricted output",
+        "This shifts trust toward:",
+        "hardware;",
+        "firmware;",
+        "remote attestation;",
+        "side-channel resistance;",
+        "platform operator assumptions.",
+        "It is therefore a different trust model from pure cryptographic MPC."
+      ]
+    },
+    {
+      "heading": "No architecture eliminates trust; it relocates it",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 2,
+      "word_count": 35,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "trusted third party → trust linkage organization Bloom encoding → trust encoding hardness, key management, and threat assumptions secure MPC → trust cryptographic assumptions and implementation correctness trusted execution → trust hardware and attestation"
+      ]
+    },
+    {
+      "heading": "The correct question is not \"Which method is private?\"",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "It is:",
+      "paragraphs": [
+        "It is:",
+        "Which method provides which privacy guarantee against which adversary for which workload at which accuracy and computational cost?"
+      ]
+    },
+    {
+      "heading": "Approximate text matching remains central",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Many PPRL systems ultimately need to cope with:",
+      "paragraphs": [
+        "Many PPRL systems ultimately need to cope with:",
+        "misspellings missing characters extra characters OCR errors transliteration name variants address variation",
+        "These are the same problems explored in conventional data matching.",
+        "See Name, Address and Place Matching ."
+      ]
+    },
+    {
+      "heading": "Levenshtein distance inside secure computation",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 8,
+      "word_count": 30,
+      "evidence": "One conceptually clean approach is to compute:",
+      "paragraphs": [
+        "One conceptually clean approach is to compute:",
+        "d_L(x,y)",
+        "inside a secure protocol.",
+        "The parties would ideally learn only:",
+        "d_L(x,y) ≤ τ ?",
+        "or perhaps:",
+        "d_L(x,y)",
+        "depending on the intended functionality."
+      ]
+    },
+    {
+      "heading": "But revealing distance leaks more than revealing a threshold bit",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "OUTPUT A match = true",
+        "with:",
+        "OUTPUT B distance = 1",
+        "The second output reveals additional information about the hidden identifiers.",
+        "Secure computation protects the computation, but privacy still depends on what result the computation releases."
+      ]
+    },
+    {
+      "heading": "Threshold-only output",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 4,
+      "word_count": 28,
+      "evidence": "A more data-minimizing functionality might return:",
+      "paragraphs": [
+        "A more data-minimizing functionality might return:",
+        "1 if d_L(x,y) ≤ 2 0 otherwise",
+        "instead of the exact distance.",
+        "Whether that is sufficient depends on the downstream linkage model."
+      ]
+    },
+    {
+      "heading": "Field-specific secure evidence",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 5,
+      "word_count": 27,
+      "evidence": "A more sophisticated protocol could compute:",
+      "paragraphs": [
+        "A more sophisticated protocol could compute:",
+        "name_close DOB_exact address_close phone_exact",
+        "and then combine these results securely into:",
+        "match / review / non-match",
+        "without exposing every intermediate score."
+      ]
+    },
+    {
+      "heading": "Weighted string comparison",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "Real data-entry errors are not uniformly distributed.",
+      "paragraphs": [
+        "Real data-entry errors are not uniformly distributed.",
+        "A secure system may need domain-specific costs such as those described in Weighted Levenshtein Distance .",
+        "This increases circuit or protocol complexity relative to simple equality."
+      ]
+    },
+    {
+      "heading": "Transpositions",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 4,
+      "word_count": 21,
+      "evidence": "Adjacent transposition:",
+      "paragraphs": [
+        "Adjacent transposition:",
+        "Brian Biran",
+        "is common enough in manually entered identifiers that some systems use transposition-aware comparison.",
+        "See Damerau-Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Comparator choice remains application-specific",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 8,
+      "word_count": 33,
+      "evidence": "Levenshtein distance is not automatically the best comparator for every identity attribute.",
+      "paragraphs": [
+        "Levenshtein distance is not automatically the best comparator for every identity attribute.",
+        "Names may also use:",
+        "Jaro-Winkler;",
+        "phonetic methods;",
+        "token similarity;",
+        "alias tables;",
+        "transliteration-aware logic.",
+        "See Levenshtein vs Jaro-Winkler and Phonetic Matching ."
+      ]
+    },
+    {
+      "heading": "String privacy versus entity privacy",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 6,
+      "word_count": 59,
+      "evidence": "Protecting the spelling of a name is not necessarily the same as protecting the person's identity.",
+      "paragraphs": [
+        "Protecting the spelling of a name is not necessarily the same as protecting the person's identity.",
+        "Suppose an attacker cannot recover:",
+        "\"Jonathan Smith\"",
+        "but can determine that one encoded record corresponds uniquely to:",
+        "a 42-year-old person living at one address who appears in a rare-disease registry",
+        "The spelling has remained hidden while sensitive identity information may still have leaked."
+      ]
+    },
+    {
+      "heading": "Protect the person, not merely the encoding",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "A strong PPRL analysis therefore asks:",
+      "paragraphs": [
+        "A strong PPRL analysis therefore asks:",
+        "Can an adversary identify, profile, or learn sensitive facts about the real-world entity?",
+        "rather than only:",
+        "Can the adversary recover the exact q-grams?"
+      ]
+    },
+    {
+      "heading": "String similarity is not entity identity",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "Even inside a privacy-preserving system:",
+      "paragraphs": [
+        "Even inside a privacy-preserving system:",
+        "high encoded similarity ⇏ same person",
+        "The underlying inference problem remains unchanged.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Common failure mode: \"We hashed the names, so the data are safe\"",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "Ordinary cryptographic hashing can be attacked when:",
+      "paragraphs": [
+        "Ordinary cryptographic hashing can be attacked when:",
+        "the input domain is predictable;",
+        "no secret key is used;",
+        "the same value always creates the same digest;",
+        "dictionary enumeration is practical.",
+        "Names and dates of birth come from highly structured, enumerable domains."
+      ]
+    },
+    {
+      "heading": "Common failure mode: calling Bloom filters encryption",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Similarity-preserving Bloom encodings intentionally leak structural relationships.",
+      "paragraphs": [
+        "Similarity-preserving Bloom encodings intentionally leak structural relationships.",
+        "Treating them as equivalent to general-purpose semantically secure encryption leads to incorrect security assumptions."
+      ]
+    },
+    {
+      "heading": "Common failure mode: using obsolete Bloom-filter constructions unchanged",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 4,
+      "word_count": 34,
+      "evidence": "The PPRL attack literature has evolved substantially since 2009.",
+      "paragraphs": [
+        "The PPRL attack literature has evolved substantially since 2009.",
+        "A system should not copy:",
+        "old parameters + old hashing method + old encoding structure",
+        "without evaluating them against modern attacks and current hardening techniques."
+      ]
+    },
+    {
+      "heading": "Common failure mode: same PPRL key everywhere",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 5,
+      "word_count": 16,
+      "evidence": "A universal long-term secret increases the damage from:",
+      "paragraphs": [
+        "A universal long-term secret increases the damage from:",
+        "key compromise;",
+        "cross-project correlation;",
+        "collusion;",
+        "long-term observational attacks."
+      ]
+    },
+    {
+      "heading": "Common failure mode: security through secrecy of the algorithm",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "A secure architecture should assume an attacker may know:",
+      "paragraphs": [
+        "A secure architecture should assume an attacker may know:",
+        "algorithm parameter ranges software implementation population characteristics",
+        "and protect the data through well-defined secrets and security properties rather than obscurity."
+      ]
+    },
+    {
+      "heading": "Common failure mode: protect comparison but expose blocking",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "A mathematically secure MPC comparator is not enough if the candidate-generation stage publishes highly identifying block keys.",
+      "paragraphs": [
+        "A mathematically secure MPC comparator is not enough if the candidate-generation stage publishes highly identifying block keys."
+      ]
+    },
+    {
+      "heading": "Common failure mode: protect inputs but expose every similarity score",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "Suppose a party can repeatedly ask:",
+      "paragraphs": [
+        "Suppose a party can repeatedly ask:",
+        "similarity(secret_record, candidate_1) similarity(secret_record, candidate_2) ...",
+        "Detailed score outputs can become an inference oracle.",
+        "Rate limits, output minimization, authentication, and query governance may therefore be part of the privacy design."
+      ]
+    },
+    {
+      "heading": "Common failure mode: ignore malicious query construction",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "An attacker may submit strategically selected records intended to probe hidden data.",
+      "paragraphs": [
+        "An attacker may submit strategically selected records intended to probe hidden data.",
+        "A semi-honest security argument does not automatically cover this behavior."
+      ]
+    },
+    {
+      "heading": "Common failure mode: assume a trusted third party cannot be compromised",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 8,
+      "word_count": 28,
+      "evidence": "A trusted linkage unit creates a concentrated store of sensitive or linkable data.",
+      "paragraphs": [
+        "A trusted linkage unit creates a concentrated store of sensitive or linkable data.",
+        "Its security model must include:",
+        "insider access;",
+        "credential compromise;",
+        "logging;",
+        "backup exposure;",
+        "retention;",
+        "secondary use."
+      ]
+    },
+    {
+      "heading": "Common failure mode: keep encoded linkage files forever",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "Future attacks improve.",
+      "paragraphs": [
+        "Future attacks improve.",
+        "Data considered difficult to decode today may become vulnerable when:",
+        "new cryptanalytic methods appear;",
+        "auxiliary datasets become available;",
+        "keys leak;",
+        "more observations accumulate.",
+        "Retention should therefore be justified by actual operational need."
+      ]
+    },
+    {
+      "heading": "Common failure mode: evaluate only precision and recall",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "A PPRL method with:",
+      "paragraphs": [
+        "A PPRL method with:",
+        "precision = 99.9% recall = 99.9%",
+        "can still be unacceptable if:",
+        "80% of names can be reidentified",
+        "under a plausible attack."
+      ]
+    },
+    {
+      "heading": "Common failure mode: evaluate only privacy",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "Conversely, a representation that is impossible to reverse but yields:",
+      "paragraphs": [
+        "Conversely, a representation that is impossible to reverse but yields:",
+        "recall = 40%",
+        "may be unusable for the linkage objective."
+      ]
+    },
+    {
+      "heading": "Common failure mode: ignore subgroup utility",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "A privacy mechanism may disproportionately damage linkage for:",
+      "paragraphs": [
+        "A privacy mechanism may disproportionately damage linkage for:",
+        "short names;",
+        "rare scripts;",
+        "particular address formats;",
+        "records with missing attributes.",
+        "End-to-end evaluation must be stratified."
+      ]
+    },
+    {
+      "heading": "Common failure mode: assume differential privacy fixes a vulnerable encoding",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "Adding random bit perturbation can weaken specific attacks but does not automatically make the complete record-linkage process private.",
+      "paragraphs": [
+        "Adding random bit perturbation can weaken specific attacks but does not automatically make the complete record-linkage process private.",
+        "The protected object, privacy unit, output, and adversary model must be specified."
+      ]
+    },
+    {
+      "heading": "Common failure mode: blockchain as a privacy substitute",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 7,
+      "word_count": 50,
+      "evidence": "Blockchain can provide properties such as:",
+      "paragraphs": [
+        "Blockchain can provide properties such as:",
+        "auditability;",
+        "append-only logging;",
+        "distributed consensus.",
+        "It does not automatically protect the privacy of the linkage representations stored or exchanged.",
+        "A published analysis of a blockchain-based PPRL proposal demonstrated precisely this distinction by identifying privacy weaknesses despite the blockchain layer.",
+        "Christen et al., 2022 ."
+      ]
+    },
+    {
+      "heading": "Common failure mode: confuse anonymity with unlinkability",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 5,
+      "word_count": 27,
+      "evidence": "A representation may hide:",
+      "paragraphs": [
+        "A representation may hide:",
+        "who the person is",
+        "while still allowing:",
+        "the same person to be tracked across releases",
+        "Identity confidentiality and cross-context unlinkability are separate properties."
+      ]
+    },
+    {
+      "heading": "Common failure mode: use deterministic encodings for rare attributes",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 2,
+      "word_count": 31,
+      "evidence": "Rare deterministic encodings can function almost like fingerprints.",
+      "paragraphs": [
+        "Rare deterministic encodings can function almost like fingerprints.",
+        "The attacker may not need to invert the transformation if auxiliary data reveal which unique individual must correspond to the unique encoded value."
+      ]
+    },
+    {
+      "heading": "Common failure mode: ignore missingness",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "Missing fields themselves create observable patterns:",
+      "paragraphs": [
+        "Missing fields themselves create observable patterns:",
+        "name present DOB present address absent phone absent",
+        "A distinctive missingness pattern can contribute to reidentification or population inference."
+      ]
+    },
+    {
+      "heading": "Common failure mode: disclose all nonmatches",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "Sometimes the downstream party needs:",
+      "paragraphs": [
+        "Sometimes the downstream party needs:",
+        "matched records only",
+        "There may be no legitimate reason to reveal:",
+        "every candidate that failed",
+        "or every detailed similarity score."
+      ]
+    },
+    {
+      "heading": "Common failure mode: secure computation with insecure software engineering",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 7,
+      "word_count": 23,
+      "evidence": "A cryptographic proof does not protect:",
+      "paragraphs": [
+        "A cryptographic proof does not protect:",
+        "debug logs containing raw names;",
+        "temporary plaintext files;",
+        "memory dumps;",
+        "weak authentication;",
+        "misconfigured backups;",
+        "stolen endpoint credentials."
+      ]
+    },
+    {
+      "heading": "Production PPRL architecture",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 1,
+      "word_count": 96,
+      "evidence": "DATA CUSTODIAN A │ ▼ ┌─────────────────────┐ │ local validation │ │ normalization │ │ Unicode handling │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ privacy transform │ │ or secure protocol │ └─────────┬───────────┘ │ │ ▼ ┌─────────────────────┐ │ privacy-preserving │ │ candidate search │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ secure / encoded │ │ field comparison │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ evidence │ │ classification │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ minimum necessary │ │ linkage output │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ governed analysis │ │ / linked dataset │ └─────────────────────┘ ▲ │ DATA CUSTODIAN B",
+      "paragraphs": [
+        "DATA CUSTODIAN A │ ▼ ┌─────────────────────┐ │ local validation │ │ normalization │ │ Unicode handling │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ privacy transform │ │ or secure protocol │ └─────────┬───────────┘ │ │ ▼ ┌─────────────────────┐ │ privacy-preserving │ │ candidate search │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ secure / encoded │ │ field comparison │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ evidence │ │ classification │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ minimum necessary │ │ linkage output │ └─────────┬───────────┘ │ ▼ ┌─────────────────────┐ │ governed analysis │ │ / linked dataset │ └─────────────────────┘ ▲ │ DATA CUSTODIAN B"
+      ]
+    },
+    {
+      "heading": "A secure design starts locally",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Raw identifiers should normally be:",
+      "paragraphs": [
+        "Raw identifiers should normally be:",
+        "cleaned standardized validated encoded",
+        "inside the originating organization's security boundary where possible.",
+        "Sending raw identifiers to a central service merely so that it can encode them defeats much of the privacy objective."
+      ]
+    },
+    {
+      "heading": "Canonicalization rules must be synchronized",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "If party A applies:",
+      "paragraphs": [
+        "If party A applies:",
+        "NFC + case folding",
+        "while party B applies:",
+        "NFKD + diacritic removal",
+        "they are not encoding the same comparison representation.",
+        "Preprocessing specifications should therefore be versioned and shared."
+      ]
+    },
+    {
+      "heading": "Version everything that affects linkage",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 12,
+      "word_count": 23,
+      "evidence": "Record:",
+      "paragraphs": [
+        "Record:",
+        "normalization version;",
+        "encoding version;",
+        "q-gram size;",
+        "hashing method;",
+        "hardening method;",
+        "blocking logic;",
+        "comparison model;",
+        "threshold;",
+        "cryptographic protocol version;",
+        "key identifier;",
+        "reference-data version."
+      ]
+    },
+    {
+      "heading": "Do not log secrets alongside diagnostics",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "Operational logging should avoid retaining:",
+      "paragraphs": [
+        "Operational logging should avoid retaining:",
+        "raw q-grams secret keys clear identifiers reversible intermediate values",
+        "unless explicitly required and protected."
+      ]
+    },
+    {
+      "heading": "Audit events",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "Useful events include:",
+      "paragraphs": [
+        "Useful events include:",
+        "project started key generated data encoded candidate search executed linkage completed results released review performed keys rotated temporary files deleted project closed"
+      ]
+    },
+    {
+      "heading": "Separation of duties",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "A robust architecture may separate:",
+      "paragraphs": [
+        "A robust architecture may separate:",
+        "data custodians key management linkage execution result approval research analysis",
+        "so that no single actor automatically receives every component needed to reconstruct identities."
+      ]
+    },
+    {
+      "heading": "Collusion analysis",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "For each pair of roles:",
+      "paragraphs": [
+        "For each pair of roles:",
+        "A + linkage unit B + linkage unit A + B key custodian + linkage unit",
+        "ask what becomes possible if they cooperate improperly."
+      ]
+    },
+    {
+      "heading": "Multi-party linkage",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "With:",
+      "paragraphs": [
+        "With:",
+        "A B C D",
+        "privacy becomes more complicated than ordinary two-party PPRL.",
+        "Possible desired outputs include:",
+        "people present in all four people present in at least two pairwise overlaps union cardinality linked longitudinal graph",
+        "Each output leaks different information."
+      ]
+    },
+    {
+      "heading": "Transitive multi-party linkage can reveal relationships",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 6,
+      "word_count": 45,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "A ↔ B and B ↔ C",
+        "Even if A and C never directly exchanged identifiers, the linkage infrastructure may infer:",
+        "A ↔ C",
+        "through the shared identity.",
+        "Multi-party linkage therefore creates an identity graph whose disclosure risk can exceed any individual pairwise linkage."
+      ]
+    },
+    {
+      "heading": "Privacy-preserving linkage and longitudinal identifiers",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "Some research infrastructures want a stable pseudonymous identifier:",
+      "paragraphs": [
+        "Some research infrastructures want a stable pseudonymous identifier:",
+        "P_83f291",
+        "so that future observations can be attached to the same person.",
+        "This improves longitudinal analysis but deliberately creates linkability over time.",
+        "The trade-off is:",
+        "longitudinal utility ↕ cross-release linkability"
+      ]
+    },
+    {
+      "heading": "Purpose-specific pseudonyms",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "One design can create:",
+      "paragraphs": [
+        "One design can create:",
+        "research_project_A: ID_A_91 research_project_B: ID_B_04",
+        "for the same person instead of one universal identifier.",
+        "A controlled mapping service can preserve identity relationships without exposing cross-project linkability to every researcher."
+      ]
+    },
+    {
+      "heading": "Privacy budget is broader than cryptography",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "Repeated linkage projects can accumulate information even if every individual execution appears acceptable.",
+      "paragraphs": [
+        "Repeated linkage projects can accumulate information even if every individual execution appears acceptable.",
+        "For example:",
+        "Project 1: person overlaps registry A Project 2: person overlaps registry B Project 3: person does not overlap registry C",
+        "Together these outputs create a richer profile."
+      ]
+    },
+    {
+      "heading": "Composition must be considered operationally",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "A project governance system should know:",
+      "paragraphs": [
+        "A project governance system should know:",
+        "which datasets have been linked;",
+        "which parties received outputs;",
+        "which identities were persistently pseudonymized;",
+        "which results can be combined."
+      ]
+    },
+    {
+      "heading": "PPRL design checklist",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 1,
+      "word_count": 126,
+      "evidence": "Question Why It Matters What exact linkage output is required? Determines minimum disclosure Are exact stable identifiers available? May allow simpler cryptographic methods How noisy are the identifiers? Determines required fuzzy matching Who are the parties? Defines trust boundaries Can parties collude? Changes security assumptions What auxiliary data may attackers possess? Determines reidentification risk How are candidates generated? Blocking can leak information What encoded structure is exposed? Determines cryptanalytic attack surface Are formal guarantees required? May favor secure computation What latency is acceptable? Constrains MPC and large-scale methods How are keys managed? Key compromise can defeat privacy How long are encoded records retained? Long-term exposure increases at",
+      "paragraphs": [
+        "Question Why It Matters What exact linkage output is required? Determines minimum disclosure Are exact stable identifiers available? May allow simpler cryptographic methods How noisy are the identifiers? Determines required fuzzy matching Who are the parties? Defines trust boundaries Can parties collude? Changes security assumptions What auxiliary data may attackers possess? Determines reidentification risk How are candidates generated? Blocking can leak information What encoded structure is exposed? Determines cryptanalytic attack surface Are formal guarantees required? May favor secure computation What latency is acceptable? Constrains MPC and large-scale methods How are keys managed? Key compromise can defeat privacy How long are encoded records retained? Long-term exposure increases attack opportunity How is linkage quality validated? Privacy cannot make linkage useless How is privacy empirically attacked? Tests real vulnerability"
+      ]
+    },
+    {
+      "heading": "Use exact keyed matching when",
+      "level": 3,
+      "id": "ux-section-152",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "stable identifiers exist and errors are negligible",
+      "paragraphs": [
+        "stable identifiers exist and errors are negligible",
+        "Avoid building fuzzy complexity that the data do not require."
+      ]
+    },
+    {
+      "heading": "Consider similarity-preserving encodings when",
+      "level": 3,
+      "id": "ux-section-153",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "fuzzy linkage is necessary scale is large operational simplicity matters",
+      "paragraphs": [
+        "fuzzy linkage is necessary scale is large operational simplicity matters",
+        "but perform modern vulnerability analysis and avoid assuming that obfuscation equals cryptographic confidentiality."
+      ]
+    },
+    {
+      "heading": "Consider secure computation when",
+      "level": 3,
+      "id": "ux-section-154",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "stronger formal privacy is required and the computational and network cost is acceptable",
+      "paragraphs": [
+        "stronger formal privacy is required and the computational and network cost is acceptable"
+      ]
+    },
+    {
+      "heading": "Consider hybrid architectures when",
+      "level": 3,
+      "id": "ux-section-155",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Different stages have different needs:",
+      "paragraphs": [
+        "Different stages have different needs:",
+        "privacy-preserving blocking ↓ secure candidate comparison ↓ minimal output"
+      ]
+    },
+    {
+      "heading": "Levenshtein distance has a precise role in PPRL",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "Levenshtein distance is useful when:",
+      "paragraphs": [
+        "Levenshtein distance is useful when:",
+        "the true identifier differs because of insertion, deletion, or substitution errors",
+        "Examples:",
+        "Jonathan Jonathon Harrison Harison",
+        "But PPRL changes how that information can be computed."
+      ]
+    },
+    {
+      "heading": "1. Approximate surrogate",
+      "level": 3,
+      "id": "ux-section-158",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "q-gram encoding ↓ Bloom-filter overlap",
+      "paragraphs": [
+        "q-gram encoding ↓ Bloom-filter overlap",
+        "The encoded similarity approximates a useful notion of textual closeness without calculating Levenshtein distance itself."
+      ]
+    },
+    {
+      "heading": "2. Secure exact computation",
+      "level": 3,
+      "id": "ux-section-159",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "private x + private y ↓ MPC ↓ d_L(x,y)",
+      "paragraphs": [
+        "private x + private y ↓ MPC ↓ d_L(x,y)",
+        "or a threshold decision based on it."
+      ]
+    },
+    {
+      "heading": "3. Candidate generation",
+      "level": 3,
+      "id": "ux-section-160",
+      "paragraph_count": 1,
+      "word_count": 22,
+      "evidence": "A privacy-preserving retrieval layer can identify plausible candidate records, after which a more expensive secure comparison is performed only on those candidates.",
+      "paragraphs": [
+        "A privacy-preserving retrieval layer can identify plausible candidate records, after which a more expensive secure comparison is performed only on those candidates."
+      ]
+    },
+    {
+      "heading": "Levenshtein is not the privacy mechanism",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "It defines a textual relationship:",
+      "paragraphs": [
+        "It defines a textual relationship:",
+        "d_L(x,y)",
+        "Privacy comes from:",
+        "how x and y are represented;",
+        "where the comparison runs;",
+        "what protocol protects it;",
+        "what output is revealed."
+      ]
+    },
+    {
+      "heading": "The deeper principle",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 4,
+      "word_count": 69,
+      "evidence": "PPRL is not fundamentally about hiding strings.",
+      "paragraphs": [
+        "PPRL is not fundamentally about hiding strings.",
+        "It is about evaluating an identity relation while controlling information flow.",
+        "REAL PERSON │ ├── DATABASE A │ ↓ │ identifier observations │ └── DATABASE B ↓ identifier observations │ ▼ PRIVACY-PRESERVING COMPUTATION │ ▼ same entity? different entity? uncertain?",
+        "The engineering challenge is to expose enough information to make the identity decision while exposing no more than the application actually needs."
+      ]
+    },
+    {
+      "heading": "Modern research direction",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 4,
+      "word_count": 62,
+      "evidence": "The current PPRL literature increasingly moves away from the simple question:",
+      "paragraphs": [
+        "The current PPRL literature increasingly moves away from the simple question:",
+        "How can we encode a name so that it is difficult to read?",
+        "toward the more rigorous questions:",
+        "What leaks? To whom? Under which protocol? Against which adversary? Can the leakage be exploited? What is formally protected? What does the output reveal? What accuracy is lost? How does the system scale?"
+      ]
+    },
+    {
+      "heading": "A mature PPRL evaluation therefore has four axes",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 1,
+      "word_count": 36,
+      "evidence": "1. LINKAGE QUALITY precision recall candidate recall cluster quality 2. PRIVACY reidentification resistance attribute inference linkability output leakage 3. SECURITY MODEL semi-honest malicious collusion auxiliary knowledge 4. SYSTEM PERFORMANCE runtime memory network traffic index size scalability",
+      "paragraphs": [
+        "1. LINKAGE QUALITY precision recall candidate recall cluster quality 2. PRIVACY reidentification resistance attribute inference linkability output leakage 3. SECURITY MODEL semi-honest malicious collusion auxiliary knowledge 4. SYSTEM PERFORMANCE runtime memory network traffic index size scalability"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 14,
+      "word_count": 608,
+      "evidence": "Privacy-preserving record linkage allows organizations to identify records belonging to the same real-world entities without simply pooling the sensitive personal identifiers ordinarily required for matching. It is therefore both an entity-resolution problem and an information-security problem.",
+      "paragraphs": [
+        "Privacy-preserving record linkage allows organizations to identify records belonging to the same real-world entities without simply pooling the sensitive personal identifiers ordinarily required for matching. It is therefore both an entity-resolution problem and an information-security problem.",
+        "The central technical difficulty is that realistic records contain errors. Exact cryptographic equality works well when both organizations possess the same stable identifier, but a one-character typo produces an unrelated cryptographic digest. Fuzzy linkage requires some representation or protocol capable of recognizing approximate similarity.",
+        "Bloom-filter PPRL addresses this problem by mapping q-grams of identifying strings into bit arrays and comparing overlap between those arrays. The method can preserve useful tolerance for spelling variation, and real-world evaluations have demonstrated linkage quality close to conventional clear-text linkage under suitable configurations.",
+        "However, Bloom-filter encodings preserve structural information precisely because that information is needed for matching. Frequency distributions, bit patterns, co-occurrence structure, string length, and similarity neighborhoods can create attack surfaces. A substantial cryptanalytic literature has shown that certain Bloom-filter constructions are vulnerable to reidentification and attribute-inference attacks.",
+        "Hardening methods such as randomized hashing, salting, composite encodings, balancing, and other transformations can reduce known vulnerabilities, but hardening must be evaluated against both attacks and linkage-quality loss. Resistance to today's known attacks is not equivalent to a formal cryptographic security proof.",
+        "Private set intersection provides stronger cryptographic tools for identifying exact shared values, but conventional PSI does not naturally solve fuzzy record linkage because misspelled names are unequal set elements. Hybrid methods combine approximate representations with PSI, while secure multiparty computation can directly evaluate richer fuzzy matching functions without revealing the raw inputs under the protocol's security assumptions.",
+        "Secure computation shifts the trade-off toward stronger formal privacy but introduces additional computational and communication cost. It also does not eliminate the need for candidate generation. Comparing every record pair securely remains infeasible for large databases, which makes privacy-preserving blocking and indexing an essential part of the architecture.",
+        "Blocking itself creates privacy risks. Block keys, block sizes, candidate relationships, and frequency information can expose attributes even when the later comparison protocol is cryptographically secure. Privacy must therefore be analyzed across the complete linkage process rather than only at the encoding or comparison stage.",
+        "The final linkage output also leaks information. Learning that a record occurs in a second database can reveal sensitive membership. A system should therefore return the minimum information necessary for its downstream purpose—perhaps only an intersection count, perhaps pseudonymous pair mappings, or perhaps a full linked dataset depending on the application.",
+        "Differential privacy illustrates the importance of matching a privacy mechanism to the correct objective. Differential privacy provides powerful formal guarantees for particular kinds of statistical releases, but recent PPRL research has shown that perturbing blocks or encoded bits does not automatically protect the actual people being linked and may substantially reduce linkage quality.",
+        "A rigorous PPRL design begins with a threat model. It specifies the participating organizations, trusted components, possible collusion, attacker knowledge, allowed outputs, key-management assumptions, retention periods, and security properties. Only then can an encoding or cryptographic protocol be evaluated meaningfully.",
+        "The strongest operational discipline is therefore:",
+        "define the linkage purpose → minimize required data → normalize locally → define the adversary → generate candidates privately → compare records under an explicit privacy model → reveal only the necessary linkage result → measure linkage quality → attack the privacy mechanism → monitor and rotate the system over time",
+        "Within this architecture, Levenshtein distance remains useful for exactly the problem it was designed to solve: quantifying insertion, deletion, and substitution differences between sequence representations. Privacy-preserving record linkage determines how that similarity evidence can be computed without unnecessarily exposing the people represented by those strings."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 10,
+      "word_count": 135,
+      "evidence": "Entity Resolution and Record Linkage — the probabilistic and statistical foundations of deciding whether records represent the same real-world entity.",
+      "paragraphs": [
+        "Entity Resolution and Record Linkage — the probabilistic and statistical foundations of deciding whether records represent the same real-world entity.",
+        "Name, Address and Place Matching — normalization, aliases, transliteration, structured addresses, and geographic identity evidence.",
+        "Patient Identity Matching — privacy and identity-resolution trade-offs in healthcare and master patient indexes.",
+        "Indexing and Filtering for Edit Distance — candidate-generation principles required before expensive secure comparison.",
+        "Weighted Levenshtein Distance — nonuniform edit costs for domain-specific error processes.",
+        "Damerau-Levenshtein Distance — transposition-aware string comparison for data-entry errors.",
+        "Unicode and Grapheme-Safe Levenshtein — text representation and normalization before private encoding.",
+        "Text Normalization and Transliteration — multilingual and cross-script representation before linkage.",
+        "Levenshtein vs Jaro-Winkler and Phonetic Matching — comparator choice for personal names and noisy identifiers.",
+        "String Similarity vs Semantic Similarity — why textual resemblance alone cannot establish real-world identity."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-167",
+      "paragraph_count": 15,
+      "word_count": 414,
+      "evidence": "Rainer Schnell, Tobias Bachteler, and Jörg Reiher, “Privacy-Preserving Record Linkage Using Bloom Filters,” BMC Medical Informatics and Decision Making , 9, 41, 2009. DOI record .",
+      "paragraphs": [
+        "Rainer Schnell, Tobias Bachteler, and Jörg Reiher, “Privacy-Preserving Record Linkage Using Bloom Filters,” BMC Medical Informatics and Decision Making , 9, 41, 2009. DOI record .",
+        "Dinusha Vatsalan, Peter Christen, and Vassilios S. Verykios, “A Taxonomy of Privacy-Preserving Record Linkage Techniques,” Information Systems , 38(6), 946–969, 2013. DOI record .",
+        "Vassilios S. Verykios and Peter Christen, “Privacy-Preserving Record Linkage,” WIREs Data Mining and Knowledge Discovery , 3(5), 321–332, 2013. DOI record .",
+        "Mehmet Kuzu, Murat Kantarcioglu, Elizabeth Durham, and Bradley Malin, “A Constraint Satisfaction Cryptanalysis of Bloom Filters in Private Record Linkage,” Privacy Enhancing Technologies , 2011. DOI record .",
+        "Adrian P. Brown et al., “Evaluating Privacy-Preserving Record Linkage Using Cryptographic Long-Term Keys and Multibit Trees on Large Medical Datasets,” BMC Medical Informatics and Decision Making , 17, 83, 2017. DOI record .",
+        "Matthias Franke, Ziad Sehili, Felix Rohde, and Erhard Rahm, “Evaluation of Hardening Techniques for Privacy-Preserving Record Linkage,” EDBT 2021 , 289–300. DOI record .",
+        "Sean Randall et al., “A Blinded Evaluation of Privacy Preserving Record Linkage with Bloom Filters,” BMC Medical Research Methodology , 22, 22, 2022. DOI record .",
+        "Sebastian Stammler et al., “Mainzelliste SecureEpiLinker (MainSEL): Privacy-Preserving Record Linkage Using Secure Multi-Party Computation,” Bioinformatics , 38(6), 1657–1668, 2022. DOI record .",
+        "Anushka Vidanage, Thilina Ranbaduge, Peter Christen, and Rainer Schnell, “Taxonomy of Attacks on Privacy-Preserving Record Linkage,” Journal of Privacy and Confidentiality , 12(1), 2022. DOI record .",
+        "Anushka Vidanage, Peter Christen, Thilina Ranbaduge, and Rainer Schnell, “A Vulnerability Assessment Framework for Privacy-Preserving Record Linkage,” ACM Transactions on Privacy and Security , 26(3), Article 36, 2023. DOI record .",
+        "Allon Adir et al., “Privacy-Preserving Record Linkage Using Local Sensitive Hash and Private Set Intersection,” Applied Cryptography and Network Security Workshops , 398–424, 2022. DOI record .",
+        "Peter Christen, Rainer Schnell, Thilina Ranbaduge, and Anushka Vidanage, “A Critique and Attack on Blockchain-Based Privacy-Preserving Record Linkage,” Information Systems , 108, 101930, 2022. DOI record .",
+        "Sumayya Ziyad, Peter Christen, Anushka Vidanage, Charini Nanayakkara, and Rainer Schnell, “Privacy-Preserving Record Linkage Using Reference Set Based Encoding: A Single Parameter Method,” Information Systems , 133, 102569, 2025. DOI record .",
+        "Peter Christen, Rainer Schnell, and Anushka Vidanage, “Information Leakage in the Practical Linking of Sensitive Data: Parties, Protocols, and Adversaries,” Information Systems , 140, 102720, 2026. DOI record .",
+        "Sumayya Ziyad, Peter Christen, Rainer Schnell, Lucas Lange, and Anushka Vidanage, “The Use of Differential Privacy for Privacy-Preserving Record Linkage: Protecting the Bits but Not the People,” Information Systems , 140, 102726, 2026. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Transpositions",
+          "anchor_id": "ux-section-111",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau-Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Damerau-Levenshtein Distance — transposition-aware string comparison for data-entry errors."
+        }
+      ]
+    },
+    {
+      "target": "/data-matching",
+      "evidence": [
+        {
+          "section": "Approximate text matching remains central",
+          "anchor_id": "ux-section-105",
+          "alias": "data matching",
+          "excerpt": "These are the same problems explored in conventional data matching."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Privacy-preserving blocking",
+          "anchor_id": "ux-section-64",
+          "alias": "edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance for the general candidate-reduction principle."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — candidate-generation principles required before expensive secure comparison."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "Privacy-Preserving Record Linkage",
+          "anchor_id": "ux-section-1",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "A conventional entity-resolution and record-linkage system can inspect these values directly, normalize them, compare them with several string and field-specific comparators, and combine the resulting evidence."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "Entity Resolution and Record Linkage — the probabilistic and statistical foundations of deciding whether records represent the same real-world entity."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Privacy-preserving blocking",
+          "anchor_id": "ux-section-64",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance for the general candidate-reduction principle."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — candidate-generation principles required before expensive secure comparison."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-jaro-winkler-and-phonetic-matching",
+      "evidence": [
+        {
+          "section": "Comparator choice remains application-specific",
+          "anchor_id": "ux-section-112",
+          "alias": "levenshtein vs jaro winkler and phonetic matching",
+          "excerpt": "See Levenshtein vs Jaro-Winkler and Phonetic Matching ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "levenshtein vs jaro winkler and phonetic matching",
+          "excerpt": "Levenshtein vs Jaro-Winkler and Phonetic Matching — comparator choice for personal names and noisy identifiers."
+        }
+      ]
+    },
+    {
+      "target": "/name-address-and-place-matching",
+      "evidence": [
+        {
+          "section": "Stratified linkage evaluation is essential",
+          "anchor_id": "ux-section-88",
+          "alias": "name address and place matching",
+          "excerpt": "See Name, Address and Place Matching ."
+        },
+        {
+          "section": "Approximate text matching remains central",
+          "anchor_id": "ux-section-105",
+          "alias": "name address and place matching",
+          "excerpt": "See Name, Address and Place Matching ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "name address and place matching",
+          "excerpt": "Name, Address and Place Matching — normalization, aliases, transliteration, structured addresses, and geographic identity evidence."
+        }
+      ]
+    },
+    {
+      "target": "/patient-identity-matching",
+      "evidence": [
+        {
+          "section": "Healthcare makes PPRL particularly consequential",
+          "anchor_id": "ux-section-89",
+          "alias": "patient identity matching",
+          "excerpt": "See Patient Identity Matching ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "patient identity matching",
+          "excerpt": "Patient Identity Matching — privacy and identity-resolution trade-offs in healthcare and master patient indexes."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "String similarity is not entity identity",
+          "anchor_id": "ux-section-115",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "String Similarity vs Semantic Similarity — why textual resemblance alone cannot establish real-world identity."
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "Normalization still happens before privacy encoding",
+          "anchor_id": "ux-section-30",
+          "alias": "text normalization and transliteration",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein and Text Normalization and Transliteration ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "text normalization and transliteration",
+          "excerpt": "Text Normalization and Transliteration — multilingual and cross-script representation before linkage."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Normalization still happens before privacy encoding",
+          "anchor_id": "ux-section-30",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein and Text Normalization and Transliteration ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "Unicode and Grapheme-Safe Levenshtein — text representation and normalization before private encoding."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted string comparison",
+          "anchor_id": "ux-section-110",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "A secure system may need domain-specific costs such as those described in Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-166",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — nonuniform edit costs for domain-specific error processes."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/privacy-preserving-record-linkage#page",
+      "type": "WebPage",
+      "name": "Privacy-Preserving Record Linkage",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/privacy-preserving-record-linkage#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/privacy-preserving-record-linkage#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "type": "TechArticle",
+      "name": "Privacy-Preserving Record Linkage",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/privacy-preserving-record-linkage#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/privacy-preserving-record-linkage#bloom-filter-pprl"
+        },
+        {
+          "@id": "https://www.levenshtein.net/privacy-preserving-record-linkage#secure-computation"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/privacy-preserving-record-linkage#concept",
+      "type": "DefinedTerm",
+      "name": "Privacy-Preserving Record Linkage",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/privacy-preserving-record-linkage#bloom-filter-pprl",
+      "type": "DefinedTerm",
+      "name": "Bloom Filter Privacy-Preserving Record Linkage",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/privacy-preserving-record-linkage#secure-computation",
+      "type": "DefinedTerm",
+      "name": "Secure Computation for Record Linkage",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/privacy-preserving-record-linkage#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "hasPart",
+      "https://www.levenshtein.net/data-matching#collection"
+    ],
+    [
+      "https://www.levenshtein.net/data-matching#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/applications#collection"
+    ],
+    [
+      "https://www.levenshtein.net/data-matching#collection",
+      "hasPart",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#page"
+    ],
+    [
+      "https://www.levenshtein.net/data-matching#collection",
+      "hasPart",
+      "https://www.levenshtein.net/name-address-and-place-matching#page"
+    ],
+    [
+      "https://www.levenshtein.net/data-matching#collection",
+      "hasPart",
+      "https://www.levenshtein.net/patient-identity-matching#page"
+    ],
+    [
+      "https://www.levenshtein.net/data-matching#collection",
+      "hasPart",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#page"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#page",
+      "about",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#page",
+      "mainEntity",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#page",
+      "isPartOf",
+      "https://www.levenshtein.net/data-matching#collection"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#page",
+      "hasPart",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "about",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "about",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#bloom-filter-pprl"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "about",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#secure-computation"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/name-address-and-place-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/patient-identity-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-vs-jaro-winkler-and-phonetic-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "mentions",
+      "https://www.levenshtein.net/string-similarity-vs-semantic-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "isPartOf",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#page"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1186/1472-6947-9-41"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1016/j.is.2012.11.005"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1002/widm.1101"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1007/978-3-642-22263-4_13"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1186/s12911-017-0478-5"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.5441/002/edbt.2021.26"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1186/s12874-022-01510-2"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1093/bioinformatics/btaa764"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.29012/jpc.764"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1145/3589641"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1007/978-3-031-16815-4_22"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1016/j.is.2025.102569"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1016/j.is.2026.102720"
+    ],
+    [
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#article",
+      "citation",
+      "https://doi.org/10.1016/j.is.2026.102726"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1186/1472-6947-9-41",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1186/s12874-022-01510-2",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1007/978-3-642-22263-4_13",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3589641",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.29012/jpc.764",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.5441/002/edbt.2021.26",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1007/978-3-031-16815-4_22",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1093/bioinformatics/btaa764",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.is.2025.102569",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.is.2026.102720",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.is.2026.102726",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.is.2021.101930",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.is.2012.11.005",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1002/widm.1101",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1186/s12911-017-0478-5",
+      "anchor": "DOI record"
+    }
+  ]
+}

@@ -1,0 +1,858 @@
+{
+  "url": "/typosquatting-and-supply-chain-security",
+  "title": "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+  "h1": [
+    "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense"
+  ],
+  "group": "Software",
+  "provisional_mission": "Phát hiện giả mạo tên package",
+  "content_sha256": "5c65c309cd43123db5d81bade120d43665b65b782d20db188d52919daba21a03",
+  "canonical": "https://www.levenshtein.net/typosquatting-and-supply-chain-security",
+  "primary_entity_candidate": "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+      "level": 2,
+      "id": "",
+      "paragraph_count": 6,
+      "word_count": 127,
+      "evidence": "Typosquatting is a name-based attack pattern in which a package, domain, repository, module, library, or other software identifier is made similar enough to a trusted identifier that a user or automated system may select the wrong artifact.",
+      "paragraphs": [
+        "Typosquatting is a name-based attack pattern in which a package, domain, repository, module, library, or other software identifier is made similar enough to a trusted identifier that a user or automated system may select the wrong artifact.",
+        "The deceptive name may differ through a missing character, an inserted character, a substitution, a transposition, a separator change, an added prefix or suffix, a Unicode confusable character, or another transformation.",
+        "This makes Levenshtein distance useful for detecting nearby identifiers. But string similarity should normally be treated as a candidate-generation signal , not as proof that a package is malicious.",
+        "name similarity ↓ candidate generation ↓ context ↓ provenance ↓ package metadata ↓ artifact / behavior analysis ↓ security decision",
+        "The central distinction is:",
+        "small edit distance ≠ malicious package"
+      ]
+    },
+    {
+      "heading": "Why Package Names Are Security-Sensitive Strings",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 3,
+      "word_count": 52,
+      "evidence": "In ordinary prose, a typo usually changes text. In a software ecosystem, a typo can change which executable artifact is downloaded.",
+      "paragraphs": [
+        "In ordinary prose, a typo usually changes text. In a software ecosystem, a typo can change which executable artifact is downloaded.",
+        "developer intent ↓ package identifier ↓ registry resolution ↓ downloaded artifact ↓ installation or execution",
+        "A naming mistake near the beginning of this chain can therefore cross a software trust boundary."
+      ]
+    },
+    {
+      "heading": "Levenshtein Distance as a First Detection Layer",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 8,
+      "word_count": 57,
+      "evidence": "Let T be the trusted identifier and C a candidate. A simple detector can search for:",
+      "paragraphs": [
+        "Let T be the trusted identifier and C a candidate. A simple detector can search for:",
+        "dL(T, C) ≤ k",
+        "where dL is Levenshtein distance and k is a selected search radius.",
+        "Standard Levenshtein distance models:",
+        "insertion,",
+        "deletion,",
+        "substitution.",
+        "Transformation Trusted name Variant Unit-cost distance Deletion package pakage 1 Insertion package packaage 1 Substitution package packege 1"
+      ]
+    },
+    {
+      "heading": "Transpositions Need a Different Operation Model",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 4,
+      "word_count": 49,
+      "evidence": "A common typing mistake swaps adjacent characters:",
+      "paragraphs": [
+        "A common typing mistake swaps adjacent characters:",
+        "package → pakcage",
+        "Classic Levenshtein distance does not include transposition as a primitive operation. An adjacent swap can therefore require two Levenshtein edits even though a user experiences it as one typing error.",
+        "For applications where transpositions matter, see Damerau-Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Distance Is Better for Candidate Generation Than Verdicts",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 4,
+      "word_count": 47,
+      "evidence": "A useful security architecture separates two tasks.",
+      "paragraphs": [
+        "A useful security architecture separates two tasks.",
+        "CANDIDATE GENERATION find names that are close to a protected identifier SECURITY CLASSIFICATION decide whether the relationship is legitimate, accidental, defensive, or malicious",
+        "Levenshtein distance is naturally suited to the first task.",
+        "The second requires evidence outside the string itself."
+      ]
+    },
+    {
+      "heading": "Why a Fixed Distance Threshold Produces False Positives",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 14,
+      "word_count": 53,
+      "evidence": "Software ecosystems contain many legitimate names that differ by only one or two characters.",
+      "paragraphs": [
+        "Software ecosystems contain many legitimate names that differ by only one or two characters.",
+        "parser parsers color colors request requests",
+        "Package names also reuse common vocabulary such as:",
+        "core,",
+        "utils,",
+        "client,",
+        "server,",
+        "api,",
+        "plugin,",
+        "parser,",
+        "adapter.",
+        "A rule such as:",
+        "distance ≤ 1 → malicious",
+        "would therefore create large numbers of false positives."
+      ]
+    },
+    {
+      "heading": "Name Length Changes the Meaning of an Edit Count",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 6,
+      "word_count": 66,
+      "evidence": "A distance of two can be large for a three-character identifier and small relative to a thirty-character identifier.",
+      "paragraphs": [
+        "A distance of two can be large for a three-character identifier and small relative to a thirty-character identifier.",
+        "A normalized edit distance can be defined as:",
+        "d_norm(x,y) = dL(x,y) / max(|x|, |y|)",
+        "and a simple derived similarity as:",
+        "sim(x,y) = 1 - d_norm(x,y)",
+        "These values can help compare strings of different lengths, but they still do not encode trust, popularity, visual similarity, ownership, or malicious intent."
+      ]
+    },
+    {
+      "heading": "Registry Canonicalization Must Be Modeled Explicitly",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 11,
+      "word_count": 53,
+      "evidence": "Package ecosystems can define naming rules involving:",
+      "paragraphs": [
+        "Package ecosystems can define naming rules involving:",
+        "case,",
+        "hyphens,",
+        "underscores,",
+        "periods,",
+        "scopes,",
+        "namespaces.",
+        "A detector should therefore preserve both:",
+        "raw identifier + registry-canonicalized identifier",
+        "Comparing only the raw spelling can miss relationships introduced by registry resolution rules.",
+        "Comparing only the canonicalized form can also destroy useful evidence about how the candidate was constructed."
+      ]
+    },
+    {
+      "heading": "Token Structure Matters",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 10,
+      "word_count": 55,
+      "evidence": "Package identifiers often contain meaningful components:",
+      "paragraphs": [
+        "Package identifiers often contain meaningful components:",
+        "cloud-storage-client cloud storage client",
+        "Character-level edit distance treats the entire identifier as one sequence. A second representation can compare token structure:",
+        "d_token( tokens(target), tokens(candidate) )",
+        "This can reveal relationships that character distance alone handles poorly, such as:",
+        "added prefixes,",
+        "added suffixes,",
+        "token reordering,",
+        "separator changes,",
+        "vendor or framework additions."
+      ]
+    },
+    {
+      "heading": "Combosquatting Is Broader Than Simple Typing Errors",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 5,
+      "word_count": 42,
+      "evidence": "A candidate can preserve the trusted identifier while adding plausible words:",
+      "paragraphs": [
+        "A candidate can preserve the trusted identifier while adding plausible words:",
+        "trusted-name trusted-name-client trusted-name-security official-trusted-name",
+        "Character edit distance may become relatively large even though the impersonation structure is obvious to a human.",
+        "This illustrates a broader principle:",
+        "typo similarity ⊂ package-name confusion"
+      ]
+    },
+    {
+      "heading": "Package Confusion Extends Beyond Typosquatting",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "Research on software package ecosystems shows that developers can be confused through multiple naming mechanisms, not only simple misspellings.",
+      "paragraphs": [
+        "Research on software package ecosystems shows that developers can be confused through multiple naming mechanisms, not only simple misspellings.",
+        "A comprehensive detector therefore should not assume:",
+        "package confusion = edit distance ≤ small threshold",
+        "Lexical similarity is one important signal among several."
+      ]
+    },
+    {
+      "heading": "Weighted Edit Distance Can Model Typing Behavior",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 7,
+      "word_count": 68,
+      "evidence": "Human substitution errors are not uniformly distributed.",
+      "paragraphs": [
+        "Human substitution errors are not uniformly distributed.",
+        "On a particular keyboard layout:",
+        "cost(g → h) < cost(g → p)",
+        "can represent the fact that some keys are physically closer than others.",
+        "Similar weighting can model domain-specific error patterns.",
+        "See Weighted Levenshtein Distance .",
+        "Keyboard weighting should still be treated as an application model rather than universal truth because users may type with different layouts, devices, or input methods."
+      ]
+    },
+    {
+      "heading": "Unicode Confusables Are a Different Attack Surface",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 5,
+      "word_count": 57,
+      "evidence": "Unicode allows different code points to produce similar visual forms.",
+      "paragraphs": [
+        "Unicode allows different code points to produce similar visual forms.",
+        "A candidate identifier may therefore look close to a trusted identifier even when plain edit distance does not capture the full deception risk.",
+        "sequence similarity ≠ visual similarity",
+        "Unicode Technical Standard #39 provides dedicated mechanisms for confusable and identifier-security analysis.",
+        "See Unicode Homoglyph and Confusable Attacks ."
+      ]
+    },
+    {
+      "heading": "Confusable Processing and Edit Distance Can Be Combined",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 4,
+      "word_count": 61,
+      "evidence": "A defensive system can preserve several representations:",
+      "paragraphs": [
+        "A defensive system can preserve several representations:",
+        "raw identifier │ ├── registry canonical form ├── normalized Unicode form ├── code-point representation ├── grapheme representation └── UTS #39 security representation",
+        "Edit distance can then be used on the representations appropriate to the task.",
+        "This does not turn Levenshtein distance into a visual-similarity metric. Unicode security processing and sequence distance remain separate layers."
+      ]
+    },
+    {
+      "heading": "Popularity Makes Name Similarity Directional",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "Standard Levenshtein distance is symmetric:",
+      "paragraphs": [
+        "Standard Levenshtein distance is symmetric:",
+        "d(A,B) = d(B,A)",
+        "Impersonation risk is not.",
+        "A newly created, little-used package with a name close to a long-established popular package presents a different hypothesis from two similarly old, independently established projects.",
+        "SpellBound demonstrated the practical value of combining lexical similarity with package popularity rather than treating distance alone as the warning criterion."
+      ]
+    },
+    {
+      "heading": "Package Age and Registration Chronology Add Context",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 8,
+      "word_count": 53,
+      "evidence": "Useful temporal evidence can include:",
+      "paragraphs": [
+        "Useful temporal evidence can include:",
+        "target creation date,",
+        "candidate creation date,",
+        "first release date,",
+        "release frequency,",
+        "maintainer history.",
+        "A candidate that appears long after a well-known target and closely imitates its name may support a stronger impersonation hypothesis.",
+        "Conversely, if the candidate predates the supposed target, a simple imitation narrative becomes less plausible."
+      ]
+    },
+    {
+      "heading": "Ownership and Provenance Are Stronger Than Name Similarity",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 10,
+      "word_count": 49,
+      "evidence": "Similar package names can belong to the same legitimate project family:",
+      "paragraphs": [
+        "Similar package names can belong to the same legitimate project family:",
+        "framework-core framework-http framework-cli framework-test",
+        "Useful evidence includes:",
+        "maintainer accounts,",
+        "publisher organization,",
+        "namespace ownership,",
+        "repository ownership,",
+        "verified project domains,",
+        "release provenance.",
+        "Package metadata can help, but metadata supplied by a publisher should not automatically be treated as verified ownership."
+      ]
+    },
+    {
+      "heading": "Repository and Source Similarity Add Another Layer",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 11,
+      "word_count": 79,
+      "evidence": "A candidate package may copy a legitimate project's source code or documentation.",
+      "paragraphs": [
+        "A candidate package may copy a legitimate project's source code or documentation.",
+        "Useful questions include:",
+        "Does the candidate reference the same repository?",
+        "Does repository ownership match the package publisher?",
+        "Does the repository predate package publication?",
+        "Does the published artifact correspond to the repository?",
+        "Was documentation copied from another project?",
+        "Source similarity can provide evidence of relationship, but:",
+        "similar source ≠ safe source",
+        "A nearly identical project can contain a small malicious modification.",
+        "See Source Code and AST Similarity ."
+      ]
+    },
+    {
+      "heading": "Typosquatting Is Only One Supply-Chain Attack Strategy",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 2,
+      "word_count": 65,
+      "evidence": "Software supply-chain security includes attack classes where package-name similarity provides little or no signal.",
+      "paragraphs": [
+        "Software supply-chain security includes attack classes where package-name similarity provides little or no signal.",
+        "Attack class Name similarity useful? Primary security layer Classic typosquatting Strongly useful Identifier Combosquatting Useful with structural features Identifier Unicode impersonation Partly Identifier + Unicode security Dependency confusion Often not useful Resolver / namespace Maintainer compromise No Identity / release Malicious update No Artifact / behavior Build compromise No Build provenance"
+      ]
+    },
+    {
+      "heading": "Dependency Confusion Can Have Distance Zero",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 8,
+      "word_count": 56,
+      "evidence": "Dependency confusion can occur when a resolver selects an unintended package from another registry or namespace even though the identifier is exactly the expected name.",
+      "paragraphs": [
+        "Dependency confusion can occur when a resolver selects an unintended package from another registry or namespace even though the identifier is exactly the expected name.",
+        "intended identifier = maliciously resolved identifier dL = 0",
+        "In this case, string similarity contains no discriminating information.",
+        "The vulnerability belongs to:",
+        "registry precedence,",
+        "namespace configuration,",
+        "version resolution,",
+        "private/public dependency policy."
+      ]
+    },
+    {
+      "heading": "Compromised Legitimate Packages Also Have Distance Zero",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 4,
+      "word_count": 53,
+      "evidence": "If an attacker compromises a maintainer account, repository, build process, or legitimate release channel, the package name can remain completely unchanged.",
+      "paragraphs": [
+        "If an attacker compromises a maintainer account, repository, build process, or legitimate release channel, the package name can remain completely unchanged.",
+        "trusted name = compromised name",
+        "Detection must then focus on provenance, artifact changes, publisher behavior, signatures, build integrity, and runtime behavior.",
+        "This is one of the clearest limits of name-based security detection."
+      ]
+    },
+    {
+      "heading": "Historical Web Typosquatting Provides the Same Lesson",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 6,
+      "word_count": 104,
+      "evidence": "Typosquatting is not restricted to software package registries. Similar naming attacks have long existed in domain names.",
+      "paragraphs": [
+        "Typosquatting is not restricted to software package registries. Similar naming attacks have long existed in domain names.",
+        "Research examining the early adoption of Let's Encrypt found evidence that some Let's Encrypt certificates were associated with typosquatting and malware-related sites.",
+        "This does not imply that Let's Encrypt certificates themselves indicate maliciousness. The important lesson is the opposite:",
+        "valid TLS certificate ≠ trusted organizational identity",
+        "Transport authentication confirms the domain to which a certificate was issued. It does not establish that a visually or lexically similar domain belongs to the organization a user intended to reach.",
+        "See Shedding Light on the Adoption of Let's Encrypt ."
+      ]
+    },
+    {
+      "heading": "Empirical Software Supply-Chain Research",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 5,
+      "word_count": 52,
+      "evidence": "Research on malicious packages has documented real-world supply-chain attacks across ecosystems including npm, PyPI, and RubyGems.",
+      "paragraphs": [
+        "Research on malicious packages has documented real-world supply-chain attacks across ecosystems including npm, PyPI, and RubyGems.",
+        "These studies reinforce two points:",
+        "name impersonation is a genuine software supply-chain technique,",
+        "software supply-chain compromise includes many techniques beyond name similarity.",
+        "See Backstabber's Knife Collection: A Review of Open Source Software Supply Chain Attacks ."
+      ]
+    },
+    {
+      "heading": "Popularity-Aware Detection",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "A practical warning system can combine:",
+      "paragraphs": [
+        "A practical warning system can combine:",
+        "lexical similarity + target popularity + candidate popularity + package age + ownership / provenance",
+        "This reduces the mistake of treating every pair of nearby names as equally suspicious.",
+        "See SpellBound: Defending Against Package Typosquatting ."
+      ]
+    },
+    {
+      "heading": "Package Confusion Is Broader Than Lexical Distance",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 4,
+      "word_count": 66,
+      "evidence": "A large study of documented package confusion attacks identified multiple mechanisms by which developers can be led to install an unintended package. Many of these mechanisms cannot be reduced to a small character edit.",
+      "paragraphs": [
+        "A large study of documented package confusion attacks identified multiple mechanisms by which developers can be led to install an unintended package. Many of these mechanisms cannot be reduced to a small character edit.",
+        "This is an important boundary for Levenshtein-based detection:",
+        "lexically close → useful candidate signal not lexically close → does not imply safe",
+        "See Beyond Typosquatting: An In-depth Look at Package Confusion ."
+      ]
+    },
+    {
+      "heading": "Pre-Installation Warnings Are Valuable",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 4,
+      "word_count": 65,
+      "evidence": "Package ecosystems can execute code during installation or build stages. A mistaken package selection can therefore become dangerous before an application explicitly imports the package.",
+      "paragraphs": [
+        "Package ecosystems can execute code during installation or build stages. A mistaken package selection can therefore become dangerous before an application explicitly imports the package.",
+        "Detection close to the package-resolution step has an important advantage:",
+        "package requested ↓ candidate appears suspicious ↓ warning / verification ↓ download decision",
+        "The earlier the uncertainty is exposed, the less reliance is placed on detecting malicious behavior after installation."
+      ]
+    },
+    {
+      "heading": "Alert Fatigue Is Part of the Security Model",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 4,
+      "word_count": 51,
+      "evidence": "A detector that warns about every similar package will eventually train users to ignore warnings.",
+      "paragraphs": [
+        "A detector that warns about every similar package will eventually train users to ignore warnings.",
+        "too many alerts ↓ routine warnings ↓ ignored warnings",
+        "Because malicious packages are rare compared with legitimate packages, even a small false-positive rate can generate substantial warning volume at registry scale.",
+        "Precision therefore matters alongside recall."
+      ]
+    },
+    {
+      "heading": "Do Not Automatically Correct Security-Sensitive Identifiers",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 8,
+      "word_count": 49,
+      "evidence": "Approximate matching can be useful for:",
+      "paragraphs": [
+        "Approximate matching can be useful for:",
+        "candidate retrieval,",
+        "warnings,",
+        "review queues,",
+        "security investigation.",
+        "It should not silently replace a supplied package identifier with the nearest known identifier.",
+        "nearest string ≠ intended package",
+        "High-consequence systems should preserve uncertainty and require explicit verification rather than silently converting fuzzy similarity into identity."
+      ]
+    },
+    {
+      "heading": "A Layered Detection Architecture",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 3,
+      "word_count": 66,
+      "evidence": "A practical typosquatting detector can be structured in layers.",
+      "paragraphs": [
+        "A practical typosquatting detector can be structured in layers.",
+        "protected package set ↓ registry-aware canonicalization ↓ character / token candidate retrieval ↓ Levenshtein / Damerau / weighted features ↓ Unicode confusable analysis ↓ popularity + age + chronology ↓ namespace + maintainer + repository evidence ↓ artifact / dependency / code analysis ↓ behavioral analysis where appropriate ↓ security decision",
+        "Each layer answers a different question."
+      ]
+    },
+    {
+      "heading": "String Similarity Is Evidence, Not Identity",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 4,
+      "word_count": 50,
+      "evidence": "The most important interpretation rule for security applications is:",
+      "paragraphs": [
+        "The most important interpretation rule for security applications is:",
+        "string similarity ≠ identity string similarity ≠ ownership string similarity ≠ trust string similarity ≠ malicious intent",
+        "Levenshtein distance measures sequence difference. Security decisions require evidence about the surrounding system.",
+        "This limitation is discussed more broadly in Levenshtein Distance Limitations ."
+      ]
+    },
+    {
+      "heading": "Relationship to Unicode Security",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 4,
+      "word_count": 68,
+      "evidence": "Typosquatting and Unicode confusable attacks meet at the identifier layer, but they require different models.",
+      "paragraphs": [
+        "Typosquatting and Unicode confusable attacks meet at the identifier layer, but they require different models.",
+        "ordinary typo → edit-distance model adjacent transposition → Damerau-style model keyboard-biased error → weighted model Unicode visual impersonation → Unicode security model package provenance problem → ownership / supply-chain model",
+        "Combining these representations is more robust than forcing every attack into a single string metric.",
+        "Continue with Unicode Homoglyph and Confusable Attacks ."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 5,
+      "word_count": 109,
+      "evidence": "Typosquatting demonstrates both the usefulness and the limitations of Levenshtein distance.",
+      "paragraphs": [
+        "Typosquatting demonstrates both the usefulness and the limitations of Levenshtein distance.",
+        "Edit distance is highly useful for discovering identifiers that differ from a protected name through ordinary insertions, deletions, and substitutions. Damerau-Levenshtein and weighted models can represent additional typo patterns.",
+        "But package confusion is broader than typing mistakes. Unicode confusables, prefix and suffix manipulation, semantic naming, dependency confusion, compromised maintainers, malicious updates, and build compromise require additional evidence.",
+        "A robust security system therefore uses string distance near the beginning of the investigation rather than as the final verdict.",
+        "Use edit distance to find suspicious neighbors. Use provenance, context, Unicode security, artifact analysis, and behavior to decide what they mean."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "Unicode Homoglyph and Confusable Attacks",
+      "paragraphs": [
+        "Unicode Homoglyph and Confusable Attacks",
+        "Damerau-Levenshtein Distance",
+        "Weighted Levenshtein Distance",
+        "Source Code and AST Similarity",
+        "Levenshtein Distance Limitations",
+        "String Metrics"
+      ]
+    },
+    {
+      "heading": "Selected Technical References",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 5,
+      "word_count": 40,
+      "evidence": "Shedding Light on the Adoption of Let's Encrypt",
+      "paragraphs": [
+        "Shedding Light on the Adoption of Let's Encrypt",
+        "Backstabber's Knife Collection: A Review of Open Source Software Supply Chain Attacks",
+        "SpellBound: Defending Against Package Typosquatting",
+        "Beyond Typosquatting: An In-depth Look at Package Confusion",
+        "Unicode Technical Standard #39: Unicode Security Mechanisms"
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Transpositions Need a Different Operation Model",
+          "anchor_id": "ux-section-4",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "For applications where transpositions matter, see Damerau-Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-33",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Damerau-Levenshtein Distance"
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+          "anchor_id": "",
+          "alias": "edit distance",
+          "excerpt": "small edit distance ≠ malicious package"
+        },
+        {
+          "section": "Name Length Changes the Meaning of an Edit Count",
+          "anchor_id": "ux-section-7",
+          "alias": "edit distance",
+          "excerpt": "A normalized edit distance can be defined as:"
+        },
+        {
+          "section": "Token Structure Matters",
+          "anchor_id": "ux-section-9",
+          "alias": "edit distance",
+          "excerpt": "Character-level edit distance treats the entire identifier as one sequence. A second representation can compare token structure:"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-distance-limitations",
+      "evidence": [
+        {
+          "section": "String Similarity Is Evidence, Not Identity",
+          "anchor_id": "ux-section-30",
+          "alias": "levenshtein distance limitations",
+          "excerpt": "This limitation is discussed more broadly in Levenshtein Distance Limitations ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-33",
+          "alias": "levenshtein distance limitations",
+          "excerpt": "Levenshtein Distance Limitations"
+        }
+      ]
+    },
+    {
+      "target": "/source-code-and-ast-similarity",
+      "evidence": [
+        {
+          "section": "Repository and Source Similarity Add Another Layer",
+          "anchor_id": "ux-section-18",
+          "alias": "source code and ast similarity",
+          "excerpt": "See Source Code and AST Similarity ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-33",
+          "alias": "source code and ast similarity",
+          "excerpt": "Source Code and AST Similarity"
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-33",
+          "alias": "string metrics",
+          "excerpt": "String Metrics"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-homoglyph-and-confusable-attacks",
+      "evidence": [
+        {
+          "section": "Unicode Confusables Are a Different Attack Surface",
+          "anchor_id": "ux-section-13",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "See Unicode Homoglyph and Confusable Attacks ."
+        },
+        {
+          "section": "Relationship to Unicode Security",
+          "anchor_id": "ux-section-31",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "Continue with Unicode Homoglyph and Confusable Attacks ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-33",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "Unicode Homoglyph and Confusable Attacks"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted Edit Distance Can Model Typing Behavior",
+          "anchor_id": "ux-section-12",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-33",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#webpage",
+      "type": "WebPage",
+      "name": "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#typosquatting"
+        },
+        {
+          "@id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#software-supply-chain-security"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article",
+      "type": "Article",
+      "name": "Typosquatting and Software Supply-Chain Security: Edit Distance, Package Impersonation, Detection, and Defense",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#typosquatting"
+        },
+        {
+          "@id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#software-supply-chain-security"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#typosquatting",
+      "type": "DefinedTerm",
+      "name": "Typosquatting",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#software-supply-chain-security",
+      "type": "DefinedTerm",
+      "name": "Software Supply-Chain Security",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#package-confusion",
+      "type": "DefinedTerm",
+      "name": "Package Confusion",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#dependency-confusion",
+      "type": "DefinedTerm",
+      "name": "Dependency Confusion",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#unicode-confusables",
+      "type": "DefinedTerm",
+      "name": "Unicode Confusables",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/typosquatting-and-supply-chain-security#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#webpage",
+      "about",
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#typosquatting"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#webpage",
+      "about",
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#software-supply-chain-security"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article",
+      "about",
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#typosquatting"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article",
+      "about",
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#software-supply-chain-security"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article",
+      "mentions",
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#package-confusion"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article",
+      "mentions",
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#dependency-confusion"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article",
+      "mentions",
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#unicode-confusables"
+    ],
+    [
+      "https://www.levenshtein.net/typosquatting-and-supply-chain-security#article",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://arxiv.org/abs/1611.00469",
+      "anchor": "Shedding Light on the Adoption of Let's Encrypt"
+    },
+    {
+      "url": "https://arxiv.org/abs/2005.09535",
+      "anchor": "Backstabber's Knife Collection: A Review of Open Source Software Supply Chain Attacks"
+    },
+    {
+      "url": "https://arxiv.org/abs/2003.03471",
+      "anchor": "SpellBound: Defending Against Package Typosquatting"
+    },
+    {
+      "url": "https://www.usenix.org/conference/usenixsecurity23/presentation/neupane",
+      "anchor": "Beyond Typosquatting: An In-depth Look at Package Confusion"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr39/",
+      "anchor": "Unicode Technical Standard #39: Unicode Security Mechanisms"
+    }
+  ]
+}

@@ -1,0 +1,1055 @@
+{
+  "url": "/levenshtein-implementations",
+  "title": "Levenshtein Implementations: Correctness, Memory & Performance",
+  "h1": [
+    "Levenshtein Implementations: Correctness, Memory & Performance"
+  ],
+  "group": "Implementations",
+  "provisional_mission": "Code, correctness và memory",
+  "content_sha256": "77c9cb0ba042a6d2ec0fe90bf4f1124e0b98738a081d26a5533da6a71df179b7",
+  "canonical": "https://www.levenshtein.net/levenshtein-implementations",
+  "primary_entity_candidate": "Levenshtein Implementations: Correctness, Memory & Performance",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Levenshtein Implementations: Correctness, Memory & Performance",
+      "level": 2,
+      "id": "",
+      "paragraph_count": 6,
+      "word_count": 134,
+      "evidence": "Implementing Levenshtein distance is easy to underestimate. The mathematical recurrence is compact, but a production implementation must define what sequence it is comparing, which edit model it uses, how Unicode text is represented, whether preprocessing changes the input, what output is required, and which performance constraints apply.",
+      "paragraphs": [
+        "Implementing Levenshtein distance is easy to underestimate. The mathematical recurrence is compact, but a production implementation must define what sequence it is comparing, which edit model it uses, how Unicode text is represented, whether preprocessing changes the input, what output is required, and which performance constraints apply.",
+        "The central implementation question is therefore not simply how to fill a dynamic-programming matrix.",
+        "It is:",
+        "What exactly counts as one element of the sequence being compared?",
+        "raw input ↓ representation validation ↓ normalization / transformation policy ↓ sequence-unit selection ↓ algorithm selection ↓ Levenshtein computation ↓ optional traceback ↓ application interpretation",
+        "Two programs can both implement the classical Levenshtein recurrence correctly and still return different results if one compares bytes, another compares UTF-16 code units, another compares Unicode code points, and another compares extended grapheme clusters."
+      ]
+    },
+    {
+      "heading": "Define the Implementation Contract First",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 6,
+      "word_count": 99,
+      "evidence": "For two sequences:",
+      "paragraphs": [
+        "For two sequences:",
+        "A = a₁a₂...aₘ B = b₁b₂...bₙ",
+        "standard unit-cost Levenshtein distance allows insertion, deletion, and substitution with cost 1, while matching equal sequence elements has cost 0.",
+        "insertion cost 1 deletion cost 1 substitution cost 1 match cost 0",
+        "Before implementing that model, define the software contract.",
+        "Decision Possible choices Sequence unit Byte, code unit, Unicode code point, grapheme cluster, token Edit model Standard, weighted, Damerau-style Output Distance, threshold decision, edit script, alignment Maximum distance Unbounded or cutoff k Normalization None, NFC, NFD, compatibility, application-specific Case policy Case-sensitive, case-folded, locale-specific Resource policy Length limit, operation budget, timeout"
+      ]
+    },
+    {
+      "heading": "The Dynamic-Programming Invariant",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 8,
+      "word_count": 86,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "D[i][j]",
+        "as the minimum edit cost required to transform the first i elements of A into the first j elements of B .",
+        "D[0][0] = 0 D[i][0] = i D[0][j] = j",
+        "For i > 0 and j > 0 :",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + substitution_cost ) substitution_cost = 0 if A[i-1] == B[j-1] 1 otherwise",
+        "The three candidates represent deletion, insertion, and either a match or substitution.",
+        "This recurrence is the foundation of the Wagner–Fischer Algorithm ."
+      ]
+    },
+    {
+      "heading": "Start With a Full-Matrix Reference Implementation",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 5,
+      "word_count": 106,
+      "evidence": "The first implementation should usually optimize for correctness and inspectability rather than maximum speed.",
+      "paragraphs": [
+        "The first implementation should usually optimize for correctness and inspectability rather than maximum speed.",
+        "function levenshtein(A, B): m = length(A) n = length(B) create D[0..m][0..n] for i = 0..m: D[i][0] = i for j = 0..n: D[0][j] = j for i = 1..m: for j = 1..n: cost = 0 if A[i-1] == B[j-1] else 1 D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + cost ) return D[m][n]",
+        "Its complexity is:",
+        "time = O(mn) space = O(mn)",
+        "The full matrix is useful as a correctness oracle because every state can be inspected, traceback is straightforward, and optimized implementations can be differential-tested against it."
+      ]
+    },
+    {
+      "heading": "Worked Example: Kitten to Sitting",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 5,
+      "word_count": 108,
+      "evidence": "∅ s i t t i n g ┌────────────────────────── ∅ │ 0 1 2 3 4 5 6 7 k │ 1 1 2 3 4 5 6 7 i │ 2 2 1 2 3 4 5 6 t │ 3 3 2 1 2 3 4 5 t │ 4 4 3 2 1 2 3 4 e │ 5 5 4 3 2 2 3 4 n │ 6 6 5 4 3 3 2 3",
+      "paragraphs": [
+        "∅ s i t t i n g ┌────────────────────────── ∅ │ 0 1 2 3 4 5 6 7 k │ 1 1 2 3 4 5 6 7 i │ 2 2 1 2 3 4 5 6 t │ 3 3 2 1 2 3 4 5 t │ 4 4 3 2 1 2 3 4 e │ 5 5 4 3 2 2 3 4 n │ 6 6 5 4 3 3 2 3",
+        "The final cell gives:",
+        "ED(\"kitten\", \"sitting\") = 3",
+        "One optimal transformation is:",
+        "kitten ↓ substitute k → s sitten ↓ substitute e → i sittin ↓ insert g sitting"
+      ]
+    },
+    {
+      "heading": "Distance Only Does Not Require the Full Matrix",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 6,
+      "word_count": 59,
+      "evidence": "Computing one dynamic-programming cell requires only the value above it, the value to its left, and the previous diagonal value.",
+      "paragraphs": [
+        "Computing one dynamic-programming cell requires only the value above it, the value to its left, and the previous diagonal value.",
+        "D[i-1][j] D[i][j-1] D[i-1][j-1]",
+        "If the application needs only the numerical distance, it can retain only the previous and current rows.",
+        "time = O(mn) space = O(n)",
+        "If the shorter sequence is placed on the row-width dimension:",
+        "space = O(min(m,n))"
+      ]
+    },
+    {
+      "heading": "Two-Row Implementation",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 2,
+      "word_count": 63,
+      "evidence": "previous = [0, 1, 2, ..., n] for i = 1..m: current[0] = i for j = 1..n: cost = 0 if A[i-1] == B[j-1] else 1 current[j] = min( previous[j] + 1, current[j-1] + 1, previous[j-1] + cost ) swap(previous, current) return previous[n]",
+      "paragraphs": [
+        "previous = [0, 1, 2, ..., n] for i = 1..m: current[0] = i for j = 1..n: cost = 0 if A[i-1] == B[j-1] else 1 current[j] = min( previous[j] + 1, current[j-1] + 1, previous[j-1] + cost ) swap(previous, current) return previous[n]",
+        "This is often a useful production baseline because it substantially reduces memory while remaining easy to inspect and test."
+      ]
+    },
+    {
+      "heading": "One-Row Implementation",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 3,
+      "word_count": 95,
+      "evidence": "Even two rows are unnecessary if the previous diagonal value is preserved before the current cell is overwritten.",
+      "paragraphs": [
+        "Even two rows are unnecessary if the previous diagonal value is preserved before the current cell is overwritten.",
+        "row = [0, 1, 2, ..., n] for i = 1..m: previous_diagonal = row[0] row[0] = i for j = 1..n: old_above = row[j] cost = 0 if A[i-1] == B[j-1] else 1 row[j] = min( old_above + 1, row[j-1] + 1, previous_diagonal + cost ) previous_diagonal = old_above return row[n]",
+        "Working space remains linear in the shorter sequence, but the implementation is easier to get wrong because overwritten values still carry meaning during the current iteration."
+      ]
+    },
+    {
+      "heading": "Input Swapping Requires the Correct Cost Model",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 7,
+      "word_count": 64,
+      "evidence": "Standard unit-cost Levenshtein distance is symmetric:",
+      "paragraphs": [
+        "Standard unit-cost Levenshtein distance is symmetric:",
+        "ED(A,B) = ED(B,A)",
+        "A distance-only implementation can therefore place the shorter sequence on the dimension controlling row width.",
+        "That assumption does not automatically hold for every weighted model.",
+        "insert cost = 3 delete cost = 1",
+        "can produce an asymmetric transformation cost.",
+        "Input swapping must follow the semantics of the actual edit model rather than being applied mechanically."
+      ]
+    },
+    {
+      "heading": "Memory Scale Matters",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 5,
+      "word_count": 47,
+      "evidence": "If both input sequences contain approximately 100,000 elements, a full matrix contains roughly:",
+      "paragraphs": [
+        "If both input sequences contain approximately 100,000 elements, a full matrix contains roughly:",
+        "10^10 cells",
+        "Even before container and allocator overhead, quadratic storage can become impractical.",
+        "One-row or two-row implementations reduce the working set to approximately the length of the shorter sequence.",
+        "O(mn) memory ↓ O(min(m,n)) memory"
+      ]
+    },
+    {
+      "heading": "Distance and Edit Script Are Different Outputs",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 4,
+      "word_count": 39,
+      "evidence": "A scalar distance does not identify which operations form an optimal path.",
+      "paragraphs": [
+        "A scalar distance does not identify which operations form an optimal path.",
+        "Applications may instead require an alignment, highlighted differences, counts of edit operations, or source-to-target position mappings.",
+        "Those requirements need additional state or recomputation.",
+        "See Edit Operations ."
+      ]
+    },
+    {
+      "heading": "Traceback Through the Matrix",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 7,
+      "word_count": 70,
+      "evidence": "A full-matrix traceback starts at:",
+      "paragraphs": [
+        "A full-matrix traceback starts at:",
+        "(m,n)",
+        "and repeatedly selects a predecessor satisfying the optimal recurrence.",
+        "diagonal → match or substitution up → deletion left → insertion",
+        "The process continues until (0,0) is reached.",
+        "Multiple predecessors can sometimes have the same minimum cost. A stable application should therefore define deterministic tie-breaking when the reported edit script must be reproducible.",
+        "Tie-breaking can change the explanation while leaving the optimal numerical distance unchanged."
+      ]
+    },
+    {
+      "heading": "Thresholded Distance Is a Different Computational Requirement",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 7,
+      "word_count": 45,
+      "evidence": "Many applications do not need the exact distance once a defined cutoff has been exceeded.",
+      "paragraphs": [
+        "Many applications do not need the exact distance once a defined cutoff has been exceeded.",
+        "Is ED(A,B) ≤ k?",
+        "The first lower bound is:",
+        "ED(A,B) ≥ |m - n|",
+        "Therefore:",
+        "if |m - n| > k: distance > k",
+        "without evaluating the complete dynamic-programming problem."
+      ]
+    },
+    {
+      "heading": "Banded Dynamic Programming",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 7,
+      "word_count": 63,
+      "evidence": "Under standard unit costs, any edit path with distance at most k must remain close to the main diagonal.",
+      "paragraphs": [
+        "Under standard unit costs, any edit path with distance at most k must remain close to the main diagonal.",
+        "|i - j| ≤ k",
+        "A row can therefore restrict evaluation to:",
+        "j_start = max(1, i-k) j_end = min(n, i+k)",
+        "instead of processing every matrix column.",
+        "For small thresholds, this can substantially reduce work.",
+        "See Ukkonen Algorithm and Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Algorithm Choice Should Follow the Workload",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 1,
+      "word_count": 57,
+      "evidence": "Requirement Useful starting point Generic exact distance Wagner–Fischer dynamic programming Distance only with low memory One-row or two-row dynamic programming Small maximum distance Banded / Ukkonen-style computation Suitable unit-cost workloads Myers bit-vector methods Fixed query against dictionary or trie Levenshtein automata Symbol-dependent edit costs Weighted dynamic programming Adjacent transpositions Damerau-specific model Explicit alignment Matrix or alignment-capable reconstruction",
+      "paragraphs": [
+        "Requirement Useful starting point Generic exact distance Wagner–Fischer dynamic programming Distance only with low memory One-row or two-row dynamic programming Small maximum distance Banded / Ukkonen-style computation Suitable unit-cost workloads Myers bit-vector methods Fixed query against dictionary or trie Levenshtein automata Symbol-dependent edit costs Weighted dynamic programming Adjacent transpositions Damerau-specific model Explicit alignment Matrix or alignment-capable reconstruction"
+      ]
+    },
+    {
+      "heading": "Myers Bit-Vector Implementations",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "Bit-parallel algorithms encode many logical dynamic-programming states into machine-word bits and update them using bitwise and arithmetic operations.",
+      "paragraphs": [
+        "Bit-parallel algorithms encode many logical dynamic-programming states into machine-word bits and update them using bitwise and arithmetic operations.",
+        "For suitable unit-cost workloads, they can provide substantially higher throughput than a straightforward cell-by-cell implementation.",
+        "bit-vector algorithm ≠ ordinary dynamic programming with smaller integers",
+        "Recovering an edit script can also require additional state or recomputation.",
+        "See Myers Bit-Vector Algorithm ."
+      ]
+    },
+    {
+      "heading": "Levenshtein Automata",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 4,
+      "word_count": 59,
+      "evidence": "When one query must be matched against many candidate strings under a fixed edit threshold, a finite-state representation can be more appropriate than repeatedly running independent pairwise dynamic programming.",
+      "paragraphs": [
+        "When one query must be matched against many candidate strings under a fixed edit threshold, a finite-state representation can be more appropriate than repeatedly running independent pairwise dynamic programming.",
+        "query + maximum distance k ↓ Levenshtein automaton ↓ dictionary / trie traversal",
+        "This changes the implementation problem from isolated pairwise comparison to bounded language recognition.",
+        "See Levenshtein Automata ."
+      ]
+    },
+    {
+      "heading": "Weighted Implementations Need Different Boundaries",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 9,
+      "word_count": 54,
+      "evidence": "In a weighted model:",
+      "paragraphs": [
+        "In a weighted model:",
+        "insert(b) delete(a) substitute(a,b)",
+        "can have different costs.",
+        "The ordinary initialization:",
+        "D[i][0] = i D[0][j] = j",
+        "is correct only when insertion and deletion each have unit cost.",
+        "A general weighted implementation requires cumulative boundary costs:",
+        "D[i][0] = D[i-1][0] + delete_cost(A[i-1]) D[0][j] = D[0][j-1] + insert_cost(B[j-1])",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Do Not Force Every Edit Model Into the Standard Recurrence",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 4,
+      "word_count": 53,
+      "evidence": "Additional edit operations can require additional state or a different recurrence.",
+      "paragraphs": [
+        "Additional edit operations can require additional state or a different recurrence.",
+        "Examples include adjacent transpositions, context-sensitive costs, affine gaps, block operations, and structured tree or graph edits.",
+        "Adding one extra local transition to standard Levenshtein does not automatically implement the mathematical model of another edit distance.",
+        "For adjacent transpositions, see Damerau-Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Unicode Is Part of Correctness",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 3,
+      "word_count": 54,
+      "evidence": "Levenshtein distance operates on sequences. Programming languages and storage systems expose strings through different default representations, and those implementation details should not silently define the application's metric.",
+      "paragraphs": [
+        "Levenshtein distance operates on sequences. Programming languages and storage systems expose strings through different default representations, and those implementation details should not silently define the application's metric.",
+        "byte ≠ UTF-16 code unit ≠ Unicode code point ≠ extended grapheme cluster",
+        "Each is a legitimate sequence unit for some tasks, but they answer different questions."
+      ]
+    },
+    {
+      "heading": "String Models Across Programming Languages",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 7,
+      "word_count": 359,
+      "evidence": "The Levenshtein recurrence does not define how a programming language represents a string. That decision is made by the language runtime and by the specific API used to iterate, index, normalize, or segment the input.",
+      "paragraphs": [
+        "The Levenshtein recurrence does not define how a programming language represents a string. That decision is made by the language runtime and by the specific API used to iterate, index, normalize, or segment the input.",
+        "This distinction matters because the same visible text can become a different sequence before it reaches the Levenshtein algorithm. An implementation may be mathematically correct while measuring a sequence of bytes, UTF-16 code units, Unicode code points, Unicode scalar values, or grapheme clusters.",
+        "Environment Common string operation Sequence unit exposed Levenshtein consequence JavaScript length , charAt() , charCodeAt() , indexed access UTF-16 code units A supplementary Unicode code point can occupy two sequence positions. Code-unit distance is therefore not automatically code-point or grapheme-cluster distance. Java String.length() , charAt() UTF-16 char code units Surrogate pairs can be processed as two elements unless the implementation explicitly works with Unicode code points. Rust str.chars() Unicode scalar values Scalar-value comparison avoids UTF-8 byte distance, but one user-perceived character can still contain several scalar values. Go String indexing or for range Bytes when indexed; Unicode code points (runes) when ranged over UTF-8 text A byte-based implementation and a rune-based implementation can return different distances for the same textual input. Python Iteration over str Unicode code points Code-point iteration avoids encoded-byte distance, but does not make each extended grapheme cluster a single sequence element.",
+        "These are not different versions of the Levenshtein algorithm. They are different definitions of the sequence supplied to the same edit-distance model. The recurrence operates on whatever elements the implementation exposes.",
+        "programming-language string ↓ runtime / API representation ↓ optional Unicode normalization ↓ optional grapheme segmentation ↓ defined sequence elements ↓ Levenshtein distance",
+        "For example, a JavaScript implementation based on UTF-16 code-unit indexing and a Rust implementation based on char iteration can both implement the standard Levenshtein recurrence correctly while operating on different sequence models.",
+        "The implementation contract should therefore state both the programming-language string model and the intended comparison unit. Language names alone are not enough: JavaScript can expose code points through code-point-aware APIs, Go can operate on either bytes or runes, and an application can perform segmentation before the distance function receives its inputs."
+      ]
+    },
+    {
+      "heading": "Runtime Representation Is Not User-Perceived Text",
+      "level": 3,
+      "id": "ux-section-22",
+      "paragraph_count": 2,
+      "word_count": 71,
+      "evidence": "Moving from bytes or UTF-16 code units to Unicode code points solves only one layer of the problem. A visible character can still consist of multiple code points, including combining sequences, emoji modifier sequences, and zero-width-joiner sequences.",
+      "paragraphs": [
+        "Moving from bytes or UTF-16 code units to Unicode code points solves only one layer of the problem. A visible character can still consist of multiple code points, including combining sequences, emoji modifier sequences, and zero-width-joiner sequences.",
+        "When the application intends one user-perceived character to count as one edit, the input should be segmented according to an explicit grapheme-cluster policy before Levenshtein distance is calculated. See Unicode & Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Normalization and Transformation Are Separate Decisions",
+      "level": 3,
+      "id": "ux-section-23",
+      "paragraph_count": 3,
+      "word_count": 111,
+      "evidence": "Runtime representation also does not determine whether canonically equivalent text should compare as equivalent. Precomposed and decomposed Unicode sequences can remain different even when an implementation correctly iterates over Unicode code points or scalar values.",
+      "paragraphs": [
+        "Runtime representation also does not determine whether canonically equivalent text should compare as equivalent. Precomposed and decomposed Unicode sequences can remain different even when an implementation correctly iterates over Unicode code points or scalar values.",
+        "Normalization, case folding, transliteration, width conversion, styled Unicode substitution, and other preprocessing operations change the sequence presented to the distance algorithm. These transformations should be defined separately from the runtime's string representation. See Unicode Text Transformations .",
+        "The important implementation chain is therefore: Levenshtein distance → implementation → runtime string model → sequence unit → Unicode normalization and segmentation policy . Only after those choices are explicit does the numerical distance have an unambiguous application meaning."
+      ]
+    },
+    {
+      "heading": "UTF-8 Byte Distance",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "UTF-8 represents many Unicode characters using multiple bytes.",
+      "paragraphs": [
+        "UTF-8 represents many Unicode characters using multiple bytes.",
+        "Computing Levenshtein distance directly over the encoded bytes therefore measures edit distance between byte representations.",
+        "That can be correct for binary or encoding-oriented applications and wrong for software that intends to count textual character units."
+      ]
+    },
+    {
+      "heading": "UTF-16 Code-Unit Distance",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "UTF-16 represents supplementary Unicode code points using surrogate pairs.",
+      "paragraphs": [
+        "UTF-16 represents supplementary Unicode code points using surrogate pairs.",
+        "A naive implementation indexing UTF-16 code units can therefore treat one Unicode code point as two sequence elements.",
+        "This is relevant to environments whose native string model exposes UTF-16 code units."
+      ]
+    },
+    {
+      "heading": "Code-Point Distance",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "Unicode code points provide a more appropriate representation than bytes or surrogate halves for many text-processing applications.",
+      "paragraphs": [
+        "Unicode code points provide a more appropriate representation than bytes or surrogate halves for many text-processing applications.",
+        "But one user-perceived character can still contain several code points:",
+        "e + combining acute accent = é",
+        "Code-point distance is therefore still distinct from grapheme-cluster distance."
+      ]
+    },
+    {
+      "heading": "Grapheme-Cluster Distance",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 5,
+      "word_count": 54,
+      "evidence": "Extended grapheme clusters approximate user-perceived character boundaries for many text-processing operations.",
+      "paragraphs": [
+        "Extended grapheme clusters approximate user-perceived character boundaries for many text-processing operations.",
+        "A cluster can contain a base character and combining marks, emoji modifiers, zero-width-joiner sequences, regional-indicator pairs, or other multi-code-point structures.",
+        "sequence element = extended grapheme cluster",
+        "can therefore be an appropriate contract for some user-facing comparison systems.",
+        "See Unicode & Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Normalization Changes the Input Sequence",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 6,
+      "word_count": 72,
+      "evidence": "Canonically equivalent Unicode text can contain different code-point sequences.",
+      "paragraphs": [
+        "Canonically equivalent Unicode text can contain different code-point sequences.",
+        "U+00E9 and U+0065 + U+0301",
+        "can represent canonically equivalent text.",
+        "If an application wants such representations to compare consistently, it can normalize both inputs according to an explicit normalization policy before computing distance.",
+        "NFC and NFD address canonical equivalence. NFKC and NFKD perform stronger compatibility transformations and can remove distinctions that some applications need to preserve.",
+        "normalization policy is part of distance semantics"
+      ]
+    },
+    {
+      "heading": "Multibyte Support Does Not Define Unicode Semantics",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 8,
+      "word_count": 108,
+      "evidence": "Historical production implementations show why encoding support and comparison semantics should be separated.",
+      "paragraphs": [
+        "Historical production implementations show why encoding support and comparison semantics should be separated.",
+        "Greenplum's fuzzy string matching extension documented Levenshtein and thresholded Levenshtein functions alongside other string-matching methods. Its documentation also distinguished functions that had problems with multibyte encodings such as UTF-8.",
+        "The current PostgreSQL fuzzystrmatch documentation explicitly recommends its Levenshtein implementation as one of the options for multibyte data such as UTF-8.",
+        "That establishes an important implementation distinction:",
+        "supports multibyte UTF-8 input ≠ defines grapheme-cluster semantics",
+        "An implementation can correctly process multibyte input while still comparing a sequence model different from user-perceived characters.",
+        "Historical documentation: Greenplum Fuzzy String Matching Extension .",
+        "Current implementation documentation: PostgreSQL fuzzystrmatch ."
+      ]
+    },
+    {
+      "heading": "Case Folding and Transliteration Also Change the Metric Input",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 5,
+      "word_count": 60,
+      "evidence": "Unicode normalization is only one possible preprocessing operation.",
+      "paragraphs": [
+        "Unicode normalization is only one possible preprocessing operation.",
+        "Case folding, transliteration, accent policies, punctuation policies, and other text transformations can also modify the sequence before the Levenshtein algorithm receives it.",
+        "raw text ↓ defined transformation ↓ defined sequence units ↓ Levenshtein distance",
+        "The distance therefore describes the transformed representation, not necessarily the original raw input.",
+        "See Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "Resource Limits Are Part of Production Correctness",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 8,
+      "word_count": 66,
+      "evidence": "A mathematically correct implementation can still be operationally unsafe if untrusted inputs can force excessive quadratic computation or memory use.",
+      "paragraphs": [
+        "A mathematically correct implementation can still be operationally unsafe if untrusted inputs can force excessive quadratic computation or memory use.",
+        "Production systems should define limits such as:",
+        "maximum input length,",
+        "maximum edit threshold,",
+        "operation budget,",
+        "timeout policy,",
+        "and maximum retained traceback state.",
+        "If the application only cares about small distances, bounded computation should be exposed directly to the algorithm rather than calculating an unrestricted distance first."
+      ]
+    },
+    {
+      "heading": "Do Not Allocate the Full Matrix Before Checking the Problem Size",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 4,
+      "word_count": 41,
+      "evidence": "Before allocating quadratic storage, check:",
+      "paragraphs": [
+        "Before allocating quadratic storage, check:",
+        "m n m × n threshold k required output",
+        "If only a scalar distance is required, linear-memory dynamic programming is usually a better baseline.",
+        "If only small distances matter, thresholded computation may reduce work much further."
+      ]
+    },
+    {
+      "heading": "Testing Strategy",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 5,
+      "word_count": 75,
+      "evidence": "A robust implementation should maintain a simple trusted reference version and compare optimized versions against it.",
+      "paragraphs": [
+        "A robust implementation should maintain a simple trusted reference version and compare optimized versions against it.",
+        "reference full-matrix DP │ ├── random test vectors ├── adversarial cases ├── Unicode cases ├── weighted-cost cases └── threshold boundary cases ↓ optimized implementation",
+        "Useful invariants for standard unit-cost Levenshtein include:",
+        "ED(x,x) = 0 ED(x,y) ≥ 0 ED(x,y) = ED(y,x) ED(x,z) ≤ ED(x,y) + ED(y,z)",
+        "These properties should not be assumed automatically for modified, asymmetric, or application-specific cost models."
+      ]
+    },
+    {
+      "heading": "Unicode Test Cases Are Mandatory for Unicode-Aware Software",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "Testing only ASCII strings cannot establish Unicode correctness.",
+      "paragraphs": [
+        "Testing only ASCII strings cannot establish Unicode correctness.",
+        "Test data should include precomposed and decomposed text, supplementary characters, combining sequences, emoji, grapheme clusters, multiple scripts, and compatibility characters where relevant.",
+        "The expected result must be defined according to the implementation's chosen sequence representation."
+      ]
+    },
+    {
+      "heading": "Benchmark the Complete Pipeline",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "Benchmarking only the dynamic-programming kernel can hide significant preprocessing costs.",
+      "paragraphs": [
+        "Benchmarking only the dynamic-programming kernel can hide significant preprocessing costs.",
+        "decode + normalize / transform + segment + allocate tokens + Levenshtein computation + optional traceback",
+        "should be measured according to the real workload.",
+        "For deeper optimization topics, see Levenshtein Performance Engineering ."
+      ]
+    },
+    {
+      "heading": "Indexing and Candidate Generation Change the System Architecture",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 5,
+      "word_count": 47,
+      "evidence": "Running Levenshtein distance against every item in a large corpus is often unnecessary.",
+      "paragraphs": [
+        "Running Levenshtein distance against every item in a large corpus is often unnecessary.",
+        "Large-scale systems commonly separate:",
+        "candidate generation ↓ candidate filtering ↓ exact or bounded edit-distance verification",
+        "This can be more important than optimizing one pairwise distance call.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Implementation Checklist",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 1,
+      "word_count": 121,
+      "evidence": "Area Question Metric Is this standard unit-cost Levenshtein or another edit model? Representation What exactly is one sequence element? Runtime string model Which language or API exposes the input as bytes, UTF-16 code units, Unicode code points, scalar values, or another sequence representation? Transformation Is input modified before comparison? Unicode Is canonical or compatibility normalization required? Unicode Are inputs compared as code units, code points, or grapheme clusters? Memory Is only numerical distance required? Traceback Must an edit script or alignment be returned? Cutoff Does the application have a natural maximum distance? Symmetry May the inputs safely be swapped? Security Can untrusted input trigger excessive work? Testing Is there a trusted reference implementation? ",
+      "paragraphs": [
+        "Area Question Metric Is this standard unit-cost Levenshtein or another edit model? Representation What exactly is one sequence element? Runtime string model Which language or API exposes the input as bytes, UTF-16 code units, Unicode code points, scalar values, or another sequence representation? Transformation Is input modified before comparison? Unicode Is canonical or compatibility normalization required? Unicode Are inputs compared as code units, code points, or grapheme clusters? Memory Is only numerical distance required? Traceback Must an edit script or alignment be returned? Cutoff Does the application have a natural maximum distance? Symmetry May the inputs safely be swapped? Security Can untrusted input trigger excessive work? Testing Is there a trusted reference implementation? Benchmarking Are preprocessing and distance computation measured together?"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 4,
+      "word_count": 110,
+      "evidence": "The classical Levenshtein recurrence is compact, but a correct implementation requires a precise definition of the input sequence, edit model, preprocessing policy, required output, and resource constraints.",
+      "paragraphs": [
+        "The classical Levenshtein recurrence is compact, but a correct implementation requires a precise definition of the input sequence, edit model, preprocessing policy, required output, and resource constraints.",
+        "A full Wagner–Fischer matrix remains a useful correctness reference. Distance-only computation can reduce working memory to O(min(m,n)) , while bounded dynamic programming, bit-vector methods, and Levenshtein automata can improve performance for suitable workloads.",
+        "Unicode must be part of the implementation contract. Bytes, UTF-16 code units, Unicode code points, and grapheme clusters define different sequences. Normalization and other text transformations can further change those sequences before edit distance is calculated.",
+        "Define the representation first. Implement the metric second. Optimize only after correctness is explicit."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 11,
+      "word_count": 35,
+      "evidence": "Wagner–Fischer Algorithm",
+      "paragraphs": [
+        "Wagner–Fischer Algorithm",
+        "Ukkonen Algorithm",
+        "Myers Bit-Vector Algorithm",
+        "Levenshtein Automata",
+        "Bounded and Parameterized Edit Distance",
+        "Weighted Levenshtein Distance",
+        "Edit Operations",
+        "Unicode & Grapheme-Safe Levenshtein",
+        "Unicode Text Transformations",
+        "Levenshtein Performance Engineering",
+        "Indexing and Filtering for Edit Distance"
+      ]
+    },
+    {
+      "heading": "Technical References",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 8,
+      "word_count": 61,
+      "evidence": "Wagner and Fischer — The String-to-String Correction Problem",
+      "paragraphs": [
+        "Wagner and Fischer — The String-to-String Correction Problem",
+        "Hirschberg — A Linear Space Algorithm for Computing Maximal Common Subsequences",
+        "Ukkonen — Algorithms for Approximate String Matching",
+        "Myers — A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming",
+        "Unicode Standard Annex #15: Unicode Normalization Forms",
+        "Unicode Standard Annex #29: Unicode Text Segmentation",
+        "Greenplum Fuzzy String Matching Extension",
+        "PostgreSQL fuzzystrmatch"
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Technical References",
+          "anchor_id": "ux-section-40",
+          "alias": "approximate string matching",
+          "excerpt": "Ukkonen — Algorithms for Approximate String Matching"
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Banded Dynamic Programming",
+          "anchor_id": "ux-section-14",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See Ukkonen Algorithm and Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance"
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Do Not Force Every Edit Model Into the Standard Recurrence",
+          "anchor_id": "ux-section-19",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "For adjacent transpositions, see Damerau-Levenshtein Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Banded Dynamic Programming",
+          "anchor_id": "ux-section-14",
+          "alias": "edit distance",
+          "excerpt": "See Ukkonen Algorithm and Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Do Not Force Every Edit Model Into the Standard Recurrence",
+          "anchor_id": "ux-section-19",
+          "alias": "edit distance",
+          "excerpt": "Adding one extra local transition to standard Levenshtein does not automatically implement the mathematical model of another edit distance."
+        },
+        {
+          "section": "String Models Across Programming Languages",
+          "anchor_id": "ux-section-21",
+          "alias": "edit distance",
+          "excerpt": "These are not different versions of the Levenshtein algorithm. They are different definitions of the sequence supplied to the same edit-distance model. The recurrence operates on whatever elements the implementation exposes."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Distance and Edit Script Are Different Outputs",
+          "anchor_id": "ux-section-11",
+          "alias": "edit operations",
+          "excerpt": "Applications may instead require an alignment, highlighted differences, counts of edit operations, or source-to-target position mappings."
+        },
+        {
+          "section": "Do Not Force Every Edit Model Into the Standard Recurrence",
+          "anchor_id": "ux-section-19",
+          "alias": "edit operations",
+          "excerpt": "Additional edit operations can require additional state or a different recurrence."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "edit operations",
+          "excerpt": "Edit Operations"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Indexing and Candidate Generation Change the System Architecture",
+          "anchor_id": "ux-section-36",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "Algorithm Choice Should Follow the Workload",
+          "anchor_id": "ux-section-15",
+          "alias": "levenshtein automata",
+          "excerpt": "Requirement Useful starting point Generic exact distance Wagner–Fischer dynamic programming Distance only with low memory One-row or two-row dynamic programming Small maximum distance Banded / Ukkonen-style computation Suitable unit-cost workloads Myers bit-vector methods Fixed query against dictionary or trie Levenshtein automata Symbol-dependent edit costs Weighted dynamic programming Adjacent transpositions Damerau-specific model Explicit alignment Matrix or alignment-capable reconstruction"
+        },
+        {
+          "section": "Levenshtein Automata",
+          "anchor_id": "ux-section-17",
+          "alias": "levenshtein automata",
+          "excerpt": "See Levenshtein Automata ."
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-38",
+          "alias": "levenshtein automata",
+          "excerpt": "A full Wagner–Fischer matrix remains a useful correctness reference. Distance-only computation can reduce working memory to O(min(m,n)) , while bounded dynamic programming, bit-vector methods, and Levenshtein automata can improve performance for suitable workloads."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-performance-engineering",
+      "evidence": [
+        {
+          "section": "Benchmark the Complete Pipeline",
+          "anchor_id": "ux-section-35",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "For deeper optimization topics, see Levenshtein Performance Engineering ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "Levenshtein Performance Engineering"
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Myers Bit-Vector Implementations",
+          "anchor_id": "ux-section-16",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "See Myers Bit-Vector Algorithm ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm"
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Banded Dynamic Programming",
+          "anchor_id": "ux-section-14",
+          "alias": "ukkonen algorithm",
+          "excerpt": "See Ukkonen Algorithm and Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Runtime Representation Is Not User-Perceived Text",
+          "anchor_id": "ux-section-22",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "When the application intends one user-perceived character to count as one edit, the input should be segmented according to an explicit grapheme-cluster policy before Levenshtein distance is calculated. See Unicode & Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Grapheme-Cluster Distance",
+          "anchor_id": "ux-section-27",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "See Unicode & Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "Unicode & Grapheme-Safe Levenshtein"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-text-transformations",
+      "evidence": [
+        {
+          "section": "Normalization and Transformation Are Separate Decisions",
+          "anchor_id": "ux-section-23",
+          "alias": "unicode text transformations",
+          "excerpt": "Normalization, case folding, transliteration, width conversion, styled Unicode substitution, and other preprocessing operations change the sequence presented to the distance algorithm. These transformations should be defined separately from the runtime's string representation. See Unicode Text Transformations ."
+        },
+        {
+          "section": "Case Folding and Transliteration Also Change the Metric Input",
+          "anchor_id": "ux-section-30",
+          "alias": "unicode text transformations",
+          "excerpt": "See Unicode Text Transformations ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "unicode text transformations",
+          "excerpt": "Unicode Text Transformations"
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "The Dynamic-Programming Invariant",
+          "anchor_id": "ux-section-3",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "This recurrence is the foundation of the Wagner–Fischer Algorithm ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "Wagner–Fischer Algorithm"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted Implementations Need Different Boundaries",
+          "anchor_id": "ux-section-18",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-39",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/levenshtein-implementations#webpage",
+      "type": "WebPage",
+      "name": "Levenshtein Implementations: Correctness, Memory & Performance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/levenshtein-implementations#article"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-implementations#implementation"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-implementations#article",
+      "type": "Article",
+      "name": "Levenshtein Implementations: Correctness, Memory & Performance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-implementations#implementation"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-implementations#dynamic-programming"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-implementations#implementation",
+      "type": "DefinedTerm",
+      "name": "Levenshtein Distance Implementation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-implementations#dynamic-programming",
+      "type": "DefinedTerm",
+      "name": "Dynamic Programming",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-implementations#unicode-text-representation",
+      "type": "DefinedTerm",
+      "name": "Unicode Text Representation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-implementations#thresholded-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Thresholded Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-implementations#bit-parallel-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Bit-Parallel Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-implementations#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#webpage",
+      "about",
+      "https://www.levenshtein.net/levenshtein-implementations#implementation"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/levenshtein-implementations#article"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-implementations#implementation"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-implementations#dynamic-programming"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-implementations#unicode-text-representation"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-implementations#thresholded-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-implementations#bit-parallel-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-implementations#article",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://docs-cn.greenplum.org/v5/ref_guide/extensions/fuzzystrmatch.html",
+      "anchor": "Greenplum Fuzzy String Matching Extension"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/16/fuzzystrmatch.html",
+      "anchor": "PostgreSQL fuzzystrmatch"
+    },
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "Wagner and Fischer — The String-to-String Correction Problem"
+    },
+    {
+      "url": "https://doi.org/10.1145/360825.360861",
+      "anchor": "Hirschberg — A Linear Space Algorithm for Computing Maximal Common Subsequences"
+    },
+    {
+      "url": "https://doi.org/10.1016/S0019-9958(85)80046-2",
+      "anchor": "Ukkonen — Algorithms for Approximate String Matching"
+    },
+    {
+      "url": "https://doi.org/10.1145/316542.316550",
+      "anchor": "Myers — A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr15/",
+      "anchor": "Unicode Standard Annex #15: Unicode Normalization Forms"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr29/",
+      "anchor": "Unicode Standard Annex #29: Unicode Text Segmentation"
+    }
+  ]
+}

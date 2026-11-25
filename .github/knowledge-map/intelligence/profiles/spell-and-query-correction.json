@@ -1,0 +1,2174 @@
+{
+  "url": "/spell-and-query-correction",
+  "title": "Spell & Query Correction with Edit Distance: Models, Ranking & Search",
+  "h1": [
+    "Spell & Query Correction with Edit Distance: Models, Ranking & Search"
+  ],
+  "group": "Language",
+  "provisional_mission": "Sửa lỗi và ranking truy vấn",
+  "content_sha256": "92c2e04049c4e21cef8f9fa7d1b1c39f8496be08ed19914b83ea2a796d7a3f44",
+  "canonical": "https://www.levenshtein.net/spell-and-query-correction",
+  "primary_entity_candidate": "Spell & Query Correction with Edit Distance: Models, Ranking & Search",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Spell and Query Correction with Edit Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 5,
+      "word_count": 160,
+      "evidence": "Spelling correction is often introduced as a simple problem: detect a misspelled word, find dictionary words with small edit distance, and replace the input with the nearest candidate. That description captures only the first layer of a much broader inference problem.",
+      "paragraphs": [
+        "Spelling correction is often introduced as a simple problem: detect a misspelled word, find dictionary words with small edit distance, and replace the input with the nearest candidate. That description captures only the first layer of a much broader inference problem.",
+        "A production spelling, search-query, or developer-identifier correction system must usually answer four separate questions:",
+        "1. DETECTION Is anything actually wrong? 2. CANDIDATE GENERATION What alternatives are plausible? 3. CANDIDATE RANKING Which alternative is most likely intended? 4. DECISION Should the system: - preserve the original, - show a suggestion, - automatically correct, - or evaluate several hypotheses?",
+        "Edit distance and Levenshtein distance are especially useful for candidate generation and distortion scoring because many textual errors can be represented as insertions, deletions, and substitutions. But edit distance alone does not determine whether input is wrong, what the user intended, or whether replacing the input is safe.",
+        "edit proximity ≠ intent edit proximity ≠ identity edit proximity ≠ permission to rewrite"
+      ]
+    },
+    {
+      "heading": "Detection and Correction Are Different Tasks",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 8,
+      "word_count": 64,
+      "evidence": "A spell checker can detect that:",
+      "paragraphs": [
+        "A spell checker can detect that:",
+        "algoritm",
+        "is absent from a vocabulary.",
+        "A corrector must additionally decide whether the intended form is:",
+        "algorithm algorithms algorithmic algorism ...",
+        "The distinction is:",
+        "DETECTION: Is t suspicious? CORRECTION: Which candidate c, if any, should replace or be suggested for t?",
+        "A system can be highly confident that something is unusual while remaining uncertain about the intended replacement."
+      ]
+    },
+    {
+      "heading": "Non-Word Errors",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 6,
+      "word_count": 53,
+      "evidence": "A non-word error produces a token not recognized by the vocabulary:",
+      "paragraphs": [
+        "A non-word error produces a token not recognized by the vocabulary:",
+        "speling recieve algoritm",
+        "For an ordinary English dictionary, these can often be detected through lexical lookup.",
+        "Candidate generation can then search nearby terms:",
+        "ED(\"speling\",\"spelling\") = 1",
+        "Non-word errors are relatively convenient because the token itself provides evidence that correction may be needed."
+      ]
+    },
+    {
+      "heading": "Real-Word Errors",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 8,
+      "word_count": 71,
+      "evidence": "A real-word error produces a valid word in the wrong context:",
+      "paragraphs": [
+        "A real-word error produces a valid word in the wrong context:",
+        "I drove form London intended: I drove from London",
+        "Both:",
+        "form from",
+        "are valid words.",
+        "A dictionary-only detector therefore cannot identify the error. Context must help compare competing hypotheses.",
+        "P(\"drove form London\") versus P(\"drove from London\")",
+        "This illustrates a central limitation of pure edit-distance correction: small textual distance can generate candidates, but context often determines which candidate is actually appropriate."
+      ]
+    },
+    {
+      "heading": "Correction Is Harder Than Nearest-Neighbor Search",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Suppose the observed token is:",
+      "paragraphs": [
+        "Suppose the observed token is:",
+        "ther",
+        "Nearby candidates can include:",
+        "the her there their then",
+        "Context changes the interpretation:",
+        "ther house → their house over ther → over there",
+        "The nearest string is not automatically the intended word."
+      ]
+    },
+    {
+      "heading": "The Classical Edit Operations",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "Classical Levenshtein distance uses three primitive operations:",
+      "paragraphs": [
+        "Classical Levenshtein distance uses three primitive operations:",
+        "insertion,",
+        "deletion,",
+        "substitution.",
+        "Adjacent transposition is not a primitive operation in classical Levenshtein distance.",
+        "For example:",
+        "form from",
+        "can require two substitutions under ordinary Levenshtein, while a transposition-aware model can represent the adjacent swap as one operation.",
+        "See Damerau-Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "A Four-Stage Correction Architecture",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 2,
+      "word_count": 73,
+      "evidence": "OBSERVED INPUT │ ▼ ┌───────────────────┐ │ error detection │ └─────────┬─────────┘ │ ▼ ┌───────────────────┐ │ candidate │ │ generation │ └─────────┬─────────┘ │ ▼ ┌───────────────────┐ │ candidate scoring │ │ and ranking │ └─────────┬─────────┘ │ ▼ ┌───────────────────┐ │ decision policy │ └─────────┬─────────┘ │ ▼ KEEP / SUGGEST / REWRITE / EXPAND",
+      "paragraphs": [
+        "OBSERVED INPUT │ ▼ ┌───────────────────┐ │ error detection │ └─────────┬─────────┘ │ ▼ ┌───────────────────┐ │ candidate │ │ generation │ └─────────┬─────────┘ │ ▼ ┌───────────────────┐ │ candidate scoring │ │ and ranking │ └─────────┬─────────┘ │ ▼ ┌───────────────────┐ │ decision policy │ └─────────┬─────────┘ │ ▼ KEEP / SUGGEST / REWRITE / EXPAND",
+        "These stages should remain separate. Improving candidate generation does not automatically improve ranking, and improving ranking does not imply that automatic rewriting is safe."
+      ]
+    },
+    {
+      "heading": "Stage 1: Error Detection",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "For observed token t , a simple lexical detector defines:",
+      "paragraphs": [
+        "For observed token t , a simple lexical detector defines:",
+        "error(t) = 1 if t ∉ V",
+        "where V is a vocabulary.",
+        "This only works when the vocabulary represents the domain well."
+      ]
+    },
+    {
+      "heading": "Vocabulary Incompleteness Creates False Alarms",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 15,
+      "word_count": 37,
+      "evidence": "A conventional dictionary may omit:",
+      "paragraphs": [
+        "A conventional dictionary may omit:",
+        "personal names,",
+        "company names,",
+        "scientific terminology,",
+        "product codes,",
+        "software identifiers,",
+        "API operation names,",
+        "CLI commands,",
+        "configuration keys,",
+        "schema fields,",
+        "abbreviations,",
+        "foreign terms,",
+        "newly coined terms.",
+        "Therefore:",
+        "not in general dictionary ≠ misspelled"
+      ]
+    },
+    {
+      "heading": "Detection Confidence and Correction Confidence Should Be Separate",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "A system may have high confidence that:",
+      "paragraphs": [
+        "A system may have high confidence that:",
+        "something is invalid",
+        "without high confidence that:",
+        "candidate X is the intended replacement",
+        "This distinction becomes particularly important for identifiers, commands, product codes, names, and other inputs where a wrong replacement can trigger a different action."
+      ]
+    },
+    {
+      "heading": "Stage 2: Candidate Generation",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "Given observed text:",
+      "paragraphs": [
+        "Given observed text:",
+        "t",
+        "candidate generation constructs:",
+        "C(t) = { c1, c2, ... cr }",
+        "The correct answer cannot be ranked if it never enters the candidate set.",
+        "candidate recall places an upper bound on final correction recall"
+      ]
+    },
+    {
+      "heading": "Edit-Distance Candidate Generation",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "A basic candidate set is:",
+      "paragraphs": [
+        "A basic candidate set is:",
+        "Ck(t) = { c ∈ V : ED(t,c) ≤ k }",
+        "For:",
+        "t = \"speling\" k = 1",
+        "a vocabulary can include:",
+        "spelling",
+        "because one insertion repairs the token."
+      ]
+    },
+    {
+      "heading": "The Edit Radius Should Usually Be Small",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 11,
+      "word_count": 43,
+      "evidence": "As threshold k increases:",
+      "paragraphs": [
+        "As threshold k increases:",
+        "candidate recall increases,",
+        "candidate count increases,",
+        "search cost increases,",
+        "ambiguity increases,",
+        "false suggestions become more likely.",
+        "Short tokens are especially ambiguous.",
+        "For:",
+        "cat",
+        "many ordinary words lie only one edit away:",
+        "bat car cap can cut cot at cats"
+      ]
+    },
+    {
+      "heading": "Length-Adaptive Thresholds",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 5,
+      "word_count": 48,
+      "evidence": "A practical policy may use:",
+      "paragraphs": [
+        "A practical policy may use:",
+        "very short input: k = 0 or 1 medium input: k = 1 longer input: k = 1 or 2",
+        "Relative thresholds can also be useful:",
+        "normalized_distance = ED(t,c) / max(|t|, |c|)",
+        "The correct threshold should be validated against the target error distribution."
+      ]
+    },
+    {
+      "heading": "Efficient Candidate Generation",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 13,
+      "word_count": 48,
+      "evidence": "Brute-force comparison:",
+      "paragraphs": [
+        "Brute-force comparison:",
+        "for c in vocabulary: calculate ED(t,c)",
+        "does not scale to large dictionaries.",
+        "Candidate retrieval can instead use:",
+        "length filtering,",
+        "q-gram indexes,",
+        "tries,",
+        "Levenshtein automata,",
+        "metric indexes where valid,",
+        "specialized dictionaries,",
+        "prefix structures,",
+        "or application-specific blocking.",
+        "See Indexing and Filtering for Edit Distance and Levenshtein Automata ."
+      ]
+    },
+    {
+      "heading": "Length Lower Bound",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "For classical Levenshtein distance:",
+      "paragraphs": [
+        "For classical Levenshtein distance:",
+        "ED(t,c) ≥ ||t| - |c||",
+        "Therefore:",
+        "if abs(length(t) - length(c)) > k then ED(t,c) > k",
+        "This provides a cheap exact filter before dynamic programming."
+      ]
+    },
+    {
+      "heading": "Candidate Generation Can Use Multiple Channels",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 2,
+      "word_count": 31,
+      "evidence": "EDIT DISTANCE + KEYBOARD MODEL + PHONETIC MODEL + QUERY LOGS + MORPHOLOGY + SPLIT / MERGE RULES + TRANSLITERATION + DOMAIN VOCABULARY",
+      "paragraphs": [
+        "EDIT DISTANCE + KEYBOARD MODEL + PHONETIC MODEL + QUERY LOGS + MORPHOLOGY + SPLIT / MERGE RULES + TRANSLITERATION + DOMAIN VOCABULARY",
+        "The candidate union can then be ranked jointly."
+      ]
+    },
+    {
+      "heading": "Keyboard-Aware Errors",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "Ordinary Levenshtein may assign the same substitution cost to:",
+      "paragraphs": [
+        "Ordinary Levenshtein may assign the same substitution cost to:",
+        "test → rest test → qest",
+        "but one substitution may be much more plausible under a particular keyboard layout.",
+        "A keyboard-aware model can encode neighboring keys as lower-cost transformations.",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Error Distributions Depend on Input Method",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 9,
+      "word_count": 33,
+      "evidence": "Different systems produce different errors:",
+      "paragraphs": [
+        "Different systems produce different errors:",
+        "desktop keyboards,",
+        "mobile touch keyboards,",
+        "OCR,",
+        "handwriting recognition,",
+        "speech transcription,",
+        "developer typing,",
+        "machine-generated commands.",
+        "A model learned from one source should not automatically be assumed optimal for another."
+      ]
+    },
+    {
+      "heading": "Phonetic Errors",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "Not every spelling error is a motor typo. A writer may produce an orthographic form that approximately matches pronunciation.",
+      "paragraphs": [
+        "Not every spelling error is a motor typo. A writer may produce an orthographic form that approximately matches pronunciation.",
+        "Candidate generation can therefore combine:",
+        "C(t) = C_edit(t) ∪ C_phonetic(t) ∪ C_behavioral(t)",
+        "Orthographic distance and phonetic plausibility can provide complementary evidence."
+      ]
+    },
+    {
+      "heading": "Whitespace, Split, and Merge Errors",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "Some corrections change token boundaries:",
+      "paragraphs": [
+        "Some corrections change token boundaries:",
+        "alot → a lot web site → website note book → notebook",
+        "A token-by-token corrector cannot represent these naturally unless split and merge operations are modeled explicitly."
+      ]
+    },
+    {
+      "heading": "Query Correction Has a Larger Search Space",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 12,
+      "word_count": 39,
+      "evidence": "Search queries often contain:",
+      "paragraphs": [
+        "Search queries often contain:",
+        "several misspelled words,",
+        "missing spaces,",
+        "extra spaces,",
+        "brand names,",
+        "model identifiers,",
+        "foreign terms,",
+        "abbreviations,",
+        "URLs,",
+        "code fragments,",
+        "named entities.",
+        "Query correction can therefore become a sequence-transduction problem rather than a collection of independent word replacements."
+      ]
+    },
+    {
+      "heading": "Correction and Fuzzy Retrieval Are Different Tasks",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 5,
+      "word_count": 113,
+      "evidence": "Spell or query correction asks whether an observed input should be preserved, suggested against, expanded, or rewritten. Fuzzy retrieval asks which stored objects should be returned when exact equality is too strict.",
+      "paragraphs": [
+        "Spell or query correction asks whether an observed input should be preserved, suggested against, expanded, or rewritten. Fuzzy retrieval asks which stored objects should be returned when exact equality is too strict.",
+        "CORRECTION observed input ↓ infer plausible intended form ↓ KEEP / SUGGEST / REWRITE / EXPAND FUZZY RETRIEVAL query ↓ retrieve approximately matching objects ↓ rank results",
+        "A search engine can preserve the original query while still returning fuzzy matches. Likewise, a correction system can suggest an alternative without immediately retrieving every object near that alternative.",
+        "query correction ≠ fuzzy retrieval",
+        "This distinction keeps input inference separate from result retrieval. For the retrieval problem, see Fuzzy Search with Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Stage 3: Candidate Ranking",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "C(t) = { c1, c2, c3 }",
+        "The system must evaluate:",
+        "Score(ci | t)",
+        "A simple ranking method is:",
+        "Score(c|t) = -ED(t,c)",
+        "but raw edit distance ignores candidate frequency, context, error probability, domain knowledge, and user intent."
+      ]
+    },
+    {
+      "heading": "The Noisy-Channel Model",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 8,
+      "word_count": 45,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "c = intended form t = observed form",
+        "Choose:",
+        "c* = argmax_c P(c | t)",
+        "Using Bayes' rule:",
+        "P(c | t) ∝ P(t | c) P(c)",
+        "where:",
+        "P(c) = prior probability of intended candidate P(t | c) = probability that c produced observed t"
+      ]
+    },
+    {
+      "heading": "Levenshtein as a Distortion Model",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "A simple channel approximation is:",
+      "paragraphs": [
+        "A simple channel approximation is:",
+        "P(t | c) ∝ exp( -λ ED(t,c) )",
+        "for:",
+        "λ > 0",
+        "This assigns lower probability to candidates requiring more edits.",
+        "It is useful but crude because different edits can have very different empirical probabilities."
+      ]
+    },
+    {
+      "heading": "Equal Distance Does Not Mean Equal Error Probability",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "Suppose two candidates both satisfy:",
+      "paragraphs": [
+        "Suppose two candidates both satisfy:",
+        "ED = 1",
+        "but one requires:",
+        "adjacent keyboard substitution",
+        "while the other requires:",
+        "unlikely character replacement",
+        "Their edit counts are equal, but their error probabilities need not be."
+      ]
+    },
+    {
+      "heading": "Weighted Edit Costs",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "A probabilistic cost can use:",
+      "paragraphs": [
+        "A probabilistic cost can use:",
+        "cost(edit) = -log P(edit)",
+        "More probable errors then receive lower cost.",
+        "This connects probabilistic spelling models with weighted edit-distance dynamic programming."
+      ]
+    },
+    {
+      "heading": "Minimum-Cost Path Is Not Necessarily Full Probability",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 3,
+      "word_count": 48,
+      "evidence": "Weighted edit distance normally finds one minimum-cost edit script. A probabilistic transducer may instead sum probability over all possible edit paths.",
+      "paragraphs": [
+        "Weighted edit distance normally finds one minimum-cost edit script. A probabilistic transducer may instead sum probability over all possible edit paths.",
+        "best path probability ≠ sum of all path probabilities",
+        "Do not automatically interpret minimum weighted edit cost as the exact negative log probability of the complete model."
+      ]
+    },
+    {
+      "heading": "Context and Language Models",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 7,
+      "word_count": 32,
+      "evidence": "For text sequence:",
+      "paragraphs": [
+        "For text sequence:",
+        "w1, w2, ..., wn",
+        "a language model can estimate:",
+        "P(wi | context)",
+        "or:",
+        "P(w1, w2, ..., wn)",
+        "Context helps distinguish candidates that are lexically close but linguistically very different."
+      ]
+    },
+    {
+      "heading": "Large Language Models Do Not Eliminate Edit Distance",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 7,
+      "word_count": 44,
+      "evidence": "A generative model can rank or create correction hypotheses, but edit distance can still provide:",
+      "paragraphs": [
+        "A generative model can rank or create correction hypotheses, but edit distance can still provide:",
+        "candidate constraints,",
+        "distortion penalties,",
+        "minimum-change objectives,",
+        "training-data filtering,",
+        "post-generation validation.",
+        "Language models estimate what output is plausible. Edit models measure how much the proposed output changes the observed input."
+      ]
+    },
+    {
+      "heading": "Generative Correctors Can Overrewrite",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 9,
+      "word_count": 38,
+      "evidence": "A general model may:",
+      "paragraphs": [
+        "A general model may:",
+        "paraphrase,",
+        "expand abbreviations,",
+        "replace unknown entities,",
+        "normalize intentional dialect,",
+        "alter numbers,",
+        "change identifiers,",
+        "or introduce text absent from the input.",
+        "For search, developer tooling, and structured systems, these changes can alter intent or behavior."
+      ]
+    },
+    {
+      "heading": "Minimum-Distortion Constraints",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "A generated candidate C can be constrained by:",
+      "paragraphs": [
+        "A generated candidate C can be constrained by:",
+        "D(T,C) ≤ τ",
+        "where T is the original input and τ is an allowed distortion threshold.",
+        "This separates:",
+        "what may be changed",
+        "from:",
+        "which allowed change is preferred"
+      ]
+    },
+    {
+      "heading": "Protected Spans",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 13,
+      "word_count": 42,
+      "evidence": "Some input regions should receive stricter correction policies:",
+      "paragraphs": [
+        "Some input regions should receive stricter correction policies:",
+        "URLs,",
+        "email-like strings,",
+        "serial numbers,",
+        "SKUs,",
+        "version numbers,",
+        "code identifiers,",
+        "API names,",
+        "configuration keys,",
+        "quoted text.",
+        "For example:",
+        "rx 7900 xtx",
+        "contains tokens where one-character changes may represent different products rather than spelling mistakes."
+      ]
+    },
+    {
+      "heading": "Numbers Require Conservative Handling",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 5,
+      "word_count": 22,
+      "evidence": "2025 2026",
+      "paragraphs": [
+        "2025 2026",
+        "have Levenshtein distance:",
+        "1",
+        "but replacing one with the other can completely change meaning.",
+        "small edit distance ≠ safe replacement"
+      ]
+    },
+    {
+      "heading": "Rare Entities Require Conservative Correction",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 12,
+      "word_count": 43,
+      "evidence": "Suppose a rare entity:",
+      "paragraphs": [
+        "Suppose a rare entity:",
+        "R",
+        "lies one edit away from common word:",
+        "C",
+        "A frequency-heavy model can incorrectly rewrite R → C .",
+        "Useful protective evidence includes:",
+        "entity dictionary membership,",
+        "domain corpus frequency,",
+        "exact retrieval evidence,",
+        "known catalog membership,",
+        "query history,",
+        "structured identifiers."
+      ]
+    },
+    {
+      "heading": "Preserve a No-Correction Hypothesis",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 6,
+      "word_count": 115,
+      "evidence": "A correction system should be able to decide that the original input should remain unchanged. That does not require the original input to be treated as a valid correction candidate in every application.",
+      "paragraphs": [
+        "A correction system should be able to decide that the original input should remain unchanged. That does not require the original input to be treated as a valid correction candidate in every application.",
+        "It is clearer to separate:",
+        "C(T) = candidate corrections from H(T) = { KEEP_ORIGINAL } ∪ C(T)",
+        "For open-ended spell and query correction, KEEP_ORIGINAL protects valid rare terms, entities, intentional spellings, and uncertain inputs from forced rewriting.",
+        "For a closed developer-identifier vocabulary, an invalid identifier does not become a valid resolution candidate merely because it is preserved. Exact resolution can still fail while the original input remains available for diagnostics.",
+        "invalid identifier → resolution failure + preserve observed input + optional suggestions"
+      ]
+    },
+    {
+      "heading": "Suggestion and Automatic Rewrite Are Different Actions",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "A decision layer can use different confidence regions:",
+      "paragraphs": [
+        "A decision layer can use different confidence regions:",
+        "HIGH CONFIDENCE → automatic correction when the application permits it MEDIUM CONFIDENCE → \"Did you mean ...?\" LOW CONFIDENCE → preserve original",
+        "The action threshold should depend on the cost of making a wrong decision."
+      ]
+    },
+    {
+      "heading": "Developer Diagnostics and Identifier Suggestions",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 22,
+      "word_count": 76,
+      "evidence": "The same candidate-generation principles used in spelling correction also apply to developer-facing identifiers.",
+      "paragraphs": [
+        "The same candidate-generation principles used in spelling correction also apply to developer-facing identifiers.",
+        "Examples include:",
+        "CLI commands and subcommands,",
+        "API operation IDs,",
+        "configuration keys,",
+        "schema properties,",
+        "component names,",
+        "adapter names,",
+        "theme identifiers,",
+        "database fields,",
+        "compiler symbols,",
+        "function names,",
+        "package names.",
+        "A user may type:",
+        "deply",
+        "when the valid command is:",
+        "deploy",
+        "or:",
+        "feature",
+        "when a schema accepts:",
+        "features",
+        "These are not ordinary dictionary words in the correction model. They belong to an application-defined vocabulary or namespace."
+      ]
+    },
+    {
+      "heading": "Developer Correction Often Uses a Closed Candidate Vocabulary",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 13,
+      "word_count": 77,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "V = set of valid identifiers for the current context",
+        "Then:",
+        "Ck(t) = { c ∈ V : ED(t,c) ≤ k }",
+        "Unlike open-language spelling correction, the candidate set in many developer tools can be defined exactly for the current namespace, schema, command, or API surface.",
+        "For example:",
+        "valid subcommands: deploy destroy preview refresh stack",
+        "If input is:",
+        "deply",
+        "then:",
+        "ED(\"deply\",\"deploy\") = 1",
+        "and the diagnostic can safely say:",
+        "Unknown command \"deply\". Did you mean \"deploy\"?"
+      ]
+    },
+    {
+      "heading": "Suggestion Is Safer Than Silent Identifier Replacement",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 12,
+      "word_count": 68,
+      "evidence": "Developer identifiers can trigger actions. Therefore:",
+      "paragraphs": [
+        "Developer identifiers can trigger actions. Therefore:",
+        "nearest identifier ≠ identifier to execute automatically",
+        "A fuzzy match should usually improve diagnostics, not silently change the command.",
+        "This is especially important for:",
+        "deployment commands,",
+        "cloud API operations,",
+        "database mutations,",
+        "package installation,",
+        "destructive CLI operations,",
+        "security-sensitive configuration.",
+        "A safer architecture is:",
+        "invalid identifier ↓ retrieve nearby valid identifiers ↓ rank candidates ↓ show suggestion ↓ require explicit user / program decision"
+      ]
+    },
+    {
+      "heading": "Exact Resolution and Fuzzy Suggestion Should Be Separate",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 4,
+      "word_count": 50,
+      "evidence": "A robust system can use:",
+      "paragraphs": [
+        "A robust system can use:",
+        "STEP 1: exact identifier lookup under the system's real semantics STEP 2: if exact lookup fails, generate diagnostic candidates STEP 3: display suggestions without changing resolution semantics",
+        "This preserves deterministic behavior:",
+        "valid identifier → resolve exactly invalid identifier → fail explicitly + offer nearby alternatives"
+      ]
+    },
+    {
+      "heading": "Fuzzy Resolution Can Be Dangerous",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 9,
+      "word_count": 38,
+      "evidence": "Consider valid operations:",
+      "paragraphs": [
+        "Consider valid operations:",
+        "DeleteUser DisableUser DeleteUsers GetUser",
+        "Input:",
+        "DeleteUsr",
+        "may have a clear nearest candidate, but automatically invoking that operation would be unsafe.",
+        "The correct use of edit distance is usually:",
+        "diagnostic assistance",
+        "rather than:",
+        "implicit command execution"
+      ]
+    },
+    {
+      "heading": "Package Names Require Additional Security Caution",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 4,
+      "word_count": 70,
+      "evidence": "A nearby package name is not automatically a spelling correction. It may identify a completely different package, including a package created to imitate a popular dependency.",
+      "paragraphs": [
+        "A nearby package name is not automatically a spelling correction. It may identify a completely different package, including a package created to imitate a popular dependency.",
+        "small package-name distance ≠ same package ≠ safe package to install",
+        "Package managers and developer tools should therefore avoid automatically resolving or installing a dependency solely because its name has small edit distance from the requested package.",
+        "See Typosquatting and Software Supply-Chain Security ."
+      ]
+    },
+    {
+      "heading": "Context Should Restrict Identifier Candidates",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 6,
+      "word_count": 78,
+      "evidence": "Do not compare every unknown identifier against every symbol in the entire system when a smaller context is available.",
+      "paragraphs": [
+        "Do not compare every unknown identifier against every symbol in the entire system when a smaller context is available.",
+        "For example:",
+        "unknown theme → compare with valid themes unknown adapter → compare with valid adapters unknown CLI subcommand → compare with subcommands valid under the current command unknown API operation → compare with operation IDs for the relevant API surface",
+        "This creates:",
+        "hard scope → candidate generation → edit-distance ranking",
+        "Scope constraints should generally dominate raw lexical similarity."
+      ]
+    },
+    {
+      "heading": "Type and Namespace Constraints Matter",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "identifier = \"member\"",
+        "and the system contains:",
+        "type: Members API operation: ListMembers configuration: memberLimit theme: ember",
+        "Comparing all identifiers globally can produce irrelevant suggestions.",
+        "Prefer:",
+        "identifier type + namespace + scope + lexical distance"
+      ]
+    },
+    {
+      "heading": "Case Sensitivity Is Domain-Specific",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 6,
+      "word_count": 75,
+      "evidence": "Some identifiers are case-insensitive. Others are case-sensitive.",
+      "paragraphs": [
+        "Some identifiers are case-insensitive. Others are case-sensitive.",
+        "ListUsers listUsers listusers",
+        "The first lookup must follow the actual identifier semantics of the target system.",
+        "exact lookup under real identifier semantics ↓ if exact lookup fails: optional case-equivalent candidate search ↓ fuzzy candidate search ↓ diagnostic suggestion",
+        "For a case-sensitive identifier system, a case-insensitive comparison can still be useful as a suggestion signal, but it must not silently change exact resolution semantics.",
+        "case-insensitive candidate ≠ case-insensitive identity"
+      ]
+    },
+    {
+      "heading": "Relative Thresholds Help with Identifier Length",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 12,
+      "word_count": 53,
+      "evidence": "A fixed threshold:",
+      "paragraphs": [
+        "A fixed threshold:",
+        "ED ≤ 3",
+        "can behave differently for short and long identifiers.",
+        "Compare:",
+        "cat → cut distance = 1",
+        "with:",
+        "ListOrganizationMembers → ListOrganisationMembers distance = small relative to total length",
+        "A system can combine:",
+        "absolute_distance ≤ k_a",
+        "and:",
+        "ED(t,c) / max(|t|,|c|) ≤ k_r",
+        "to avoid overly permissive matches for short identifiers."
+      ]
+    },
+    {
+      "heading": "Top-k Suggestions Should Usually Be Small",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "A diagnostic that prints dozens of nearby identifiers recreates the original discovery problem.",
+      "paragraphs": [
+        "A diagnostic that prints dozens of nearby identifiers recreates the original discovery problem.",
+        "Often:",
+        "top 1 or top 3",
+        "is more useful than:",
+        "every candidate within a large radius"
+      ]
+    },
+    {
+      "heading": "Ambiguous Identifier Suggestions",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 12,
+      "word_count": 76,
+      "evidence": "Suppose input:",
+      "paragraphs": [
+        "Suppose input:",
+        "getUsr",
+        "has candidates:",
+        "getUser getUsers getUserId",
+        "If their scores are very close, the system should expose ambiguity rather than pretend certainty.",
+        "A useful ranking signal is:",
+        "margin = score(best) - score(second_best)",
+        "Small margin:",
+        "more ambiguous ranking",
+        "Large margin:",
+        "stronger separation between the top candidates",
+        "The margin is not automatically a calibrated probability or confidence value. Its meaning depends on the score scale and should be calibrated empirically if it is used for confidence decisions."
+      ]
+    },
+    {
+      "heading": "Identifier Suggestions Need More Than Edit Distance in Some Systems",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 12,
+      "word_count": 39,
+      "evidence": "Ranking can combine:",
+      "paragraphs": [
+        "Ranking can combine:",
+        "edit distance,",
+        "prefix agreement,",
+        "case-equivalent match,",
+        "namespace match,",
+        "identifier type,",
+        "usage frequency,",
+        "deprecation status,",
+        "argument compatibility,",
+        "current command context.",
+        "For example:",
+        "Score(c|t) = -w1 × normalized_edit_distance +w2 × scope_match +w3 × type_match +w4 × usage_prior ..."
+      ]
+    },
+    {
+      "heading": "Suggestions Must Preserve Exact System Semantics",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 9,
+      "word_count": 40,
+      "evidence": "A diagnostic helper should not quietly change:",
+      "paragraphs": [
+        "A diagnostic helper should not quietly change:",
+        "validation rules,",
+        "parser semantics,",
+        "accepted identifiers,",
+        "command execution,",
+        "API routing.",
+        "Its job can remain narrowly defined:",
+        "invalid exact input → useful nearby suggestion",
+        "This narrow role makes Levenshtein particularly suitable for developer diagnostics."
+      ]
+    },
+    {
+      "heading": "Developer Diagnostics as a General Pattern",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 2,
+      "word_count": 54,
+      "evidence": "VALID IDENTIFIER SET │ ▼ EXACT LOOKUP │ ├── success │ ↓ │ execute / validate │ └── failure ↓ FUZZY CANDIDATE SEARCH ↓ DISTANCE / RANKING ↓ \"DID YOU MEAN ...?\" ↓ NO IMPLICIT EXECUTION",
+      "paragraphs": [
+        "VALID IDENTIFIER SET │ ▼ EXACT LOOKUP │ ├── success │ ↓ │ execute / validate │ └── failure ↓ FUZZY CANDIDATE SEARCH ↓ DISTANCE / RANKING ↓ \"DID YOU MEAN ...?\" ↓ NO IMPLICIT EXECUTION",
+        "This graph connects ordinary spelling correction to command-line interfaces, APIs, schema validators, compilers, configuration systems, and developer tools."
+      ]
+    },
+    {
+      "heading": "Query Correction and Developer Diagnostics Share a Core Architecture",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "Both can use:",
+      "paragraphs": [
+        "Both can use:",
+        "observed input ↓ candidate vocabulary ↓ edit-distance neighborhood ↓ ranking ↓ decision",
+        "But the decision semantics differ:",
+        "search query: correction / expansion / preserve developer identifier: exact failure / suggestion / explicit choice"
+      ]
+    },
+    {
+      "heading": "Why Automatic Rewriting Is Riskier for Identifiers",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "Natural-language search can sometimes tolerate exploratory reformulation. Structured identifiers usually have discrete semantics.",
+      "paragraphs": [
+        "Natural-language search can sometimes tolerate exploratory reformulation. Structured identifiers usually have discrete semantics.",
+        "one-character difference can select a completely different operation",
+        "Therefore:",
+        "developer fuzzy matching should usually optimize diagnostic quality not automatic execution"
+      ]
+    },
+    {
+      "heading": "Unicode in Identifier Suggestions",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "Identifiers may contain Unicode, or visually confusable characters may appear in copied input.",
+      "paragraphs": [
+        "Identifiers may contain Unicode, or visually confusable characters may appear in copied input.",
+        "Before computing distance, define whether the system operates on:",
+        "raw bytes,",
+        "UTF-16 code units,",
+        "Unicode code points,",
+        "Unicode scalar values,",
+        "grapheme clusters.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Unicode Normalization",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 7,
+      "word_count": 54,
+      "evidence": "Canonically equivalent strings can have different code-point sequences:",
+      "paragraphs": [
+        "Canonically equivalent strings can have different code-point sequences:",
+        "é versus e + combining acute accent",
+        "If canonical equivalence should not create an identifier difference, normalization must be defined consistently before comparison.",
+        "But:",
+        "Unicode normalization ≠ confusable detection",
+        "Visual homoglyphs and cross-script confusables are a separate security problem.",
+        "See Unicode Homoglyph and Confusable Attacks ."
+      ]
+    },
+    {
+      "heading": "Unicode Case Folding Is Also an Identifier Policy",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 2,
+      "word_count": 37,
+      "evidence": "Unicode case folding can be useful for caseless comparison, but it should only be used when the application intends case differences to be irrelevant for the relevant comparison.",
+      "paragraphs": [
+        "Unicode case folding can be useful for caseless comparison, but it should only be used when the application intends case differences to be irrelevant for the relevant comparison.",
+        "case folding ≠ permission to change case-sensitive identifier semantics"
+      ]
+    },
+    {
+      "heading": "Query Correction Uses Retrieval Evidence",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 10,
+      "word_count": 43,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "original query: rare technical term candidate: common ordinary word",
+        "If the original query retrieves coherent high-quality results, that retrieval evidence can support preserving it.",
+        "Search systems can use evidence from:",
+        "document frequency,",
+        "click behavior,",
+        "catalog matches,",
+        "entity matches,",
+        "result coherence,",
+        "known terminology."
+      ]
+    },
+    {
+      "heading": "Zero Results Are Evidence, Not Proof of Misspelling",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "If a query returns zero results:",
+      "paragraphs": [
+        "If a query returns zero results:",
+        "zero results ≠ definitely misspelled",
+        "The requested item may simply not exist in the collection."
+      ]
+    },
+    {
+      "heading": "Correction",
+      "level": 3,
+      "id": "ux-section-62",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "replace T with C",
+      "paragraphs": [
+        "replace T with C"
+      ]
+    },
+    {
+      "heading": "Expansion",
+      "level": 3,
+      "id": "ux-section-63",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "search T and C",
+      "paragraphs": [
+        "search T and C",
+        "Expansion preserves the possibility that the original input was intentional."
+      ]
+    },
+    {
+      "heading": "Multi-Hypothesis Retrieval",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "A search system can evaluate:",
+      "paragraphs": [
+        "A search system can evaluate:",
+        "original query + best correction + alternative correction",
+        "instead of forcing one irreversible interpretation."
+      ]
+    },
+    {
+      "heading": "Query Logs as Evidence",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "Behavioral data can reveal recurring reformulations:",
+      "paragraphs": [
+        "Behavioral data can reveal recurring reformulations:",
+        "query A ↓ query B ↓ successful result interaction",
+        "Repeated patterns can provide evidence that A → B is a useful correction.",
+        "But:",
+        "reformulation ≠ spelling label",
+        "Users change queries for many reasons besides spelling."
+      ]
+    },
+    {
+      "heading": "Query-Log Bias",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "Observed logs reflect:",
+      "paragraphs": [
+        "Observed logs reflect:",
+        "current ranking,",
+        "interface design,",
+        "existing correction behavior,",
+        "traffic distribution,",
+        "bots and automated clients.",
+        "They are valuable evidence, but not an unbiased ground-truth corpus."
+      ]
+    },
+    {
+      "heading": "Feedback Loops",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "If a system automatically rewrites:",
+      "paragraphs": [
+        "If a system automatically rewrites:",
+        "X → Y",
+        "and later learns from those rewritten queries, it can create artificial evidence that users prefer Y .",
+        "Preserve separately:",
+        "raw input system suggestion automatic rewrite user-selected reformulation retrieval outcome"
+      ]
+    },
+    {
+      "heading": "Query-Log Poisoning",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "Behavioral correction models can be manipulated by repeated artificial query patterns.",
+      "paragraphs": [
+        "Behavioral correction models can be manipulated by repeated artificial query patterns.",
+        "An attacker or bot can generate:",
+        "input X followed by target Y",
+        "to manufacture apparent correction evidence.",
+        "Large systems should filter anomalous traffic before learning correction pairs."
+      ]
+    },
+    {
+      "heading": "Privacy Considerations",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 8,
+      "word_count": 24,
+      "evidence": "Query logs can contain sensitive text.",
+      "paragraphs": [
+        "Query logs can contain sensitive text.",
+        "Correction pipelines should consider:",
+        "data minimization,",
+        "access controls,",
+        "aggregation,",
+        "retention limits,",
+        "sensitive identifier handling,",
+        "privacy-preserving learning where appropriate."
+      ]
+    },
+    {
+      "heading": "Candidate Generation Is a Recall Problem",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "Let the true intended correction be:",
+      "paragraphs": [
+        "Let the true intended correction be:",
+        "c*",
+        "Candidate recall is:",
+        "P( c* ∈ C(t) )",
+        "If candidate recall is:",
+        "95%",
+        "then no ranking model can recover the correct candidate on the missing 5%."
+      ]
+    },
+    {
+      "heading": "Ranking Conditional on Candidate Presence",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "A useful diagnostic decomposition is approximately:",
+      "paragraphs": [
+        "A useful diagnostic decomposition is approximately:",
+        "overall top-1 accuracy = candidate recall × ranking success given candidate presence",
+        "This reveals whether a system needs improvement in:",
+        "generation",
+        "or:",
+        "ranking"
+      ]
+    },
+    {
+      "heading": "Detection Precision",
+      "level": 3,
+      "id": "ux-section-73",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "correctly flagged errors / all flagged errors",
+      "paragraphs": [
+        "correctly flagged errors / all flagged errors"
+      ]
+    },
+    {
+      "heading": "Detection Recall",
+      "level": 3,
+      "id": "ux-section-74",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "correctly flagged errors / all true errors",
+      "paragraphs": [
+        "correctly flagged errors / all true errors"
+      ]
+    },
+    {
+      "heading": "Top-1 Correction Accuracy",
+      "level": 3,
+      "id": "ux-section-75",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "examples where top candidate is correct / all examples",
+      "paragraphs": [
+        "examples where top candidate is correct / all examples"
+      ]
+    },
+    {
+      "heading": "Top-k Candidate Recall",
+      "level": 3,
+      "id": "ux-section-76",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "fraction where intended candidate appears among first k candidates",
+      "paragraphs": [
+        "fraction where intended candidate appears among first k candidates"
+      ]
+    },
+    {
+      "heading": "Mean Reciprocal Rank",
+      "level": 3,
+      "id": "ux-section-77",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "MRR = 1/N Σ 1/r_i",
+      "paragraphs": [
+        "MRR = 1/N Σ 1/r_i"
+      ]
+    },
+    {
+      "heading": "Overcorrection Rate",
+      "level": 3,
+      "id": "ux-section-78",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "clean inputs incorrectly changed / all clean inputs",
+      "paragraphs": [
+        "clean inputs incorrectly changed / all clean inputs"
+      ]
+    },
+    {
+      "heading": "Automatic-Correction Precision",
+      "level": 3,
+      "id": "ux-section-79",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "correct automatic corrections / all automatic corrections",
+      "paragraphs": [
+        "correct automatic corrections / all automatic corrections"
+      ]
+    },
+    {
+      "heading": "Exact-Input Preservation",
+      "level": 3,
+      "id": "ux-section-80",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Already-correct input should be part of the benchmark.",
+      "paragraphs": [
+        "Already-correct input should be part of the benchmark.",
+        "do not evaluate only on known misspellings"
+      ]
+    },
+    {
+      "heading": "Developer-Suggestion Evaluation",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 12,
+      "word_count": 62,
+      "evidence": "For CLI/API/schema diagnostics, additionally measure:",
+      "paragraphs": [
+        "For CLI/API/schema diagnostics, additionally measure:",
+        "intended-identifier candidate recall,",
+        "top-1 suggestion accuracy,",
+        "top-3 intended-identifier recall,",
+        "false-suggestion rate,",
+        "ambiguous-candidate rate,",
+        "short-identifier behavior,",
+        "case-handling accuracy,",
+        "cross-namespace false matches,",
+        "latency,",
+        "and whether invalid input remains invalid rather than being silently executed.",
+        "The evaluation target should be the intended identifier or accepted diagnostic behavior, not merely whichever valid identifier happens to have the smallest raw edit distance."
+      ]
+    },
+    {
+      "heading": "Error-Category Evaluation",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 16,
+      "word_count": 28,
+      "evidence": "Break results down by:",
+      "paragraphs": [
+        "Break results down by:",
+        "insertion,",
+        "deletion,",
+        "substitution,",
+        "transposition,",
+        "real-word error,",
+        "split,",
+        "merge,",
+        "phonetic error,",
+        "multiple errors,",
+        "Unicode normalization,",
+        "named entity,",
+        "rare term,",
+        "identifier typo,",
+        "namespace error,",
+        "case-only error."
+      ]
+    },
+    {
+      "heading": "Autocomplete and Correction Are Related but Different",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "Autocomplete receives incomplete prefixes:",
+      "paragraphs": [
+        "Autocomplete receives incomplete prefixes:",
+        "l le lev leve leven ...",
+        "During typing:",
+        "levensh",
+        "may simply be an incomplete prefix of:",
+        "levenshtein",
+        "rather than a misspelling.",
+        "completion: prefix → likely continuation correction: noisy form → intended form"
+      ]
+    },
+    {
+      "heading": "Incremental Candidate Generation",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "Trie states, automaton states, or cached prefix computations can sometimes update candidates incrementally as new characters arrive.",
+      "paragraphs": [
+        "Trie states, automaton states, or cached prefix computations can sometimes update candidates incrementally as new characters arrive.",
+        "This can be more efficient than recomputing a full search after every keystroke."
+      ]
+    },
+    {
+      "heading": "Worked Example: Isolated Word",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 4,
+      "word_count": 25,
+      "evidence": "observed: speling candidates: spelling spieling ...",
+      "paragraphs": [
+        "observed: speling candidates: spelling spieling ...",
+        "Suppose:",
+        "ED(\"speling\",\"spelling\") = 1 ED(\"speling\",\"spieling\") = 1",
+        "Raw distance ties. Prior frequency and error probability can break the tie."
+      ]
+    },
+    {
+      "heading": "Worked Example: Contextual Correction",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 4,
+      "word_count": 28,
+      "evidence": "we drove form london",
+      "paragraphs": [
+        "we drove form london",
+        "Hypotheses:",
+        "C0 = we drove form london C1 = we drove from london",
+        "Both form and from are valid words. Context is therefore essential."
+      ]
+    },
+    {
+      "heading": "Worked Example: Rare Entity",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 8,
+      "word_count": 32,
+      "evidence": "Observed:",
+      "paragraphs": [
+        "Observed:",
+        "levenshtein",
+        "A generic language model may know common neighboring strings better than the surname.",
+        "A domain-aware system should consider:",
+        "entity dictionary membership,",
+        "technical corpus frequency,",
+        "exact retrieval quality,",
+        "consistent domain usage."
+      ]
+    },
+    {
+      "heading": "Worked Example: Split Correction",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "alot",
+      "paragraphs": [
+        "alot",
+        "Hypotheses:",
+        "C0 = \"alot\" C1 = \"a lot\"",
+        "Candidate generation must explicitly support one-to-many token transformations or treat whitespace as part of the editable sequence."
+      ]
+    },
+    {
+      "heading": "Worked Example: Multiple Errors",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "levenshten algoritm",
+      "paragraphs": [
+        "levenshten algoritm",
+        "can generate:",
+        "levenshtein algorithm",
+        "through several local corrections.",
+        "The overall ranker should still evaluate:",
+        "global sequence plausibility",
+        "rather than accepting each local candidate independently."
+      ]
+    },
+    {
+      "heading": "Worked Example: Developer Command Suggestion",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 11,
+      "word_count": 37,
+      "evidence": "Valid commands:",
+      "paragraphs": [
+        "Valid commands:",
+        "deploy destroy preview refresh",
+        "Observed:",
+        "deply",
+        "Exact lookup fails.",
+        "Candidate generation finds:",
+        "deploy distance = 1",
+        "A safe diagnostic is:",
+        "Unknown command \"deply\". Did you mean \"deploy\"?",
+        "An unsafe policy would be:",
+        "silently execute \"deploy\""
+      ]
+    },
+    {
+      "heading": "Worked Example: Schema Identifier",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "Suppose valid keys are:",
+      "paragraphs": [
+        "Suppose valid keys are:",
+        "features featureType featureSource theme",
+        "Input:",
+        "feature",
+        "A validator can return:",
+        "Unknown key \"feature\". Did you mean \"features\"?",
+        "The schema remains strict. The suggestion improves diagnostics without changing what the schema accepts."
+      ]
+    },
+    {
+      "heading": "Worked Example: Ambiguous API Operation",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "Valid operations:",
+      "paragraphs": [
+        "Valid operations:",
+        "ListMembers ListMemberTokens ListMemberships",
+        "Input:",
+        "ListMembrs",
+        "More than one candidate may be lexically plausible. A system can display the top few suggestions rather than selecting an operation automatically."
+      ]
+    },
+    {
+      "heading": "Candidate Scoring Hierarchy",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 87,
+      "evidence": "Signal Question answered Levenshtein distance How many local edits separate the strings? Weighted edit cost How plausible are those specific edits? Word prior How common is the intended word? Context model How plausible is the corrected sequence? Phonetic model Could the observed form arise from pronunciation? Query-log evidence How do real users reformulate this input? Entity evidence Is the apparently rare form a known entity? Identifier scope Is the candidate valid in this namespace or command context? Identifier type Is the candidate the correct kind of symbol?",
+      "paragraphs": [
+        "Signal Question answered Levenshtein distance How many local edits separate the strings? Weighted edit cost How plausible are those specific edits? Word prior How common is the intended word? Context model How plausible is the corrected sequence? Phonetic model Could the observed form arise from pronunciation? Query-log evidence How do real users reformulate this input? Entity evidence Is the apparently rare form a known entity? Identifier scope Is the candidate valid in this namespace or command context? Identifier type Is the candidate the correct kind of symbol?"
+      ]
+    },
+    {
+      "heading": "A Unified Correction Architecture",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 111,
+      "evidence": "INPUT │ ▼ ┌────────────────────────┐ │ lexical / exact check │ └────────────┬───────────┘ │ ▼ ┌────────────────────────┐ │ candidate generation │ │ │ │ edit distance │ │ automata │ │ phonetic │ │ query logs │ │ split / merge │ │ entity vocabulary │ │ identifier scope │ └────────────┬───────────┘ │ ▼ ┌────────────────────────┐ │ distortion features │ │ exact / weighted ED │ └────────────┬───────────┘ │ ▼ ┌────────────────────────┐ │ contextual ranking │ │ │ │ language model │ │ query frequency │ │ retrieval evidence │ │ entity evidence │ │ namespace/type │ └────────────┬───────────┘ │ ▼ ┌────────────────────────┐ │ decision / confidence │ └────────────┬───────────┘ │ ┌─────┼──────────┐ ▼ ▼ ▼ KEEP SUGGEST REWRITE ORIGINAL / EXPAND",
+      "paragraphs": [
+        "INPUT │ ▼ ┌────────────────────────┐ │ lexical / exact check │ └────────────┬───────────┘ │ ▼ ┌────────────────────────┐ │ candidate generation │ │ │ │ edit distance │ │ automata │ │ phonetic │ │ query logs │ │ split / merge │ │ entity vocabulary │ │ identifier scope │ └────────────┬───────────┘ │ ▼ ┌────────────────────────┐ │ distortion features │ │ exact / weighted ED │ └────────────┬───────────┘ │ ▼ ┌────────────────────────┐ │ contextual ranking │ │ │ │ language model │ │ query frequency │ │ retrieval evidence │ │ entity evidence │ │ namespace/type │ └────────────┬───────────┘ │ ▼ ┌────────────────────────┐ │ decision / confidence │ └────────────┬───────────┘ │ ┌─────┼──────────┐ ▼ ▼ ▼ KEEP SUGGEST REWRITE ORIGINAL / EXPAND"
+      ]
+    },
+    {
+      "heading": "A Minimal Mathematical Model",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 21,
+      "word_count": 155,
+      "evidence": "For observed input:",
+      "paragraphs": [
+        "For observed input:",
+        "T",
+        "generate correction candidates:",
+        "C(T) = { c1, c2, ... }",
+        "and define the decision hypotheses:",
+        "H(T) = { KEEP_ORIGINAL } ∪ C(T)",
+        "For a correction candidate C , one general ranking model is:",
+        "S(C,T) = α log P_language(C) + β log P_error(T | C) + γ R(C) + δ E(C) + η Scope(C) + ...",
+        "where:",
+        "P_language(C) = language / query prior P_error(T | C) = distortion likelihood R(C) = retrieval evidence E(C) = entity or domain evidence Scope(C) = identifier / namespace validity",
+        "Choose the strongest correction candidate:",
+        "C* = argmax_(C ∈ C(T)) S(C,T)",
+        "but compare that correction hypothesis with an explicit no-correction decision. Automatic rewriting should occur only when:",
+        "S(C*,T) - S_keep(T) ≥ τ_auto",
+        "A lower threshold:",
+        "τ_suggest",
+        "can instead trigger:",
+        "Did you mean C*?",
+        "while preserving the original input.",
+        "For structured developer identifiers, automatic rewriting can be disabled entirely:",
+        "invalid exact identifier → resolution failure + suggest only"
+      ]
+    },
+    {
+      "heading": "Why Levenshtein Belongs Inside This Model",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 4,
+      "word_count": 50,
+      "evidence": "Levenshtein distance provides a useful inductive bias: reasonable corrections often remain close to the observed text.",
+      "paragraphs": [
+        "Levenshtein distance provides a useful inductive bias: reasonable corrections often remain close to the observed text.",
+        "But the complete system should combine:",
+        "edit proximity + error plausibility + language context + retrieval behavior + entity evidence + identifier scope + decision risk",
+        "Different applications assign different importance to these components."
+      ]
+    },
+    {
+      "heading": "Important Boundaries",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 1,
+      "word_count": 95,
+      "evidence": "not in dictionary ≠ misspelled small edit distance ≠ intended correction nearest candidate ≠ safe automatic replacement valid word ≠ correct word in context high error probability ≠ high correction confidence zero search results ≠ proof of spelling error query reformulation ≠ spelling label language-model preference ≠ user intent numerical similarity ≠ probability rare word ≠ error rare entity ≠ common-word typo identifier typo ≠ permission to execute nearest identifier fuzzy suggestion ≠ identifier resolution case-insensitive similarity ≠ case-insensitive semantics Unicode normalization ≠ confusable detection candidate ranking ≠ decision policy query correction ≠ fuzzy retrieval",
+      "paragraphs": [
+        "not in dictionary ≠ misspelled small edit distance ≠ intended correction nearest candidate ≠ safe automatic replacement valid word ≠ correct word in context high error probability ≠ high correction confidence zero search results ≠ proof of spelling error query reformulation ≠ spelling label language-model preference ≠ user intent numerical similarity ≠ probability rare word ≠ error rare entity ≠ common-word typo identifier typo ≠ permission to execute nearest identifier fuzzy suggestion ≠ identifier resolution case-insensitive similarity ≠ case-insensitive semantics Unicode normalization ≠ confusable detection candidate ranking ≠ decision policy query correction ≠ fuzzy retrieval"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 9,
+      "word_count": 299,
+      "evidence": "Spell and query correction cannot be reduced to choosing the string with minimum Levenshtein distance. Edit distance is best understood as a structured measure of textual distortion inside a broader candidate-generation, ranking, and decision system.",
+      "paragraphs": [
+        "Spell and query correction cannot be reduced to choosing the string with minimum Levenshtein distance. Edit distance is best understood as a structured measure of textual distortion inside a broader candidate-generation, ranking, and decision system.",
+        "The first distinction is between detection and correction. A token can be clearly suspicious while the intended replacement remains uncertain. Real-word errors make the distinction even stronger because dictionary membership alone cannot determine correctness.",
+        "Candidate generation creates the search space. Edit distance, Levenshtein automata, keyboard models, phonetic models, query logs, transliteration, split and merge rules, domain dictionaries, and scoped identifier vocabularies can all participate. A ranker cannot recover a candidate that was never generated.",
+        "Ranking can combine textual proximity with error probabilities, language context, query behavior, entity evidence, retrieval evidence, identifier scope, and application-specific priors. The system should preserve an explicit no-correction hypothesis rather than forcing every input toward another string.",
+        "Developer diagnostics form a natural extension of this architecture. CLI commands, API operation IDs, schema properties, configuration keys, component names, and other structured identifiers can use Levenshtein distance to retrieve nearby valid candidates after exact lookup fails. But fuzzy similarity should generally improve the error message, not silently change the identifier being executed or validated.",
+        "Search correction and fuzzy retrieval remain separate application layers: one infers plausible intended input, while the other retrieves approximately matching stored objects. They can cooperate without becoming the same entity.",
+        "This creates a useful general rule:",
+        "exact semantics first ↓ candidate generation second ↓ suggestion when helpful ↓ automatic action only when the application explicitly permits it",
+        "Levenshtein distance remains foundational because it provides a precise and interpretable notion of minimal textual change. Its strongest role is not to decide intent by itself, but to constrain the hypotheses that richer contextual, probabilistic, retrieval, entity, and developer-diagnostic systems evaluate."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 14,
+      "word_count": 52,
+      "evidence": "Levenshtein Algorithm & Distance",
+      "paragraphs": [
+        "Levenshtein Algorithm & Distance",
+        "Edit Distance",
+        "String Metrics",
+        "Damerau-Levenshtein Distance",
+        "Weighted Levenshtein Distance",
+        "Levenshtein Automata",
+        "Indexing and Filtering for Edit Distance",
+        "Fuzzy Search with Edit Distance",
+        "Fuzzy Search at Scale",
+        "Entity Resolution and Record Linkage",
+        "Unicode and Grapheme-Safe Levenshtein",
+        "Unicode Homoglyph and Confusable Attacks",
+        "Typosquatting and Software Supply-Chain Security",
+        "Levenshtein Distance Limitations"
+      ]
+    },
+    {
+      "heading": "Technical References",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 5,
+      "word_count": 79,
+      "evidence": "Fred J. Damerau — A Technique for Computer Detection and Correction of Spelling Errors .",
+      "paragraphs": [
+        "Fred J. Damerau — A Technique for Computer Detection and Correction of Spelling Errors .",
+        "Mark D. Kernighan, Kenneth W. Church, and William A. Gale — A Spelling Correction Program Based on a Noisy Channel Model .",
+        "Eric Brill and Robert C. Moore — An Improved Error Model for Noisy Channel Spelling Correction .",
+        "Kristina Toutanova and Robert C. Moore — Pronunciation Modeling for Improved Spelling Correction .",
+        "Gonzalo Navarro — A Guided Tour to Approximate String Matching ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Technical References",
+          "anchor_id": "ux-section-100",
+          "alias": "approximate string matching",
+          "excerpt": "Gonzalo Navarro — A Guided Tour to Approximate String Matching ."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "The Classical Edit Operations",
+          "anchor_id": "ux-section-6",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau-Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Damerau-Levenshtein Distance"
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Spell and Query Correction with Edit Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Spelling correction is often introduced as a simple problem: detect a misspelled word, find dictionary words with small edit distance, and replace the input with the nearest candidate. That description captures only the first layer of a much broader inference problem."
+        },
+        {
+          "section": "Real-Word Errors",
+          "anchor_id": "ux-section-4",
+          "alias": "edit distance",
+          "excerpt": "This illustrates a central limitation of pure edit-distance correction: small textual distance can generate candidates, but context often determines which candidate is actually appropriate."
+        },
+        {
+          "section": "Efficient Candidate Generation",
+          "anchor_id": "ux-section-15",
+          "alias": "edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance and Levenshtein Automata ."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "Entity Resolution and Record Linkage"
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-at-scale",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "fuzzy search at scale",
+          "excerpt": "Fuzzy Search at Scale"
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-with-edit-distance",
+      "evidence": [
+        {
+          "section": "Correction and Fuzzy Retrieval Are Different Tasks",
+          "anchor_id": "ux-section-23",
+          "alias": "fuzzy search with edit distance",
+          "excerpt": "This distinction keeps input inference separate from result retrieval. For the retrieval problem, see Fuzzy Search with Edit Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "fuzzy search with edit distance",
+          "excerpt": "Fuzzy Search with Edit Distance"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Efficient Candidate Generation",
+          "anchor_id": "ux-section-15",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance and Levenshtein Automata ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "Efficient Candidate Generation",
+          "anchor_id": "ux-section-15",
+          "alias": "levenshtein automata",
+          "excerpt": "Levenshtein automata,"
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-98",
+          "alias": "levenshtein automata",
+          "excerpt": "Candidate generation creates the search space. Edit distance, Levenshtein automata, keyboard models, phonetic models, query logs, transliteration, split and merge rules, domain dictionaries, and scoped identifier vocabularies can all participate. A ranker cannot recover a candidate that was never generated."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "levenshtein automata",
+          "excerpt": "Levenshtein Automata"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-distance-limitations",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "levenshtein distance limitations",
+          "excerpt": "Levenshtein Distance Limitations"
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "string metrics",
+          "excerpt": "String Metrics"
+        }
+      ]
+    },
+    {
+      "target": "/typosquatting-and-supply-chain-security",
+      "evidence": [
+        {
+          "section": "Package Names Require Additional Security Caution",
+          "anchor_id": "ux-section-44",
+          "alias": "typosquatting and software supply chain security",
+          "excerpt": "See Typosquatting and Software Supply-Chain Security ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "typosquatting and software supply chain security",
+          "excerpt": "Typosquatting and Software Supply-Chain Security"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Unicode in Identifier Suggestions",
+          "anchor_id": "ux-section-56",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "Unicode and Grapheme-Safe Levenshtein"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-homoglyph-and-confusable-attacks",
+      "evidence": [
+        {
+          "section": "Unicode Normalization",
+          "anchor_id": "ux-section-57",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "See Unicode Homoglyph and Confusable Attacks ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "Unicode Homoglyph and Confusable Attacks"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Keyboard-Aware Errors",
+          "anchor_id": "ux-section-18",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-99",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/spell-and-query-correction#page",
+      "type": "WebPage",
+      "name": "Spell and Query Correction with Edit Distance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/spell-and-query-correction#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/spell-and-query-correction#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/spell-and-query-correction#noisy-channel"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/spell-and-query-correction#article",
+      "type": "TechArticle",
+      "name": "Spell and Query Correction with Edit Distance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/spell-and-query-correction#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/spell-and-query-correction#noisy-channel"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/spell-and-query-correction#concept",
+      "type": "DefinedTerm",
+      "name": "Spell and Query Correction",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/spell-and-query-correction#noisy-channel",
+      "type": "DefinedTerm",
+      "name": "Noisy-Channel Spelling Correction",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/spell-and-query-correction#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "hasPart",
+      "https://www.levenshtein.net/applications#collection"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "hasPart",
+      "https://www.levenshtein.net/search#collection"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "about",
+      "https://www.levenshtein.net/search#fuzzy-search"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/applications#collection"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "hasPart",
+      "https://www.levenshtein.net/spell-and-query-correction#page"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#page",
+      "about",
+      "https://www.levenshtein.net/spell-and-query-correction#concept"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#page",
+      "about",
+      "https://www.levenshtein.net/spell-and-query-correction#noisy-channel"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#page",
+      "mainEntity",
+      "https://www.levenshtein.net/spell-and-query-correction#concept"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#page",
+      "isPartOf",
+      "https://www.levenshtein.net/search#collection"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#page",
+      "hasPart",
+      "https://www.levenshtein.net/spell-and-query-correction#article"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "about",
+      "https://www.levenshtein.net/spell-and-query-correction#concept"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "about",
+      "https://www.levenshtein.net/spell-and-query-correction#noisy-channel"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-automata#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#concept"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#concept"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "mentions",
+      "https://www.levenshtein.net/string-similarity-vs-semantic-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "isPartOf",
+      "https://www.levenshtein.net/spell-and-query-correction#page"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://doi.org/10.1145/363958.363994"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://doi.org/10.3115/997939.997975"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://doi.org/10.1016/0306-4573(91)90066-u"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://doi.org/10.1145/146370.146380"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://doi.org/10.3115/1075218.1075255"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://doi.org/10.3115/1073083.1073109"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://aclanthology.org/w04-3238/"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://aclanthology.org/h05-1120/"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://aclanthology.org/d07-1019/"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://aclanthology.org/c10-1041/"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://doi.org/10.18653/v1/d15-1051"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://aclanthology.org/2020.lrec-1.228/"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://doi.org/10.18653/v1/2023.acl-industry.66"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#article",
+      "citation",
+      "https://doi.org/10.18653/v1/2024.emnlp-main.966"
+    ],
+    [
+      "https://www.levenshtein.net/spell-and-query-correction#noisy-channel",
+      "isPartOf",
+      "https://www.levenshtein.net/spell-and-query-correction#concept"
+    ],
+    [
+      "https://doi.org/10.3115/997939.997975",
+      "about",
+      "https://www.levenshtein.net/spell-and-query-correction#noisy-channel"
+    ],
+    [
+      "https://doi.org/10.3115/1075218.1075255",
+      "about",
+      "https://www.levenshtein.net/spell-and-query-correction#noisy-channel"
+    ]
+  ],
+  "external_citations": []
+}

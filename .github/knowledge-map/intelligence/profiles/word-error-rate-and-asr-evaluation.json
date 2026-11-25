@@ -1,0 +1,1461 @@
+{
+  "url": "/word-error-rate-and-asr-evaluation",
+  "title": "Word Error Rate (WER) and ASR Evaluation: Mathematics, Alignment, Protocols, and Limitations",
+  "h1": [
+    "Word Error Rate (WER) and ASR Evaluation: Mathematics, Alignment, Protocols, and Limitations"
+  ],
+  "group": "Language",
+  "provisional_mission": "WER và đánh giá ASR",
+  "content_sha256": "9188ca508782e4413ee473999492a8e8697801c31032feae60f771fec2ea042a",
+  "canonical": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation",
+  "primary_entity_candidate": "Word Error Rate (WER) and ASR Evaluation: Mathematics, Alignment, Protocols, and Limitations",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Word Error Rate and ASR Evaluation",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 6,
+      "word_count": 169,
+      "evidence": "Word error rate (WER) is the dominant sequence-level metric for evaluating automatic speech recognition (ASR). It measures the amount of word-level editing required to transform a system hypothesis into a reference transcription, using substitutions, deletions, and insertions as the primitive error operations.",
+      "paragraphs": [
+        "Word error rate (WER) is the dominant sequence-level metric for evaluating automatic speech recognition (ASR). It measures the amount of word-level editing required to transform a system hypothesis into a reference transcription, using substitutions, deletions, and insertions as the primitive error operations.",
+        "The apparent simplicity of WER hides an important fact: a reported WER is not determined by the acoustic model alone. It is the output of an evaluation protocol that includes the reference transcription, text normalization, tokenization, segmentation, alignment procedure, treatment of optional words and non-speech events, aggregation rule, and—in conversational settings—speaker and timing constraints.",
+        "Two systems can therefore produce identical raw transcripts yet receive different WERs under different scoring protocols. Conversely, two systems with similar WER can behave very differently in production because WER assigns equal cost to lexical errors that may have radically different semantic or operational consequences.",
+        "The central mathematical relationship is:",
+        "word error rate = word-level edit errors ---------------------- reference word count",
+        "but a rigorous ASR evaluation requires substantially more than evaluating that fraction."
+      ]
+    },
+    {
+      "heading": "1. Formal definition",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 18,
+      "word_count": 173,
+      "evidence": "Let the reference transcription be the word sequence",
+      "paragraphs": [
+        "Let the reference transcription be the word sequence",
+        "R = (r1, r2, ..., rN)",
+        "and the ASR hypothesis be",
+        "H = (h1, h2, ..., hM).",
+        "After aligning the two sequences, let:",
+        "S = number of substitutions;",
+        "D = number of deletions;",
+        "I = number of insertions;",
+        "C = number of correctly matched reference words;",
+        "N = number of words in the reference.",
+        "Since every reference word is either correct, substituted, or deleted,",
+        "N = C + S + D.",
+        "The conventional word error rate is",
+        "S + D + I WER = ------------------------- N",
+        "or, as a percentage,",
+        "S + D + I WER (%) = 100 * --------------- N",
+        "The definition corresponds to a word-level form of Levenshtein distance : instead of comparing individual characters, the atomic symbols are words.",
+        "This relationship is fundamental but should not be overstated. WER is a task-specific evaluation statistic built from edit operations. It is not merely another name for Levenshtein distance because WER adds a particular denominator, a transcription protocol, and often scorer-specific alignment rules."
+      ]
+    },
+    {
+      "heading": "2. What substitution, deletion, and insertion mean",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 3,
+      "word_count": 102,
+      "evidence": "Error type Reference Hypothesis Interpretation Correct house house The reference token is recognized correctly. Substitution house mouse One reference word is replaced by another word. Deletion house — A reference word is missing from the hypothesis. Insertion — house The hypothesis contains a word not aligned to a reference word.",
+      "paragraphs": [
+        "Error type Reference Hypothesis Interpretation Correct house house The reference token is recognized correctly. Substitution house mouse One reference word is replaced by another word. Deletion house — A reference word is missing from the hypothesis. Insertion — house The hypothesis contains a word not aligned to a reference word.",
+        "A substitution can be interpreted operationally as deleting one word and inserting another, but standard WER counts it as one substitution error rather than two errors.",
+        "This distinction matters because the alignment algorithm must decide whether a mismatch is best represented as a substitution or as some combination of insertions and deletions."
+      ]
+    },
+    {
+      "heading": "3. WER as a dynamic-programming alignment problem",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 14,
+      "word_count": 134,
+      "evidence": "The conventional mathematical formulation can be computed with the same dynamic-programming structure used by the Wagner-Fischer algorithm .",
+      "paragraphs": [
+        "The conventional mathematical formulation can be computed with the same dynamic-programming structure used by the Wagner-Fischer algorithm .",
+        "Define",
+        "d[i][j]",
+        "as the minimum number of word-level edits required to transform the first i reference words into the first j hypothesis words.",
+        "The boundary conditions are:",
+        "d[0][0] = 0 d[i][0] = i d[0][j] = j",
+        "because transforming i reference words into an empty hypothesis requires i deletions, while transforming an empty reference into j hypothesis words requires j insertions.",
+        "For i > 0 and j > 0 :",
+        "cost = 0 if ri = hj 1 otherwise",
+        "and",
+        "d[i][j] = min( d[i-1][j] + 1, # deletion d[i][j-1] + 1, # insertion d[i-1][j-1] + cost # correct or substitution )",
+        "The final edit count is",
+        "d[N][M] = S + D + I",
+        "under the unit-cost formulation."
+      ]
+    },
+    {
+      "heading": "4. Worked WER example",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 11,
+      "word_count": 145,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "REF: the cat sat on the mat HYP: the cat is on mat",
+        "A minimum-edit alignment is:",
+        "REF: the cat sat on the mat HYP: the cat is on *** mat C S C D C",
+        "The counts are:",
+        "C = 4 S = 1 D = 1 I = 0 N = 6",
+        "Therefore:",
+        "1 + 1 + 0 WER = --------- 6 WER = 0.3333... WER = 33.33%",
+        "The corresponding unit-cost dynamic-programming matrix is:",
+        "REF \\ HYP ∅ the cat is on mat ∅ 0 1 2 3 4 5 the 1 0 1 2 3 4 cat 2 1 0 1 2 3 sat 3 2 1 1 2 3 on 4 3 2 2 1 2 the 5 4 3 3 2 2 mat 6 5 4 4 3 2",
+        "The bottom-right cell contains the minimum edit count of two."
+      ]
+    },
+    {
+      "heading": "5. Alignment and scoring are related but not identical",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 10,
+      "word_count": 151,
+      "evidence": "A subtle but important distinction is that the mathematical definition of WER and the objective used by a practical alignment program do not have to be numerically identical.",
+      "paragraphs": [
+        "A subtle but important distinction is that the mathematical definition of WER and the objective used by a practical alignment program do not have to be numerically identical.",
+        "The NIST SCLITE scorer, part of the NIST Scoring Toolkit (SCTK), has historically used default dynamic-programming word-to-word alignment costs of:",
+        "correct = 0 insertion = 3 deletion = 3 substitution = 4",
+        "and then tallies substitutions, deletions, and insertions for word-error scoring. See the official SCLITE documentation .",
+        "This is not the same numerical cost system as the simple unit-cost recurrence:",
+        "correct = 0 insertion = 1 deletion = 1 substitution = 1",
+        "Both prefer a substitution to a separate deletion-plus-insertion in ordinary mismatches, but their relative costs differ.",
+        "This illustrates a general evaluation rule:",
+        "WER formula != complete scorer specification",
+        "For reproducible benchmarks, the scorer, version, alignment mode, normalization rules, tokenization rules, and evaluation configuration should be reported alongside the final number."
+      ]
+    },
+    {
+      "heading": "6. Multiple optimal alignments",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 10,
+      "word_count": 100,
+      "evidence": "Edit-distance alignments are not necessarily unique.",
+      "paragraphs": [
+        "Edit-distance alignments are not necessarily unique.",
+        "Two or more alignment paths can have identical minimum total error cost while assigning individual tokens to different error categories.",
+        "For example, repeated words can create ambiguity:",
+        "REF: a b a HYP: a a",
+        "One alignment can delete the middle b ; in more complicated repeated-token examples, multiple paths may yield the same total edit distance but different local correspondence decisions.",
+        "The total WER can remain unchanged while:",
+        "specific substitution pairs differ;",
+        "the location of deletions differs;",
+        "word-level diagnostic statistics differ.",
+        "This matters when the purpose is error analysis rather than only leaderboard ranking."
+      ]
+    },
+    {
+      "heading": "7. Why WER can exceed 100%",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 17,
+      "word_count": 122,
+      "evidence": "WER is not bounded above by one.",
+      "paragraphs": [
+        "WER is not bounded above by one.",
+        "The denominator contains only reference words:",
+        "N = reference word count.",
+        "Insertions, however, are not limited by N .",
+        "Suppose:",
+        "REF: hello world HYP: hello strange noisy words appear world again",
+        "If the alignment produces five insertions and no substitutions or deletions:",
+        "N = 2 I = 5",
+        "then:",
+        "WER = 5 / 2 = 2.5 = 250%",
+        "Therefore:",
+        "0% <= WER",
+        "but there is no universal upper bound of 100%.",
+        "This has an important consequence:",
+        "word accuracy = 1 - WER",
+        "is not generally a probability-like accuracy measure. It can become negative when WER exceeds 100%.",
+        "WER should therefore be interpreted directly as normalized edit cost rather than automatically reinterpreted as conventional classification accuracy."
+      ]
+    },
+    {
+      "heading": "8. Reference length creates asymmetric normalization",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 10,
+      "word_count": 126,
+      "evidence": "WER normalizes by the number of reference words rather than by the hypothesis length or a symmetric function of both lengths:",
+      "paragraphs": [
+        "WER normalizes by the number of reference words rather than by the hypothesis length or a symmetric function of both lengths:",
+        "errors WER = ------------------------ reference word count",
+        "This asymmetry is intentional: the reference transcription defines the amount of speech content the system was expected to recover.",
+        "But it also means that insertions and deletions do not have symmetric effects on the denominator.",
+        "Compare:",
+        "REF length = 100 HYP length = 90",
+        "with:",
+        "REF length = 90 HYP length = 100.",
+        "Even if an alignment contains a superficially similar number of disagreements, normalization against different reference lengths can produce different WERs.",
+        "Morris, Maier, and Green discuss this asymmetry and alternative measures such as match error rate and word information lost in their 2004 Interspeech paper ."
+      ]
+    },
+    {
+      "heading": "9. Corpus WER is not normally the arithmetic mean of utterance WERs",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 8,
+      "word_count": 72,
+      "evidence": "Suppose a test set contains utterances indexed by k . For utterance k , define:",
+      "paragraphs": [
+        "Suppose a test set contains utterances indexed by k . For utterance k , define:",
+        "Ek = Sk + Dk + Ik Nk = number of reference words",
+        "The corpus-level WER should ordinarily be calculated by pooling counts:",
+        "sum_k Ek WERcorpus = ---------- sum_k Nk",
+        "This is effectively a reference-word-weighted, or micro-aggregated, error rate.",
+        "It is generally not equal to:",
+        "1 - * sum_k WERk K",
+        "where every utterance receives equal weight."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-11",
+      "paragraph_count": 7,
+      "word_count": 58,
+      "evidence": "Utterance Reference words Errors Utterance WER A 100 10 10% B 2 2 100%",
+      "paragraphs": [
+        "Utterance Reference words Errors Utterance WER A 100 10 10% B 2 2 100%",
+        "The unweighted mean is:",
+        "(10% + 100%) / 2 = 55%",
+        "but pooled WER is:",
+        "(10 + 2) / (100 + 2) = 11.76%",
+        "Neither statistic is inherently meaningless, but they answer different questions.",
+        "The evaluation report must state which aggregation is being used."
+      ]
+    },
+    {
+      "heading": "10. Micro WER and macro WER answer different questions",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 3,
+      "word_count": 84,
+      "evidence": "Aggregation Weighting unit Interpretation Corpus/micro WER Reference words Error probability over the pooled reference-token population. Utterance-macro WER Utterances Average difficulty of an utterance regardless of its length. Speaker-macro WER Speakers Average performance across speakers rather than across tokens. Domain-macro WER Domains or conditions Prevents large domains from dominating the overall metric.",
+      "paragraphs": [
+        "Aggregation Weighting unit Interpretation Corpus/micro WER Reference words Error probability over the pooled reference-token population. Utterance-macro WER Utterances Average difficulty of an utterance regardless of its length. Speaker-macro WER Speakers Average performance across speakers rather than across tokens. Domain-macro WER Domains or conditions Prevents large domains from dominating the overall metric.",
+        "A single pooled WER can hide severe failures on minority speakers, rare acoustic conditions, particular accents, short utterances, or low-resource languages.",
+        "For serious evaluation, overall WER should often be accompanied by stratified reporting."
+      ]
+    },
+    {
+      "heading": "11. Text normalization is part of the metric",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 21,
+      "word_count": 142,
+      "evidence": "WER operates on tokens. Therefore, the transformation from raw text to tokens directly changes the metric.",
+      "paragraphs": [
+        "WER operates on tokens. Therefore, the transformation from raw text to tokens directly changes the metric.",
+        "Possible preprocessing includes:",
+        "case folding;",
+        "punctuation removal;",
+        "number normalization;",
+        "abbreviation expansion;",
+        "contraction handling;",
+        "Unicode normalization;",
+        "non-speech-event removal;",
+        "hesitation handling;",
+        "spelling standardization;",
+        "tokenization;",
+        "language-specific segmentation.",
+        "For example:",
+        "REF raw: I paid $25. HYP raw: i paid twenty five dollars",
+        "Depending on the scoring normalization, these may produce several apparent lexical errors or may be mapped to equivalent forms.",
+        "Therefore:",
+        "WER(raw text) != WER(normalized text)",
+        "in general.",
+        "The NIST SCTK ecosystem explicitly supports global mapping rules for scoring transformations; its historical GLM documentation shows that evaluation protocols have even allowed alternative forms for contractions where transcription itself can be ambiguous. See the NIST GLM rules .",
+        "Normalization should be deterministic, documented, frozen before system comparison, and applied consistently to the reference and hypothesis according to the benchmark protocol."
+      ]
+    },
+    {
+      "heading": "12. Normalization can remove real product errors",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 11,
+      "word_count": 81,
+      "evidence": "A normalization rule is not automatically harmless.",
+      "paragraphs": [
+        "A normalization rule is not automatically harmless.",
+        "Suppose a transcription product must output punctuation, capitalization, formatted dates, and currency correctly.",
+        "If evaluation first removes all punctuation and case differences, WER deliberately stops measuring those product requirements.",
+        "Similarly:",
+        "REF: twenty-five dollars HYP: twenty five dollars",
+        "may become equivalent under one tokenizer and different under another.",
+        "Evaluation must therefore distinguish between:",
+        "ASR lexical recognition objective",
+        "and",
+        "complete transcription-product objective.",
+        "If formatting matters operationally, it should be evaluated separately rather than silently normalized away."
+      ]
+    },
+    {
+      "heading": "13. Unicode normalization is not tokenization",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 7,
+      "word_count": 70,
+      "evidence": "Multilingual ASR introduces additional representation choices.",
+      "paragraphs": [
+        "Multilingual ASR introduces additional representation choices.",
+        "Unicode normalization can make canonically equivalent code-point sequences comparable, but it does not determine linguistic word boundaries.",
+        "Likewise:",
+        "Unicode normalization != word segmentation",
+        "and",
+        "code point != grapheme cluster != word.",
+        "These distinctions are especially important in scripts where whitespace is not a reliable word delimiter or where combining characters are common. The underlying representation issues are discussed in text normalization and transliteration ."
+      ]
+    },
+    {
+      "heading": "14. Word segmentation can dominate multilingual WER",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 5,
+      "word_count": 117,
+      "evidence": "WER assumes that the evaluator can define the sequence of units called “words.” That assumption is relatively convenient for whitespace-delimited English text, but it becomes more problematic across languages.",
+      "paragraphs": [
+        "WER assumes that the evaluator can define the sequence of units called “words.” That assumption is relatively convenient for whitespace-delimited English text, but it becomes more problematic across languages.",
+        "NIST SCLITE historically included special inferred word-segmentation support for Mandarin evaluation because word boundaries are not uniquely determined by ordinary orthographic spacing.",
+        "More recent multilingual research has likewise documented cases where WER becomes unstable or less comparable across writing systems and morphologically different languages. Thennal D K and colleagues argue that character error rate should at least supplement WER in multilingual evaluation; see their NAACL 2025 study .",
+        "The appropriate conclusion is not that CER universally replaces WER. Rather:",
+        "evaluation unit must match language representation + task objective."
+      ]
+    },
+    {
+      "heading": "15. Character error rate",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 18,
+      "word_count": 124,
+      "evidence": "Character error rate (CER) applies the same general edit-distance framework at a character-level representation.",
+      "paragraphs": [
+        "Character error rate (CER) applies the same general edit-distance framework at a character-level representation.",
+        "If:",
+        "Sc = character substitutions Dc = character deletions Ic = character insertions Nc = reference character count",
+        "then:",
+        "Sc + Dc + Ic CER = ---------------------------- Nc",
+        "CER can be useful when:",
+        "word boundaries are ambiguous;",
+        "a language has rich morphology;",
+        "the evaluation target is closer to orthographic sequence accuracy;",
+        "word-level tokenization creates artificial instability.",
+        "But character error is not automatically linguistically neutral.",
+        "A one-character difference can represent:",
+        "a minor spelling variation;",
+        "a completely different morpheme;",
+        "a changed digit in a medication dose;",
+        "a changed named entity;",
+        "a diacritic difference with language-specific significance.",
+        "CER therefore changes the evaluation granularity; it does not solve the general problem of semantic importance."
+      ]
+    },
+    {
+      "heading": "16. WER measures lexical sequence disagreement, not semantic error",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 16,
+      "word_count": 144,
+      "evidence": "This is the most important conceptual limitation of WER.",
+      "paragraphs": [
+        "This is the most important conceptual limitation of WER.",
+        "Consider:",
+        "REF: the patient does not have diabetes HYP: the patient does have diabetes",
+        "Only one lexical deletion may separate the two sequences:",
+        "deleted word: not",
+        "but the semantic consequence is large.",
+        "Now consider:",
+        "REF: I purchased a new automobile HYP: I bought a new car",
+        "Several words differ while much of the meaning is preserved.",
+        "WER can score the second example worse even though its semantic distortion may be smaller.",
+        "Therefore:",
+        "low WER does not guarantee semantic correctness",
+        "and",
+        "high local WER does not necessarily imply equivalent semantic damage.",
+        "This is an instance of the broader distinction between string similarity and semantic similarity .",
+        "Whetten and Kennington experimentally investigated this limitation in biomedical ASR and note that WER is not guaranteed to track human judgment or downstream-task performance; see their 2023 BioNLP study ."
+      ]
+    },
+    {
+      "heading": "17. Equal error counts can hide unequal operational risk",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 11,
+      "word_count": 77,
+      "evidence": "Reference Hypothesis Approximate lexical consequence Potential operational consequence give five milligrams give nine milligrams 1 substitution Potentially critical hello Sarah hello Sara 1 substitution Often minor do not restart do restart 1 deletion Meaning reversal buy the automobile buy the car 1 substitution Meaning mostly preserved",
+      "paragraphs": [
+        "Reference Hypothesis Approximate lexical consequence Potential operational consequence give five milligrams give nine milligrams 1 substitution Potentially critical hello Sarah hello Sara 1 substitution Often minor do not restart do restart 1 deletion Meaning reversal buy the automobile buy the car 1 substitution Meaning mostly preserved",
+        "Standard WER assigns each case one unit of lexical error.",
+        "Consequently, domain-specific systems may require additional metrics for:",
+        "named entities;",
+        "numbers;",
+        "medical terminology;",
+        "negation;",
+        "commands;",
+        "keywords;",
+        "semantic preservation;",
+        "downstream task success."
+      ]
+    },
+    {
+      "heading": "18. Weighted word error scoring",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 9,
+      "word_count": 105,
+      "evidence": "One possible extension assigns different costs to different words or error types.",
+      "paragraphs": [
+        "One possible extension assigns different costs to different words or error types.",
+        "NIST SCLITE supports weighted-word scoring in addition to default equal-weight word scoring.",
+        "A general weighted objective can be written as:",
+        "Eweighted = sum substitution costs + sum deletion costs + sum insertion costs",
+        "followed by an appropriate weighted reference normalization.",
+        "This can make evaluation more aligned with operational risk, but it introduces a model-design problem:",
+        "Who chooses the weights?",
+        "If weights are selected after examining system errors, comparison becomes vulnerable to metric tuning.",
+        "Therefore weighted evaluation should be specified prospectively and reported under a distinct metric name rather than presented as ordinary WER."
+      ]
+    },
+    {
+      "heading": "19. WER does not diagnose why a recognizer fails",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 8,
+      "word_count": 61,
+      "evidence": "A scalar WER compresses several different failure mechanisms:",
+      "paragraphs": [
+        "A scalar WER compresses several different failure mechanisms:",
+        "acoustic confusion language-model preference voice-activity errors segmentation failures speaker overlap named-entity errors normalization mismatch hallucinated speech missed speech domain vocabulary mismatch",
+        "Two systems can have:",
+        "WER_A = 8.0% WER_B = 8.0%",
+        "while producing completely different error profiles.",
+        "Always retain the components:",
+        "S D I",
+        "and preferably analyze frequent confusion pairs and condition-specific errors."
+      ]
+    },
+    {
+      "heading": "20. Error decomposition can expose system behavior",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 2,
+      "word_count": 79,
+      "evidence": "Error profile Possible interpretation High deletions Missed speech, weak acoustic evidence, aggressive VAD, overlap loss, decoding pruning. High insertions Hallucination, false speech detection, noise interpreted as speech, language-model overgeneration. High substitutions Lexical/acoustic confusions, pronunciation ambiguity, domain vocabulary mismatch. Low WER but critical entity errors General transcript quality is good but application-specific utility may still be poor.",
+      "paragraphs": [
+        "Error profile Possible interpretation High deletions Missed speech, weak acoustic evidence, aggressive VAD, overlap loss, decoding pruning. High insertions Hallucination, false speech detection, noise interpreted as speech, language-model overgeneration. High substitutions Lexical/acoustic confusions, pronunciation ambiguity, domain vocabulary mismatch. Low WER but critical entity errors General transcript quality is good but application-specific utility may still be poor.",
+        "These associations are diagnostic hypotheses, not deterministic causal rules. The audio, decoder traces, confidence outputs, and alignment should be examined before attributing cause."
+      ]
+    },
+    {
+      "heading": "21. Empty-reference segments and hallucination evaluation",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 9,
+      "word_count": 112,
+      "evidence": "The classical WER formula has a mathematical edge case when the reference contains zero words:",
+      "paragraphs": [
+        "The classical WER formula has a mathematical edge case when the reference contains zero words:",
+        "N = 0.",
+        "The expression",
+        "(S + D + I) / N",
+        "then has a zero denominator.",
+        "This is not merely theoretical. Silent or non-speech audio can legitimately have an empty reference, and modern generative ASR systems can emit words during silence.",
+        "Software therefore needs an explicit convention.",
+        "For example, JiWER 4.0 defines an empty-reference and empty-hypothesis pair as zero error and counts hypothesis words emitted against an empty reference as insertions. See the JiWER documentation .",
+        "This convention is useful for hallucination testing but should be recognized as an implementation policy added around the classical formula."
+      ]
+    },
+    {
+      "heading": "22. Reference transcription is not infallible ground truth",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 15,
+      "word_count": 92,
+      "evidence": "WER is often described as comparing a hypothesis against “ground truth.” In practice, the reference is usually a human-created transcription governed by an annotation protocol.",
+      "paragraphs": [
+        "WER is often described as comparing a hypothesis against “ground truth.” In practice, the reference is usually a human-created transcription governed by an annotation protocol.",
+        "Reference uncertainty can arise from:",
+        "overlapping speakers;",
+        "disfluencies;",
+        "unclear audio;",
+        "proper-name spelling;",
+        "contractions;",
+        "dialectal forms;",
+        "foreign words;",
+        "partial words;",
+        "filled pauses;",
+        "punctuation policy;",
+        "segmentation decisions.",
+        "NIST scoring formats historically supported alternative transcriptions and optionally deletable words precisely because some speech events cannot always be represented by one unquestionably correct lexical sequence.",
+        "A very low WER system can therefore approach the disagreement rate of the annotation protocol itself."
+      ]
+    },
+    {
+      "heading": "23. Reference alternatives change the optimization problem",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 13,
+      "word_count": 99,
+      "evidence": "Suppose an utterance can reasonably be transcribed as either:",
+      "paragraphs": [
+        "Suppose an utterance can reasonably be transcribed as either:",
+        "going to",
+        "or:",
+        "gonna",
+        "If only one sequence is accepted, a system producing the other can be penalized even when the difference reflects transcription convention rather than recognition failure.",
+        "A scoring protocol can instead represent acceptable alternatives.",
+        "Conceptually, if references are",
+        "R1, R2, ..., RK",
+        "one possible evaluation rule is:",
+        "score(H) = min_k edit_distance(Rk, H)",
+        "although real scoring formats may represent alternatives inside a richer alignment graph rather than literally enumerating complete transcripts.",
+        "The key point is:",
+        "reference uncertainty should be modeled explicitly rather than silently treated as model error."
+      ]
+    },
+    {
+      "heading": "24. Sentence error rate is much harsher than WER",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 8,
+      "word_count": 95,
+      "evidence": "Sentence or utterance error rate counts an entire segment as incorrect if it contains at least one recognition error.",
+      "paragraphs": [
+        "Sentence or utterance error rate counts an entire segment as incorrect if it contains at least one recognition error.",
+        "If:",
+        "U = number of reference utterances Eutt = number containing one or more errors",
+        "then:",
+        "Eutt utterance error rate = ---- U",
+        "A ten-word utterance containing one substitution and a ten-word utterance containing ten errors both contribute one erroneous utterance.",
+        "This metric therefore measures exact-sequence success rather than average lexical error.",
+        "It can be useful for command recognition or tasks where an utterance must be completely correct, but it should not be confused with WER."
+      ]
+    },
+    {
+      "heading": "25. Match error rate, WIP, and WIL",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 9,
+      "word_count": 136,
+      "evidence": "Morris, Maier, and Green proposed alternative sequence-recognition measures including match error rate (MER) and word information lost (WIL).",
+      "paragraphs": [
+        "Morris, Maier, and Green proposed alternative sequence-recognition measures including match error rate (MER) and word information lost (WIL).",
+        "Let:",
+        "H = number of hits/correct matches S = substitutions D = deletions I = insertions",
+        "Then a commonly used formulation of match error rate is:",
+        "S + D + I MER = ------------------------ H + S + D + I",
+        "Unlike WER, its denominator incorporates the alignment length rather than only the reference length.",
+        "Word information preserved (WIP) and word information lost (WIL) attempt to characterize preserved lexical information rather than only normalized correction cost.",
+        "These alternatives can provide useful complementary views, but WER remains far more common in ASR benchmarking.",
+        "The correct methodological response is usually not to search for a single universally superior scalar. Instead, select a small metric set whose failure modes are understood."
+      ]
+    },
+    {
+      "heading": "26. Relative WER reduction can exaggerate small absolute changes",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 14,
+      "word_count": 84,
+      "evidence": "ASR papers frequently report relative word-error-rate reduction.",
+      "paragraphs": [
+        "ASR papers frequently report relative word-error-rate reduction.",
+        "If a baseline has:",
+        "WERbaseline = 10%",
+        "and a new model has:",
+        "WERnew = 9%",
+        "the absolute reduction is:",
+        "10% - 9% = 1 percentage point",
+        "while the relative WER reduction is:",
+        "10% - 9% --------- = 10% 10%",
+        "Thus:",
+        "1 percentage point absolute improvement = 10% relative WER reduction",
+        "in this example.",
+        "Both are mathematically valid, but reporting only relative improvement can make a small absolute difference appear larger.",
+        "Good reporting includes the underlying WER values."
+      ]
+    },
+    {
+      "heading": "27. Do not infer statistical significance from WER difference alone",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 13,
+      "word_count": 146,
+      "evidence": "Suppose two systems obtain:",
+      "paragraphs": [
+        "Suppose two systems obtain:",
+        "System A: 6.9% WER System B: 6.7% WER",
+        "The observed difference is:",
+        "0.2 percentage points.",
+        "That number alone does not establish that system B is reliably better.",
+        "The systems are evaluated on the same utterances, creating paired observations. Some utterances may favor A, others B. The uncertainty depends on the amount and structure of evaluation data.",
+        "NIST SCTK includes sc_stats specifically for statistical comparison of recognition systems, including a Matched Pair Sentence Segment Word Error test. The official SCTK repository documents this functionality in the NIST Scoring Toolkit .",
+        "Depending on the benchmark design, alternatives may include:",
+        "paired bootstrap resampling;",
+        "paired permutation/randomization procedures;",
+        "matched-pair tests;",
+        "confidence intervals over independent evaluation units.",
+        "The resampling or testing unit must respect dependence in the data. Treating every word as an independent observation can be unjustified when words are clustered by utterance, speaker, recording, or meeting."
+      ]
+    },
+    {
+      "heading": "28. Dataset size is not simply word count",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 12,
+      "word_count": 70,
+      "evidence": "A test corpus containing one million words from a small number of speakers does not provide the same evidence about generalization as one million words distributed across thousands of independent speakers and acoustic environments.",
+      "paragraphs": [
+        "A test corpus containing one million words from a small number of speakers does not provide the same evidence about generalization as one million words distributed across thousands of independent speakers and acoustic environments.",
+        "Relevant sampling units can include:",
+        "speaker;",
+        "conversation;",
+        "meeting;",
+        "recording session;",
+        "acoustic environment;",
+        "device;",
+        "domain;",
+        "language;",
+        "dialect.",
+        "A confidence interval based on an unrealistic independence assumption can be much narrower than the actual uncertainty about deployment performance."
+      ]
+    },
+    {
+      "heading": "29. Aggregate WER can hide subgroup failure",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 6,
+      "word_count": 63,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "Group Reference words WER Group A 90,000 5% Group B 10,000 25%",
+        "The pooled WER is:",
+        "(0.05 * 90000 + 0.25 * 10000) / 100000 = 7%",
+        "A reported “7% WER” can therefore coexist with a 25% error rate on one subgroup.",
+        "For systems deployed across heterogeneous populations, evaluation should include meaningful condition-specific results instead of relying exclusively on one corpus-wide value."
+      ]
+    },
+    {
+      "heading": "30. Domain shift makes benchmark WER conditional",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 16,
+      "word_count": 71,
+      "evidence": "A WER is meaningful only with respect to the distribution on which it was measured.",
+      "paragraphs": [
+        "A WER is meaningful only with respect to the distribution on which it was measured.",
+        "Performance can change under:",
+        "background noise;",
+        "reverberation;",
+        "microphone distance;",
+        "codec degradation;",
+        "telephone bandwidth;",
+        "accent or dialect shift;",
+        "specialized terminology;",
+        "speaker overlap;",
+        "code switching;",
+        "different speaking styles;",
+        "different age populations.",
+        "Therefore:",
+        "WER(dataset A) does not predict WER(dataset B) without assumptions about distribution shift.",
+        "The benchmark name and evaluation condition are part of the meaning of the number."
+      ]
+    },
+    {
+      "heading": "31. Single-speaker WER is insufficient for meeting transcription",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 11,
+      "word_count": 57,
+      "evidence": "Ordinary WER assumes a reference sequence and a corresponding hypothesis sequence.",
+      "paragraphs": [
+        "Ordinary WER assumes a reference sequence and a corresponding hypothesis sequence.",
+        "Meeting transcription can instead contain:",
+        "multiple simultaneous speakers;",
+        "arbitrary system speaker labels;",
+        "speaker-count errors;",
+        "overlapping speech;",
+        "long recordings;",
+        "segmentation uncertainty;",
+        "timestamp errors.",
+        "A system could recognize nearly every word correctly while assigning those words to the wrong speakers.",
+        "Plain WER can fail to capture that distinction."
+      ]
+    },
+    {
+      "heading": "32. Concatenated minimum-permutation WER",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 13,
+      "word_count": 94,
+      "evidence": "Concatenated minimum-permutation WER (cpWER) is one approach to speaker-attributed evaluation.",
+      "paragraphs": [
+        "Concatenated minimum-permutation WER (cpWER) is one approach to speaker-attributed evaluation.",
+        "Conceptually:",
+        "concatenate the words belonging to each reference speaker;",
+        "concatenate words belonging to each hypothesis speaker stream;",
+        "consider possible mappings between hypothesis and reference speakers;",
+        "calculate total WER under each allowed mapping;",
+        "choose the mapping giving minimum error.",
+        "If reference speakers are:",
+        "Alice Bob",
+        "and the system arbitrarily labels them:",
+        "speaker_0 speaker_1",
+        "cpWER does not penalize merely because the arbitrary label names differ. It searches for the best speaker assignment.",
+        "But it does penalize words attributed to the wrong speaker under the best assignment."
+      ]
+    },
+    {
+      "heading": "33. Time-constrained WER for meeting transcription",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 7,
+      "word_count": 121,
+      "evidence": "Pure concatenation can allow words far apart in time to participate in an alignment after speaker streams are concatenated.",
+      "paragraphs": [
+        "Pure concatenation can allow words far apart in time to participate in an alignment after speaker streams are concatenated.",
+        "Time-constrained minimum-permutation WER (tcpWER) adds temporal restrictions so that words that are implausibly distant in time cannot be treated as ordinary matches.",
+        "The MeetEval project formalized and implemented this class of meeting-transcription metrics. The authors describe cpWER, ORC-WER, MIMO-WER, and a time-constrained extension in the CHiME 2023 MeetEval paper .",
+        "A related paper analyzes WER definitions and their efficient computation for multi-speaker systems; see von Neumann et al., ICASSP 2023 .",
+        "The important principle is:",
+        "evaluation metric must reflect the output structure required from the system.",
+        "For single-speaker transcription, ordinary WER may be appropriate. For speaker-attributed meeting transcription, it can be incomplete."
+      ]
+    },
+    {
+      "heading": "34. Timing quality is not ordinary lexical WER",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 11,
+      "word_count": 61,
+      "evidence": "A transcription system may correctly recognize:",
+      "paragraphs": [
+        "A transcription system may correctly recognize:",
+        "we should begin now",
+        "but attach the words to timestamps tens of seconds away from the actual speech.",
+        "Ordinary WER can still be zero if timing is discarded before scoring.",
+        "Applications such as:",
+        "subtitle synchronization;",
+        "search within recordings;",
+        "meeting navigation;",
+        "speaker attribution;",
+        "audio-text alignment;",
+        "may therefore require explicit timing evaluation or a time-constrained transcript metric."
+      ]
+    },
+    {
+      "heading": "35. Streaming ASR requires more than final WER",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 11,
+      "word_count": 57,
+      "evidence": "An online recognizer can eventually emit the correct final sentence while behaving poorly during real-time use.",
+      "paragraphs": [
+        "An online recognizer can eventually emit the correct final sentence while behaving poorly during real-time use.",
+        "Relevant streaming properties include:",
+        "first-token latency;",
+        "finalization latency;",
+        "revision frequency;",
+        "partial-hypothesis instability;",
+        "endpointing delay;",
+        "real-time factor;",
+        "final WER.",
+        "Two systems can have identical final WER but substantially different user experience.",
+        "Therefore final transcript accuracy and streaming behavior should be measured separately."
+      ]
+    },
+    {
+      "heading": "36. Confidence quality is a separate evaluation problem",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 9,
+      "word_count": 77,
+      "evidence": "An ASR system may output confidence estimates for recognized words.",
+      "paragraphs": [
+        "An ASR system may output confidence estimates for recognized words.",
+        "WER answers:",
+        "How many lexical errors occurred?",
+        "Confidence evaluation asks:",
+        "Does the system know when it is likely to be wrong?",
+        "A recognizer with the same WER as another system may be more useful if its confidence scores are better calibrated and reliably isolate uncertain words.",
+        "NIST SCLITE historically included evaluation of word confidence measures in addition to ordinary WER scoring.",
+        "Thus:",
+        "recognition accuracy != confidence calibration."
+      ]
+    },
+    {
+      "heading": "37. WER is non-differentiable as a training objective",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 6,
+      "word_count": 95,
+      "evidence": "WER depends on discrete decoding and minimum edit alignment. Small changes in model parameters do not produce smooth changes in the final edit count.",
+      "paragraphs": [
+        "WER depends on discrete decoding and minimum edit alignment. Small changes in model parameters do not produce smooth changes in the final edit count.",
+        "Therefore standard ASR training generally relies on differentiable surrogate objectives or sequence-level approximations rather than directly backpropagating through the ordinary WER calculation.",
+        "This creates another distinction:",
+        "training objective != evaluation metric.",
+        "A model can be trained with one objective and selected according to WER on held-out data.",
+        "The fact that WER is the final benchmark does not imply that it is mathematically suitable as the elementary loss function used throughout training."
+      ]
+    },
+    {
+      "heading": "38. Reference implementation of unit-cost WER",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 3,
+      "word_count": 164,
+      "evidence": "The following pseudocode computes a word-level minimum-edit matrix and retains enough information to recover an alignment:",
+      "paragraphs": [
+        "The following pseudocode computes a word-level minimum-edit matrix and retains enough information to recover an alignment:",
+        "function wer(reference_words, hypothesis_words): N = length(reference_words) M = length(hypothesis_words) create matrix d[0..N][0..M] create matrix back[0..N][0..M] d[0][0] = 0 for i = 1..N: d[i][0] = i back[i][0] = DELETE for j = 1..M: d[0][j] = j back[0][j] = INSERT for i = 1..N: for j = 1..M: if reference_words[i-1] == hypothesis_words[j-1]: diagonal_cost = d[i-1][j-1] diagonal_op = CORRECT else: diagonal_cost = d[i-1][j-1] + 1 diagonal_op = SUBSTITUTE deletion_cost = d[i-1][j] + 1 insertion_cost = d[i][j-1] + 1 choose the minimum according to an explicitly documented tie-breaking rule store cost in d[i][j] store operation in back[i][j] backtrace from (N, M) count: S = substitutions D = deletions I = insertions if N == 0: apply explicitly defined empty-reference policy return (S + D + I) / N",
+        "The explicit tie-breaking requirement is intentional. If detailed error decomposition matters, a production scorer should not leave ambiguity in how equal-cost paths are resolved."
+      ]
+    },
+    {
+      "heading": "39. Computational complexity",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 6,
+      "word_count": 77,
+      "evidence": "For reference length N and hypothesis length M , the full dynamic-programming matrix requires:",
+      "paragraphs": [
+        "For reference length N and hypothesis length M , the full dynamic-programming matrix requires:",
+        "time: O(NM) space: O(NM)",
+        "If only the edit distance is required, rows can be compressed to reduce memory to:",
+        "O(min(N, M)).",
+        "Recovering the complete alignment normally requires additional information or a more sophisticated divide-and-conquer reconstruction strategy.",
+        "For ordinary short ASR utterances this computation is usually inexpensive. Long-form and multi-speaker evaluation can create much larger alignment search spaces, motivating specialized algorithms and temporal pruning."
+      ]
+    },
+    {
+      "heading": "40. Segmentation affects alignment",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 10,
+      "word_count": 89,
+      "evidence": "Consider a reference split as:",
+      "paragraphs": [
+        "Consider a reference split as:",
+        "REF segment 1: we should REF segment 2: begin now",
+        "while the hypothesis segmentation is:",
+        "HYP segment 1: we HYP segment 2: should begin now",
+        "If evaluation forces one-to-one segment scoring, artificial errors may appear even though concatenated lexical content is perfect.",
+        "A global alignment could instead obtain:",
+        "WER = 0",
+        "after concatenation.",
+        "Neither protocol is universally correct. The answer depends on whether segment boundaries are part of the task.",
+        "This is why evaluation tools distinguish utterance-based, time-marked, and global or multidimensional alignment settings."
+      ]
+    },
+    {
+      "heading": "41. Voice-activity detection can alter WER indirectly",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 6,
+      "word_count": 89,
+      "evidence": "A modern ASR pipeline may contain:",
+      "paragraphs": [
+        "A modern ASR pipeline may contain:",
+        "audio | v voice activity detection | v segmentation | v speech recognition | v text normalization | v WER scoring",
+        "If VAD misses speech, the recognizer may produce deletions.",
+        "If VAD treats noise or silence as speech, the recognizer may generate insertions or hallucinations.",
+        "Thus an end-to-end WER can measure the combined pipeline rather than the acoustic-linguistic recognizer in isolation.",
+        "This is desirable when evaluating a production system, but component experiments should clearly state which stages are oracle and which are predicted."
+      ]
+    },
+    {
+      "heading": "42. Oracle preprocessing can produce misleading comparisons",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 10,
+      "word_count": 55,
+      "evidence": "An experimental system may be evaluated using:",
+      "paragraphs": [
+        "An experimental system may be evaluated using:",
+        "oracle speech segments;",
+        "oracle speaker boundaries;",
+        "oracle language identity;",
+        "oracle speaker count;",
+        "oracle punctuation stripping;",
+        "manually corrected reference segmentation.",
+        "Another system may operate completely end-to-end.",
+        "Comparing their WERs without reporting these assumptions is not a controlled comparison.",
+        "Evaluation should specify what information the model receives at inference time."
+      ]
+    },
+    {
+      "heading": "43. Benchmark contamination and memorization",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 10,
+      "word_count": 77,
+      "evidence": "Low WER is meaningful only when the evaluation set is genuinely held out with respect to the training process being claimed.",
+      "paragraphs": [
+        "Low WER is meaningful only when the evaluation set is genuinely held out with respect to the training process being claimed.",
+        "For large pretrained speech and language models, potential overlap can occur through:",
+        "public audio;",
+        "public transcripts;",
+        "subtitle corpora;",
+        "web text;",
+        "benchmark-derived training datasets;",
+        "pseudo-labeling pipelines.",
+        "A suspiciously low WER on a famous benchmark is therefore not automatically evidence of equivalent performance on unseen deployment audio.",
+        "Evaluation methodology should consider contamination risk as part of benchmark validity."
+      ]
+    },
+    {
+      "heading": "44. A lower WER is meaningful only under the same protocol",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 5,
+      "word_count": 72,
+      "evidence": "A direct comparison such as",
+      "paragraphs": [
+        "A direct comparison such as",
+        "Model A = 5.2% Model B = 4.8%",
+        "is valid only when major evaluation conditions match.",
+        "Condition Must be controlled? Test audio Yes Reference transcription Yes Normalization Yes Tokenizer/word segmentation Yes Scorer implementation Preferably yes Optional-word treatment Yes Non-speech event policy Yes Speaker-attribution policy Yes for multi-speaker data Segmentation/timing protocol Yes where relevant",
+        "Without protocol equivalence, the difference can partly measure evaluation preprocessing rather than recognition performance."
+      ]
+    },
+    {
+      "heading": "45.1 Calling WER “percentage of wrong words” without qualification",
+      "level": 3,
+      "id": "ux-section-48",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "This intuition is incomplete because insertions have no corresponding reference word and WER can exceed 100%.",
+      "paragraphs": [
+        "This intuition is incomplete because insertions have no corresponding reference word and WER can exceed 100%."
+      ]
+    },
+    {
+      "heading": "45.2 Reporting only 1 − WER as accuracy",
+      "level": 3,
+      "id": "ux-section-49",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "This can become negative and should not automatically be interpreted as a bounded classification accuracy.",
+      "paragraphs": [
+        "This can become negative and should not automatically be interpreted as a bounded classification accuracy."
+      ]
+    },
+    {
+      "heading": "45.3 Averaging utterance WERs without stating the aggregation",
+      "level": 3,
+      "id": "ux-section-50",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Macro and micro averaging can produce radically different results.",
+      "paragraphs": [
+        "Macro and micro averaging can produce radically different results."
+      ]
+    },
+    {
+      "heading": "45.4 Comparing normalized WER to raw WER",
+      "level": 3,
+      "id": "ux-section-51",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "The numbers measure different token sequences.",
+      "paragraphs": [
+        "The numbers measure different token sequences."
+      ]
+    },
+    {
+      "heading": "45.5 Ignoring tokenization in multilingual ASR",
+      "level": 3,
+      "id": "ux-section-52",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "Word boundaries can be an evaluation assumption rather than an intrinsic property of the transcript.",
+      "paragraphs": [
+        "Word boundaries can be an evaluation assumption rather than an intrinsic property of the transcript."
+      ]
+    },
+    {
+      "heading": "45.6 Assuming lower WER means better semantic fidelity",
+      "level": 3,
+      "id": "ux-section-53",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "A small lexical error can reverse meaning, while several lexical substitutions can preserve meaning.",
+      "paragraphs": [
+        "A small lexical error can reverse meaning, while several lexical substitutions can preserve meaning."
+      ]
+    },
+    {
+      "heading": "45.7 Ignoring speaker attribution",
+      "level": 3,
+      "id": "ux-section-54",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Plain WER can understate failures in conversational or meeting transcription.",
+      "paragraphs": [
+        "Plain WER can understate failures in conversational or meeting transcription."
+      ]
+    },
+    {
+      "heading": "45.8 Treating tiny WER differences as conclusive",
+      "level": 3,
+      "id": "ux-section-55",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Uncertainty and paired statistical comparison should be considered.",
+      "paragraphs": [
+        "Uncertainty and paired statistical comparison should be considered."
+      ]
+    },
+    {
+      "heading": "45.9 Hiding the S/D/I breakdown",
+      "level": 3,
+      "id": "ux-section-56",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "The same total WER can arise from very different system failure modes.",
+      "paragraphs": [
+        "The same total WER can arise from very different system failure modes."
+      ]
+    },
+    {
+      "heading": "45.10 Treating the reference as error-free by definition",
+      "level": 3,
+      "id": "ux-section-57",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Human transcription itself is a protocol-dependent measurement process.",
+      "paragraphs": [
+        "Human transcription itself is a protocol-dependent measurement process."
+      ]
+    },
+    {
+      "heading": "46. Recommended ASR evaluation report",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 2,
+      "word_count": 104,
+      "evidence": "A serious evaluation should report more than one number.",
+      "paragraphs": [
+        "A serious evaluation should report more than one number.",
+        "Category Recommended information Dataset Name, version, split, number of recordings, speakers, hours, and reference words. Primary metric Corpus WER with S, D, and I counts. Preprocessing Exact normalization and tokenization policy. Scorer Tool, version, and important options. Segmentation Oracle, system-generated, global, utterance-based, or time-constrained. Multilingual handling Word segmentation and CER or other supplementary metrics where appropriate. Multi-speaker handling Speaker-aware metric such as cpWER/tcpWER where required. Subgroups Performance by relevant speaker/domain/acoustic conditions. Uncertainty Confidence intervals or paired statistical comparison when systems are close. Product metrics Latency, entity accuracy, formatting, semantic fidelity, or downstream success as required."
+      ]
+    },
+    {
+      "heading": "47. Choosing the right metric",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 1,
+      "word_count": 126,
+      "evidence": "Evaluation problem Useful metric family Why ordinary WER may be insufficient English single-speaker transcription WER Often an appropriate primary lexical metric. Languages with unstable word segmentation WER + CER or language-specific unit metric Word boundaries may dominate the result. Exact command recognition WER + utterance accuracy/error A single error may invalidate the entire command. Medical or safety-critical transcription WER + critical-term/semantic evaluation Equal lexical errors do not have equal consequence. Meeting transcription cpWER/tcpWER or related multi-speaker metrics Speaker assignment and temporal structure matter. Streaming ASR WER + latency/stability measures Final transcript quality does not measure real-time behavior. Hallucination testing on silence Insertion-f",
+      "paragraphs": [
+        "Evaluation problem Useful metric family Why ordinary WER may be insufficient English single-speaker transcription WER Often an appropriate primary lexical metric. Languages with unstable word segmentation WER + CER or language-specific unit metric Word boundaries may dominate the result. Exact command recognition WER + utterance accuracy/error A single error may invalidate the entire command. Medical or safety-critical transcription WER + critical-term/semantic evaluation Equal lexical errors do not have equal consequence. Meeting transcription cpWER/tcpWER or related multi-speaker metrics Speaker assignment and temporal structure matter. Streaming ASR WER + latency/stability measures Final transcript quality does not measure real-time behavior. Hallucination testing on silence Insertion-focused evaluation with explicit empty-reference policy Classical WER denominator is zero. Downstream NLP pipeline WER + task-specific metric Lexical edits need not predict downstream utility."
+      ]
+    },
+    {
+      "heading": "48. What WER is good at",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 12,
+      "word_count": 76,
+      "evidence": "Despite its limitations, WER remains valuable because it is:",
+      "paragraphs": [
+        "Despite its limitations, WER remains valuable because it is:",
+        "simple;",
+        "interpretable as normalized word-level edit cost;",
+        "easy to reproduce under a fixed protocol;",
+        "decomposable into substitutions, deletions, and insertions;",
+        "model-independent;",
+        "applicable to many ASR architectures;",
+        "historically well established;",
+        "supported by mature evaluation software.",
+        "It directly answers a useful question:",
+        "How much lexical editing is required to transform this ASR transcript into the chosen reference transcript?",
+        "For dictation-like applications, that question can closely approximate real correction effort."
+      ]
+    },
+    {
+      "heading": "49. What WER cannot establish",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 13,
+      "word_count": 58,
+      "evidence": "WER alone cannot establish:",
+      "paragraphs": [
+        "WER alone cannot establish:",
+        "semantic equivalence;",
+        "speaker-attribution correctness;",
+        "timestamp accuracy;",
+        "confidence calibration;",
+        "punctuation quality if punctuation was removed;",
+        "capitalization quality if case was normalized;",
+        "named-entity reliability;",
+        "fairness across populations;",
+        "real-time latency;",
+        "downstream task success;",
+        "generalization outside the evaluation distribution.",
+        "These are not defects that can be repaired merely by computing WER more precisely. They are different evaluation questions."
+      ]
+    },
+    {
+      "heading": "50. Final interpretation",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 9,
+      "word_count": 151,
+      "evidence": "Word error rate should be understood as a normalized, word-level sequence-edit measure embedded inside a larger evaluation protocol.",
+      "paragraphs": [
+        "Word error rate should be understood as a normalized, word-level sequence-edit measure embedded inside a larger evaluation protocol.",
+        "At its mathematical core:",
+        "substitutions + deletions + insertions WER = ---------------------------- reference words",
+        "The numerator is obtained from an alignment related to edit distance . The denominator anchors the score to the reference transcript.",
+        "But a meaningful ASR benchmark additionally depends on:",
+        "reference definition + normalization + tokenization + alignment + aggregation + speaker/timing assumptions + statistical uncertainty + task-specific consequences",
+        "This leads to the correct decision boundary:",
+        "WER is a strong metric for lexical transcription error. WER is not a complete measure of speech-system quality.",
+        "For ordinary ASR evaluation, WER should remain a primary metric where the concept of a word is well defined and the reference protocol is appropriate. For multilingual, multi-speaker, streaming, semantic, or safety-sensitive systems, it should be supplemented by metrics designed for the additional properties that matter."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 9,
+      "word_count": 188,
+      "evidence": "National Institute of Standards and Technology. SCTK: The NIST Scoring Toolkit. Official SCTK repository .",
+      "paragraphs": [
+        "National Institute of Standards and Technology. SCTK: The NIST Scoring Toolkit. Official SCTK repository .",
+        "National Institute of Standards and Technology. SCLITE speech-recognition scoring documentation. SCLITE documentation .",
+        "National Institute of Standards and Technology. Global Mapping Rules for speech-recognition scoring. GLM rules .",
+        "Wagner, R. A., and Fischer, M. J. The String-to-String Correction Problem. Journal of the ACM, 1974. https://doi.org/10.1145/321796.321811 .",
+        "Morris, A. C., Maier, V., and Green, P. From WER and RIL to MER and WIL: improved evaluation measures for connected speech recognition. Interspeech 2004. https://doi.org/10.21437/Interspeech.2004-668 .",
+        "Whetten, R., and Kennington, C. Evaluating and Improving Automatic Speech Recognition using Severity. BioNLP 2023. https://doi.org/10.18653/v1/2023.bionlp-1.6 .",
+        "von Neumann, T., Boeddeker, C., Delcroix, M., and Haeb-Umbach, R. MeetEval: A Toolkit for Computation of Word Error Rates for Meeting Transcription Systems. CHiME 2023. https://doi.org/10.21437/CHiME.2023-6 .",
+        "von Neumann, T., Boeddeker, C., Kinoshita, K., Delcroix, M., and Haeb-Umbach, R. On Word Error Rate Definitions and their Efficient Computation for Multi-Speaker Speech Recognition Systems. ICASSP 2023. https://doi.org/10.1109/ICASSP49357.2023.10094784 .",
+        "Thennal D K, James, J., Gopinath, D. P., and Muhammed Ashraf K. Advocating Character Error Rate for Multilingual ASR Evaluation. Findings of NAACL 2025. https://doi.org/10.18653/v1/2025.findings-naacl.277 ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "6. Multiple optimal alignments",
+          "anchor_id": "ux-section-7",
+          "alias": "edit distance",
+          "excerpt": "Edit-distance alignments are not necessarily unique."
+        },
+        {
+          "section": "15. Character error rate",
+          "anchor_id": "ux-section-17",
+          "alias": "edit distance",
+          "excerpt": "Character error rate (CER) applies the same general edit-distance framework at a character-level representation."
+        },
+        {
+          "section": "23. Reference alternatives change the optimization problem",
+          "anchor_id": "ux-section-25",
+          "alias": "edit distance",
+          "excerpt": "score(H) = min_k edit_distance(Rk, H)"
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "1. Formal definition",
+          "anchor_id": "ux-section-2",
+          "alias": "edit operations",
+          "excerpt": "This relationship is fundamental but should not be overstated. WER is a task-specific evaluation statistic built from edit operations. It is not merely another name for Levenshtein distance because WER adds a particular denominator, a transcription protocol, and often scorer-specific alignment rules."
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "13. Unicode normalization is not tokenization",
+          "anchor_id": "ux-section-15",
+          "alias": "text normalization and transliteration",
+          "excerpt": "These distinctions are especially important in scripts where whitespace is not a reliable word delimiter or where combining characters are common. The underlying representation issues are discussed in text normalization and transliteration ."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "3. WER as a dynamic-programming alignment problem",
+          "anchor_id": "ux-section-4",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "The conventional mathematical formulation can be computed with the same dynamic-programming structure used by the Wagner-Fischer algorithm ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#page",
+      "type": "WebPage",
+      "name": "Word Error Rate (WER) and ASR Evaluation: Mathematics, Alignment, Protocols, and Limitations",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#asr-evaluation"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "type": "TechArticle",
+      "name": "Word Error Rate (WER) and ASR Evaluation: Mathematics, Alignment, Protocols, and Limitations",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#asr-evaluation"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#concept",
+      "type": "DefinedTerm",
+      "name": "Word Error Rate",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#asr-evaluation",
+      "type": "DefinedTerm",
+      "name": "Automatic Speech Recognition Evaluation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#character-error-rate",
+      "type": "DefinedTerm",
+      "name": "Character Error Rate",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#cpwer",
+      "type": "DefinedTerm",
+      "name": "Concatenated Minimum-Permutation Word Error Rate",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#tcpwer",
+      "type": "DefinedTerm",
+      "name": "Time-Constrained Minimum-Permutation Word Error Rate",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#match-error-rate",
+      "type": "DefinedTerm",
+      "name": "Match Error Rate",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#word-information-lost",
+      "type": "DefinedTerm",
+      "name": "Word Information Lost",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#page",
+      "about",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#concept"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#page",
+      "about",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#asr-evaluation"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#page",
+      "mainEntity",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#concept"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#page",
+      "isPartOf",
+      "https://www.levenshtein.net/language-processing#collection"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "about",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#concept"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "about",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#asr-evaluation"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#character-error-rate"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#cpwer"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#tcpwer"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#match-error-rate"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#word-information-lost"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "isPartOf",
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#page"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "citation",
+      "https://github.com/usnistgov/SCTK"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "citation",
+      "https://doi.org/10.1145/321796.321811"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "citation",
+      "https://doi.org/10.21437/Interspeech.2004-668"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "citation",
+      "https://doi.org/10.18653/v1/2023.bionlp-1.6"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "citation",
+      "https://doi.org/10.21437/CHiME.2023-6"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "citation",
+      "https://doi.org/10.1109/ICASSP49357.2023.10094784"
+    ],
+    [
+      "https://www.levenshtein.net/word-error-rate-and-asr-evaluation#article",
+      "citation",
+      "https://doi.org/10.18653/v1/2025.findings-naacl.277"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://github.com/usnistgov/SCTK/blob/master/doc/sclite.htm",
+      "anchor": "SCLITE documentation"
+    },
+    {
+      "url": "https://doi.org/10.21437/Interspeech.2004-668",
+      "anchor": "https://doi.org/10.21437/Interspeech.2004-668"
+    },
+    {
+      "url": "https://github.com/usnistgov/SCTK/blob/master/doc/GLMRules.txt",
+      "anchor": "GLM rules"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/2025.findings-naacl.277",
+      "anchor": "https://doi.org/10.18653/v1/2025.findings-naacl.277"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/2023.bionlp-1.6",
+      "anchor": "https://doi.org/10.18653/v1/2023.bionlp-1.6"
+    },
+    {
+      "url": "https://jitsi.github.io/jiwer/",
+      "anchor": "JiWER documentation"
+    },
+    {
+      "url": "https://github.com/usnistgov/SCTK",
+      "anchor": "Official SCTK repository"
+    },
+    {
+      "url": "https://doi.org/10.21437/CHiME.2023-6",
+      "anchor": "https://doi.org/10.21437/CHiME.2023-6"
+    },
+    {
+      "url": "https://doi.org/10.1109/ICASSP49357.2023.10094784",
+      "anchor": "https://doi.org/10.1109/ICASSP49357.2023.10094784"
+    },
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "https://doi.org/10.1145/321796.321811"
+    }
+  ]
+}

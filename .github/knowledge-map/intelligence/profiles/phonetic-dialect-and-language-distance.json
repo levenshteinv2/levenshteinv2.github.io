@@ -1,0 +1,2511 @@
+{
+  "url": "/phonetic-dialect-and-language-distance",
+  "title": "Phonetic, Dialect, and Language Distance: Levenshtein Methods, Dialectometry, and Linguistic Similarity",
+  "h1": [
+    "Phonetic, Dialect, and Language Distance: Levenshtein Methods, Dialectometry, and Linguistic Similarity"
+  ],
+  "group": "Language",
+  "provisional_mission": "Khoảng cách âm vị phương ngữ",
+  "content_sha256": "5a9c659d9dc72913bc459180ca11795a7676c4356f89e0975017631305c69d25",
+  "canonical": "https://www.levenshtein.net/phonetic-dialect-and-language-distance",
+  "primary_entity_candidate": "Phonetic, Dialect, and Language Distance: Levenshtein Methods, Dialectometry, and Linguistic Similarity",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Phonetic, Dialect, and Language Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 5,
+      "word_count": 198,
+      "evidence": "Phonetic, dialect, and language distance are related but fundamentally different measurement problems. All can involve comparing sequences of speech sounds, and all have been studied using variants of Levenshtein distance , but the meaning of the resulting number depends on what is represented, what is aligned, how segment differences are weighted, which lexical items are compared, how word-level measurements are aggregated, and what scientific question the distance is intended to answer.",
+      "paragraphs": [
+        "Phonetic, dialect, and language distance are related but fundamentally different measurement problems. All can involve comparing sequences of speech sounds, and all have been studied using variants of Levenshtein distance , but the meaning of the resulting number depends on what is represented, what is aligned, how segment differences are weighted, which lexical items are compared, how word-level measurements are aggregated, and what scientific question the distance is intended to answer.",
+        "A distance between two phonetic transcriptions can describe how much their segment sequences differ. An aggregate distance between two dialects can summarize pronunciation differences over a set of corresponding words. A distance between two languages may instead incorporate lexical replacement, phonological correspondence, cognacy, grammatical structure, or other properties. None of these quantities is automatically a measure of mutual intelligibility, genealogical time depth, or whether two varieties should socially or politically be called separate languages.",
+        "The most important conceptual boundary is therefore:",
+        "phonetic distance != dialect distance != language distance != historical relatedness != mutual intelligibility.",
+        "Levenshtein distance is useful because it supplies a mathematically explicit sequence-comparison framework. But the framework only becomes linguistically meaningful after the representation, cost model, alignment assumptions, and aggregation procedure have been specified."
+      ]
+    },
+    {
+      "heading": "1. What does “linguistic distance” mean?",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 4,
+      "word_count": 142,
+      "evidence": "There is no single scalar quantity called the distance between two languages.",
+      "paragraphs": [
+        "There is no single scalar quantity called the distance between two languages.",
+        "Possible measurement targets include:",
+        "Distance type Objects compared Primary question Orthographic distance Written strings How different are the spellings? Phonetic distance Phonetic segment sequences How different are the pronunciations? Phonological distance Phonemic structures or systems How different are the sound systems or phonological representations? Lexical distance Word forms or lexical inventories How different is the vocabulary? Dialect distance Aggregated linguistic features across varieties How different are regional or social varieties? Perceptual distance Human similarity judgments How different do speakers perceive the varieties to be? Mutual-intelligibility distance Comprehension performance How difficult is cross-variety understanding? Typological distance Structural features How different are grammatical or phonological systems? Genealogical distance Historical relationships How are varieties related by descent?",
+        "A number derived from one row should not automatically be interpreted as a number from another."
+      ]
+    },
+    {
+      "heading": "2. Phonetic distance begins with a representation",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 15,
+      "word_count": 70,
+      "evidence": "Suppose two pronunciations are represented as:",
+      "paragraphs": [
+        "Suppose two pronunciations are represented as:",
+        "X = (x1, x2, ..., xn) Y = (y1, y2, ..., ym).",
+        "A phonetic distance function is then conceptually:",
+        "dphon(X, Y).",
+        "But before defining dphon , one must decide what the sequence elements actually are.",
+        "Possible units include:",
+        "orthographic characters;",
+        "phonemes;",
+        "phonetic segments;",
+        "IPA tokens including diacritics;",
+        "sound classes;",
+        "feature vectors;",
+        "syllables;",
+        "acoustic frames.",
+        "Changing the unit changes the geometry of the distance space."
+      ]
+    },
+    {
+      "heading": "3. Orthographic distance is not phonetic distance",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 7,
+      "word_count": 50,
+      "evidence": "Two words can have similar spelling but substantially different pronunciation.",
+      "paragraphs": [
+        "Two words can have similar spelling but substantially different pronunciation.",
+        "Conversely, two words can be pronounced similarly while being spelled differently.",
+        "Therefore:",
+        "Levenshtein( written_word_A, written_word_B )",
+        "does not automatically estimate:",
+        "phonetic_difference( pronunciation_A, pronunciation_B ).",
+        "A genuine phonetic comparison requires a pronunciation representation or another model that relates orthography to sound."
+      ]
+    },
+    {
+      "heading": "4. Phonemic and phonetic transcription are not interchangeable",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 17,
+      "word_count": 72,
+      "evidence": "A broad phonemic representation typically preserves distinctions considered contrastive in a language.",
+      "paragraphs": [
+        "A broad phonemic representation typically preserves distinctions considered contrastive in a language.",
+        "A narrow phonetic transcription may additionally encode:",
+        "allophonic variation;",
+        "aspiration;",
+        "nasalization;",
+        "vowel quality;",
+        "length;",
+        "secondary articulation;",
+        "fine place differences;",
+        "other phonetic detail.",
+        "Consequently:",
+        "distance(broad transcription)",
+        "and:",
+        "distance(narrow transcription)",
+        "measure different phenomena.",
+        "A dialect comparison can appear artificially small if important dialectal distinctions have already been removed by broad transcription.",
+        "It can appear artificially large if transcribers encode inconsistent fine-grained detail."
+      ]
+    },
+    {
+      "heading": "5. Transcription consistency is part of the measurement",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 8,
+      "word_count": 49,
+      "evidence": "Suppose one fieldworker writes a phonetic distinction that another fieldworker systematically omits.",
+      "paragraphs": [
+        "Suppose one fieldworker writes a phonetic distinction that another fieldworker systematically omits.",
+        "A distance algorithm cannot know whether the difference reflects:",
+        "actual pronunciation",
+        "or:",
+        "annotation practice.",
+        "This creates a measurement-error problem:",
+        "observed distance = linguistic difference + transcription difference + annotation noise.",
+        "Dialectometry therefore requires highly consistent transcription protocols."
+      ]
+    },
+    {
+      "heading": "6. IPA strings must be tokenized linguistically",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 12,
+      "word_count": 86,
+      "evidence": "An IPA transcription cannot always be treated as a sequence of arbitrary Unicode code points.",
+      "paragraphs": [
+        "An IPA transcription cannot always be treated as a sequence of arbitrary Unicode code points.",
+        "A phonetic unit can contain:",
+        "a base symbol;",
+        "combining diacritics;",
+        "a length mark;",
+        "a tie bar;",
+        "secondary-articulation marks;",
+        "tone marks.",
+        "For example, a segment with a diacritic may occupy several Unicode code points while representing one phonetic unit.",
+        "Therefore:",
+        "Unicode code point sequence != phonetic segment sequence.",
+        "The underlying Unicode issues should be handled consistently with the principles described in text normalization and transliteration and Unicode- and grapheme-safe Levenshtein processing ."
+      ]
+    },
+    {
+      "heading": "7. Plain phonetic Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 8,
+      "word_count": 72,
+      "evidence": "The simplest phonetic-distance model treats each phonetic token as a sequence symbol and applies classic edit distance.",
+      "paragraphs": [
+        "The simplest phonetic-distance model treats each phonetic token as a sequence symbol and applies classic edit distance.",
+        "Let:",
+        "X = (x1, ..., xn) Y = (y1, ..., ym).",
+        "Define unit-cost operations:",
+        "insert segment cost = 1 delete segment cost = 1 substitute segment cost = 1 match segment cost = 0",
+        "Then:",
+        "d(X,Y) = minimum total edit cost transforming X into Y.",
+        "This is exactly the sequence principle underlying edit distance ."
+      ]
+    },
+    {
+      "heading": "8. Dynamic-programming recurrence",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 8,
+      "word_count": 76,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "D[i][j]",
+        "be the minimum edit cost between the first i segments of X and first j segments of Y .",
+        "Boundary conditions:",
+        "D[0][0] = 0 D[i][0] = i D[0][j] = j.",
+        "For i > 0 and j > 0 :",
+        "sub_cost = 0 if xi = yj 1 otherwise D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + sub_cost ).",
+        "This computes the optimal alignment in O(nm) time using the conventional matrix formulation."
+      ]
+    },
+    {
+      "heading": "9. A simple phonetic example",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 15,
+      "word_count": 85,
+      "evidence": "Consider the illustrative token sequences:",
+      "paragraphs": [
+        "Consider the illustrative token sequences:",
+        "X = [p, a, t] Y = [b, a, t].",
+        "Under unit costs:",
+        "p -> b = substitution a -> a = match t -> t = match.",
+        "Therefore:",
+        "d(X,Y) = 1.",
+        "Now compare:",
+        "X = [p, a, t] Z = [a, a, t].",
+        "Unit-cost Levenshtein can also yield:",
+        "d(X,Z) = 1.",
+        "Thus the metric assigns equal cost to:",
+        "p -> b",
+        "and:",
+        "p -> a,",
+        "even though the first pair is phonetically much more similar under most articulatory descriptions."
+      ]
+    },
+    {
+      "heading": "10. The equal-substitution-cost problem",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 7,
+      "word_count": 53,
+      "evidence": "Classic Levenshtein treats:",
+      "paragraphs": [
+        "Classic Levenshtein treats:",
+        "substitute segment A with segment B",
+        "as one operation regardless of how similar the two sounds are.",
+        "This creates the fundamental limitation:",
+        "segment identity is represented, but degree of phonetic similarity is not.",
+        "For ordinary spelling correction that simplification may be acceptable.",
+        "For phonetic distance it can be linguistically crude."
+      ]
+    },
+    {
+      "heading": "11. Feature-sensitive phonetic distance",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 7,
+      "word_count": 64,
+      "evidence": "A more sophisticated model represents each segment as a vector of phonetic features.",
+      "paragraphs": [
+        "A more sophisticated model represents each segment as a vector of phonetic features.",
+        "For example:",
+        "phi(p) = [ consonantal, bilabial, stop, voiceless, ... ] phi(b) = [ consonantal, bilabial, stop, voiced, ... ].",
+        "The two vectors differ mainly in voicing.",
+        "A segment such as a vowel differs along many more dimensions.",
+        "A feature-sensitive substitution cost can therefore be:",
+        "csub(x,y) = distance( phi(x), phi(y) )."
+      ]
+    },
+    {
+      "heading": "12. Weighted feature distance",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "If feature k has weight wk , a simple model could use:",
+      "paragraphs": [
+        "If feature k has weight wk , a simple model could use:",
+        "csub(x,y) = sum_k wk * |phi_k(x) - phi_k(y)|.",
+        "Then:",
+        "csub(p,b) < csub(p,a)",
+        "can be represented naturally.",
+        "This transforms ordinary edit distance into a form of weighted Levenshtein distance ."
+      ]
+    },
+    {
+      "heading": "13. Phonetic features do not have universally correct weights",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 12,
+      "word_count": 67,
+      "evidence": "Assigning numerical costs creates a model of phonetic importance.",
+      "paragraphs": [
+        "Assigning numerical costs creates a model of phonetic importance.",
+        "For example:",
+        "voice difference = 0.2 place difference = 0.6 manner difference = 0.8",
+        "implicitly claims that manner differences are more important than voicing differences for the task.",
+        "That may be useful in one context and wrong in another.",
+        "The appropriate weights can depend on:",
+        "language family;",
+        "dialect area;",
+        "perceptual task;",
+        "cognate detection;",
+        "speech-recognition application;",
+        "historical sound correspondences."
+      ]
+    },
+    {
+      "heading": "14. ALINE: a feature-based alignment model",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 6,
+      "word_count": 103,
+      "evidence": "Grzegorz Kondrak's ALINE method was developed specifically for phonetic sequence alignment. Rather than giving every non-identical phoneme the same substitution cost, ALINE represents segments using multiple phonetic features and assigns feature salience weights.",
+      "paragraphs": [
+        "Grzegorz Kondrak's ALINE method was developed specifically for phonetic sequence alignment. Rather than giving every non-identical phoneme the same substitution cost, ALINE represents segments using multiple phonetic features and assigns feature salience weights.",
+        "The original alignment work is described in A New Algorithm for the Alignment of Phonetic Sequences .",
+        "The core principle is:",
+        "phonetic segment -> feature vector pair of segments -> feature-sensitive similarity sequence pair -> optimal phonetic alignment.",
+        "Features used in the ALINE framework include distinctions related to place, manner, voicing, nasality, syllabicity, vowel quality, length, and other articulatory properties.",
+        "The feature weights express the relative importance of those dimensions."
+      ]
+    },
+    {
+      "heading": "15. ALINE illustrates an important modeling principle",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 7,
+      "word_count": 59,
+      "evidence": "A phonetic alignment algorithm should ideally distinguish:",
+      "paragraphs": [
+        "A phonetic alignment algorithm should ideally distinguish:",
+        "near substitution",
+        "from:",
+        "radical substitution.",
+        "But ALINE also illustrates why phonetic similarity is not purely objective.",
+        "Feature sets, numerical feature values, salience weights, and gap penalties are modeling choices.",
+        "Kondrak's own framework was designed to be adjustable rather than claiming that one fixed weight system is optimal for every language or task."
+      ]
+    },
+    {
+      "heading": "16. Insertions and deletions also need phonetic interpretation",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 11,
+      "word_count": 48,
+      "evidence": "Unit-cost edit distance assigns:",
+      "paragraphs": [
+        "Unit-cost edit distance assigns:",
+        "delete any segment = 1.",
+        "But linguistic processes differ substantially.",
+        "For example, deletion of:",
+        "an unstressed vowel;",
+        "a word-final schwa;",
+        "a consonant cluster member;",
+        "a stressed vowel;",
+        "a tone-bearing unit;",
+        "may have different linguistic significance.",
+        "A richer model can therefore use context-sensitive gap penalties."
+      ]
+    },
+    {
+      "heading": "17. Context-sensitive alignment",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 10,
+      "word_count": 48,
+      "evidence": "The probability that one sound corresponds to another can depend on phonological context.",
+      "paragraphs": [
+        "The probability that one sound corresponds to another can depend on phonological context.",
+        "For example:",
+        "segment correspondence + word position + neighboring segments + stress environment",
+        "can provide more information than the segment pair alone.",
+        "This motivates models incorporating:",
+        "bigrams;",
+        "trigrams;",
+        "prosodic context;",
+        "syllable position;",
+        "language-pair-specific correspondence frequencies."
+      ]
+    },
+    {
+      "heading": "18. Empirical evaluation of dialect distance algorithms",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 6,
+      "word_count": 102,
+      "evidence": "Heeringa, Kleiweg, Gooskens, and Nerbonne compared multiple string-distance methods for dialectology and evaluated them against perceptual judgments. Their study found that order-sensitive measures performed well and reported evidence that phonological context expressed through n-grams could improve correspondence with perceived dialect distance. They did not find a clear general advantage for gradual segmental differences over binary differences in that particular evaluation.",
+      "paragraphs": [
+        "Heeringa, Kleiweg, Gooskens, and Nerbonne compared multiple string-distance methods for dialectology and evaluated them against perceptual judgments. Their study found that order-sensitive measures performed well and reported evidence that phonological context expressed through n-grams could improve correspondence with perceived dialect distance. They did not find a clear general advantage for gradual segmental differences over binary differences in that particular evaluation.",
+        "See Evaluation of String Distance Algorithms for Dialectology .",
+        "This result should not be generalized into:",
+        "phonetic feature weighting never helps.",
+        "The correct conclusion is narrower:",
+        "the value of additional phonetic complexity must be empirically demonstrated for the specific task and dataset."
+      ]
+    },
+    {
+      "heading": "19. Sound classes reduce phonetic detail",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 6,
+      "word_count": 54,
+      "evidence": "Another strategy maps detailed phonetic segments into broader classes.",
+      "paragraphs": [
+        "Another strategy maps detailed phonetic segments into broader classes.",
+        "Conceptually:",
+        "IPA segment -> sound class.",
+        "Multiple phonetically related sounds may therefore receive the same class.",
+        "This reduces the size of the comparison alphabet and can make regular cross-linguistic relationships easier to detect.",
+        "LingPy implements several sound-class models and alignment procedures for computational historical linguistics."
+      ]
+    },
+    {
+      "heading": "20. Sound classes are intentionally lossy",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "class(x) = class(y)",
+        "for two non-identical sounds, their distinction disappears at the class level.",
+        "This can improve robustness:",
+        "less sensitivity to irrelevant fine phonetic detail.",
+        "But it also reduces resolution:",
+        "genuine fine differences may be collapsed.",
+        "The representation should therefore be chosen according to the scientific question."
+      ]
+    },
+    {
+      "heading": "21. Learned sound correspondence scores",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 7,
+      "word_count": 83,
+      "evidence": "Feature-based distance is not the only alternative to unit-cost substitution.",
+      "paragraphs": [
+        "Feature-based distance is not the only alternative to unit-cost substitution.",
+        "A correspondence score can also be learned from data.",
+        "Suppose sound a in one language repeatedly aligns with sound b in another language more frequently than chance would predict.",
+        "A statistical model can assign the pair:",
+        "a <-> b",
+        "a high correspondence score even if the sounds are not maximally similar phonetically.",
+        "This is especially important in historical linguistics because regular sound change can produce correspondences that are systematic without being phonetically identical."
+      ]
+    },
+    {
+      "heading": "22. Pointwise Mutual Information for sound correspondences",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 8,
+      "word_count": 83,
+      "evidence": "One useful statistical quantity is Pointwise Mutual Information (PMI):",
+      "paragraphs": [
+        "One useful statistical quantity is Pointwise Mutual Information (PMI):",
+        "PMI(a,b) = log [ P(a,b) / (P(a)P(b)) ].",
+        "If a and b align together much more often than expected from their marginal frequencies:",
+        "PMI(a,b) > 0.",
+        "If their co-occurrence is unexceptional:",
+        "PMI(a,b) ≈ 0.",
+        "Such scores can be used in weighted sequence alignment.",
+        "Gerhard Jäger's large-scale work on lexical phylogenetic inference estimated PMI scores between sound classes using iterative weighted alignment and applied the resulting scores to large multilingual word-list collections. See 10.1038/sdata.2018.189 ."
+      ]
+    },
+    {
+      "heading": "23. Articulatory similarity and historical correspondence are different",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 9,
+      "word_count": 55,
+      "evidence": "Consider two objectives.",
+      "paragraphs": [
+        "Consider two objectives.",
+        "Objective A:",
+        "How phonetically similar are these sounds?",
+        "Objective B:",
+        "How plausible is it that these sounds correspond historically between these languages?",
+        "The optimal substitution matrix can differ.",
+        "A regular historical correspondence can involve sounds that are not especially close under a simple articulatory metric.",
+        "Therefore:",
+        "phonetic similarity != historical correspondence probability."
+      ]
+    },
+    {
+      "heading": "24. LexStat and language-specific correspondence evidence",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 5,
+      "word_count": 76,
+      "evidence": "Johann-Mattis List's LexStat approach uses multilingual phonetic word lists and derives language-pair-specific scoring schemes from observed versus expected sound correspondences.",
+      "paragraphs": [
+        "Johann-Mattis List's LexStat approach uses multilingual phonetic word lists and derives language-pair-specific scoring schemes from observed versus expected sound correspondences.",
+        "The method uses permutation-based evidence to help distinguish recurrent correspondences from those likely to occur by chance.",
+        "See LexStat: Automatic Detection of Cognates in Multilingual Wordlists .",
+        "This embodies a central principle of historical comparison:",
+        "one isolated similar word pair is weak evidence, but recurrent systematic sound correspondences across multiple comparable words are much stronger evidence."
+      ]
+    },
+    {
+      "heading": "25. Alignment and distance are separate components",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 11,
+      "word_count": 66,
+      "evidence": "Given two sequences, an algorithm must often determine:",
+      "paragraphs": [
+        "Given two sequences, an algorithm must often determine:",
+        "which segment corresponds to which segment.",
+        "Only then can it assign a meaningful total cost.",
+        "For example:",
+        "X: p a t Y: p r a t",
+        "one plausible alignment is:",
+        "X: p - a t Y: p r a t",
+        "with:",
+        "one insertion.",
+        "A different alignment might create substitutions instead.",
+        "The scoring model determines which alignment is optimal."
+      ]
+    },
+    {
+      "heading": "26. Global versus local alignment",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 6,
+      "word_count": 53,
+      "evidence": "Different linguistic tasks call for different alignment assumptions.",
+      "paragraphs": [
+        "Different linguistic tasks call for different alignment assumptions.",
+        "Global alignment attempts to align complete sequences.",
+        "Local alignment emphasizes highly similar subsequences.",
+        "For comparable lexical forms representing the same concept, global alignment is often a natural starting point.",
+        "For detecting shared material inside longer forms, local alignment can be useful.",
+        "Neither is universally correct."
+      ]
+    },
+    {
+      "heading": "27. Phonetic distance should often be normalized for word length—but not always",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "A raw edit distance tends to increase with sequence length.",
+      "paragraphs": [
+        "A raw edit distance tends to increase with sequence length.",
+        "For example:",
+        "d(\"ab\", \"ac\") = 1 d(\"abcdefghij\", \"abcdxfghij\") = 1.",
+        "The same raw distance represents:",
+        "50% of a two-symbol sequence",
+        "versus:",
+        "10% of a ten-symbol sequence.",
+        "A common normalized Levenshtein distance is:",
+        "LDN(x,y) = LD(x,y) / max(|x|, |y|)."
+      ]
+    },
+    {
+      "heading": "28. LDN is bounded under ordinary unit costs",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 5,
+      "word_count": 36,
+      "evidence": "For standard insertion, deletion, and substitution costs of one:",
+      "paragraphs": [
+        "For standard insertion, deletion, and substitution costs of one:",
+        "0 <= LDN(x,y) <= 1.",
+        "Examples:",
+        "identical strings: LDN = 0 maximally different equal-length strings: LDN can approach 1.",
+        "This facilitates comparison of words of different lengths."
+      ]
+    },
+    {
+      "heading": "29. Length normalization is not universally superior",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 9,
+      "word_count": 69,
+      "evidence": "Normalization changes what receives equal weight.",
+      "paragraphs": [
+        "Normalization changes what receives equal weight.",
+        "With LDN:",
+        "one edit in a two-segment word",
+        "counts much more than:",
+        "one edit in an eight-segment word.",
+        "This may be desirable when every word should contribute proportionally to its internal divergence.",
+        "But dialect-perception research has also found cases in which unnormalized sequence measures correlated better with speakers' judgments.",
+        "Thus:",
+        "normalize because the model requires it, not because normalized is automatically more scientific."
+      ]
+    },
+    {
+      "heading": "30. From word distance to dialect distance",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 16,
+      "word_count": 65,
+      "evidence": "Dialectometry typically requires many comparable lexical items.",
+      "paragraphs": [
+        "Dialectometry typically requires many comparable lexical items.",
+        "Suppose varieties A and B contain pronunciations for concepts:",
+        "c1, c2, ..., ck.",
+        "Let:",
+        "A_i",
+        "and:",
+        "B_i",
+        "be the corresponding pronunciations for concept ci .",
+        "A simple aggregate pronunciation distance is:",
+        "D(A,B) = 1/k * sum_i d(A_i, B_i).",
+        "The word-level function d can be:",
+        "raw Levenshtein distance;",
+        "normalized Levenshtein distance;",
+        "feature-weighted distance;",
+        "sound-class alignment score;",
+        "learned correspondence distance."
+      ]
+    },
+    {
+      "heading": "31. Worked miniature dialect-distance example",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 8,
+      "word_count": 103,
+      "evidence": "Consider four hypothetical lexical items. These forms are purely illustrative and do not represent claims about any particular language.",
+      "paragraphs": [
+        "Consider four hypothetical lexical items. These forms are purely illustrative and do not represent claims about any particular language.",
+        "Concept Variety A Variety B Raw LD LDN 1 [p a t] [b a t] 1 1/3 2 [k a] [k a] 0 0 3 [m a n] [m a] 1 1/3 4 [s u] [ʃ u] 1 1/2",
+        "Mean normalized distance:",
+        "D(A,B) = ( 1/3 + 0 + 1/3 + 1/2 ) / 4 ≈ 0.2917.",
+        "This number means only:",
+        "average normalized edit divergence for this word sample under this representation and this cost model.",
+        "It is not automatically:",
+        "29.17% different as languages."
+      ]
+    },
+    {
+      "heading": "32. Word selection determines aggregate dialect distance",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "Suppose one study uses mainly:",
+      "paragraphs": [
+        "Suppose one study uses mainly:",
+        "high-frequency basic vocabulary;",
+        "while another uses:",
+        "rare vocabulary;",
+        "loanwords;",
+        "highly variable lexical items.",
+        "The resulting distance matrices can differ even for the same dialects.",
+        "Thus:",
+        "dialect distance = varieties + word sample + transcription + alignment model + aggregation."
+      ]
+    },
+    {
+      "heading": "33. Lexical replacement and pronunciation difference should be distinguished",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 7,
+      "word_count": 47,
+      "evidence": "Suppose two dialects use different lexical items for the same concept.",
+      "paragraphs": [
+        "Suppose two dialects use different lexical items for the same concept.",
+        "Comparing the pronunciations directly can produce a large string distance.",
+        "But the cause is:",
+        "lexical replacement",
+        "rather than simply:",
+        "phonetic divergence of the same lexical form.",
+        "A study focusing specifically on pronunciation should control this distinction."
+      ]
+    },
+    {
+      "heading": "34. Dialectometry and lexicometry answer different questions",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 5,
+      "word_count": 42,
+      "evidence": "A pronunciation-distance study asks roughly:",
+      "paragraphs": [
+        "A pronunciation-distance study asks roughly:",
+        "How different are corresponding spoken forms?",
+        "A lexical-difference study asks:",
+        "How often do varieties use different lexical forms for the same meanings?",
+        "Combining both can be scientifically useful, but the resulting composite score must be interpreted accordingly."
+      ]
+    },
+    {
+      "heading": "35. Kessler's computational dialectology",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 4,
+      "word_count": 66,
+      "evidence": "Brett Kessler's 1995 work on Irish Gaelic demonstrated an early computational dialectology approach in which Levenshtein distance between phonetic transcriptions was used to compute distances among locations, followed by cluster analysis.",
+      "paragraphs": [
+        "Brett Kessler's 1995 work on Irish Gaelic demonstrated an early computational dialectology approach in which Levenshtein distance between phonetic transcriptions was used to compute distances among locations, followed by cluster analysis.",
+        "See Computational dialectology in Irish Gaelic .",
+        "The important methodological progression is:",
+        "phonetic word pairs | v word-level edit distances | v aggregate site distances | v distance matrix | v cluster / geographic analysis."
+      ]
+    },
+    {
+      "heading": "36. Dialectometry transforms many local differences into one aggregate matrix",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 11,
+      "word_count": 67,
+      "evidence": "With n dialect locations, construct:",
+      "paragraphs": [
+        "With n dialect locations, construct:",
+        "M[i,j] = distance between location i and location j.",
+        "The result is a symmetric matrix such as:",
+        "A B C D A 0 0.18 0.37 0.55 B 0.18 0 0.27 0.46 C 0.37 0.27 0 0.24 D 0.55 0.46 0.24 0",
+        "This matrix can then support:",
+        "hierarchical clustering;",
+        "multidimensional scaling;",
+        "geographic mapping;",
+        "network analysis;",
+        "regression against geographic distance;",
+        "comparison with perceptual data."
+      ]
+    },
+    {
+      "heading": "37. Cluster boundaries depend on the clustering algorithm",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 11,
+      "word_count": 44,
+      "evidence": "A continuous distance matrix does not contain mandatory discrete dialect groups.",
+      "paragraphs": [
+        "A continuous distance matrix does not contain mandatory discrete dialect groups.",
+        "A clustering procedure imposes a partition or hierarchy.",
+        "Different choices can produce different structures:",
+        "single linkage;",
+        "complete linkage;",
+        "average linkage;",
+        "Ward-type procedures;",
+        "medoid methods;",
+        "network representations.",
+        "Thus:",
+        "distance matrix != unique dialect classification."
+      ]
+    },
+    {
+      "heading": "38. Dialect continua challenge hard boundaries",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 5,
+      "word_count": 76,
+      "evidence": "Neighboring communities can differ only slightly while differences accumulate gradually across geography.",
+      "paragraphs": [
+        "Neighboring communities can differ only slightly while differences accumulate gradually across geography.",
+        "This produces the classic dialect-continuum pattern:",
+        "A -- B -- C -- D -- E small local changes + large end-to-end difference.",
+        "Heeringa and Nerbonne analyzed aggregate pronunciation distances in relation to dialect areas and geographic continua. See Dialect areas and dialect continua .",
+        "The existence of a measurable distance therefore does not imply that a natural categorical boundary occurs at one particular value."
+      ]
+    },
+    {
+      "heading": "39. There is no universal Levenshtein threshold separating language from dialect",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 13,
+      "word_count": 61,
+      "evidence": "A tempting but invalid rule would be:",
+      "paragraphs": [
+        "A tempting but invalid rule would be:",
+        "distance < T -> same dialect distance >= T -> different language.",
+        "No universal threshold has this interpretation.",
+        "The labels language and dialect depend on much more than phonetic similarity, including:",
+        "historical convention;",
+        "standardization;",
+        "literary traditions;",
+        "political boundaries;",
+        "speaker identity;",
+        "institutional status;",
+        "mutual intelligibility;",
+        "sociolinguistic history.",
+        "String distance cannot decide these categories by itself."
+      ]
+    },
+    {
+      "heading": "40. Perceptual validation",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "A computational dialect distance should ideally be validated against independent evidence.",
+      "paragraphs": [
+        "A computational dialect distance should ideally be validated against independent evidence.",
+        "One possibility is:",
+        "computational distance vs. speaker perception.",
+        "Gooskens and Heeringa compared Levenshtein-derived distances among Norwegian dialects with listeners' perceptual judgments. See Perceptive evaluation of Levenshtein dialect distance measurements using Norwegian dialect data .",
+        "This kind of validation asks:",
+        "Does the computational metric track the differences that listeners actually perceive?"
+      ]
+    },
+    {
+      "heading": "41. Perceived similarity is not identical to phonetic distance",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 14,
+      "word_count": 48,
+      "evidence": "Human perception can be influenced by:",
+      "paragraphs": [
+        "Human perception can be influenced by:",
+        "listener dialect;",
+        "familiarity;",
+        "stereotypes;",
+        "lexical knowledge;",
+        "exposure;",
+        "prosody;",
+        "speech rate;",
+        "speaker identity.",
+        "A purely segmental edit-distance model does not represent all these factors.",
+        "Therefore even a strong correlation should not be interpreted as identity between:",
+        "computed segment distance",
+        "and:",
+        "human perceptual distance."
+      ]
+    },
+    {
+      "heading": "42. Acoustic distance is another measurement layer",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 12,
+      "word_count": 48,
+      "evidence": "Instead of transcribing speech into symbolic segments, researchers can compare acoustic properties directly.",
+      "paragraphs": [
+        "Instead of transcribing speech into symbolic segments, researchers can compare acoustic properties directly.",
+        "Possible measurements include:",
+        "formant frequencies;",
+        "spectral information;",
+        "duration;",
+        "fundamental frequency;",
+        "voice onset time;",
+        "mel-frequency representations;",
+        "learned speech embeddings.",
+        "Then the comparison becomes:",
+        "acoustic representation -> numeric distance.",
+        "This is different from symbolic phonetic edit distance."
+      ]
+    },
+    {
+      "heading": "43. Symbolic and acoustic distance have different strengths",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 2,
+      "word_count": 42,
+      "evidence": "Property Symbolic phonetic distance Acoustic distance Interpretability High Depends on features/model Requires transcription Yes No Fine phonetic detail Depends on transcription Potentially high Speaker variation Partly abstracted away Must be controlled Alignment unit Segments Frames, segments, embeddings",
+      "paragraphs": [
+        "Property Symbolic phonetic distance Acoustic distance Interpretability High Depends on features/model Requires transcription Yes No Fine phonetic detail Depends on transcription Potentially high Speaker variation Partly abstracted away Must be controlled Alignment unit Segments Frames, segments, embeddings",
+        "Neither representation is universally superior."
+      ]
+    },
+    {
+      "heading": "44. Speaker effects must be separated from dialect effects",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 11,
+      "word_count": 50,
+      "evidence": "Observed pronunciation varies with:",
+      "paragraphs": [
+        "Observed pronunciation varies with:",
+        "age;",
+        "gender;",
+        "speaking style;",
+        "speech rate;",
+        "social group;",
+        "individual physiology;",
+        "recording conditions.",
+        "If one dialect is represented by one speaker and another dialect by another speaker:",
+        "measured difference = dialect difference + speaker difference.",
+        "Reliable dialect studies therefore benefit from multiple speakers or carefully standardized materials."
+      ]
+    },
+    {
+      "heading": "45. Word-level phonetic distances need uncertainty estimates",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 9,
+      "word_count": 47,
+      "evidence": "Suppose aggregate distance is based on only ten words.",
+      "paragraphs": [
+        "Suppose aggregate distance is based on only ten words.",
+        "One unusual lexical item can strongly change the average.",
+        "With hundreds of words, the estimate can be much more stable.",
+        "Useful procedures include:",
+        "bootstrap resampling of lexical items;",
+        "leave-one-word-out analysis;",
+        "speaker resampling;",
+        "confidence intervals;",
+        "stability analysis of clustering."
+      ]
+    },
+    {
+      "heading": "46. Dialect distance is sample dependent",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 11,
+      "word_count": 49,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "D_W(A,B)",
+        "be aggregate dialect distance computed on word set W .",
+        "For another word set W' :",
+        "D_W(A,B)",
+        "need not equal:",
+        "D_W'(A,B).",
+        "The correct scientific question is therefore not merely:",
+        "What is the distance?",
+        "but:",
+        "How stable is the estimated distance under reasonable resampling of the linguistic evidence?"
+      ]
+    },
+    {
+      "heading": "47. Missing lexical items require an explicit policy",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "Word-list datasets often contain missing values.",
+      "paragraphs": [
+        "Word-list datasets often contain missing values.",
+        "Possible policies include:",
+        "exclude concepts missing in either language;",
+        "require minimum shared coverage;",
+        "impute values;",
+        "assign a missing-data penalty.",
+        "These choices can change the aggregate result.",
+        "Missing data should not silently become maximum linguistic distance."
+      ]
+    },
+    {
+      "heading": "48. Multiple synonyms create another ambiguity",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 10,
+      "word_count": 50,
+      "evidence": "A language may have multiple words for the same concept:",
+      "paragraphs": [
+        "A language may have multiple words for the same concept:",
+        "concept c -> word A1 word A2 word A3.",
+        "Another language may have:",
+        "word B1 word B2.",
+        "Possible strategies include:",
+        "compare designated primary forms;",
+        "use the minimum cross-form distance;",
+        "average all forms;",
+        "model synonymy explicitly.",
+        "Each answers a different question."
+      ]
+    },
+    {
+      "heading": "49. Language distance from word lists",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "A basic multilingual procedure compares words representing the same concepts.",
+      "paragraphs": [
+        "A basic multilingual procedure compares words representing the same concepts.",
+        "For languages A and B :",
+        "D(A,B) = mean over concepts c of LDN( word_A(c), word_B(c) ).",
+        "This creates an aggregate lexical-phonetic distance.",
+        "It should not automatically be interpreted as complete linguistic distance."
+      ]
+    },
+    {
+      "heading": "50. LDN in cross-language comparison",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 4,
+      "word_count": 53,
+      "evidence": "A commonly used normalized measure is:",
+      "paragraphs": [
+        "A commonly used normalized measure is:",
+        "LDN(x,y) = LD(x,y) / max(|x|,|y|).",
+        "Wichmann, Holman, Bakker, and Brown discuss this measure and a further normalized variant in their study Evaluating linguistic distance measures .",
+        "Dividing by the longer word prevents long forms from automatically contributing larger absolute edit distances simply because they contain more symbols."
+      ]
+    },
+    {
+      "heading": "51. The background-similarity problem",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 8,
+      "word_count": 60,
+      "evidence": "Two languages can appear similar for reasons unrelated to genuine lexical correspondence.",
+      "paragraphs": [
+        "Two languages can appear similar for reasons unrelated to genuine lexical correspondence.",
+        "For example, their phoneme inventories or phonotactic patterns can make arbitrary word pairs relatively similar.",
+        "Suppose:",
+        "same-concept LDN = 0.55.",
+        "That value has a different interpretation if unrelated word pairs in those languages typically have:",
+        "LDN ≈ 0.90",
+        "than if unrelated word pairs already have:",
+        "LDN ≈ 0.60."
+      ]
+    },
+    {
+      "heading": "52. LDND: normalized distance divided by background distance",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 10,
+      "word_count": 53,
+      "evidence": "One approach attempts to correct for this language-pair-specific baseline.",
+      "paragraphs": [
+        "One approach attempts to correct for this language-pair-specific baseline.",
+        "Let:",
+        "Dsame(A,B)",
+        "be average normalized Levenshtein distance for words expressing the same concepts.",
+        "Let:",
+        "Ddifferent(A,B)",
+        "be average normalized distance for words expressing different concepts.",
+        "Then a simplified conceptual form is:",
+        "LDND(A,B) = Dsame(A,B) / Ddifferent(A,B).",
+        "The second denominator acts as a background similarity calibration."
+      ]
+    },
+    {
+      "heading": "53. Why LDND can outperform simple LDN for broad language classification",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 6,
+      "word_count": 57,
+      "evidence": "Wichmann and colleagues evaluated LDN and LDND and argued empirically that the additional normalization is particularly useful when language relationships are not already known.",
+      "paragraphs": [
+        "Wichmann and colleagues evaluated LDN and LDND and argued empirically that the additional normalization is particularly useful when language relationships are not already known.",
+        "The intuition is:",
+        "observed same-concept similarity",
+        "should be evaluated relative to:",
+        "how similar arbitrary words from these languages would be anyway.",
+        "This is conceptually similar to correcting a matching score for chance-level resemblance."
+      ]
+    },
+    {
+      "heading": "54. LDND is not a universal phonetic metric",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "LDND is designed for a particular type of aggregate lexical comparison.",
+      "paragraphs": [
+        "LDND is designed for a particular type of aggregate lexical comparison.",
+        "It should not replace ordinary segment distance when asking:",
+        "How similar are these two pronunciations?",
+        "The denominator makes sense primarily when comparing language-level word lists where background cross-language similarity is relevant."
+      ]
+    },
+    {
+      "heading": "55. ASJP-style language comparison",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 8,
+      "word_count": 70,
+      "evidence": "The Automated Similarity Judgment Program tradition uses compact standardized phonetic word lists representing basic concepts and has employed Levenshtein-derived measures for large-scale language comparison.",
+      "paragraphs": [
+        "The Automated Similarity Judgment Program tradition uses compact standardized phonetic word lists representing basic concepts and has employed Levenshtein-derived measures for large-scale language comparison.",
+        "This enables analyses over thousands of linguistic varieties.",
+        "But scalability comes with abstraction:",
+        "phonetic inventories are reduced;",
+        "concept lists are limited;",
+        "fine morphological information may be absent;",
+        "within-language variation is compressed.",
+        "The resulting distance is therefore a broad lexical-phonetic statistic rather than a complete linguistic description."
+      ]
+    },
+    {
+      "heading": "56. Large-scale automatic inference has moved beyond raw edit distance",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 8,
+      "word_count": 42,
+      "evidence": "Modern computational historical linguistics often uses:",
+      "paragraphs": [
+        "Modern computational historical linguistics often uses:",
+        "sound-class representations;",
+        "weighted alignment;",
+        "PMI correspondence scores;",
+        "supervised classifiers;",
+        "automatic cognate clustering;",
+        "phylogenetic methods.",
+        "For example, Jäger's 2018 large-scale analysis used sound-class PMI alignment and automated cognate inference rather than relying only on raw Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "57. Cognacy is not phonetic similarity",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 8,
+      "word_count": 46,
+      "evidence": "Two words are cognate if they descend historically from the same ancestral lexical source.",
+      "paragraphs": [
+        "Two words are cognate if they descend historically from the same ancestral lexical source.",
+        "That is a historical relation.",
+        "Two words can be:",
+        "phonetically similar but not cognate.",
+        "They can also be:",
+        "cognate but phonetically quite different after substantial sound change.",
+        "Therefore:",
+        "phonetic similarity != cognacy."
+      ]
+    },
+    {
+      "heading": "58. Chance resemblance",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 6,
+      "word_count": 50,
+      "evidence": "Short words provide a simple example.",
+      "paragraphs": [
+        "Short words provide a simple example.",
+        "If many languages contain syllables such as:",
+        "ma pa ta ka",
+        "some unrelated words will resemble each other by chance.",
+        "A low edit distance between one isolated pair therefore provides weak evidence of shared ancestry.",
+        "Historical inference requires recurrent patterns across multiple lexical items."
+      ]
+    },
+    {
+      "heading": "59. Borrowing creates another false genealogy signal",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "Two languages can share similar words because one borrowed them from another or both borrowed from a third language.",
+      "paragraphs": [
+        "Two languages can share similar words because one borrowed them from another or both borrowed from a third language.",
+        "For example:",
+        "shared modern word",
+        "can produce:",
+        "very small phonetic distance",
+        "while revealing contact rather than common inheritance from the relevant ancestral branch.",
+        "Thus:",
+        "lexical similarity != genealogical inheritance."
+      ]
+    },
+    {
+      "heading": "60. Regular sound correspondence is stronger evidence than isolated similarity",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 6,
+      "word_count": 55,
+      "evidence": "Suppose across many meaning-matched word pairs, language A sound:",
+      "paragraphs": [
+        "Suppose across many meaning-matched word pairs, language A sound:",
+        "x",
+        "systematically corresponds to language B sound:",
+        "y.",
+        "If this relationship recurs significantly more often than chance, it provides stronger historical evidence than one pair with high surface similarity.",
+        "This is why modern automated cognate methods learn correspondence patterns rather than using only generic edit distance."
+      ]
+    },
+    {
+      "heading": "61. Kondrak's phonetic alignment and cognate work",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 6,
+      "word_count": 66,
+      "evidence": "Kondrak developed feature-aware phonetic alignment specifically with cognate comparison in mind. Later work comparing phonetic-similarity algorithms showed that learned methods such as pair hidden Markov models and other statistical approaches can outperform hand-designed similarity functions under suitable training conditions.",
+      "paragraphs": [
+        "Kondrak developed feature-aware phonetic alignment specifically with cognate comparison in mind. Later work comparing phonetic-similarity algorithms showed that learned methods such as pair hidden Markov models and other statistical approaches can outperform hand-designed similarity functions under suitable training conditions.",
+        "See Evaluation of Several Phonetic Similarity Algorithms on the Task of Cognate Identification .",
+        "This illustrates the transition from:",
+        "fixed universal substitution costs",
+        "toward:",
+        "data-driven correspondence models."
+      ]
+    },
+    {
+      "heading": "62. Automatic cognate detection is not automatic proof of ancestry",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 12,
+      "word_count": 43,
+      "evidence": "A classifier can output:",
+      "paragraphs": [
+        "A classifier can output:",
+        "P(cognate | features)",
+        "or a cluster assignment.",
+        "This remains model inference.",
+        "Errors can arise from:",
+        "borrowings;",
+        "chance similarity;",
+        "semantic drift;",
+        "poor transcription;",
+        "insufficient word lists;",
+        "weakly represented languages.",
+        "Automated methods expand scale but do not eliminate the historical-linguistic problem."
+      ]
+    },
+    {
+      "heading": "63. Jäger, List, and Sofroniev's supervised cognate framework",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 4,
+      "word_count": 47,
+      "evidence": "Jäger, List, and Sofroniev combined multiple state-of-the-art phonetic alignment and similarity signals using supervised classification for multilingual cognate detection.",
+      "paragraphs": [
+        "Jäger, List, and Sofroniev combined multiple state-of-the-art phonetic alignment and similarity signals using supervised classification for multilingual cognate detection.",
+        "See 10.18653/v1/E17-1113 .",
+        "The important methodological lesson is that:",
+        "one scalar string distance can be a useful feature, but historical inference can benefit from combining multiple evidence sources."
+      ]
+    },
+    {
+      "heading": "64. Synchronic similarity and historical distance are different axes",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 7,
+      "word_count": 46,
+      "evidence": "Consider two varieties that recently borrowed large amounts of vocabulary from one another.",
+      "paragraphs": [
+        "Consider two varieties that recently borrowed large amounts of vocabulary from one another.",
+        "They may be synchronically similar despite distant ancestry.",
+        "Conversely, related languages can become structurally and lexically very different over time.",
+        "Thus:",
+        "present-day distance",
+        "is not a monotonic clock for:",
+        "time since common ancestor."
+      ]
+    },
+    {
+      "heading": "65. Levenshtein distance is not a molecular clock for language",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 9,
+      "word_count": 41,
+      "evidence": "A naïve historical model might assume:",
+      "paragraphs": [
+        "A naïve historical model might assume:",
+        "greater edit distance -> older divergence.",
+        "This fails because rates of linguistic change vary dramatically across:",
+        "words;",
+        "phonemes;",
+        "languages;",
+        "historical periods;",
+        "contact environments.",
+        "Borrowing, convergence, replacement, and independent innovation further disrupt a simple clock interpretation."
+      ]
+    },
+    {
+      "heading": "66. A distance tree is not automatically a family tree",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "A distance matrix can be fed into a tree-building algorithm.",
+      "paragraphs": [
+        "A distance matrix can be fed into a tree-building algorithm.",
+        "The resulting tree represents the structure of that distance matrix.",
+        "It does not automatically represent actual descent.",
+        "For example, intensive contact can make neighboring but genealogically distant languages appear more similar.",
+        "Therefore:",
+        "distance-derived tree != proven genealogical tree."
+      ]
+    },
+    {
+      "heading": "67. Networks may sometimes represent contact better than trees",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 7,
+      "word_count": 53,
+      "evidence": "Language history can involve both:",
+      "paragraphs": [
+        "Language history can involve both:",
+        "vertical inheritance",
+        "and:",
+        "horizontal contact.",
+        "A strict branching tree represents inheritance naturally but represents borrowing less directly.",
+        "Distance networks or other graphical approaches can expose incompatible or reticulate similarity patterns.",
+        "Choosing the visualization should follow the historical hypothesis rather than forcing every distance matrix into one hierarchical tree."
+      ]
+    },
+    {
+      "heading": "68. Geography and linguistic distance",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 7,
+      "word_count": 47,
+      "evidence": "Dialectology often finds that nearby varieties tend to be more similar than distant varieties.",
+      "paragraphs": [
+        "Dialectology often finds that nearby varieties tend to be more similar than distant varieties.",
+        "A simple model might examine:",
+        "linguistic_distance(i,j)",
+        "against:",
+        "geographic_distance(i,j).",
+        "But geographic distance is not the same as social contact.",
+        "Mountains, rivers, transportation routes, cities, migration, borders, and historical networks can all distort the relationship."
+      ]
+    },
+    {
+      "heading": "69. Spatial autocorrelation complicates statistical testing",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "Pairwise dialect distances are not independent observations.",
+      "paragraphs": [
+        "Pairwise dialect distances are not independent observations.",
+        "If:",
+        "D(A,B)",
+        "and:",
+        "D(A,C)",
+        "both contain dialect A, they share information.",
+        "Ordinary regression assumptions can therefore fail.",
+        "Dialectometric analyses should account for dependence in distance matrices rather than treating every matrix cell as an independent sample."
+      ]
+    },
+    {
+      "heading": "70. Aggregate distance can hide which features differ",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 13,
+      "word_count": 46,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "D(A,B) = 0.25",
+        "and:",
+        "D(C,D) = 0.25.",
+        "The first pair may differ mainly in vowels.",
+        "The second may differ mainly in consonants.",
+        "A scalar aggregate cannot reveal this.",
+        "Useful follow-up analysis includes:",
+        "segment confusion counts;",
+        "vowel/consonant decomposition;",
+        "word-level contribution analysis;",
+        "geographic feature maps;",
+        "cluster-specific correspondences."
+      ]
+    },
+    {
+      "heading": "71. Contribution analysis",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 10,
+      "word_count": 45,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "D(A,B) = 1/k * sum_i d_i,",
+        "the contribution of item i can be expressed as:",
+        "contribution_i = d_i / sum_j d_j.",
+        "This identifies lexical items disproportionately responsible for the aggregate difference.",
+        "Large contributions may reflect:",
+        "important sound changes;",
+        "lexical replacement;",
+        "annotation error;",
+        "outlier forms."
+      ]
+    },
+    {
+      "heading": "72. Weighted aggregate dialect distance",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "Not every lexical item must receive equal weight.",
+      "paragraphs": [
+        "Not every lexical item must receive equal weight.",
+        "A generalized model is:",
+        "D(A,B) = sum_i w_i d_i / sum_i w_i.",
+        "Weights can reflect:",
+        "measurement reliability;",
+        "frequency;",
+        "confidence;",
+        "historical relevance.",
+        "But weighting can introduce researcher discretion and should be justified before inspecting desired cluster outcomes."
+      ]
+    },
+    {
+      "heading": "73. Feature weighting can destroy metric properties",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 7,
+      "word_count": 66,
+      "evidence": "Classic unit-cost Levenshtein distance is a metric.",
+      "paragraphs": [
+        "Classic unit-cost Levenshtein distance is a metric.",
+        "It satisfies:",
+        "d(x,y) >= 0 d(x,y) = 0 iff x = y d(x,y) = d(y,x) d(x,z) <= d(x,y) + d(y,z).",
+        "With arbitrary weighted edit costs, these properties are not guaranteed.",
+        "For example, asymmetric sound-change costs can intentionally make:",
+        "d(x,y) != d(y,x).",
+        "That may be appropriate for modeling historical directionality but means the function is no longer an ordinary metric."
+      ]
+    },
+    {
+      "heading": "74. Similarity and distance must not be mixed carelessly",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 10,
+      "word_count": 68,
+      "evidence": "A model may produce:",
+      "paragraphs": [
+        "A model may produce:",
+        "similarity = 1",
+        "for identical strings and lower values for divergence.",
+        "Another model may produce:",
+        "distance = 0",
+        "for identical strings and larger values for divergence.",
+        "Converting between them by:",
+        "distance = 1 - similarity",
+        "is only valid when the score is appropriately bounded and calibrated.",
+        "PMI scores, ALINE scores, raw edit distances, and LDN values do not all share the same numerical scale."
+      ]
+    },
+    {
+      "heading": "75. Thresholds are dataset dependent",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 13,
+      "word_count": 38,
+      "evidence": "Suppose a cognate classifier uses:",
+      "paragraphs": [
+        "Suppose a cognate classifier uses:",
+        "distance <= 0.4.",
+        "Changing from:",
+        "raw IPA characters",
+        "to:",
+        "sound classes",
+        "changes the distance distribution.",
+        "So does changing:",
+        "normalization;",
+        "gap penalties;",
+        "feature weights;",
+        "word length normalization.",
+        "The old threshold must therefore be recalibrated."
+      ]
+    },
+    {
+      "heading": "76. Calibration with positive and negative pairs",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 11,
+      "word_count": 50,
+      "evidence": "If labeled data are available, estimate:",
+      "paragraphs": [
+        "If labeled data are available, estimate:",
+        "P(distance | related)",
+        "and:",
+        "P(distance | unrelated).",
+        "A useful threshold depends on how these distributions overlap.",
+        "For example:",
+        "related |------| |---------| unrelated",
+        "A threshold in the overlap region creates both:",
+        "false positives;",
+        "false negatives.",
+        "No threshold can eliminate both if the distributions overlap strongly."
+      ]
+    },
+    {
+      "heading": "77. Phonetic distance and mutual intelligibility",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 12,
+      "word_count": 45,
+      "evidence": "Pronunciation similarity can contribute to intelligibility, but comprehension also depends on:",
+      "paragraphs": [
+        "Pronunciation similarity can contribute to intelligibility, but comprehension also depends on:",
+        "lexical overlap;",
+        "grammar;",
+        "speech rate;",
+        "exposure;",
+        "context;",
+        "listener expectations;",
+        "orthographic familiarity;",
+        "asymmetric language exposure.",
+        "Therefore:",
+        "low phonetic distance does not guarantee high mutual intelligibility.",
+        "Likewise, substantial phonetic divergence can sometimes be overcome through familiarity."
+      ]
+    },
+    {
+      "heading": "78. Mutual intelligibility can be asymmetric",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 5,
+      "word_count": 48,
+      "evidence": "Speakers of variety A may understand variety B better than speakers of B understand A.",
+      "paragraphs": [
+        "Speakers of variety A may understand variety B better than speakers of B understand A.",
+        "A symmetric edit distance obeys:",
+        "d(A,B) = d(B,A).",
+        "It therefore cannot directly represent asymmetric comprehension.",
+        "This is a clear example where the mathematical structure of the distance function differs from the linguistic phenomenon."
+      ]
+    },
+    {
+      "heading": "79. Dialect classification and speaker identity are different",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 11,
+      "word_count": 38,
+      "evidence": "A model may estimate:",
+      "paragraphs": [
+        "A model may estimate:",
+        "this pronunciation resembles dialect A",
+        "without establishing:",
+        "the speaker belongs socially to community A.",
+        "People:",
+        "move;",
+        "code-switch;",
+        "accommodate;",
+        "use multiple styles;",
+        "acquire mixed features.",
+        "Dialect similarity should not be transformed into rigid identity inference."
+      ]
+    },
+    {
+      "heading": "80. Language distance and speech recognition",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 5,
+      "word_count": 73,
+      "evidence": "Phonetic variation becomes operationally important in automatic speech recognition because the same lexical item can be pronounced differently across speakers and dialects.",
+      "paragraphs": [
+        "Phonetic variation becomes operationally important in automatic speech recognition because the same lexical item can be pronounced differently across speakers and dialects.",
+        "However, ASR evaluation typically measures transcript disagreement using metrics such as word error rate , not dialect distance itself.",
+        "The distinction is:",
+        "dialect distance: difference between linguistic varieties WER: difference between reference transcript and ASR hypothesis.",
+        "A dialect can increase ASR errors without the WER metric itself identifying the dialectal cause."
+      ]
+    },
+    {
+      "heading": "81. Pronunciation dictionaries and phonetic similarity",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 7,
+      "word_count": 46,
+      "evidence": "Speech systems often map lexical forms to one or more pronunciations.",
+      "paragraphs": [
+        "Speech systems often map lexical forms to one or more pronunciations.",
+        "Phonetic sequence distance can help:",
+        "cluster pronunciation variants;",
+        "detect near-pronunciations;",
+        "analyze recognition confusions;",
+        "expand lexical pronunciation models.",
+        "But edit distance should be calibrated against the actual pronunciation inventory rather than assuming one universal cost function."
+      ]
+    },
+    {
+      "heading": "82. Language identification is a different problem",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 8,
+      "word_count": 56,
+      "evidence": "Given speech or text, language identification asks:",
+      "paragraphs": [
+        "Given speech or text, language identification asks:",
+        "Which language generated this observation?",
+        "Language distance asks:",
+        "How different are two language representations?",
+        "A classifier can distinguish two languages extremely accurately even if they are linguistically close.",
+        "Conversely, two distant languages may be difficult to identify from a very short ambiguous observation.",
+        "Thus:",
+        "classification difficulty != language distance."
+      ]
+    },
+    {
+      "heading": "83. Typological distance cannot be replaced by word-form distance",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 7,
+      "word_count": 42,
+      "evidence": "Two languages can have:",
+      "paragraphs": [
+        "Two languages can have:",
+        "similar word order;",
+        "similar morphological structure;",
+        "similar phoneme inventories;",
+        "while sharing little lexical material.",
+        "Another pair can share many loanwords while differing strongly in grammar.",
+        "A complete structural comparison therefore requires features beyond edit distance between lexical forms."
+      ]
+    },
+    {
+      "heading": "84. Language distance is naturally multidimensional",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 7,
+      "word_count": 56,
+      "evidence": "A better conceptual model is a vector:",
+      "paragraphs": [
+        "A better conceptual model is a vector:",
+        "D(A,B) = [ phonetic_distance, lexical_distance, morphological_distance, syntactic_distance, semantic_distance, perceptual_distance ].",
+        "A scalar distance:",
+        "Dscalar(A,B)",
+        "can be obtained by combining components, but that requires explicit weights:",
+        "Dscalar = w1 Dphon + w2 Dlex + w3 Dmorph + w4 Dsyntax + ...",
+        "The choice of weights defines what “linguistic distance” means."
+      ]
+    },
+    {
+      "heading": "85. A single scalar can obscure contradictory dimensions",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 5,
+      "word_count": 36,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "Dimension Language A vs B Phonetic distance Low Lexical distance High Syntactic distance Low Mutual intelligibility Low",
+        "Calling the languages:",
+        "distance = 0.42",
+        "without preserving the components discards the structure researchers may actually care about."
+      ]
+    },
+    {
+      "heading": "86. Pairwise distance is not an explanation",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 14,
+      "word_count": 35,
+      "evidence": "A distance answers:",
+      "paragraphs": [
+        "A distance answers:",
+        "how different?",
+        "It does not answer:",
+        "why different?",
+        "Observed differences can result from:",
+        "sound change;",
+        "lexical replacement;",
+        "borrowing;",
+        "contact;",
+        "migration;",
+        "standardization;",
+        "social differentiation;",
+        "annotation conventions.",
+        "Causal interpretation requires historical and sociolinguistic evidence."
+      ]
+    },
+    {
+      "heading": "87. A rigorous dialectometry pipeline",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 1,
+      "word_count": 65,
+      "evidence": "linguistic sites / varieties | v controlled word list | v phonetic transcription | v Unicode + token normalization | v segment or sound-class representation | v pairwise phonetic alignment | v word-level distance | v aggregate variety distance | v distance matrix | +------------------+ | | v v geographic analysis clustering / MDS | | +--------+---------+ | v external validation | v linguistic interpretation",
+      "paragraphs": [
+        "linguistic sites / varieties | v controlled word list | v phonetic transcription | v Unicode + token normalization | v segment or sound-class representation | v pairwise phonetic alignment | v word-level distance | v aggregate variety distance | v distance matrix | +------------------+ | | v v geographic analysis clustering / MDS | | +--------+---------+ | v external validation | v linguistic interpretation"
+      ]
+    },
+    {
+      "heading": "88. A rigorous historical-comparison pipeline",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 3,
+      "word_count": 51,
+      "evidence": "meaning-matched word lists | v phonetic normalization | v sound-class representation | v preliminary alignments | v correspondence estimation | v weighted realignment | v cognate probability / distance | v cognate clustering | v historical / phylogenetic analysis",
+      "paragraphs": [
+        "meaning-matched word lists | v phonetic normalization | v sound-class representation | v preliminary alignments | v correspondence estimation | v weighted realignment | v cognate probability / distance | v cognate clustering | v historical / phylogenetic analysis",
+        "This is substantially richer than:",
+        "run Levenshtein on every pair of words."
+      ]
+    },
+    {
+      "heading": "89. Baseline model: plain phonetic Levenshtein",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 3,
+      "word_count": 45,
+      "evidence": "A useful research strategy is to begin with a simple baseline.",
+      "paragraphs": [
+        "A useful research strategy is to begin with a simple baseline.",
+        "function phonetic_ld(tokens_a, tokens_b): initialize edit-distance matrix insertion = 1 deletion = 1 substitution(a,b): if a == b: return 0 return 1 return minimum edit cost",
+        "This establishes what can be achieved without linguistic weighting."
+      ]
+    },
+    {
+      "heading": "90. Feature-weighted model",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 2,
+      "word_count": 58,
+      "evidence": "function phonetic_weighted_ld(A, B): substitution(x, y): if x == y: return 0 fx = phonetic_features(x) fy = phonetic_features(y) cost = 0 for feature k: cost += weight[k] * difference( fx[k], fy[k] ) return cost insertion(x): return gap_cost(x) deletion(x): return gap_cost(x) return weighted_edit_distance( A, B, substitution, insertion, deletion )",
+      "paragraphs": [
+        "function phonetic_weighted_ld(A, B): substitution(x, y): if x == y: return 0 fx = phonetic_features(x) fy = phonetic_features(y) cost = 0 for feature k: cost += weight[k] * difference( fx[k], fy[k] ) return cost insertion(x): return gap_cost(x) deletion(x): return gap_cost(x) return weighted_edit_distance( A, B, substitution, insertion, deletion )",
+        "The model is more linguistically expressive but requires substantially more assumptions."
+      ]
+    },
+    {
+      "heading": "91. Corpus-learned correspondence model",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 2,
+      "word_count": 44,
+      "evidence": "initialize generic alignment scores repeat: align many meaning-matched word pairs count sound correspondences estimate observed correspondence frequency estimate expected frequency from unrelated / shuffled pairs derive correspondence scores until scores stabilize sufficiently realign using learned scores",
+      "paragraphs": [
+        "initialize generic alignment scores repeat: align many meaning-matched word pairs count sound correspondences estimate observed correspondence frequency estimate expected frequency from unrelated / shuffled pairs derive correspondence scores until scores stabilize sufficiently realign using learned scores",
+        "This general architecture underlies modern statistical correspondence approaches."
+      ]
+    },
+    {
+      "heading": "92. Evaluation must match the intended use",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 2,
+      "word_count": 49,
+      "evidence": "Task Useful validation target Dialect perception Listener similarity judgments Dialect geography Spatial patterns and known linguistic features Cognate detection Expert cognate annotations Historical phylogeny Established comparative evidence Cross-dialect ASR Recognition performance Mutual intelligibility Comprehension experiments",
+      "paragraphs": [
+        "Task Useful validation target Dialect perception Listener similarity judgments Dialect geography Spatial patterns and known linguistic features Cognate detection Expert cognate annotations Historical phylogeny Established comparative evidence Cross-dialect ASR Recognition performance Mutual intelligibility Comprehension experiments",
+        "A method validated for one task cannot automatically claim validity for all the others."
+      ]
+    },
+    {
+      "heading": "93. Compare against multiple baselines",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 4,
+      "word_count": 48,
+      "evidence": "A strong experimental study might compare:",
+      "paragraphs": [
+        "A strong experimental study might compare:",
+        "1. orthographic Levenshtein 2. phonetic unit-cost Levenshtein 3. normalized phonetic Levenshtein 4. feature-weighted alignment 5. sound-class alignment 6. learned correspondence alignment",
+        "Then evaluate which representation best predicts the independent target.",
+        "This is stronger than assuming the most complicated metric must be best."
+      ]
+    },
+    {
+      "heading": "94. Ablation reveals where improvement comes from",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 4,
+      "word_count": 51,
+      "evidence": "If a model contains:",
+      "paragraphs": [
+        "If a model contains:",
+        "phonetic features + context + stress + language-specific scores + normalization",
+        "evaluate:",
+        "Configuration Question Plain LD Baseline sequence information + normalized length Effect of length scaling + phonetic weights Effect of gradual sound similarity + context Effect of neighboring sounds + learned correspondences Effect of language-pair evidence"
+      ]
+    },
+    {
+      "heading": "95. Report the representation completely",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 16,
+      "word_count": 48,
+      "evidence": "A reproducible study should state:",
+      "paragraphs": [
+        "A reproducible study should state:",
+        "transcription system;",
+        "Unicode normalization;",
+        "tokenization;",
+        "treatment of diacritics;",
+        "treatment of stress;",
+        "treatment of length;",
+        "treatment of tone;",
+        "sound-class mapping if used;",
+        "edit costs;",
+        "gap penalties;",
+        "length normalization;",
+        "aggregation procedure.",
+        "Without this information, the phrase:",
+        "we used Levenshtein distance",
+        "is not sufficient for reproducibility."
+      ]
+    },
+    {
+      "heading": "96. Report the lexical sample",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 9,
+      "word_count": 30,
+      "evidence": "Also report:",
+      "paragraphs": [
+        "Also report:",
+        "number of concepts;",
+        "concept source;",
+        "missing-data rate;",
+        "handling of synonyms;",
+        "loanword policy;",
+        "number of speakers per variety;",
+        "transcription provenance.",
+        "The input dataset is part of the distance definition."
+      ]
+    },
+    {
+      "heading": "97. Report uncertainty, not only point estimates",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 6,
+      "word_count": 33,
+      "evidence": "Instead of:",
+      "paragraphs": [
+        "Instead of:",
+        "distance(A,B) = 0.284",
+        "prefer, where possible:",
+        "estimated distance = 0.284 bootstrap interval = [0.251, 0.318]",
+        "or another appropriate uncertainty measure.",
+        "This reveals whether small apparent differences between variety pairs are stable."
+      ]
+    },
+    {
+      "heading": "98. Common failure mode: comparing spelling instead of pronunciation",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "Failure:",
+      "paragraphs": [
+        "Failure:",
+        "phonetic distance = Levenshtein(orthographic words).",
+        "This is only valid if orthography is an adequate proxy for pronunciation in the application.",
+        "Otherwise the method measures orthographic similarity."
+      ]
+    },
+    {
+      "heading": "99. Common failure mode: treating IPA as Unicode characters",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "Combining marks, tied segments, and other phonetic structures can be split incorrectly.",
+      "paragraphs": [
+        "Combining marks, tied segments, and other phonetic structures can be split incorrectly.",
+        "Segment-aware tokenization is required."
+      ]
+    },
+    {
+      "heading": "100. Common failure mode: equal substitution costs without justification",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 4,
+      "word_count": 28,
+      "evidence": "Unit costs implicitly assert:",
+      "paragraphs": [
+        "Unit costs implicitly assert:",
+        "distance(p,b) = distance(p,a)",
+        "for all nonidentical segments under substitution.",
+        "This may be acceptable as a baseline but should be recognized as a modeling simplification."
+      ]
+    },
+    {
+      "heading": "101. Common failure mode: overengineering phonetic weights",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 3,
+      "word_count": 47,
+      "evidence": "The opposite error is to create extremely detailed phonetic costs without validation.",
+      "paragraphs": [
+        "The opposite error is to create extremely detailed phonetic costs without validation.",
+        "A complicated feature matrix can look scientifically sophisticated while reducing predictive accuracy.",
+        "Heeringa and colleagues' comparison of dialect-distance algorithms provides an important warning that greater phonetic granularity does not automatically yield better correspondence with perception."
+      ]
+    },
+    {
+      "heading": "102. Common failure mode: interpreting raw word distance as language distance",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 4,
+      "word_count": 18,
+      "evidence": "One pair:",
+      "paragraphs": [
+        "One pair:",
+        "word_A vs. word_B",
+        "cannot characterize an entire language pair.",
+        "Language-level inference requires aggregation over representative evidence."
+      ]
+    },
+    {
+      "heading": "103. Common failure mode: averaging incomparable words",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "If lexical items do not represent comparable meanings, their phonetic distance may be scientifically irrelevant to the intended comparison.",
+      "paragraphs": [
+        "If lexical items do not represent comparable meanings, their phonetic distance may be scientifically irrelevant to the intended comparison.",
+        "Meaning alignment must precede lexical-form comparison."
+      ]
+    },
+    {
+      "heading": "104. Common failure mode: interpreting similarity as cognacy",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 6,
+      "word_count": 23,
+      "evidence": "Two words can resemble each other through:",
+      "paragraphs": [
+        "Two words can resemble each other through:",
+        "chance;",
+        "borrowing;",
+        "onomatopoeia;",
+        "universal phonotactic patterns.",
+        "Regular correspondences and historical evidence are required for cognate inference."
+      ]
+    },
+    {
+      "heading": "105. Common failure mode: interpreting cognacy as phonetic similarity",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Deeply related words can become extremely different after centuries of sound change.",
+      "paragraphs": [
+        "Deeply related words can become extremely different after centuries of sound change.",
+        "Cognacy is historical ancestry, not a requirement for low present-day edit distance."
+      ]
+    },
+    {
+      "heading": "106. Common failure mode: treating dialect clusters as objective natural boundaries",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Clustering transforms continuous differences into categorical groups.",
+      "paragraphs": [
+        "Clustering transforms continuous differences into categorical groups.",
+        "Those groups can be useful summaries but should not automatically be interpreted as objectively existing linguistic borders."
+      ]
+    },
+    {
+      "heading": "107. Common failure mode: treating distance as time depth",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "The transformation:",
+      "paragraphs": [
+        "The transformation:",
+        "distance = 0.4",
+        "into:",
+        "diverged 1,500 years ago",
+        "requires an explicit historical-rate model and calibration.",
+        "Raw Levenshtein distance provides neither."
+      ]
+    },
+    {
+      "heading": "108. Common failure mode: ignoring borrowing",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Borrowed vocabulary can make unrelated languages look unusually similar.",
+      "paragraphs": [
+        "Borrowed vocabulary can make unrelated languages look unusually similar.",
+        "Historical classification needs mechanisms that distinguish inherited and borrowed similarity where possible."
+      ]
+    },
+    {
+      "heading": "109. Common failure mode: ignoring geography and contact",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Similarity caused by regional convergence may be mistakenly interpreted as shared descent if contact history is ignored.",
+      "paragraphs": [
+        "Similarity caused by regional convergence may be mistakenly interpreted as shared descent if contact history is ignored."
+      ]
+    },
+    {
+      "heading": "110. Common failure mode: using one distance for every language pair",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "A universal cost matrix assumes that the importance of every sound difference is constant across:",
+      "paragraphs": [
+        "A universal cost matrix assumes that the importance of every sound difference is constant across:",
+        "languages;",
+        "families;",
+        "phonological contexts;",
+        "historical periods.",
+        "That assumption should be tested rather than accepted automatically."
+      ]
+    },
+    {
+      "heading": "111. Common failure mode: forgetting that distance can be task dependent",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 6,
+      "word_count": 27,
+      "evidence": "The best distance for:",
+      "paragraphs": [
+        "The best distance for:",
+        "speaker perception",
+        "may differ from the best distance for:",
+        "cognate detection.",
+        "Likewise, both can differ from the best model for:",
+        "ASR pronunciation confusions."
+      ]
+    },
+    {
+      "heading": "112. Common failure mode: claiming a universal dialect-language threshold",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "No fixed edit-distance value transforms a dialect into a language.",
+      "paragraphs": [
+        "No fixed edit-distance value transforms a dialect into a language.",
+        "The classification problem is sociolinguistically and historically richer than string distance."
+      ]
+    },
+    {
+      "heading": "113. Recommended decision table",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 1,
+      "word_count": 118,
+      "evidence": "Research question Recommended starting model Primary warning Are two pronunciations textually similar? Segment-level Levenshtein Equal substitutions may be crude How phonetically similar are the pronunciations? Feature-aware alignment Weights require validation How different are dialects overall? Aggregate distances over controlled word lists Sampling and transcription dominate reliability Do computed dialect distances match perception? Distance + listener experiment Perception is listener dependent Are two words likely cognate? Learned sound correspondences + alignment Similarity is not ancestry How different are language word lists? LDN/LDND or richer lexical models Not a complete linguistic distance How historically related are languages? Comparative/cognate + phylogenetic evidence Edit",
+      "paragraphs": [
+        "Research question Recommended starting model Primary warning Are two pronunciations textually similar? Segment-level Levenshtein Equal substitutions may be crude How phonetically similar are the pronunciations? Feature-aware alignment Weights require validation How different are dialects overall? Aggregate distances over controlled word lists Sampling and transcription dominate reliability Do computed dialect distances match perception? Distance + listener experiment Perception is listener dependent Are two words likely cognate? Learned sound correspondences + alignment Similarity is not ancestry How different are language word lists? LDN/LDND or richer lexical models Not a complete linguistic distance How historically related are languages? Comparative/cognate + phylogenetic evidence Edit distance alone is insufficient How mutually intelligible are varieties? Comprehension testing Symmetric phonetic distance cannot capture all effects"
+      ]
+    },
+    {
+      "heading": "114. Phonetic distance as a measurement model",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "A rigorous formulation can be written as:",
+      "paragraphs": [
+        "A rigorous formulation can be written as:",
+        "ObservedDistance(A,B) = F( representation, segmentation, substitution_model, gap_model, alignment, normalization ).",
+        "This emphasizes that the distance is not found directly in nature.",
+        "It is estimated through a measurement system."
+      ]
+    },
+    {
+      "heading": "115. Dialect distance adds an aggregation layer",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "DialectDistance(A,B) = G( word_sample, speakers, phonetic_distance_function, missing_data_policy, aggregation ).",
+      "paragraphs": [
+        "DialectDistance(A,B) = G( word_sample, speakers, phonetic_distance_function, missing_data_policy, aggregation ).",
+        "Even a perfect word-level distance can produce misleading dialect results if the lexical sample is poor."
+      ]
+    },
+    {
+      "heading": "116. Language distance adds another abstraction layer",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 2,
+      "word_count": 35,
+      "evidence": "LanguageDistance(A,B) = H( lexical evidence, phonetic evidence, structural evidence, historical evidence, weighting, research objective ).",
+      "paragraphs": [
+        "LanguageDistance(A,B) = H( lexical evidence, phonetic evidence, structural evidence, historical evidence, weighting, research objective ).",
+        "Calling one word-list statistic “the language distance” should therefore always be understood as shorthand for a precisely defined operational measure."
+      ]
+    },
+    {
+      "heading": "117. What classic Levenshtein contributes",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 10,
+      "word_count": 88,
+      "evidence": "The lasting value of Levenshtein distance in dialectology and computational historical linguistics is not that it solves linguistic comparison by itself.",
+      "paragraphs": [
+        "The lasting value of Levenshtein distance in dialectology and computational historical linguistics is not that it solves linguistic comparison by itself.",
+        "Its value is that it provides:",
+        "an explicit alignment model;",
+        "a reproducible sequence distance;",
+        "a decomposition into insertions, deletions, and substitutions;",
+        "a simple baseline;",
+        "a framework that can be extended with linguistic costs.",
+        "That baseline made it possible to replace impressionistic judgments such as:",
+        "dialect A sounds rather different from dialect B",
+        "with quantitative hypotheses that can be validated against perception, geography, historical classification, or other data."
+      ]
+    },
+    {
+      "heading": "118. Where classic Levenshtein stops being enough",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 12,
+      "word_count": 34,
+      "evidence": "Classic Levenshtein has no knowledge of:",
+      "paragraphs": [
+        "Classic Levenshtein has no knowledge of:",
+        "articulatory similarity;",
+        "acoustic similarity;",
+        "phonological features;",
+        "regular sound correspondences;",
+        "cognacy;",
+        "borrowing;",
+        "speaker perception;",
+        "geographic diffusion;",
+        "historical direction;",
+        "social language boundaries.",
+        "All of these require additional modeling or evidence."
+      ]
+    },
+    {
+      "heading": "119. Final conceptual map",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 1,
+      "word_count": 76,
+      "evidence": "SPEECH / WORD FORMS | +------------+------------+ | | v v symbolic phonetic acoustic transcription representation | | v v sequence alignment acoustic distance | +-------+--------+ | | v v plain edit weighted / learned distance correspondence | | +-------+--------+ | v word-level distance | v aggregate word list | +-------+--------+ | | v v dialectometry lexical / language distance | | v v geography cognate / perception phylogenetic models | | +-------+--------+ | v linguistic interpretation",
+      "paragraphs": [
+        "SPEECH / WORD FORMS | +------------+------------+ | | v v symbolic phonetic acoustic transcription representation | | v v sequence alignment acoustic distance | +-------+--------+ | | v v plain edit weighted / learned distance correspondence | | +-------+--------+ | v word-level distance | v aggregate word list | +-------+--------+ | | v v dialectometry lexical / language distance | | v v geography cognate / perception phylogenetic models | | +-------+--------+ | v linguistic interpretation"
+      ]
+    },
+    {
+      "heading": "120. Final interpretation",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 6,
+      "word_count": 242,
+      "evidence": "Phonetic distance is not simply Levenshtein distance applied to IPA characters. The meaningful unit may be a phonetic segment, sound class, feature vector, or learned correspondence representation. Unit-cost edit distance is a valuable baseline, but it assigns the same substitution cost to every pair of non-identical symbols and therefore ignores degrees of phonetic similarity.",
+      "paragraphs": [
+        "Phonetic distance is not simply Levenshtein distance applied to IPA characters. The meaningful unit may be a phonetic segment, sound class, feature vector, or learned correspondence representation. Unit-cost edit distance is a valuable baseline, but it assigns the same substitution cost to every pair of non-identical symbols and therefore ignores degrees of phonetic similarity.",
+        "Dialect distance adds an aggregation problem. Word-level distances must be combined over a representative and consistently transcribed lexical sample. The resulting distance matrix can reveal geographic continua, clusters, and aggregate pronunciation patterns, but clustering does not turn a continuous linguistic landscape into objectively fixed natural categories.",
+        "Language distance is broader still. Normalized Levenshtein measures such as LDN and LDND can provide scalable lexical-phonetic comparisons over multilingual word lists, while sound-class, PMI, and language-specific alignment approaches capture richer correspondence structure. Yet these remain operational measures of selected linguistic evidence.",
+        "The critical distinctions are:",
+        "orthographic distance != phonetic distance phonetic distance != perceptual distance phonetic distance != mutual intelligibility word similarity != cognacy cognacy != present-day phonetic similarity lexical similarity != genealogical inheritance dialect cluster != natural categorical boundary language distance != time since divergence distance tree != proven family tree low Levenshtein distance != same language high Levenshtein distance != unrelated languages.",
+        "The strongest use of Levenshtein distance in this domain is therefore as a transparent computational foundation: define the representation, align the sequences, quantify the differences, validate the measure externally, and only then interpret the resulting structure linguistically."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 12,
+      "word_count": 233,
+      "evidence": "Kessler, B. Computational dialectology in Irish Gaelic. EACL, 1995. https://doi.org/10.3115/976973.976983 .",
+      "paragraphs": [
+        "Kessler, B. Computational dialectology in Irish Gaelic. EACL, 1995. https://doi.org/10.3115/976973.976983 .",
+        "Nerbonne, J., and Heeringa, W. Measuring Dialect Distance Phonetically. SIGMORPHON, 1997. ACL Anthology record .",
+        "Kondrak, G. A New Algorithm for the Alignment of Phonetic Sequences. NAACL, 2000. ACL Anthology record .",
+        "Heeringa, W. J. Measuring Dialect Pronunciation Differences using Levenshtein Distance. PhD thesis, University of Groningen, 2004. University of Groningen record .",
+        "Gooskens, C., and Heeringa, W. Perceptive evaluation of Levenshtein dialect distance measurements using Norwegian dialect data. Language Variation and Change, 2004. https://doi.org/10.1017/S0954394504163023 .",
+        "Heeringa, W., and Nerbonne, J. Dialect areas and dialect continua. Language Variation and Change, 2001. https://doi.org/10.1017/S0954394501133041 .",
+        "Kondrak, G., and Sherif, T. Evaluation of Several Phonetic Similarity Algorithms on the Task of Cognate Identification. Workshop on Linguistic Distances, 2006. ACL Anthology record .",
+        "Heeringa, W., Kleiweg, P., Gooskens, C., and Nerbonne, J. Evaluation of String Distance Algorithms for Dialectology. Workshop on Linguistic Distances, 2006. ACL Anthology record .",
+        "Wichmann, S., Holman, E. W., Bakker, D., and Brown, C. H. Evaluating linguistic distance measures. Physica A, 2010. https://doi.org/10.1016/j.physa.2010.05.011 .",
+        "List, J.-M. LexStat: Automatic Detection of Cognates in Multilingual Wordlists. EACL Workshop, 2012. ACL Anthology record .",
+        "Jäger, G., List, J.-M., and Sofroniev, P. Using support vector machines and state-of-the-art algorithms for phonetic alignment to identify cognates in multi-lingual wordlists. EACL, 2017. https://doi.org/10.18653/v1/E17-1113 .",
+        "Jäger, G. Global-scale phylogenetic linguistic inference from lexical resources. Scientific Data, 2018. https://doi.org/10.1038/sdata.2018.189 ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "7. Plain phonetic Levenshtein distance",
+          "anchor_id": "ux-section-8",
+          "alias": "edit distance",
+          "excerpt": "The simplest phonetic-distance model treats each phonetic token as a sequence symbol and applies classic edit distance."
+        },
+        {
+          "section": "12. Weighted feature distance",
+          "anchor_id": "ux-section-13",
+          "alias": "edit distance",
+          "excerpt": "This transforms ordinary edit distance into a form of weighted Levenshtein distance ."
+        },
+        {
+          "section": "16. Insertions and deletions also need phonetic interpretation",
+          "anchor_id": "ux-section-17",
+          "alias": "edit distance",
+          "excerpt": "Unit-cost edit distance assigns:"
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "6. IPA strings must be tokenized linguistically",
+          "anchor_id": "ux-section-7",
+          "alias": "text normalization and transliteration",
+          "excerpt": "The underlying Unicode issues should be handled consistently with the principles described in text normalization and transliteration and Unicode- and grapheme-safe Levenshtein processing ."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "6. IPA strings must be tokenized linguistically",
+          "anchor_id": "ux-section-7",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "The underlying Unicode issues should be handled consistently with the principles described in text normalization and transliteration and Unicode- and grapheme-safe Levenshtein processing ."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "12. Weighted feature distance",
+          "anchor_id": "ux-section-13",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "This transforms ordinary edit distance into a form of weighted Levenshtein distance ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#page",
+      "type": "WebPage",
+      "name": "Phonetic, Dialect, and Language Distance: Levenshtein Methods, Dialectometry, and Linguistic Similarity",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#phonetic-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#dialectometry"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "type": "TechArticle",
+      "name": "Phonetic, Dialect, and Language Distance: Levenshtein Methods, Dialectometry, and Linguistic Similarity",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#phonetic-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#dialectometry"
+        },
+        {
+          "@id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#language-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#concept",
+      "type": "DefinedTerm",
+      "name": "Phonetic, Dialect, and Language Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#phonetic-distance",
+      "type": "DefinedTerm",
+      "name": "Phonetic Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#dialectometry",
+      "type": "DefinedTerm",
+      "name": "Dialectometry",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#language-distance",
+      "type": "DefinedTerm",
+      "name": "Language Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#normalized-levenshtein-distance",
+      "type": "DefinedTerm",
+      "name": "Normalized Levenshtein Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#ldnd",
+      "type": "DefinedTerm",
+      "name": "Levenshtein Distance Normalized Divided",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#phonetic-alignment",
+      "type": "DefinedTerm",
+      "name": "Phonetic Sequence Alignment",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#sound-correspondence",
+      "type": "DefinedTerm",
+      "name": "Sound Correspondence",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#cognacy",
+      "type": "DefinedTerm",
+      "name": "Cognacy",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#perceptual-distance",
+      "type": "DefinedTerm",
+      "name": "Perceptual Dialect Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/phonetic-dialect-and-language-distance#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#page",
+      "about",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#page",
+      "about",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#phonetic-distance"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#page",
+      "about",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#dialectometry"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#page",
+      "mainEntity",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#page",
+      "isPartOf",
+      "https://www.levenshtein.net/language-processing#collection"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "about",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "about",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#phonetic-distance"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "about",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#dialectometry"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "about",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#language-distance"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#normalized-levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#ldnd"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#phonetic-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#sound-correspondence"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#cognacy"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#perceptual-distance"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "isPartOf",
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://doi.org/10.3115/976973.976983"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://aclanthology.org/W97-1102/"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://aclanthology.org/A00-2038/"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://research.rug.nl/en/publications/measuring-dialect-pronunciation-differences-using-levenshtein-dis/"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://doi.org/10.1017/S0954394504163023"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://doi.org/10.1017/S0954394501133041"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://aclanthology.org/W06-1107/"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://aclanthology.org/W06-1108/"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://doi.org/10.1016/j.physa.2010.05.011"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://aclanthology.org/W12-0216/"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://doi.org/10.18653/v1/E17-1113"
+    ],
+    [
+      "https://www.levenshtein.net/phonetic-dialect-and-language-distance#article",
+      "citation",
+      "https://doi.org/10.1038/sdata.2018.189"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://aclanthology.org/A00-2038/",
+      "anchor": "ACL Anthology record"
+    },
+    {
+      "url": "https://aclanthology.org/W06-1108/",
+      "anchor": "ACL Anthology record"
+    },
+    {
+      "url": "https://doi.org/10.1038/sdata.2018.189",
+      "anchor": "https://doi.org/10.1038/sdata.2018.189"
+    },
+    {
+      "url": "https://aclanthology.org/W12-0216/",
+      "anchor": "ACL Anthology record"
+    },
+    {
+      "url": "https://doi.org/10.3115/976973.976983",
+      "anchor": "https://doi.org/10.3115/976973.976983"
+    },
+    {
+      "url": "https://doi.org/10.1017/S0954394501133041",
+      "anchor": "https://doi.org/10.1017/S0954394501133041"
+    },
+    {
+      "url": "https://doi.org/10.1017/S0954394504163023",
+      "anchor": "https://doi.org/10.1017/S0954394504163023"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.physa.2010.05.011",
+      "anchor": "https://doi.org/10.1016/j.physa.2010.05.011"
+    },
+    {
+      "url": "https://aclanthology.org/W06-1107/",
+      "anchor": "ACL Anthology record"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/E17-1113",
+      "anchor": "https://doi.org/10.18653/v1/E17-1113"
+    },
+    {
+      "url": "https://aclanthology.org/W97-1102/",
+      "anchor": "ACL Anthology record"
+    },
+    {
+      "url": "https://research.rug.nl/en/publications/measuring-dialect-pronunciation-differences-using-levenshtein-dis/",
+      "anchor": "University of Groningen record"
+    }
+  ]
+}

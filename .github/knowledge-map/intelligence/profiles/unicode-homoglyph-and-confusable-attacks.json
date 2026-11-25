@@ -1,0 +1,807 @@
+{
+  "url": "/unicode-homoglyph-and-confusable-attacks",
+  "title": "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense",
+  "h1": [
+    "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense"
+  ],
+  "group": "Software",
+  "provisional_mission": "Unicode confusables và IDN",
+  "content_sha256": "f678300e410d118bf345c33ee968438c7c7cede9f9927bb348791932e02655a7",
+  "canonical": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks",
+  "primary_entity_candidate": "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense",
+      "level": 2,
+      "id": "",
+      "paragraph_count": 4,
+      "word_count": 99,
+      "evidence": "Unicode allows software to represent writing systems from around the world, but different Unicode strings can sometimes appear sufficiently similar that a human reader mistakes one identifier for another.",
+      "paragraphs": [
+        "Unicode allows software to represent writing systems from around the world, but different Unicode strings can sometimes appear sufficiently similar that a human reader mistakes one identifier for another.",
+        "This becomes a security problem when text controls identity or authority, including domain names, usernames, package names, repository names, source-code identifiers, email addresses, certificate names, file names, and other security-sensitive labels.",
+        "machine identity: different human perception: possibly similar",
+        "Unicode confusable analysis and Levenshtein distance address related but different parts of this problem. Unicode security mechanisms model known confusable relationships and identifier policies. Levenshtein distance measures sequence edits between defined representations."
+      ]
+    },
+    {
+      "heading": "Character Identity and Visual Appearance Are Different",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 6,
+      "word_count": 84,
+      "evidence": "Unicode characters are identified by code points and properties, not by a guarantee that every character has a unique visual shape.",
+      "paragraphs": [
+        "Unicode characters are identified by code points and properties, not by a guarantee that every character has a unique visual shape.",
+        "Characters from different scripts can look similar depending on the font, size, rendering environment, and reader.",
+        "A familiar example is the Latin small letter a and Cyrillic small letter а . They can look very similar while remaining different Unicode characters.",
+        "Latin: a Cyrillic: а code-point identity: different",
+        "The same principle applies to many other characters and sequences.",
+        "visual resemblance ≠ Unicode identity"
+      ]
+    },
+    {
+      "heading": "Homoglyph, Homograph, and Confusable",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 3,
+      "word_count": 69,
+      "evidence": "These terms are related but should not be treated as perfect synonyms.",
+      "paragraphs": [
+        "These terms are related but should not be treated as perfect synonyms.",
+        "Term Useful interpretation Glyph A rendered visual form Homoglyph Characters or glyph forms that appear alike Homograph Written identifiers or words that can appear alike Confusable A security-oriented Unicode relationship used to detect possible visual confusion",
+        "Unicode security work should rely on the terminology and mechanisms defined by the relevant Unicode specifications rather than on appearance alone."
+      ]
+    },
+    {
+      "heading": "What UTS #39 Provides",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 12,
+      "word_count": 66,
+      "evidence": "Unicode Technical Standard #39, Unicode Security Mechanisms, defines mechanisms for detecting and managing security risks associated with Unicode identifiers.",
+      "paragraphs": [
+        "Unicode Technical Standard #39, Unicode Security Mechanisms, defines mechanisms for detecting and managing security risks associated with Unicode identifiers.",
+        "Its scope includes:",
+        "identifier security profiles,",
+        "confusable detection,",
+        "single-script confusables,",
+        "mixed-script confusables,",
+        "whole-script confusables,",
+        "script analysis,",
+        "restriction levels,",
+        "mixed-number detection,",
+        "and related identifier-security mechanisms.",
+        "A system can support Unicode correctly while still applying an unsafe identifier policy. Unicode encoding support and Unicode security are therefore separate concerns."
+      ]
+    },
+    {
+      "heading": "Confusable Skeletons",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 6,
+      "word_count": 94,
+      "evidence": "UTS #39 defines security-oriented transformations that allow strings to be compared through confusable representations derived from the official Unicode confusables data.",
+      "paragraphs": [
+        "UTS #39 defines security-oriented transformations that allow strings to be compared through confusable representations derived from the official Unicode confusables data.",
+        "At a high level:",
+        "identifier ↓ UTS #39 security processing ↓ confusable skeleton ↓ comparison",
+        "If two strings produce equal skeleton representations under the applicable UTS #39 procedure, they can satisfy the specification's confusable relation.",
+        "skeleton(A) = skeleton(B) → confusable under the defined procedure",
+        "The actual algorithm is versioned and depends on official Unicode security data. Production implementations should use the current specification and data rather than reconstructing the mechanism from simplified examples."
+      ]
+    },
+    {
+      "heading": "A Skeleton Is Not User Text",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 6,
+      "word_count": 82,
+      "evidence": "A confusable skeleton is a comparison representation for security analysis. It should not be treated as a linguistically correct replacement for the original identifier.",
+      "paragraphs": [
+        "A confusable skeleton is a comparison representation for security analysis. It should not be treated as a linguistically correct replacement for the original identifier.",
+        "original identifier = source / display representation confusable skeleton = security comparison representation",
+        "Replacing user-visible text with the skeleton could destroy legitimate distinctions.",
+        "Skeleton equality also does not establish identity or intent.",
+        "same skeleton ≠ same real-world entity same skeleton ≠ malicious intent",
+        "It is a security signal that must be interpreted together with application context and provenance."
+      ]
+    },
+    {
+      "heading": "Single-Script, Mixed-Script, and Whole-Script Confusables",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "UTS #39 distinguishes several confusable cases.",
+      "paragraphs": [
+        "UTS #39 distinguishes several confusable cases."
+      ]
+    },
+    {
+      "heading": "Single-Script Confusables",
+      "level": 3,
+      "id": "ux-section-8",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "Two strings can be confusable while remaining compatible with the same writing system.",
+      "paragraphs": [
+        "Two strings can be confusable while remaining compatible with the same writing system.",
+        "This matters because simply prohibiting mixed scripts cannot eliminate all confusable identifiers."
+      ]
+    },
+    {
+      "heading": "Mixed-Script Confusables",
+      "level": 3,
+      "id": "ux-section-9",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "A deceptive identifier can combine characters associated with different scripts.",
+      "paragraphs": [
+        "A deceptive identifier can combine characters associated with different scripts.",
+        "Latin-looking identifier + one or more visually similar characters from another script"
+      ]
+    },
+    {
+      "heading": "Whole-Script Confusables",
+      "level": 3,
+      "id": "ux-section-10",
+      "paragraph_count": 3,
+      "word_count": 30,
+      "evidence": "Two strings can each be single-script while belonging to different scripts and still be confusable.",
+      "paragraphs": [
+        "Two strings can each be single-script while belonging to different scripts and still be confusable.",
+        "This establishes an important rule:",
+        "mixed-script detection is useful but mixed-script detection is not sufficient"
+      ]
+    },
+    {
+      "heading": "Multiple Scripts Do Not Automatically Mean an Attack",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 5,
+      "word_count": 66,
+      "evidence": "Legitimate multilingual text can use more than one script.",
+      "paragraphs": [
+        "Legitimate multilingual text can use more than one script.",
+        "Japanese text, for example, can naturally involve Han, Hiragana, Katakana, Latin characters, punctuation, and other shared characters.",
+        "Unicode also defines Script and Script_Extensions properties because the relationship between characters and writing systems is more complex than assigning every character to one exclusive script.",
+        "mixed script ≠ malicious",
+        "Security policy must distinguish legitimate multilingual usage from unexpected ambiguity."
+      ]
+    },
+    {
+      "heading": "Restriction Levels Are Classification Signals",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "UTS #39 defines restriction levels for identifiers, including:",
+      "paragraphs": [
+        "UTS #39 defines restriction levels for identifiers, including:",
+        "ASCII-Only,",
+        "Single Script,",
+        "Highly Restrictive,",
+        "Moderately Restrictive,",
+        "Minimally Restrictive,",
+        "and Unrestricted.",
+        "These levels characterize script and identifier-profile usage. They are not probabilities that a string is malicious.",
+        "Single Script ≠ safe Unrestricted ≠ proof of attack"
+      ]
+    },
+    {
+      "heading": "Mixed-Number Systems",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 3,
+      "word_count": 37,
+      "evidence": "Unicode contains decimal digits from multiple numbering systems. Some of these digits can be visually confused with digits from another system.",
+      "paragraphs": [
+        "Unicode contains decimal digits from multiple numbering systems. Some of these digits can be visually confused with digits from another system.",
+        "UTS #39 therefore treats mixed-number detection as a distinct mechanism.",
+        "mixed-number detection ≠ ordinary mixed-script detection"
+      ]
+    },
+    {
+      "heading": "Unicode Normalization Solves a Different Problem",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 8,
+      "word_count": 62,
+      "evidence": "Unicode normalization deals primarily with defined representation equivalence.",
+      "paragraphs": [
+        "Unicode normalization deals primarily with defined representation equivalence.",
+        "For example, an accented character can have precomposed and decomposed representations:",
+        "é and e + ◌́",
+        "NFC and NFD address canonical equivalence. NFKC and NFKD additionally process compatibility relationships.",
+        "They do not provide universal visual canonicalization.",
+        "Unicode normalization ≠ confusable detection",
+        "Cross-script lookalikes can remain different after normalization.",
+        "See Text Normalization and Transliteration ."
+      ]
+    },
+    {
+      "heading": "Grapheme Clusters Do Not Solve Visual Confusability",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 4,
+      "word_count": 57,
+      "evidence": "Extended grapheme clusters provide useful boundaries for user-perceived text units, but they remain text-segmentation units rather than glyph-similarity models.",
+      "paragraphs": [
+        "Extended grapheme clusters provide useful boundaries for user-perceived text units, but they remain text-segmentation units rather than glyph-similarity models.",
+        "code point ≠ grapheme cluster ≠ glyph",
+        "A grapheme-aware Levenshtein implementation can improve the interpretation of text edits when visible character units matter. It does not make Levenshtein distance a visual-confusability algorithm.",
+        "See Unicode & Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Where Levenshtein Distance Fits",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 6,
+      "word_count": 57,
+      "evidence": "Many deceptive identifiers differ from a protected identifier through a small number of substitutions, insertions, or deletions.",
+      "paragraphs": [
+        "Many deceptive identifiers differ from a protected identifier through a small number of substitutions, insertions, or deletions.",
+        "protected identifier ↓ small spelling mutation ↓ candidate identifier",
+        "Standard Levenshtein distance can identify strings that are lexically close.",
+        "It does not understand visual appearance.",
+        "Levenshtein: sequence edits UTS #39: Unicode security relationships",
+        "These mechanisms are complementary rather than interchangeable."
+      ]
+    },
+    {
+      "heading": "Weighted Edit Distance",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 4,
+      "word_count": 63,
+      "evidence": "An application can assign different edit costs to different substitutions. A substitution known to be relevant in a particular domain can receive a lower cost than an unrelated substitution.",
+      "paragraphs": [
+        "An application can assign different edit costs to different substitutions. A substitution known to be relevant in a particular domain can receive a lower cost than an unrelated substitution.",
+        "cost(expected variation) = lower cost(unrelated substitution) = higher",
+        "This idea is related to Weighted Levenshtein Distance .",
+        "For Unicode security, however, application-defined weighting should not replace the standardized Unicode confusables data and security mechanisms."
+      ]
+    },
+    {
+      "heading": "Multi-View Security Comparison",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 12,
+      "word_count": 64,
+      "evidence": "A robust detector can preserve several representations of the same identifier rather than reducing every problem to one string.",
+      "paragraphs": [
+        "A robust detector can preserve several representations of the same identifier rather than reducing every problem to one string.",
+        "raw identifier │ ├── normalized representation ├── code-point representation ├── grapheme representation ├── script analysis └── confusable skeleton",
+        "Features can then include:",
+        "raw edit distance,",
+        "normalized edit distance,",
+        "grapheme-level distance where appropriate,",
+        "confusable-skeleton equality,",
+        "script relationships,",
+        "restriction level,",
+        "mixed-number signals,",
+        "identifier-profile violations,",
+        "and application-specific provenance."
+      ]
+    },
+    {
+      "heading": "Levenshtein Distance Between Security Representations",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 6,
+      "word_count": 71,
+      "evidence": "An application can additionally calculate edit distance between security-derived representations:",
+      "paragraphs": [
+        "An application can additionally calculate edit distance between security-derived representations:",
+        "ED( skeleton(A), skeleton(B) )",
+        "This can be useful for searching around a protected identifier when a candidate contains both confusable substitutions and ordinary spelling changes.",
+        "This is an application-defined extension. It is not the formal definition of UTS #39 confusability.",
+        "skeleton(A) = skeleton(B) → defined confusable relationship ED(skeleton(A), skeleton(B)) ≤ k → application-defined near-confusable search",
+        "The two concepts should remain separate."
+      ]
+    },
+    {
+      "heading": "Unicode Transformations Can Have Opposite Goals",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 4,
+      "word_count": 69,
+      "evidence": "Unicode strings can be transformed for very different purposes.",
+      "paragraphs": [
+        "Unicode strings can be transformed for very different purposes.",
+        "Transformation Primary purpose NFC / NFD Canonical representation NFKC / NFKD Compatibility-oriented representation Transliteration Representation across writing systems Presentation-oriented mapping Alternative visual presentation Confusable skeleton Security comparison",
+        "A presentation-oriented transformation may deliberately preserve an alternative representation. Security processing may instead map known confusable representations toward a common comparison representation.",
+        "The general transformation model is described in Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "Internationalized Domain Names",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 5,
+      "word_count": 74,
+      "evidence": "Internationalized Domain Names are an important environment for Unicode identifier security.",
+      "paragraphs": [
+        "Internationalized Domain Names are an important environment for Unicode identifier security.",
+        "IDNA provides standardized processing for internationalized domain labels. An ASCII-compatible encoded label can use the xn-- prefix.",
+        "The presence of Punycode does not itself indicate phishing, and successful IDNA processing does not prove that a domain is safe.",
+        "Punycode ≠ phishing valid IDN ≠ trusted identity",
+        "Domain-name security also depends on registry policy, script restrictions, browser behavior, protected-name comparison, and other identity signals."
+      ]
+    },
+    {
+      "heading": "HTTPS Does Not Solve Visual Impersonation",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 4,
+      "word_count": 46,
+      "evidence": "TLS can authenticate a connection to the domain that was actually requested.",
+      "paragraphs": [
+        "TLS can authenticate a connection to the domain that was actually requested.",
+        "It does not establish that a visually similar domain belongs to the organization a user intended to visit.",
+        "TLS: connection to requested origin visual recognition: human interpretation of identifier",
+        "These are different security layers."
+      ]
+    },
+    {
+      "heading": "Typosquatting and Unicode Confusables",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 10,
+      "word_count": 62,
+      "evidence": "Typosquatting and homoglyph attacks overlap but are not the same technique.",
+      "paragraphs": [
+        "Typosquatting and homoglyph attacks overlap but are not the same technique.",
+        "Ordinary typosquatting can use:",
+        "insertions,",
+        "deletions,",
+        "substitutions,",
+        "transpositions,",
+        "or other spelling variations.",
+        "Unicode confusable attacks can exploit visual relationships between different Unicode characters or sequences.",
+        "A real detector can therefore combine lexical-distance and Unicode-security signals rather than forcing both problems into one metric.",
+        "Continue with Typosquatting and Software Supply-Chain Security ."
+      ]
+    },
+    {
+      "heading": "Package and Repository Names",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 4,
+      "word_count": 52,
+      "evidence": "Similar risks occur outside domain names.",
+      "paragraphs": [
+        "Similar risks occur outside domain names.",
+        "Package registries, repositories, dependencies, usernames, and other software identifiers can all be targeted by names that resemble trusted identifiers.",
+        "Edit distance can help identify nearby names, while Unicode security mechanisms can identify confusable relationships that plain edit distance does not understand.",
+        "Neither signal proves malicious intent."
+      ]
+    },
+    {
+      "heading": "Do Not Use Similarity as Authentication Equality",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 7,
+      "word_count": 54,
+      "evidence": "Fuzzy matching answers questions such as:",
+      "paragraphs": [
+        "Fuzzy matching answers questions such as:",
+        "Could these identifiers be related or easily confused?",
+        "Authentication asks:",
+        "Does this credential belong to this exact account identity?",
+        "These questions must not be merged.",
+        "small edit distance ≠ same account confusable skeleton equality ≠ same account",
+        "Security-sensitive identity decisions require exact identity rules and appropriate authentication evidence."
+      ]
+    },
+    {
+      "heading": "False Positives Matter",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 4,
+      "word_count": 74,
+      "evidence": "A Unicode security detector that blocks all unfamiliar scripts or every mixed-script string will produce false positives for legitimate international users.",
+      "paragraphs": [
+        "A Unicode security detector that blocks all unfamiliar scripts or every mixed-script string will produce false positives for legitimate international users.",
+        "Likewise, a detector that flags every identifier within a small edit distance of a popular name will catch many unrelated strings.",
+        "A useful system combines several signals and applies policies appropriate to its namespace and threat model.",
+        "similarity signal + Unicode security signal + namespace policy + provenance + context ↓ security decision"
+      ]
+    },
+    {
+      "heading": "Version Unicode Security Data Explicitly",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 8,
+      "word_count": 54,
+      "evidence": "Unicode security data and algorithms evolve as Unicode adds characters, scripts, properties, and updated mappings.",
+      "paragraphs": [
+        "Unicode security data and algorithms evolve as Unicode adds characters, scripts, properties, and updated mappings.",
+        "A reproducible implementation should record at least:",
+        "Unicode version,",
+        "UTS #39 revision,",
+        "confusables-data version,",
+        "normalization implementation,",
+        "and application security-policy version.",
+        "Stored security comparison representations may need to be recomputed when the Unicode security data used by the system changes."
+      ]
+    },
+    {
+      "heading": "A Layered Detection Model",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 2,
+      "word_count": 82,
+      "evidence": "No single string metric is sufficient for Unicode identifier security.",
+      "paragraphs": [
+        "No single string metric is sufficient for Unicode identifier security.",
+        "Control Useful for Main limitation Unicode normalization Representation equivalence Does not solve arbitrary confusables Script policy Unexpected script combinations Does not eliminate whole-script confusables UTS #39 confusable processing Known Unicode confusable relationships Does not establish malicious intent Levenshtein distance Typos and nearby sequence variants No intrinsic visual semantics Rendering analysis Environment-specific visual resemblance Depends on font and rendering environment Provenance and identity data Real-world identity evidence Does not itself detect visual confusion"
+      ]
+    },
+    {
+      "heading": "Relationship to Unicode Text Transformations",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 5,
+      "word_count": 72,
+      "evidence": "Unicode security demonstrates an important property of text processing: the same source string can be transformed into different representations for different purposes.",
+      "paragraphs": [
+        "Unicode security demonstrates an important property of text processing: the same source string can be transformed into different representations for different purposes.",
+        "source Unicode text │ ├── normalization ├── transliteration ├── presentation-oriented transformation └── security transformation",
+        "A confusable skeleton is a security-oriented comparison representation. Other Unicode transformations can have entirely different goals.",
+        "Levenshtein distance can compare resulting sequences, but the transformation policy determines what those sequences represent.",
+        "See Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 4,
+      "word_count": 95,
+      "evidence": "Unicode homoglyph and confusable attacks exploit the difference between encoded character identity and human visual perception.",
+      "paragraphs": [
+        "Unicode homoglyph and confusable attacks exploit the difference between encoded character identity and human visual perception.",
+        "Unicode normalization handles defined representation equivalence but does not provide universal visual canonicalization. UTS #39 provides dedicated security mechanisms for identifier profiles, confusable detection, script analysis, restriction levels, mixed-number systems, and security-oriented comparison representations.",
+        "Levenshtein distance complements those mechanisms by measuring sequence edits and finding nearby lexical variants. It does not provide a model of glyph appearance and does not establish malicious intent.",
+        "Unicode security defines the security representation. Levenshtein measures sequence difference. Identity and intent require additional evidence."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "Unicode & Grapheme-Safe Levenshtein",
+      "paragraphs": [
+        "Unicode & Grapheme-Safe Levenshtein",
+        "Unicode Text Transformations",
+        "Text Normalization and Transliteration",
+        "Weighted Levenshtein Distance",
+        "Typosquatting and Software Supply-Chain Security",
+        "Levenshtein Distance Limitations"
+      ]
+    },
+    {
+      "heading": "Selected Technical References",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "Unicode Technical Standard #39: Unicode Security Mechanisms",
+      "paragraphs": [
+        "Unicode Technical Standard #39: Unicode Security Mechanisms",
+        "Unicode Technical Report #36: Unicode Security Considerations",
+        "Unicode Standard Annex #15: Unicode Normalization Forms",
+        "Unicode Standard Annex #31: Unicode Identifiers and Syntax",
+        "Unicode Technical Standard #46: Unicode IDNA Compatibility Processing"
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Multi-View Security Comparison",
+          "anchor_id": "ux-section-18",
+          "alias": "edit distance",
+          "excerpt": "raw edit distance,"
+        },
+        {
+          "section": "Levenshtein Distance Between Security Representations",
+          "anchor_id": "ux-section-19",
+          "alias": "edit distance",
+          "excerpt": "An application can additionally calculate edit distance between security-derived representations:"
+        },
+        {
+          "section": "Package and Repository Names",
+          "anchor_id": "ux-section-24",
+          "alias": "edit distance",
+          "excerpt": "Edit distance can help identify nearby names, while Unicode security mechanisms can identify confusable relationships that plain edit distance does not understand."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-distance-limitations",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-31",
+          "alias": "levenshtein distance limitations",
+          "excerpt": "Levenshtein Distance Limitations"
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "Unicode Normalization Solves a Different Problem",
+          "anchor_id": "ux-section-14",
+          "alias": "text normalization and transliteration",
+          "excerpt": "See Text Normalization and Transliteration ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-31",
+          "alias": "text normalization and transliteration",
+          "excerpt": "Text Normalization and Transliteration"
+        }
+      ]
+    },
+    {
+      "target": "/typosquatting-and-supply-chain-security",
+      "evidence": [
+        {
+          "section": "Typosquatting and Unicode Confusables",
+          "anchor_id": "ux-section-23",
+          "alias": "typosquatting and software supply chain security",
+          "excerpt": "Continue with Typosquatting and Software Supply-Chain Security ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-31",
+          "alias": "typosquatting and software supply chain security",
+          "excerpt": "Typosquatting and Software Supply-Chain Security"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Grapheme Clusters Do Not Solve Visual Confusability",
+          "anchor_id": "ux-section-15",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "See Unicode & Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-31",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "Unicode & Grapheme-Safe Levenshtein"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-text-transformations",
+      "evidence": [
+        {
+          "section": "Unicode Transformations Can Have Opposite Goals",
+          "anchor_id": "ux-section-20",
+          "alias": "unicode text transformations",
+          "excerpt": "The general transformation model is described in Unicode Text Transformations ."
+        },
+        {
+          "section": "Relationship to Unicode Text Transformations",
+          "anchor_id": "ux-section-29",
+          "alias": "unicode text transformations",
+          "excerpt": "See Unicode Text Transformations ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-31",
+          "alias": "unicode text transformations",
+          "excerpt": "Unicode Text Transformations"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted Edit Distance",
+          "anchor_id": "ux-section-17",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "This idea is related to Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-31",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#webpage",
+      "type": "WebPage",
+      "name": "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-confusables"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-security"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article",
+      "type": "Article",
+      "name": "Unicode Homoglyph and Confusable Attacks: Edit Distance, UTS #39, IDN Spoofing, and Defense",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-confusables"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-security"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-confusables",
+      "type": "DefinedTerm",
+      "name": "Unicode Confusable Detection",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-security",
+      "type": "DefinedTerm",
+      "name": "Unicode Security",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-normalization",
+      "type": "DefinedTerm",
+      "name": "Unicode Normalization",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#internationalized-domain-names",
+      "type": "DefinedTerm",
+      "name": "Internationalized Domain Names",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#typosquatting",
+      "type": "DefinedTerm",
+      "name": "Typosquatting",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#webpage",
+      "about",
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-confusables"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#webpage",
+      "about",
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-security"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article",
+      "about",
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-confusables"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article",
+      "about",
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-security"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#unicode-normalization"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#internationalized-domain-names"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#typosquatting"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-homoglyph-and-confusable-attacks#article",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://www.unicode.org/reports/tr39/",
+      "anchor": "Unicode Technical Standard #39: Unicode Security Mechanisms"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr36/",
+      "anchor": "Unicode Technical Report #36: Unicode Security Considerations"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr15/",
+      "anchor": "Unicode Standard Annex #15: Unicode Normalization Forms"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr31/",
+      "anchor": "Unicode Standard Annex #31: Unicode Identifiers and Syntax"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr46/",
+      "anchor": "Unicode Technical Standard #46: Unicode IDNA Compatibility Processing"
+    }
+  ]
+}

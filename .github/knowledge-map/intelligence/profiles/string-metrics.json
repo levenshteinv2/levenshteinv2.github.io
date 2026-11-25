@@ -1,0 +1,1028 @@
+{
+  "url": "/string-metrics",
+  "title": "String Metrics: Distances, Similarities & Metric Properties",
+  "h1": [
+    "String Metrics: Distances, Similarities & Metric Properties"
+  ],
+  "group": "Foundations",
+  "provisional_mission": "Tiên đề metric và phép đo chuỗi",
+  "content_sha256": "aa91eb47b6f47075778c601846e964df2b9a12fb813df8de33cf387430af74e9",
+  "canonical": "https://www.levenshtein.net/string-metrics",
+  "primary_entity_candidate": "String Metrics: Distances, Similarities & Metric Properties",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "String Metrics: Distances, Similarities & Metric Properties",
+      "level": 2,
+      "id": "",
+      "paragraph_count": 5,
+      "word_count": 155,
+      "evidence": "String metrics provide mathematical and computational ways to compare strings and other symbolic sequences. They are used in approximate matching, search, spelling correction, record linkage, entity resolution, bioinformatics, OCR, speech recognition, security, and many other systems where two sequences must be compared.",
+      "paragraphs": [
+        "String metrics provide mathematical and computational ways to compare strings and other symbolic sequences. They are used in approximate matching, search, spelling correction, record linkage, entity resolution, bioinformatics, OCR, speech recognition, security, and many other systems where two sequences must be compared.",
+        "The important point is that there is no single universal definition of “string similarity.” Different comparison methods preserve different kinds of structure. Some count edit operations, some compare aligned positions, some measure shared subsequences, some compare token or q-gram overlap, and others operate on vectors, phonetic representations, or application-specific features.",
+        "Levenshtein distance is one of the foundational string metrics, but choosing a comparison method requires two separate decisions:",
+        "1. What representation or sequence is being compared? 2. What notion of difference or similarity should be measured?",
+        "The second question cannot be interpreted correctly without the first. A metric operates on the sequence supplied to it, not directly on human perception, meaning, or identity."
+      ]
+    },
+    {
+      "heading": "What Is a Mathematical Metric?",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 5,
+      "word_count": 112,
+      "evidence": "Let Σ* denote the set of all finite strings over an alphabet Σ . A mathematical metric is a function:",
+      "paragraphs": [
+        "Let Σ* denote the set of all finite strings over an alphabet Σ . A mathematical metric is a function:",
+        "d : Σ* × Σ* → ℝ",
+        "that satisfies four properties.",
+        "Property Condition Meaning Non-negativity d(x,y) ≥ 0 A distance cannot be negative. Identity of indiscernibles d(x,y) = 0 iff x = y Only identical objects have zero distance. Symmetry d(x,y) = d(y,x) Reversing the comparison does not change the distance. Triangle inequality d(x,z) ≤ d(x,y) + d(y,z) An indirect route gives an upper bound on the direct distance.",
+        "A function should not be called a mathematical metric simply because a software library, database function, or API calls its output a “distance.”"
+      ]
+    },
+    {
+      "heading": "Metric, Distance, Similarity, and Score Are Different Concepts",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 4,
+      "word_count": 81,
+      "evidence": "Term Typical interpretation Must satisfy metric axioms? Metric A mathematically defined distance satisfying specific axioms Yes Distance A larger value usually represents greater difference Not necessarily Dissimilarity An application-defined measure of difference No Similarity A larger value usually represents greater similarity No Score A general comparison result used for ranking or decisions No",
+      "paragraphs": [
+        "Term Typical interpretation Must satisfy metric axioms? Metric A mathematically defined distance satisfying specific axioms Yes Distance A larger value usually represents greater difference Not necessarily Dissimilarity An application-defined measure of difference No Similarity A larger value usually represents greater similarity No Score A general comparison result used for ranking or decisions No",
+        "For example, converting a similarity using:",
+        "distance = 1 - similarity",
+        "does not automatically produce a mathematical metric. Metricity depends on the properties of the underlying comparison function."
+      ]
+    },
+    {
+      "heading": "Why Metric Properties Matter",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "Metric properties are not only mathematical terminology. They determine which indexing, pruning, nearest-neighbor, and search strategies are mathematically valid.",
+      "paragraphs": [
+        "Metric properties are not only mathematical terminology. They determine which indexing, pruning, nearest-neighbor, and search strategies are mathematically valid."
+      ]
+    },
+    {
+      "heading": "Non-Negativity",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "d(x,y) ≥ 0",
+      "paragraphs": [
+        "d(x,y) ≥ 0",
+        "Edit distances using nonnegative edit costs naturally satisfy this condition."
+      ]
+    },
+    {
+      "heading": "Identity of Indiscernibles",
+      "level": 3,
+      "id": "ux-section-6",
+      "paragraph_count": 5,
+      "word_count": 48,
+      "evidence": "d(x,y) = 0 iff x = y",
+      "paragraphs": [
+        "d(x,y) = 0 iff x = y",
+        "This property becomes more subtle when preprocessing or transformation is applied.",
+        "For example:",
+        "ABC abc",
+        "can become identical after case folding. A distance of zero then describes equality in the transformed comparison space, not necessarily equality of the original raw strings."
+      ]
+    },
+    {
+      "heading": "Symmetry",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "d(x,y) = d(y,x)",
+      "paragraphs": [
+        "d(x,y) = d(y,x)",
+        "Standard unit-cost Levenshtein distance is symmetric. A directional weighted model does not have to be:",
+        "cost(a → b) = 0.2 cost(b → a) = 0.9"
+      ]
+    },
+    {
+      "heading": "Triangle Inequality",
+      "level": 3,
+      "id": "ux-section-8",
+      "paragraph_count": 2,
+      "word_count": 46,
+      "evidence": "d(x,z) ≤ d(x,y) + d(y,z)",
+      "paragraphs": [
+        "d(x,z) ≤ d(x,y) + d(y,z)",
+        "For standard Levenshtein distance, an edit script transforming x into y can be followed by an edit script transforming y into z . The composed script may not be optimal, but it provides an upper bound for the optimal direct transformation."
+      ]
+    },
+    {
+      "heading": "Levenshtein Distance as a Metric",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 4,
+      "word_count": 68,
+      "evidence": "Standard Levenshtein distance assigns unit cost to three elementary edit operations :",
+      "paragraphs": [
+        "Standard Levenshtein distance assigns unit cost to three elementary edit operations :",
+        "insertion = 1 deletion = 1 substitution = 1 match = 0",
+        "The distance is the minimum total edit cost required to transform one sequence into another. Under this ordinary symmetric unit-cost model, Levenshtein distance satisfies the standard metric axioms.",
+        "See Edit Distance and Edit Operations & Edit Scripts for the underlying recurrence and transformation model."
+      ]
+    },
+    {
+      "heading": "Weighted Edit Distance Does Not Automatically Remain a Metric",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 4,
+      "word_count": 66,
+      "evidence": "Once edit costs depend on symbols, direction, keyboard position, phonetic similarity, context, probability, or another domain-specific model, metric properties must be checked rather than assumed.",
+      "paragraphs": [
+        "Once edit costs depend on symbols, direction, keyboard position, phonetic similarity, context, probability, or another domain-specific model, metric properties must be checked rather than assumed.",
+        "insert(a) = 0.7 delete(a) = 0.7 substitute(a,e) = 0.3 substitute(a,q) = 1.2",
+        "A weighted distance can be extremely useful even when it is not a mathematical metric. The important requirement is to describe its semantics accurately.",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "The Representation Comes Before the Metric",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 16,
+      "word_count": 75,
+      "evidence": "A string metric does not compare abstract “characters” unless the application has first defined what one sequence element means.",
+      "paragraphs": [
+        "A string metric does not compare abstract “characters” unless the application has first defined what one sequence element means.",
+        "The input sequence may consist of:",
+        "bytes,",
+        "UTF-16 code units,",
+        "Unicode code points,",
+        "Unicode scalar values,",
+        "extended grapheme clusters,",
+        "application-defined characters,",
+        "words,",
+        "tokens,",
+        "phonemes,",
+        "q-grams,",
+        "events,",
+        "or other symbolic units.",
+        "representation + comparison function = operational notion of difference",
+        "The same mathematical algorithm can therefore return different numerical results when it operates on different sequence representations."
+      ]
+    },
+    {
+      "heading": "Character-Level vs Token-Level Distance",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 6,
+      "word_count": 50,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "the black cat the cat",
+        "At word-token level:",
+        "[the, black, cat] [the, cat]",
+        "the transformation can be represented as one token deletion. At code-point or character level, several sequence elements must be deleted.",
+        "Neither result is inherently wrong. They answer different questions because the unit of comparison is different."
+      ]
+    },
+    {
+      "heading": "Unicode Representation and String Metrics",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 9,
+      "word_count": 87,
+      "evidence": "Unicode makes sequence representation especially important. A visible accented character can have more than one code-point representation.",
+      "paragraphs": [
+        "Unicode makes sequence representation especially important. A visible accented character can have more than one code-point representation.",
+        "For example, a visible é can be represented as:",
+        "U+00E9",
+        "or:",
+        "U+0065 + U+0301",
+        "A raw code-point comparison can distinguish these two sequences even though they are canonically equivalent.",
+        "Likewise, a single user-perceived emoji or decorated symbol can contain several code points while forming one extended grapheme cluster.",
+        "For multilingual or user-facing text, normalization, segmentation, representation, and metric selection should therefore be defined together.",
+        "See Unicode & Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Transformation Defines the Comparison Space",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 13,
+      "word_count": 74,
+      "evidence": "Many applications transform text before calculating a metric. Let T(x) represent an application-defined transformation. The system then evaluates:",
+      "paragraphs": [
+        "Many applications transform text before calculating a metric. Let T(x) represent an application-defined transformation. The system then evaluates:",
+        "dT(x,y) = d(T(x), T(y))",
+        "The resulting value describes the distance between the transformed representations, not necessarily between the original raw inputs.",
+        "Transformations may include:",
+        "Unicode normalization,",
+        "case folding,",
+        "accent or diacritic policies,",
+        "transliteration,",
+        "phonetic encoding,",
+        "tokenization,",
+        "q-gram extraction,",
+        "or application-specific canonicalization.",
+        "For the broader relation between text transformation and sequence comparison, see Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "Major Families of String Comparison",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 1,
+      "word_count": 67,
+      "evidence": "Family Typical representation Main idea Edit distances Ordered sequence Minimum transformation cost Positional distances Aligned positions Count positional disagreement Subsequence methods Ordered subsequences Measure preserved order Set-based methods Sets, multisets, q-grams Measure overlap Vector methods Frequency or feature vectors Compare vector geometry Name comparators Characters plus heuristics Model common name variations Phonetic methods Phonetic representations Compare approximate pronunciation Semantic methods Meaning-oriented representations Compare semantics rather than spelling",
+      "paragraphs": [
+        "Family Typical representation Main idea Edit distances Ordered sequence Minimum transformation cost Positional distances Aligned positions Count positional disagreement Subsequence methods Ordered subsequences Measure preserved order Set-based methods Sets, multisets, q-grams Measure overlap Vector methods Frequency or feature vectors Compare vector geometry Name comparators Characters plus heuristics Model common name variations Phonetic methods Phonetic representations Compare approximate pronunciation Semantic methods Meaning-oriented representations Compare semantics rather than spelling"
+      ]
+    },
+    {
+      "heading": "Hamming Distance",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 3,
+      "word_count": 49,
+      "evidence": "Hamming distance counts the positions at which two aligned sequences differ. In its classical form it applies to equal-length sequences.",
+      "paragraphs": [
+        "Hamming distance counts the positions at which two aligned sequences differ. In its classical form it applies to equal-length sequences.",
+        "x = abcdef y = abcxef Hamming distance = 1",
+        "Hamming distance is a genuine metric on fixed-length sequences. It models positional substitutions but does not perform insertion/deletion alignment."
+      ]
+    },
+    {
+      "heading": "Levenshtein vs Hamming Distance",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 4,
+      "word_count": 63,
+      "evidence": "Levenshtein distance also permits insertions and deletions.",
+      "paragraphs": [
+        "Levenshtein distance also permits insertions and deletions.",
+        "x = abc y = abxc Levenshtein distance = 1",
+        "Classical Hamming distance is not directly defined for this pair because the sequence lengths differ.",
+        "For equal-length strings, Hamming distance provides an upper bound on ordinary Levenshtein distance, because substitution can always repair an aligned mismatch while Levenshtein may sometimes find an even cheaper insertion/deletion alignment."
+      ]
+    },
+    {
+      "heading": "Damerau-Levenshtein and Transpositions",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 6,
+      "word_count": 65,
+      "evidence": "Standard Levenshtein distance does not treat an adjacent transposition as a primitive one-cost edit.",
+      "paragraphs": [
+        "Standard Levenshtein distance does not treat an adjacent transposition as a primitive one-cost edit.",
+        "abcd abdc",
+        "Classical Levenshtein can repair this difference using two elementary edits. A Damerau-style model can treat the adjacent swap:",
+        "cd → dc",
+        "as a transposition operation. Different Damerau variants must still be distinguished because they do not necessarily define the same operation semantics or mathematical properties.",
+        "See Damerau-Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Longest Common Subsequence and Indel Distance",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 5,
+      "word_count": 82,
+      "evidence": "A longest common subsequence (LCS) preserves relative order while allowing elements to be skipped. Let:",
+      "paragraphs": [
+        "A longest common subsequence (LCS) preserves relative order while allowing elements to be skipped. Let:",
+        "L(x,y) = length of a longest common subsequence",
+        "An insertion-deletion distance can then be defined as:",
+        "dIndel(x,y) = |x| + |y| - 2L(x,y)",
+        "This distance is often called Indel distance . Its primitive edit operations are insertion and deletion. A substitution is not a primitive cost-1 operation. Replacing one symbol with another requires deleting one symbol and inserting the other, so the corresponding cost is typically 2."
+      ]
+    },
+    {
+      "heading": "Levenshtein, Indel Distance, LCS and Ratio Scores",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 12,
+      "word_count": 283,
+      "evidence": "Levenshtein distance and Indel distance are closely related, but they are not interchangeable. This distinction becomes particularly important when software exposes a generic function named ratio , similarity , or normalized_similarity .",
+      "paragraphs": [
+        "Levenshtein distance and Indel distance are closely related, but they are not interchangeable. This distinction becomes particularly important when software exposes a generic function named ratio , similarity , or normalized_similarity .",
+        "Measure Primitive operations Typical substitution cost Main interpretation Levenshtein distance Insertion, deletion, substitution 1 Minimum number or cost of ordinary edits Indel distance Insertion, deletion Equivalent to delete + insert Insertion/deletion transformation cost LCS length Not itself an edit operation model Not applicable Amount of ordered subsequence preserved Ratio / similarity score Depends on implementation Depends on underlying measure Usually a normalized ranking score",
+        "A useful identity links LCS and Indel distance:",
+        "dIndel(x,y) = |x| + |y| - 2LCS(x,y)",
+        "This does not mean that ordinary Levenshtein distance always has the same value. Classical Levenshtein allows a substitution to cost 1, while an insertion/deletion-only model normally represents the same replacement using two edits.",
+        "For example:",
+        "x = cat y = cut Levenshtein distance: a → u distance = 1 Indel distance: delete a insert u distance = 2",
+        "Therefore the name of a software function is not sufficient to identify its mathematical semantics. A function called ratio may be based on normalized Levenshtein distance, normalized Indel distance, LCS-derived similarity, or another scoring rule.",
+        "This distinction appears in real string-matching libraries: some APIs associated with “Levenshtein” terminology expose ratio functions whose underlying score is based on Indel similarity rather than classical unit-cost Levenshtein distance.",
+        "When reproducibility matters, record the exact comparison function rather than only the API name:",
+        "sequence representation + allowed operations + operation costs + normalization formula + score range = actual comparison semantics",
+        "For a broader taxonomy of edit-distance models, including normalized and weighted variants, see Edit Distance Variants ."
+      ]
+    },
+    {
+      "heading": "Set-Based String Similarity",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 3,
+      "word_count": 47,
+      "evidence": "A string can be transformed into a set or multiset before comparison. For example:",
+      "paragraphs": [
+        "A string can be transformed into a set or multiset before comparison. For example:",
+        "abcd bigrams: ab bc cd",
+        "The comparison then operates on the derived representation rather than directly on the original ordered character sequence. This transformation can intentionally discard some information while preserving other information."
+      ]
+    },
+    {
+      "heading": "Jaccard Similarity and Distance",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 10,
+      "word_count": 66,
+      "evidence": "For sets A and B :",
+      "paragraphs": [
+        "For sets A and B :",
+        "J(A,B) = |A ∩ B| / |A ∪ B|",
+        "Jaccard distance is:",
+        "dJ(A,B) = 1 - J(A,B)",
+        "Jaccard distance is a metric on sets, but the representation still determines what the result means.",
+        "Consider:",
+        "x = abc y = cba",
+        "As character sets:",
+        "{a,b,c} {a,b,c}",
+        "their Jaccard distance is zero because converting the strings into sets removed all sequence-order information."
+      ]
+    },
+    {
+      "heading": "q-Gram Representations",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 4,
+      "word_count": 54,
+      "evidence": "q-Grams preserve some local ordering by extracting overlapping substrings of fixed length.",
+      "paragraphs": [
+        "q-Grams preserve some local ordering by extracting overlapping substrings of fixed length.",
+        "abcd ↓ ab, bc, cd",
+        "q-Grams can be represented as sets, multisets, frequency vectors, or weighted feature vectors. They are useful both as direct similarity representations and as candidate-generation features before exact edit-distance verification.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Cosine Similarity",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "Strings can also be transformed into token-frequency, character-frequency, or q-gram-frequency vectors. For nonzero vectors:",
+      "paragraphs": [
+        "Strings can also be transformed into token-frequency, character-frequency, or q-gram-frequency vectors. For nonzero vectors:",
+        "cos(x,y) = (x · y) / (||x|| ||y||)",
+        "Values closer to one indicate more similar vector direction.",
+        "The common transformation:",
+        "1 - cosine_similarity",
+        "should not automatically be assumed to satisfy all mathematical metric axioms."
+      ]
+    },
+    {
+      "heading": "Jaro and Jaro-Winkler Similarity",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 5,
+      "word_count": 74,
+      "evidence": "Jaro similarity compares short strings using matching characters within a positional window and a transposition-related disagreement term.",
+      "paragraphs": [
+        "Jaro similarity compares short strings using matching characters within a positional window and a transposition-related disagreement term.",
+        "Jaro-Winkler adds an adjustment for a bounded common prefix:",
+        "JW = J + lp(1 - J)",
+        "where J is Jaro similarity, l is a bounded common-prefix length, and p is the prefix scaling factor.",
+        "This weighting can be useful for some name-matching tasks, but it is an application-oriented model rather than a universal definition of string similarity."
+      ]
+    },
+    {
+      "heading": "Different String Metrics Can Produce Different Answers",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 4,
+      "word_count": 59,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "x = abcd y = abdc",
+        "Method Possible result What it emphasizes Levenshtein 2 Insertion, deletion, substitution Damerau-style 1 Adjacent transposition Hamming 2 Aligned positional mismatches Indel / LCS distance 2 Preserved ordered subsequence Character-set Jaccard 0 Set membership while ignoring order",
+        "These results are not contradictions. Each method defines a different comparison space and preserves different information."
+      ]
+    },
+    {
+      "heading": "Numerical Normalization Is Not Unicode Normalization",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 9,
+      "word_count": 71,
+      "evidence": "The word normalization is used for two completely different concepts in string processing.",
+      "paragraphs": [
+        "The word normalization is used for two completely different concepts in string processing.",
+        "A numerical distance can be normalized, for example:",
+        "dN(x,y) = dlev(x,y) / max(|x|, |y|)",
+        "and converted to a similarity:",
+        "s(x,y) = 1 - dN(x,y)",
+        "This operation changes a numerical result.",
+        "Unicode NFC, NFD, NFKC, and NFKD instead transform the input sequence itself.",
+        "numerical normalization ≠ Unicode normalization",
+        "The two operations belong to different layers of the comparison pipeline."
+      ]
+    },
+    {
+      "heading": "There Is No Single Universal Normalized Levenshtein Score",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 9,
+      "word_count": 84,
+      "evidence": "A raw Levenshtein distance is an integer edit cost under the chosen operation model. Turning that value into a relative score requires an additional convention.",
+      "paragraphs": [
+        "A raw Levenshtein distance is an integer edit cost under the chosen operation model. Turning that value into a relative score requires an additional convention.",
+        "Common choices can involve:",
+        "the maximum sequence length,",
+        "the minimum sequence length,",
+        "the sum of sequence lengths,",
+        "an alignment or path length,",
+        "or another task-specific denominator.",
+        "Different denominators produce different numerical semantics. A system should therefore document both the raw distance definition and the normalization formula.",
+        "For the broader treatment of normalized edit distance, see Edit Distance Variants ."
+      ]
+    },
+    {
+      "heading": "Normalizing a Metric Can Break Metric Properties",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 2,
+      "word_count": 42,
+      "evidence": "Dividing a valid metric by a denominator that depends on the particular pair being compared does not guarantee that all original metric properties are preserved.",
+      "paragraphs": [
+        "Dividing a valid metric by a denominator that depends on the particular pair being compared does not guarantee that all original metric properties are preserved.",
+        "A convenient score in the range 0..1 should therefore not automatically be described as a mathematical metric."
+      ]
+    },
+    {
+      "heading": "Metric Properties Enable Exact Search Pruning",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 11,
+      "word_count": 81,
+      "evidence": "Triangle inequality has direct computational value. Let:",
+      "paragraphs": [
+        "Triangle inequality has direct computational value. Let:",
+        "q = query p = pivot x = candidate",
+        "For a metric:",
+        "|d(q,p) - d(x,p)| ≤ d(q,x)",
+        "If the search radius is r and:",
+        "|d(q,p) - d(x,p)| > r",
+        "then:",
+        "d(q,x) > r",
+        "and the candidate can be rejected without directly computing its distance from the query.",
+        "This is one reason the distinction between a true metric and an arbitrary similarity score matters in large-scale retrieval.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "String Similarity Is Not Semantic Similarity",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 8,
+      "word_count": 40,
+      "evidence": "String metrics compare representations rather than meaning.",
+      "paragraphs": [
+        "String metrics compare representations rather than meaning.",
+        "car automobile",
+        "can be semantically close while having substantial character-level distance.",
+        "Meanwhile:",
+        "cat car",
+        "are lexically close but describe different concepts.",
+        "string similarity ≠ semantic similarity",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "String Similarity Does Not Establish Entity Identity",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 5,
+      "word_count": 75,
+      "evidence": "Two strings can be close without representing the same real-world person, organization, place, product, citation, account, or database record.",
+      "paragraphs": [
+        "Two strings can be close without representing the same real-world person, organization, place, product, citation, account, or database record.",
+        "small distance ≠ same entity",
+        "The reverse is also true. Aliases, abbreviations, transliteration, historical spelling, name changes, and multilingual representations can produce very different strings for the same entity.",
+        "String similarity should therefore be treated as evidence about representations, not as automatic proof of identity.",
+        "For identity-oriented matching systems, see Entity Resolution and Record Linkage ."
+      ]
+    },
+    {
+      "heading": "Choosing a String Metric",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 1,
+      "word_count": 87,
+      "evidence": "Problem structure Reasonable starting point Equal-length aligned symbols Hamming distance Insertions, deletions and substitutions Levenshtein distance Only insertion/deletion structure matters Indel / LCS-based distance Adjacent swaps are important Damerau-style distance Error probabilities or operation costs are known Weighted edit distance Ordered subsequences matter LCS-based comparison Token or q-gram overlap matters Jaccard-style comparison Feature-frequency geometry matters Cosine or vector comparison Short human names Evaluate multiple lexical and phonetic comparators Meaning matters more than spelling Semantic representations Metric-space indexing is required Use a comparison function with proven metric properties",
+      "paragraphs": [
+        "Problem structure Reasonable starting point Equal-length aligned symbols Hamming distance Insertions, deletions and substitutions Levenshtein distance Only insertion/deletion structure matters Indel / LCS-based distance Adjacent swaps are important Damerau-style distance Error probabilities or operation costs are known Weighted edit distance Ordered subsequences matter LCS-based comparison Token or q-gram overlap matters Jaccard-style comparison Feature-frequency geometry matters Cosine or vector comparison Short human names Evaluate multiple lexical and phonetic comparators Meaning matters more than spelling Semantic representations Metric-space indexing is required Use a comparison function with proven metric properties"
+      ]
+    },
+    {
+      "heading": "How to Evaluate a String Metric",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 13,
+      "word_count": 75,
+      "evidence": "Metric selection should be evaluated against the actual application rather than a small set of intuitive examples. A useful evaluation specifies:",
+      "paragraphs": [
+        "Metric selection should be evaluated against the actual application rather than a small set of intuitive examples. A useful evaluation specifies:",
+        "target task + sequence representation + preprocessing policy + comparison function + representative labeled data + threshold or ranking rule + quality metric + computational cost",
+        "Depending on the application, evaluation may measure:",
+        "precision,",
+        "recall,",
+        "ranking quality,",
+        "nearest-neighbor accuracy,",
+        "candidate recall,",
+        "candidate-set size,",
+        "false merge and false split rates,",
+        "latency,",
+        "memory use,",
+        "and throughput."
+      ]
+    },
+    {
+      "heading": "Comparison Function and Candidate Generation Are Separate Decisions",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 5,
+      "word_count": 80,
+      "evidence": "Choosing Levenshtein distance as the final verifier does not imply that every item in a large collection should be compared against every other item.",
+      "paragraphs": [
+        "Choosing Levenshtein distance as the final verifier does not imply that every item in a large collection should be compared against every other item.",
+        "A scalable system can instead use:",
+        "index / blocking / filter ↓ candidate set ↓ string metric ↓ verification / ranking / decision",
+        "Candidate generation and final comparison are separate modeling decisions. A highly accurate string metric cannot recover a correct match that never entered the candidate set.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "A Layered Model of String Comparison",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 4,
+      "word_count": 83,
+      "evidence": "raw text ↓ transformation / normalization policy ↓ segmentation ↓ sequence representation ↓ comparison function ↓ distance or similarity ↓ normalization / threshold / ranking ↓ application decision",
+      "paragraphs": [
+        "raw text ↓ transformation / normalization policy ↓ segmentation ↓ sequence representation ↓ comparison function ↓ distance or similarity ↓ normalization / threshold / ranking ↓ application decision",
+        "For Unicode text this may become:",
+        "Unicode input ↓ normalization policy ↓ grapheme or code-point segmentation ↓ sequence representation ↓ Levenshtein or another string metric ↓ normalized score / threshold ↓ application decision",
+        "The metric is one layer of the system. It does not determine all preprocessing, representation, retrieval, ranking, or identity decisions around it."
+      ]
+    },
+    {
+      "heading": "Why Levenshtein Distance Remains Foundational",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 12,
+      "word_count": 84,
+      "evidence": "Levenshtein distance remains foundational because its operation model is simple and general:",
+      "paragraphs": [
+        "Levenshtein distance remains foundational because its operation model is simple and general:",
+        "insertion deletion substitution",
+        "These operations connect naturally to dynamic programming, approximate string matching, metric-space search, weighted extensions, sequence alignment, Unicode-aware implementations, and many application-specific comparison pipelines.",
+        "Its limitations are equally important. Standard Levenshtein distance does not inherently model:",
+        "adjacent transpositions as one elementary edit,",
+        "phonetic equivalence,",
+        "semantic similarity,",
+        "visual glyph similarity,",
+        "token reordering,",
+        "Unicode grapheme boundaries,",
+        "or domain-specific error probabilities.",
+        "Those boundaries are useful because they make representation and modeling choices explicit."
+      ]
+    },
+    {
+      "heading": "String Metrics and Unicode Text Transformations",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 5,
+      "word_count": 94,
+      "evidence": "Unicode transformations provide a useful example of the distinction between changing a representation and measuring the distance between representations.",
+      "paragraphs": [
+        "Unicode transformations provide a useful example of the distinction between changing a representation and measuring the distance between representations.",
+        "source text ↓ transformation T ↓ transformed sequence ↓ metric d ↓ distance or similarity",
+        "Canonical normalization can collapse canonically equivalent sequences. Compatibility normalization can collapse a broader class of representational distinctions. Transliteration can move text between writing systems. Other Unicode transformations can create a different sequence for presentation or application purposes.",
+        "The underlying comparison function can remain Levenshtein distance even though the sequence supplied to it has changed.",
+        "Continue with Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 5,
+      "word_count": 163,
+      "evidence": "String metrics quantify relationships between representations. Standard unit-cost Levenshtein distance is a mathematical metric under its ordinary insertion, deletion, and substitution model, but many useful comparison scores do not necessarily satisfy metric axioms.",
+      "paragraphs": [
+        "String metrics quantify relationships between representations. Standard unit-cost Levenshtein distance is a mathematical metric under its ordinary insertion, deletion, and substitution model, but many useful comparison scores do not necessarily satisfy metric axioms.",
+        "Representation is as important as the comparison function itself. Bytes, UTF-16 code units, Unicode code points, grapheme clusters, words, tokens, q-grams, phonemes, and other units define different sequence spaces.",
+        "Levenshtein distance must also be distinguished from related models. In particular, Indel distance permits insertion and deletion but does not treat substitution as a primitive unit-cost edit. It is directly related to the longest common subsequence. A software function called ratio or similarity therefore should not be assumed to represent normalized classical Levenshtein distance without checking its actual definition.",
+        "Numerical normalization, Unicode normalization, sequence representation, candidate generation, metric choice, and application decisions are separate layers.",
+        "Choose the representation first. Choose the comparison function second. Document the exact scoring rule. Interpret the result only within the comparison space defined by those choices."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 11,
+      "word_count": 41,
+      "evidence": "Edit Distance",
+      "paragraphs": [
+        "Edit Distance",
+        "Edit Operations & Edit Scripts",
+        "Edit Distance Variants",
+        "Weighted Levenshtein Distance",
+        "Damerau-Levenshtein Distance",
+        "Approximate String Matching",
+        "Indexing and Filtering for Edit Distance",
+        "Unicode & Grapheme-Safe Levenshtein",
+        "Unicode Text Transformations",
+        "String Similarity vs Semantic Similarity",
+        "Entity Resolution and Record Linkage"
+      ]
+    },
+    {
+      "heading": "Technical References",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 5,
+      "word_count": 55,
+      "evidence": "R. W. Hamming — Error Detecting and Error Correcting Codes .",
+      "paragraphs": [
+        "R. W. Hamming — Error Detecting and Error Correcting Codes .",
+        "W. A. Burkhard and R. M. Keller — Some Approaches to Best-Match File Searching .",
+        "Gonzalo Navarro — A Guided Tour to Approximate String Matching .",
+        "Unicode Standard Annex #15 — Unicode Normalization Forms .",
+        "Unicode Standard Annex #29 — Unicode Text Segmentation ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Why Levenshtein Distance Remains Foundational",
+          "anchor_id": "ux-section-37",
+          "alias": "approximate string matching",
+          "excerpt": "These operations connect naturally to dynamic programming, approximate string matching, metric-space search, weighted extensions, sequence alignment, Unicode-aware implementations, and many application-specific comparison pipelines."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-40",
+          "alias": "approximate string matching",
+          "excerpt": "Approximate String Matching"
+        },
+        {
+          "section": "Technical References",
+          "anchor_id": "ux-section-41",
+          "alias": "approximate string matching",
+          "excerpt": "Gonzalo Navarro — A Guided Tour to Approximate String Matching ."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Damerau-Levenshtein and Transpositions",
+          "anchor_id": "ux-section-18",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau-Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-40",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Damerau-Levenshtein Distance"
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-variants",
+      "evidence": [
+        {
+          "section": "Levenshtein, Indel Distance, LCS and Ratio Scores",
+          "anchor_id": "ux-section-20",
+          "alias": "edit distance variants",
+          "excerpt": "For a broader taxonomy of edit-distance models, including normalized and weighted variants, see Edit Distance Variants ."
+        },
+        {
+          "section": "There Is No Single Universal Normalized Levenshtein Score",
+          "anchor_id": "ux-section-28",
+          "alias": "edit distance variants",
+          "excerpt": "For the broader treatment of normalized edit distance, see Edit Distance Variants ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-40",
+          "alias": "edit distance variants",
+          "excerpt": "Edit Distance Variants"
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Levenshtein Distance as a Metric",
+          "anchor_id": "ux-section-9",
+          "alias": "edit distance",
+          "excerpt": "See Edit Distance and Edit Operations & Edit Scripts for the underlying recurrence and transformation model."
+        },
+        {
+          "section": "Levenshtein, Indel Distance, LCS and Ratio Scores",
+          "anchor_id": "ux-section-20",
+          "alias": "edit distance",
+          "excerpt": "For a broader taxonomy of edit-distance models, including normalized and weighted variants, see Edit Distance Variants ."
+        },
+        {
+          "section": "q-Gram Representations",
+          "anchor_id": "ux-section-23",
+          "alias": "edit distance",
+          "excerpt": "q-Grams can be represented as sets, multisets, frequency vectors, or weighted feature vectors. They are useful both as direct similarity representations and as candidate-generation features before exact edit-distance verification."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "String Metrics: Distances, Similarities & Metric Properties",
+          "anchor_id": "",
+          "alias": "edit operations",
+          "excerpt": "The important point is that there is no single universal definition of “string similarity.” Different comparison methods preserve different kinds of structure. Some count edit operations, some compare aligned positions, some measure shared subsequences, some compare token or q-gram overlap, and others operate on vectors, phonetic representations, or application-specific features."
+        },
+        {
+          "section": "Levenshtein Distance as a Metric",
+          "anchor_id": "ux-section-9",
+          "alias": "edit operations",
+          "excerpt": "Standard Levenshtein distance assigns unit cost to three elementary edit operations :"
+        },
+        {
+          "section": "Longest Common Subsequence and Indel Distance",
+          "anchor_id": "ux-section-19",
+          "alias": "edit operations",
+          "excerpt": "This distance is often called Indel distance . Its primitive edit operations are insertion and deletion. A substitution is not a primitive cost-1 operation. Replacing one symbol with another requires deleting one symbol and inserting the other, so the corresponding cost is typically 2."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "String Similarity Does Not Establish Entity Identity",
+          "anchor_id": "ux-section-32",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "For identity-oriented matching systems, see Entity Resolution and Record Linkage ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-40",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "Entity Resolution and Record Linkage"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "q-Gram Representations",
+          "anchor_id": "ux-section-23",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Metric Properties Enable Exact Search Pruning",
+          "anchor_id": "ux-section-30",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Comparison Function and Candidate Generation Are Separate Decisions",
+          "anchor_id": "ux-section-35",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "String Similarity Is Not Semantic Similarity",
+          "anchor_id": "ux-section-31",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-40",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "String Similarity vs Semantic Similarity"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Unicode Representation and String Metrics",
+          "anchor_id": "ux-section-13",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "See Unicode & Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-40",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "Unicode & Grapheme-Safe Levenshtein"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-text-transformations",
+      "evidence": [
+        {
+          "section": "Transformation Defines the Comparison Space",
+          "anchor_id": "ux-section-14",
+          "alias": "unicode text transformations",
+          "excerpt": "For the broader relation between text transformation and sequence comparison, see Unicode Text Transformations ."
+        },
+        {
+          "section": "String Metrics and Unicode Text Transformations",
+          "anchor_id": "ux-section-38",
+          "alias": "unicode text transformations",
+          "excerpt": "Continue with Unicode Text Transformations ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-40",
+          "alias": "unicode text transformations",
+          "excerpt": "Unicode Text Transformations"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted Edit Distance Does Not Automatically Remain a Metric",
+          "anchor_id": "ux-section-10",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-40",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/string-metrics#webpage",
+      "type": "WebPage",
+      "name": "String Metrics: Distances, Similarities & Metric Properties",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/string-metrics#article"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/string-metrics#string-metrics"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/string-metrics#article",
+      "type": "Article",
+      "name": "String Metrics: Distances, Similarities & Metric Properties",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/string-metrics#string-metrics"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/string-metrics#string-metrics",
+      "type": "DefinedTerm",
+      "name": "String Metrics",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/string-metrics#metric-space",
+      "type": "DefinedTerm",
+      "name": "Metric Space",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/string-metrics#string-representation",
+      "type": "DefinedTerm",
+      "name": "String Representation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/string-metrics#unicode-text-representation",
+      "type": "DefinedTerm",
+      "name": "Unicode Text Representation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/string-metrics#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/string-metrics#webpage",
+      "about",
+      "https://www.levenshtein.net/string-metrics#string-metrics"
+    ],
+    [
+      "https://www.levenshtein.net/string-metrics#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/string-metrics#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/string-metrics#article"
+    ],
+    [
+      "https://www.levenshtein.net/string-metrics#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/string-metrics#article",
+      "about",
+      "https://www.levenshtein.net/string-metrics#string-metrics"
+    ],
+    [
+      "https://www.levenshtein.net/string-metrics#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/string-metrics#article",
+      "mentions",
+      "https://www.levenshtein.net/string-metrics#metric-space"
+    ],
+    [
+      "https://www.levenshtein.net/string-metrics#article",
+      "mentions",
+      "https://www.levenshtein.net/string-metrics#string-representation"
+    ],
+    [
+      "https://www.levenshtein.net/string-metrics#article",
+      "mentions",
+      "https://www.levenshtein.net/string-metrics#unicode-text-representation"
+    ],
+    [
+      "https://www.levenshtein.net/string-metrics#article",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ]
+  ],
+  "external_citations": []
+}

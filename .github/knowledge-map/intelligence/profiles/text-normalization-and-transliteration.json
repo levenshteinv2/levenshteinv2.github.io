@@ -1,0 +1,1139 @@
+{
+  "url": "/text-normalization-and-transliteration",
+  "title": "Text Normalization and Transliteration: Unicode, Edit Distance, and Reliable Matching",
+  "h1": [
+    "Text Normalization and Transliteration: Unicode, Edit Distance, and Reliable Matching"
+  ],
+  "group": "Language",
+  "provisional_mission": "Chuẩn hóa và chuyển tự",
+  "content_sha256": "3e4ad8f6ce812693f0fc53ba23122c5858a126add7bc97167d1f9d896782d0fa",
+  "canonical": "https://www.levenshtein.net/text-normalization-and-transliteration",
+  "primary_entity_candidate": "Text Normalization and Transliteration: Unicode, Edit Distance, and Reliable Matching",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Text Normalization and Transliteration: Unicode, Edit Distance, and Reliable Matching",
+      "level": 2,
+      "id": "",
+      "paragraph_count": 4,
+      "word_count": 122,
+      "evidence": "Text normalization and transliteration are fundamental operations in multilingual search, record linkage, entity resolution, OCR, speech processing, identifier handling, and string-similarity systems.",
+      "paragraphs": [
+        "Text normalization and transliteration are fundamental operations in multilingual search, record linkage, entity resolution, OCR, speech processing, identifier handling, and string-similarity systems.",
+        "They are also frequently misunderstood because the word normalization is often used for many unrelated transformations. Unicode normalization is not a generic instruction to “clean text.” Transliteration is not translation. Case folding is not Unicode normalization. Removing accents is an additional, potentially lossy transformation. Grapheme segmentation determines boundaries rather than equivalence.",
+        "A reliable text-processing system therefore treats each transformation as an explicit part of its comparison model.",
+        "raw text ↓ Unicode representation policy ↓ normalization / identifier policy ↓ optional case / punctuation / whitespace policy ↓ optional transliteration or other transformation ↓ segmentation ↓ similarity / retrieval / matching"
+      ]
+    },
+    {
+      "heading": "Text Normalization Is an Overloaded Term",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 14,
+      "word_count": 69,
+      "evidence": "In data engineering and natural-language processing, text normalization can describe many operations intended to reduce variation.",
+      "paragraphs": [
+        "In data engineering and natural-language processing, text normalization can describe many operations intended to reduce variation.",
+        "Examples include:",
+        "case folding,",
+        "whitespace cleanup,",
+        "punctuation policies,",
+        "number formatting,",
+        "width conversion,",
+        "diacritic handling,",
+        "transliteration,",
+        "locale-specific canonicalization.",
+        "Unicode uses the term more narrowly. Unicode Normalization Forms define standardized transformations for canonical or compatibility equivalence between Unicode sequences.",
+        "A function named:",
+        "normalize(text)",
+        "is therefore underspecified unless the application defines exactly which transformation it performs."
+      ]
+    },
+    {
+      "heading": "Representation, Appearance, Language and Identity Are Different Layers",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 4,
+      "word_count": 99,
+      "evidence": "Unicode representation ↓ orthographic representation ↓ visual presentation ↓ linguistic / phonological form ↓ meaning ↓ real-world entity identity",
+      "paragraphs": [
+        "Unicode representation ↓ orthographic representation ↓ visual presentation ↓ linguistic / phonological form ↓ meaning ↓ real-world entity identity",
+        "An operation at one layer does not automatically establish equivalence at another.",
+        "Operation Primary purpose Unicode NFC Canonical Unicode representation Unicode NFKC Compatibility normalization where those distinctions should be collapsed Case folding Caseless comparison Transliteration Representation using another writing system or transliteration convention Application-level styled Unicode mapping Replacement with other Unicode characters for presentation-like plain-text output Phonetic encoding Pronunciation-oriented comparison Semantic models Meaning-oriented similarity Entity resolution Real-world identity inference",
+        "normalized equality ≠ visual equality ≠ semantic equality ≠ entity identity"
+      ]
+    },
+    {
+      "heading": "Canonical Equivalence in Unicode",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 9,
+      "word_count": 78,
+      "evidence": "Unicode can represent canonically equivalent text using different code-point sequences.",
+      "paragraphs": [
+        "Unicode can represent canonically equivalent text using different code-point sequences.",
+        "A common example is the letter é . It may appear as:",
+        "U+00E9 LATIN SMALL LETTER E WITH ACUTE",
+        "or as:",
+        "U+0065 LATIN SMALL LETTER E + U+0301 COMBINING ACUTE ACCENT",
+        "Visually:",
+        "é and e + ◌́",
+        "A raw code-point comparison can distinguish these sequences even though Unicode defines them as canonically equivalent.",
+        "Unicode normalization provides standardized ways to bring canonically or compatibility-equivalent sequences into corresponding normalized forms."
+      ]
+    },
+    {
+      "heading": "The Four Unicode Normalization Forms",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 3,
+      "word_count": 50,
+      "evidence": "Form Operation Equivalence model NFD Canonical decomposition Canonical NFC Canonical decomposition followed by canonical composition Canonical NFKD Compatibility decomposition Compatibility NFKC Compatibility decomposition followed by canonical composition Compatibility",
+      "paragraphs": [
+        "Form Operation Equivalence model NFD Canonical decomposition Canonical NFC Canonical decomposition followed by canonical composition Canonical NFKD Compatibility decomposition Compatibility NFKC Compatibility decomposition followed by canonical composition Compatibility",
+        "NFC and NFD resolve canonical representation differences while preserving compatibility distinctions.",
+        "NFKC and NFKD deliberately collapse a broader set of compatibility distinctions."
+      ]
+    },
+    {
+      "heading": "NFD and NFC",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 6,
+      "word_count": 75,
+      "evidence": "NFD decomposes canonically decomposable characters into their canonical components.",
+      "paragraphs": [
+        "NFD decomposes canonically decomposable characters into their canonical components.",
+        "é ↓ NFD e + ◌́",
+        "The combining mark remains part of the text. NFD does not mean “remove accents.”",
+        "NFC begins with canonical decomposition and then composes sequences where Unicode defines a canonical composition.",
+        "e + ◌́ ↓ NFC é",
+        "For general Unicode text, NFC is commonly used when a composed normalized representation is desired. Canonically equivalent strings normalize consistently, while compatibility distinctions remain preserved."
+      ]
+    },
+    {
+      "heading": "NFKD and NFKC",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 6,
+      "word_count": 67,
+      "evidence": "Compatibility normalization extends beyond canonical equivalence.",
+      "paragraphs": [
+        "Compatibility normalization extends beyond canonical equivalence.",
+        "Some Unicode characters have compatibility mappings because they encode distinctions connected to legacy encodings, width forms, presentation conventions, specialized notation, or other compatibility requirements.",
+        "For example:",
+        "Ⅳ ↓ NFKC / NFKD compatibility mapping IV",
+        "NFKC and NFKD can therefore be useful for loose matching, search representations, and appropriately defined identifier systems.",
+        "They can also remove distinctions deliberately present in the source."
+      ]
+    },
+    {
+      "heading": "NFKC Is Not Simply “Stronger NFC”",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 5,
+      "word_count": 55,
+      "evidence": "NFKC should not be interpreted as a universally better version of NFC. It defines a different equivalence policy.",
+      "paragraphs": [
+        "NFKC should not be interpreted as a universally better version of NFC. It defines a different equivalence policy.",
+        "x ≠ y but NFKC(x) = NFKC(y)",
+        "A later comparison can then produce:",
+        "ED( NFKC(x), NFKC(y) ) = 0",
+        "That result means the compatibility-normalized representations are equal. It does not mean the original Unicode sequences were identical."
+      ]
+    },
+    {
+      "heading": "Compatibility Normalization and Identifiers",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 10,
+      "word_count": 112,
+      "evidence": "Identifier systems deserve a more precise treatment than ordinary display text.",
+      "paragraphs": [
+        "Identifier systems deserve a more precise treatment than ordinary display text.",
+        "Unicode recommends compatibility-oriented normalization for many identifier use cases, because distinctions that matter in rich or mathematical text may be undesirable inside identifiers.",
+        "For default caseless identifier matching, Unicode defines the specialized operation:",
+        "NFKC_Casefold",
+        "Conceptually, this combines compatibility normalization with Unicode case-folding behavior intended for identifiers and produces a normalized comparison form.",
+        "Therefore:",
+        "security-sensitive identifier ≠ \"never use NFKC\"",
+        "Instead:",
+        "identifier system ↓ define permitted characters ↓ define normalization profile ↓ define case policy ↓ define confusable / spoofing policy ↓ compare identifiers",
+        "An application should follow the identifier specification appropriate to its domain rather than inventing an ad-hoc lowercase-and-normalize pipeline."
+      ]
+    },
+    {
+      "heading": "Normalization Can Change Sequence Length",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 4,
+      "word_count": 68,
+      "evidence": "A normalization transformation does not have to preserve the number of code points.",
+      "paragraphs": [
+        "A normalization transformation does not have to preserve the number of code points.",
+        "é = 1 code point in precomposed form e + ◌́ = 2 code points in decomposed form",
+        "Compatibility decomposition can also expand one encoded character into multiple characters.",
+        "Systems that retain offsets, selections, annotations, or edit locations should therefore not assume that positions in transformed text map one-to-one to positions in the original source."
+      ]
+    },
+    {
+      "heading": "Code Points, Grapheme Clusters and Glyphs",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 6,
+      "word_count": 96,
+      "evidence": "Unicode normalization and text segmentation solve different problems.",
+      "paragraphs": [
+        "Unicode normalization and text segmentation solve different problems.",
+        "A Unicode code point is not necessarily one user-perceived character. An extended grapheme cluster can contain multiple code points, such as a base character followed by combining marks or a complex emoji sequence.",
+        "code point ≠ extended grapheme cluster ≠ glyph",
+        "Extended grapheme clusters approximate user-perceived character boundaries for many text-processing tasks. Glyphs belong to rendering and typography and are not equivalent to Unicode text elements.",
+        "This distinction affects what counts as one insertion, deletion, or substitution in a user-facing Levenshtein implementation.",
+        "See Unicode & Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Normalization Changes the Edit-Distance Space",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 8,
+      "word_count": 50,
+      "evidence": "Let N be a transformation and d an edit distance.",
+      "paragraphs": [
+        "Let N be a transformation and d an edit distance.",
+        "d( N(x), N(y) ) ≠ necessarily d(x,y)",
+        "A transformation can:",
+        "change sequence length,",
+        "collapse distinctions,",
+        "expose different alignment paths,",
+        "convert a representation difference into equality.",
+        "Normalization is therefore part of the definition of the comparison model, not merely invisible preprocessing."
+      ]
+    },
+    {
+      "heading": "Case Mapping and Case Folding Are Separate Transformations",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 4,
+      "word_count": 55,
+      "evidence": "Uppercasing, lowercasing, title casing, and case folding are not part of NFC, NFD, NFKC, or NFKD.",
+      "paragraphs": [
+        "Uppercasing, lowercasing, title casing, and case folding are not part of NFC, NFD, NFKC, or NFKD.",
+        "Case mappings can be context-sensitive, can have locale-specific behavior, and can change string length.",
+        "display-oriented: upper / lower / title comparison-oriented: case folding",
+        "Case folding is intended for caseless comparison, but the appropriate operation still depends on the application."
+      ]
+    },
+    {
+      "heading": "Default Case Folding and Identifier Case Folding Are Not Identical Policies",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "An application should distinguish:",
+      "paragraphs": [
+        "An application should distinguish:",
+        "general caseless text comparison from caseless identifier matching",
+        "For Unicode identifiers, NFKC_Casefold provides a defined compatibility-and-case-folding operation.",
+        "This is more precise than assuming:",
+        "NFKC(text).lower()",
+        "is universally equivalent to Unicode identifier case folding."
+      ]
+    },
+    {
+      "heading": "Whitespace and Punctuation Are Domain Policies",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 10,
+      "word_count": 48,
+      "evidence": "Collapsing whitespace, trimming text, or standardizing punctuation can improve retrieval, but these operations are not Unicode normalization.",
+      "paragraphs": [
+        "Collapsing whitespace, trimming text, or standardizing punctuation can improve retrieval, but these operations are not Unicode normalization.",
+        "\"A B\" ↓ \"A B\"",
+        "That transformation can be useful for general search and incorrect for:",
+        "source code,",
+        "forensic text,",
+        "fixed-width records,",
+        "poetry,",
+        "OCR evaluation.",
+        "There is no universally correct:",
+        "remove_punctuation(text)"
+      ]
+    },
+    {
+      "heading": "Accent Removal Is Not Unicode Normalization",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 11,
+      "word_count": 56,
+      "evidence": "Accent-insensitive systems often use a pipeline similar to:",
+      "paragraphs": [
+        "Accent-insensitive systems often use a pipeline similar to:",
+        "NFD ↓ remove selected combining marks ↓ optional recomposition",
+        "The removal step is an additional, lossy transformation.",
+        "Diacritics can distinguish:",
+        "words,",
+        "names,",
+        "pronunciation,",
+        "grammatical information,",
+        "language-specific orthographic distinctions.",
+        "Removing them can improve retrieval recall while also causing previously distinct strings to collide.",
+        "accent-insensitive matching ≠ canonical Unicode normalization"
+      ]
+    },
+    {
+      "heading": "Preserve the Source and Derive Comparison Views",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 3,
+      "word_count": 57,
+      "evidence": "Matching systems often benefit from preserving the authoritative source string and deriving comparison representations separately.",
+      "paragraphs": [
+        "Matching systems often benefit from preserving the authoritative source string and deriving comparison representations separately.",
+        "original text │ ├── canonical Unicode view ├── compatibility-normalized view ├── caseless view ├── accent-insensitive view ├── transliterated view └── task-specific search view",
+        "This preserves information while allowing multiple matching strategies to coexist and makes transformations easier to audit, version, or regenerate."
+      ]
+    },
+    {
+      "heading": "What Transliteration Means",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 6,
+      "word_count": 73,
+      "evidence": "Transliteration transforms text from one writing system or representation convention into another representation while attempting to preserve a defined correspondence with the source.",
+      "paragraphs": [
+        "Transliteration transforms text from one writing system or representation convention into another representation while attempting to preserve a defined correspondence with the source.",
+        "Москва ↓ Moskva",
+        "Transliteration changes representation. Translation changes linguistic content.",
+        "transliteration ≠ translation",
+        "Romanization is a common transliteration process in which text from another script is represented using Latin characters.",
+        "A language or naming system can have multiple legitimate romanization conventions, so one source name can produce several Latin-script forms."
+      ]
+    },
+    {
+      "heading": "Transliteration Is Not Phonetic Transcription",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 9,
+      "word_count": 32,
+      "evidence": "Transliteration systems can optimize for:",
+      "paragraphs": [
+        "Transliteration systems can optimize for:",
+        "reversibility,",
+        "source-script structure,",
+        "conventional spelling,",
+        "geographic naming standards,",
+        "readability.",
+        "Phonetic transcription instead attempts to represent pronunciation.",
+        "transliteration ≠ phonetic transcription",
+        "See Phonetic, Dialect, and Language Distance ."
+      ]
+    },
+    {
+      "heading": "Reversible and Lossy Transliteration",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 10,
+      "word_count": 74,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "T : A → B",
+        "represent a transformation between representation spaces.",
+        "If an exact inverse exists over the defined domain, perfect reversibility requires:",
+        "T⁻¹(T(x)) = x",
+        "for every valid source value in that domain.",
+        "If:",
+        "x ≠ y but T(x) = T(y)",
+        "the transformation is not injective, so exact inversion is impossible without additional information.",
+        "Many practical romanization systems are intentionally lossy because convention, readability, or interoperability may matter more than perfect reversibility."
+      ]
+    },
+    {
+      "heading": "Transliteration Can Change the Edit-Distance Scale",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 14,
+      "word_count": 73,
+      "evidence": "One source symbol can map to several target characters, and multiple source elements can sometimes map to a smaller target sequence.",
+      "paragraphs": [
+        "One source symbol can map to several target characters, and multiple source elements can sometimes map to a smaller target sequence.",
+        "one source unit → \"sh\"",
+        "Consequently:",
+        "length(T(x)) ≠ necessarily length(x)",
+        "If two source strings have distance:",
+        "d(x,y)",
+        "the distance after transliteration becomes:",
+        "d( T(x), T(y) )",
+        "That value can be:",
+        "larger,",
+        "smaller,",
+        "or zero",
+        "relative to the source-space distance.",
+        "Thresholds calibrated in one representation should therefore not automatically be reused after transliteration."
+      ]
+    },
+    {
+      "heading": "Transformation Order Matters",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 7,
+      "word_count": 78,
+      "evidence": "Unicode normalization, case processing, and transliteration are not generally interchangeable operations.",
+      "paragraphs": [
+        "Unicode normalization, case processing, and transliteration are not generally interchangeable operations.",
+        "T(N(x)) ≠ necessarily N(T(x))",
+        "A transliteration rule can behave differently depending on composition, combining marks, compatibility characters, or other preprocessing.",
+        "A production system should therefore specify its actual pipeline.",
+        "For example:",
+        "raw Unicode ↓ chosen source normalization ↓ transliteration ↓ chosen target normalization ↓ segmentation ↓ comparison",
+        "This is an example architecture, not a universal ordering rule. The correct pipeline depends on the transformation specifications being used."
+      ]
+    },
+    {
+      "heading": "Multilingual Name and Place Matching",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 9,
+      "word_count": 102,
+      "evidence": "Normalization and transliteration become particularly important when the same name or place can appear with:",
+      "paragraphs": [
+        "Normalization and transliteration become particularly important when the same name or place can appear with:",
+        "different scripts,",
+        "different diacritics,",
+        "different transliteration conventions,",
+        "historical spellings.",
+        "Historical gazetteer systems provide a useful example. The OWS-9 Global Gazetteer engineering work combined fuzzy string matching with explicit handling of diacritics, special characters, native scripts, and UTF-8 encoded text.",
+        "This illustrates why character encoding, normalization, transliteration, and approximate matching should be treated as related but separate layers.",
+        "See the OGC OWS-9 Global Gazetteer Engineering Report .",
+        "Within Levenshtein.net, the corresponding application context is covered in Name, Address and Place Matching and Entity Resolution and Record Linkage ."
+      ]
+    },
+    {
+      "heading": "Application-Level Styled Unicode Mappings",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 6,
+      "word_count": 60,
+      "evidence": "Normalization and transliteration are not the only transformations applied to Unicode text in real applications.",
+      "paragraphs": [
+        "Normalization and transliteration are not the only transformations applied to Unicode text in real applications.",
+        "Some social-text, profile-text, and plain-text styling tools intentionally replace ordinary letters with other Unicode characters that produce a different visual appearance.",
+        "For example:",
+        "Hello ↓ 𝐇𝐞𝐥𝐥𝐨",
+        "At the Unicode-sequence level, this changes the characters themselves.",
+        "ordinary Unicode sequence ↓ application mapping ↓ different Unicode sequence"
+      ]
+    },
+    {
+      "heading": "Mathematical Alphanumeric Symbols Have a Specific Unicode Purpose",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 11,
+      "word_count": 97,
+      "evidence": "The characters used in examples such as:",
+      "paragraphs": [
+        "The characters used in examples such as:",
+        "𝐀 𝐁 𝐂 𝑨 𝑩 𝑪 𝒜 ℬ 𝒞 𝔄 𝔅 ℭ",
+        "include characters from Unicode mathematical alphabets, especially the Mathematical Alphanumeric Symbols block and related letterlike symbols.",
+        "These characters were encoded so that typographic distinctions can carry semantic meaning in mathematical and technical notation.",
+        "They were not encoded as a general-purpose replacement for CSS fonts or rich-text styling of ordinary prose.",
+        "Therefore the common social-text use:",
+        "hello → 𝐡𝐞𝐥𝐥𝐨",
+        "should be understood as:",
+        "application-level reuse of distinct Unicode characters",
+        "rather than:",
+        "the normative Unicode purpose of those mathematical alphabets"
+      ]
+    },
+    {
+      "heading": "Styled Unicode Is Not Simply a Font Change",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 15,
+      "word_count": 67,
+      "evidence": "Changing a web font normally leaves the underlying Unicode sequence unchanged.",
+      "paragraphs": [
+        "Changing a web font normally leaves the underlying Unicode sequence unchanged.",
+        "ABC ↓ CSS font-family ABC",
+        "An application-level Unicode mapping can instead replace the characters themselves:",
+        "ABC ↓ character mapping 𝐀𝐁𝐂",
+        "The two outputs may appear visually related, but their encoded sequences are different.",
+        "This can affect:",
+        "search,",
+        "copy and paste,",
+        "normalization,",
+        "indexing,",
+        "identifiers,",
+        "string length,",
+        "edit-distance computation,",
+        "accessibility and text processing.",
+        "See Styled Unicode Text ."
+      ]
+    },
+    {
+      "heading": "Compatibility Normalization Can Collapse Some Styled Unicode Mappings",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 17,
+      "word_count": 91,
+      "evidence": "Many mathematical alphanumeric and compatibility characters have compatibility mappings toward ordinary base characters.",
+      "paragraphs": [
+        "Many mathematical alphanumeric and compatibility characters have compatibility mappings toward ordinary base characters.",
+        "For such characters:",
+        "𝐀 ↓ NFKC A",
+        "This means:",
+        "raw sequence distance",
+        "and:",
+        "distance after NFKC",
+        "can describe very different comparison spaces.",
+        "For example:",
+        "x = \"ABC\" y = \"𝐀𝐁𝐂\"",
+        "may satisfy:",
+        "x ≠ y at the raw Unicode sequence level",
+        "while:",
+        "NFKC(x) = NFKC(y)",
+        "for mappings that are compatibility equivalents.",
+        "In mathematical text, that collapse can remove distinctions that were intentionally encoded.",
+        "In a loose search representation, the same collapse can be exactly what the application wants."
+      ]
+    },
+    {
+      "heading": "Unicode Text Transformation Is the Broader Category",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 4,
+      "word_count": 52,
+      "evidence": "These operations belong to different transformation classes:",
+      "paragraphs": [
+        "These operations belong to different transformation classes:",
+        "Unicode text transformation │ ├── canonical normalization ├── compatibility normalization ├── case transformation ├── transliteration ├── diacritic policy ├── identifier folding ├── security-oriented transformation └── application-level character mapping",
+        "Their purposes and mathematical effects should remain distinct.",
+        "For the broader taxonomy, see Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "Levenshtein Can Measure Transformation Change",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 12,
+      "word_count": 58,
+      "evidence": "A transformation system can preserve both its source and transformed representation.",
+      "paragraphs": [
+        "A transformation system can preserve both its source and transformed representation.",
+        "source ↓ transformation T ↓ result",
+        "Levenshtein distance can then be applied to explicitly defined sequences:",
+        "ED( S(source), S(T(source)) )",
+        "where S defines the sequence representation.",
+        "The resulting value measures sequence edits under that representation.",
+        "It does not measure:",
+        "visual similarity,",
+        "semantic similarity,",
+        "attractiveness,",
+        "readability,",
+        "typographic quality."
+      ]
+    },
+    {
+      "heading": "Search Systems Often Need Multiple Representations",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 3,
+      "word_count": 52,
+      "evidence": "Multilingual retrieval does not require every source value to be destroyed and reduced to one universal key.",
+      "paragraphs": [
+        "Multilingual retrieval does not require every source value to be destroyed and reduced to one universal key.",
+        "original text │ ├── NFC ├── NFKC where appropriate ├── case-folded ├── accent-insensitive ├── transliterated └── task-specific retrieval representation",
+        "Different representations can participate in candidate generation or ranking according to the requirements of the system."
+      ]
+    },
+    {
+      "heading": "Normalization and Approximate Matching Are Different Decisions",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "Normalization asks:",
+      "paragraphs": [
+        "Normalization asks:",
+        "Which representation differences should this comparison treat as equivalent?",
+        "Approximate matching asks:",
+        "How much remaining difference should this comparison tolerate?",
+        "defined transformation ↓ defined sequence representation ↓ defined edit-distance model ↓ defined threshold",
+        "Keeping these decisions explicit makes matching systems easier to reproduce, audit, and evaluate."
+      ]
+    },
+    {
+      "heading": "Entity Matching Requires More Than String Normalization",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 6,
+      "word_count": 59,
+      "evidence": "Two names can produce the same normalized or transliterated representation without identifying the same person, organization, or place.",
+      "paragraphs": [
+        "Two names can produce the same normalized or transliterated representation without identifying the same person, organization, or place.",
+        "same transformed string ≠ same real-world entity",
+        "Likewise:",
+        "different transformed strings ≠ necessarily different entities",
+        "In Entity Resolution and Record Linkage , string similarity is only one source of evidence.",
+        "The same principle applies to Name, Address and Place Matching ."
+      ]
+    },
+    {
+      "heading": "Weighted Edit Distance Can Preserve Distinctions",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 3,
+      "word_count": 34,
+      "evidence": "Instead of deleting every source distinction, an application can sometimes retain the original representation and assign different costs to expected variations.",
+      "paragraphs": [
+        "Instead of deleting every source distinction, an application can sometimes retain the original representation and assign different costs to expected variations.",
+        "cost(expected variant) = lower cost(unrelated substitution) = higher",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Visual Confusables Are a Separate Security Problem",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 5,
+      "word_count": 66,
+      "evidence": "Unicode normalization does not convert every visually similar character into the same character.",
+      "paragraphs": [
+        "Unicode normalization does not convert every visually similar character into the same character.",
+        "Latin, Greek, Cyrillic, and other scripts contain characters that can resemble one another while remaining distinct Unicode elements.",
+        "canonical normalization ≠ compatibility normalization ≠ transliteration ≠ confusable detection ≠ visual similarity",
+        "Unicode security mechanisms define separate concepts and data for detecting confusable identifiers and mixed-script risks.",
+        "See Unicode Homoglyph and Confusable Attacks ."
+      ]
+    },
+    {
+      "heading": "Normalization Does Not Solve Homoglyph Attacks",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 11,
+      "word_count": 40,
+      "evidence": "Consider visually similar letters from different scripts. Their resemblance does not imply canonical equivalence.",
+      "paragraphs": [
+        "Consider visually similar letters from different scripts. Their resemblance does not imply canonical equivalence.",
+        "A security-sensitive identifier system therefore needs more than:",
+        "NFC(identifier)",
+        "or:",
+        "NFKC(identifier)",
+        "It may also require:",
+        "script restrictions,",
+        "identifier profiles,",
+        "confusable detection,",
+        "mixed-script policies,",
+        "application-specific security rules."
+      ]
+    },
+    {
+      "heading": "A Reproducible Transformation Pipeline",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 9,
+      "word_count": 67,
+      "evidence": "Instead of documenting a system simply as:",
+      "paragraphs": [
+        "Instead of documenting a system simply as:",
+        "clean the string",
+        "define every operation.",
+        "A general application might specify:",
+        "raw input ↓ normalization policy ↓ case / identifier policy ↓ task-specific transformation ↓ segmentation ↓ comparison",
+        "Another system might require a different order.",
+        "For Unicode caseless identifier comparison, a defined operation such as:",
+        "NFKC_Casefold",
+        "is preferable to inventing an undocumented sequence of compatibility normalization, lowercasing, and character deletion."
+      ]
+    },
+    {
+      "heading": "Versioning Is Part of Reproducibility",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 12,
+      "word_count": 40,
+      "evidence": "A production specification should record:",
+      "paragraphs": [
+        "A production specification should record:",
+        "Unicode version,",
+        "normalization form,",
+        "case-folding or identifier profile,",
+        "transliteration system and version,",
+        "sequence representation,",
+        "segmentation rules,",
+        "comparison function,",
+        "matching threshold.",
+        "The phrase:",
+        "normalized and compared",
+        "is not sufficient documentation for a reproducible multilingual matching system."
+      ]
+    },
+    {
+      "heading": "The Role of Levenshtein Distance",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 4,
+      "word_count": 66,
+      "evidence": "Levenshtein distance becomes meaningful only after the application has decided which representation differences matter.",
+      "paragraphs": [
+        "Levenshtein distance becomes meaningful only after the application has decided which representation differences matter.",
+        "raw text ↓ explicit transformation policy ↓ explicit sequence representation ↓ Levenshtein distance",
+        "If preprocessing removes case, diacritics, script differences, or compatibility distinctions, the resulting distance is a distance over the transformed representation, not over the original raw strings.",
+        "A transformation defines the comparison space. Levenshtein distance measures edits inside that space."
+      ]
+    },
+    {
+      "heading": "From Text Normalization to Unicode Text Transformation",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 6,
+      "word_count": 71,
+      "evidence": "Normalization and transliteration belong to a broader family of Unicode text transformations.",
+      "paragraphs": [
+        "Normalization and transliteration belong to a broader family of Unicode text transformations.",
+        "Levenshtein / edit-distance comparison ↓ representation policy ↓ Unicode normalization ↓ case / identifier policy ↓ transliteration or other mapping ↓ Unicode text transformations ↓ application-specific transformed text",
+        "The important relationship is not that every transformation is itself a Levenshtein operation.",
+        "Instead:",
+        "transformation defines the sequence Levenshtein measures edits inside that sequence space",
+        "Continue with Unicode Text Transformations ."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 7,
+      "word_count": 162,
+      "evidence": "Text normalization and transliteration are explicit transformations, not generic text cleaning.",
+      "paragraphs": [
+        "Text normalization and transliteration are explicit transformations, not generic text cleaning.",
+        "Unicode canonical normalization addresses canonical representation equivalence. Compatibility normalization deliberately collapses a broader set of distinctions. Case folding, identifier folding, transliteration, diacritic handling, segmentation, security processing, and application-level Unicode character mappings solve different problems.",
+        "For identifier processing, compatibility normalization should not be dismissed as inherently unsafe. Unicode defines specialized identifier-oriented operations such as NFKC_Casefold , while security still requires separate identifier and confusable policies.",
+        "Common social-text “styled Unicode” mappings also require careful terminology. Characters such as Mathematical Alphanumeric Symbols are distinct Unicode characters whose normative purpose is mathematical or technical notation, even though applications may reuse them to create presentation-like plain text.",
+        "Each transformation changes or defines the representation on which a string-comparison algorithm operates.",
+        "Robust systems preserve source text, derive purpose-specific representations, document transformation order and version, and interpret Levenshtein distance relative to the resulting comparison space.",
+        "Preserve the original. Define the transformation. Define the sequence. Then measure the difference."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 10,
+      "word_count": 39,
+      "evidence": "Levenshtein Algorithm & Distance",
+      "paragraphs": [
+        "Levenshtein Algorithm & Distance",
+        "Unicode Text Transformations",
+        "Unicode & Grapheme-Safe Levenshtein",
+        "Styled Unicode Text",
+        "String Metrics",
+        "Weighted Levenshtein Distance",
+        "Entity Resolution and Record Linkage",
+        "Name, Address and Place Matching",
+        "Phonetic, Dialect, and Language Distance",
+        "Unicode Homoglyph and Confusable Attacks"
+      ]
+    },
+    {
+      "heading": "Selected Technical References",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 6,
+      "word_count": 45,
+      "evidence": "Unicode Standard Annex #15: Unicode Normalization Forms",
+      "paragraphs": [
+        "Unicode Standard Annex #15: Unicode Normalization Forms",
+        "Unicode Standard Annex #29: Unicode Text Segmentation",
+        "Unicode Standard Annex #31: Unicode Identifiers and Syntax",
+        "Unicode Technical Standard #39: Unicode Security Mechanisms",
+        "The Unicode Standard — Letterlike Symbols and Mathematical Alphanumeric Symbols",
+        "OGC OWS-9 Global Gazetteer Engineering Report"
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Normalization Changes the Edit-Distance Space",
+          "anchor_id": "ux-section-12",
+          "alias": "edit distance",
+          "excerpt": "Let N be a transformation and d an edit distance."
+        },
+        {
+          "section": "Styled Unicode Is Not Simply a Font Change",
+          "anchor_id": "ux-section-26",
+          "alias": "edit distance",
+          "excerpt": "edit-distance computation,"
+        },
+        {
+          "section": "Normalization and Approximate Matching Are Different Decisions",
+          "anchor_id": "ux-section-31",
+          "alias": "edit distance",
+          "excerpt": "defined transformation ↓ defined sequence representation ↓ defined edit-distance model ↓ defined threshold"
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "Multilingual Name and Place Matching",
+          "anchor_id": "ux-section-23",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "Within Levenshtein.net, the corresponding application context is covered in Name, Address and Place Matching and Entity Resolution and Record Linkage ."
+        },
+        {
+          "section": "Entity Matching Requires More Than String Normalization",
+          "anchor_id": "ux-section-32",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "In Entity Resolution and Record Linkage , string similarity is only one source of evidence."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-41",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "Entity Resolution and Record Linkage"
+        }
+      ]
+    },
+    {
+      "target": "/language-processing",
+      "evidence": [
+        {
+          "section": "Text Normalization Is an Overloaded Term",
+          "anchor_id": "ux-section-2",
+          "alias": "language processing",
+          "excerpt": "In data engineering and natural-language processing, text normalization can describe many operations intended to reduce variation."
+        }
+      ]
+    },
+    {
+      "target": "/name-address-and-place-matching",
+      "evidence": [
+        {
+          "section": "Multilingual Name and Place Matching",
+          "anchor_id": "ux-section-23",
+          "alias": "name address and place matching",
+          "excerpt": "Within Levenshtein.net, the corresponding application context is covered in Name, Address and Place Matching and Entity Resolution and Record Linkage ."
+        },
+        {
+          "section": "Entity Matching Requires More Than String Normalization",
+          "anchor_id": "ux-section-32",
+          "alias": "name address and place matching",
+          "excerpt": "The same principle applies to Name, Address and Place Matching ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-41",
+          "alias": "name address and place matching",
+          "excerpt": "Name, Address and Place Matching"
+        }
+      ]
+    },
+    {
+      "target": "/phonetic-dialect-and-language-distance",
+      "evidence": [
+        {
+          "section": "Transliteration Is Not Phonetic Transcription",
+          "anchor_id": "ux-section-19",
+          "alias": "phonetic dialect and language distance",
+          "excerpt": "See Phonetic, Dialect, and Language Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-41",
+          "alias": "phonetic dialect and language distance",
+          "excerpt": "Phonetic, Dialect, and Language Distance"
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-41",
+          "alias": "string metrics",
+          "excerpt": "String Metrics"
+        }
+      ]
+    },
+    {
+      "target": "/styled-unicode-text",
+      "evidence": [
+        {
+          "section": "Styled Unicode Is Not Simply a Font Change",
+          "anchor_id": "ux-section-26",
+          "alias": "styled unicode text",
+          "excerpt": "See Styled Unicode Text ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-41",
+          "alias": "styled unicode text",
+          "excerpt": "Styled Unicode Text"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Code Points, Grapheme Clusters and Glyphs",
+          "anchor_id": "ux-section-11",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "See Unicode & Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-41",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "Unicode & Grapheme-Safe Levenshtein"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-homoglyph-and-confusable-attacks",
+      "evidence": [
+        {
+          "section": "Visual Confusables Are a Separate Security Problem",
+          "anchor_id": "ux-section-34",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "See Unicode Homoglyph and Confusable Attacks ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-41",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "Unicode Homoglyph and Confusable Attacks"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-text-transformations",
+      "evidence": [
+        {
+          "section": "Unicode Text Transformation Is the Broader Category",
+          "anchor_id": "ux-section-28",
+          "alias": "unicode text transformations",
+          "excerpt": "For the broader taxonomy, see Unicode Text Transformations ."
+        },
+        {
+          "section": "From Text Normalization to Unicode Text Transformation",
+          "anchor_id": "ux-section-39",
+          "alias": "unicode text transformations",
+          "excerpt": "Normalization and transliteration belong to a broader family of Unicode text transformations."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-41",
+          "alias": "unicode text transformations",
+          "excerpt": "Unicode Text Transformations"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted Edit Distance Can Preserve Distinctions",
+          "anchor_id": "ux-section-33",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-41",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/text-normalization-and-transliteration#webpage",
+      "type": "WebPage",
+      "name": "Text Normalization and Transliteration: Unicode, Edit Distance, and Reliable Matching",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/text-normalization-and-transliteration#article"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/text-normalization-and-transliteration#text-normalization"
+        },
+        {
+          "@id": "https://www.levenshtein.net/text-normalization-and-transliteration#transliteration"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/text-normalization-and-transliteration#article",
+      "type": "Article",
+      "name": "Text Normalization and Transliteration: Unicode, Edit Distance, and Reliable Matching",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/text-normalization-and-transliteration#text-normalization"
+        },
+        {
+          "@id": "https://www.levenshtein.net/text-normalization-and-transliteration#transliteration"
+        },
+        {
+          "@id": "https://www.levenshtein.net/text-normalization-and-transliteration#unicode-normalization"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/text-normalization-and-transliteration#text-normalization",
+      "type": "DefinedTerm",
+      "name": "Text Normalization",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/text-normalization-and-transliteration#unicode-normalization",
+      "type": "DefinedTerm",
+      "name": "Unicode Normalization",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/text-normalization-and-transliteration#transliteration",
+      "type": "DefinedTerm",
+      "name": "Transliteration",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/text-normalization-and-transliteration#grapheme-clusters",
+      "type": "DefinedTerm",
+      "name": "Extended Grapheme Clusters",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/text-normalization-and-transliteration#entity-resolution",
+      "type": "DefinedTerm",
+      "name": "Entity Resolution",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/text-normalization-and-transliteration#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#webpage",
+      "about",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#text-normalization"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#webpage",
+      "about",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#transliteration"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#article"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#article",
+      "about",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#text-normalization"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#article",
+      "about",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#transliteration"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#article",
+      "about",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#unicode-normalization"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#article",
+      "mentions",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#grapheme-clusters"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#article",
+      "mentions",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#entity-resolution"
+    ],
+    [
+      "https://www.levenshtein.net/text-normalization-and-transliteration#article",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://portal.ogc.org/files/?artifact_id=52065",
+      "anchor": "OGC OWS-9 Global Gazetteer Engineering Report"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr15/",
+      "anchor": "Unicode Standard Annex #15: Unicode Normalization Forms"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr29/",
+      "anchor": "Unicode Standard Annex #29: Unicode Text Segmentation"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr31/",
+      "anchor": "Unicode Standard Annex #31: Unicode Identifiers and Syntax"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr39/",
+      "anchor": "Unicode Technical Standard #39: Unicode Security Mechanisms"
+    },
+    {
+      "url": "https://www.unicode.org/versions/latest/core-spec/chapter-22/",
+      "anchor": "The Unicode Standard — Letterlike Symbols and Mathematical Alphanumeric Symbols"
+    }
+  ]
+}

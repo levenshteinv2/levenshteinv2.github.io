@@ -1,0 +1,3045 @@
+{
+  "url": "/bounded-and-parameterized-edit-distance",
+  "title": "Bounded & Parameterized Edit Distance: Algorithms, k Bounds & Complexity",
+  "h1": [
+    "Bounded & Parameterized Edit Distance: Algorithms, k Bounds & Complexity"
+  ],
+  "group": "Theory",
+  "provisional_mission": "Mô hình ngưỡng k và độ phức tạp tham số",
+  "content_sha256": "ae07e63b3811091a1bf3a3445867b73581fe7f2f4e8fb87d87794196904f6231",
+  "canonical": "https://www.levenshtein.net/bounded-and-parameterized-edit-distance",
+  "primary_entity_candidate": "Bounded & Parameterized Edit Distance: Algorithms, k Bounds & Complexity",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Bounded and Parameterized Edit Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 13,
+      "word_count": 249,
+      "evidence": "Bounded edit distance asks whether two sequences can be transformed into one another using at most a specified number or cost of edits. Parameterized edit distance goes further: instead of analyzing complexity only as a function of input length, it studies how computation changes when the distance itself is treated as a parameter.",
+      "paragraphs": [
+        "Bounded edit distance asks whether two sequences can be transformed into one another using at most a specified number or cost of edits. Parameterized edit distance goes further: instead of analyzing complexity only as a function of input length, it studies how computation changes when the distance itself is treated as a parameter.",
+        "This viewpoint fundamentally changes the algorithmic landscape. Classical Levenshtein distance between two length- n strings can be computed by dynamic programming in O(n²) time. But if the relevant edit distance is only:",
+        "k ≪ n",
+        "there is no reason to explore the entire dynamic-programming matrix.",
+        "A threshold immediately restricts which matrix diagonals are reachable. Ukkonen exploited this geometry to obtain distance-sensitive dynamic programming. Farthest-reaching methods associated with Myers and Landau–Vishkin go further: instead of visiting every cell inside the feasible band, they represent only how far each error budget can reach on each diagonal and jump across long exact matches using longest-common-extension queries.",
+        "For unit-cost edit distance, this leads to one of the central parameterized bounds in string algorithms:",
+        "O(n + k²)",
+        "for strings of length at most n when the required distance is bounded by k . The same framework can operate output-sensitively with:",
+        "d = ED(x,y)",
+        "and stop when the true distance has been reached.",
+        "The resulting picture is striking:",
+        "general exact edit distance: near quadratic in the worst case small-distance exact edit distance: near linear when k is small",
+        "Understanding precisely why both statements are simultaneously true is the purpose of this article."
+      ]
+    },
+    {
+      "heading": "Notation",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 14,
+      "word_count": 81,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "x = x₁x₂...xₘ y = y₁y₂...yₙ",
+        "and define:",
+        "m = |x| n = |y|",
+        "When discussing asymptotic bounds, let:",
+        "N = max(m,n)",
+        "unless another convention is explicitly stated.",
+        "Let:",
+        "ED(x,y)",
+        "denote standard unit-cost Levenshtein distance:",
+        "insert = 1 delete = 1 substitute = 1 match = 0",
+        "We will distinguish two quantities throughout the article:",
+        "d = ED(x,y) actual unknown distance k = supplied threshold, parameter, or promised upper bound",
+        "Confusing d and k leads to many incorrect complexity claims."
+      ]
+    },
+    {
+      "heading": "What does \"bounded edit distance\" mean?",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Several closely related computational problems are called bounded edit distance.",
+      "paragraphs": [
+        "Several closely related computational problems are called bounded edit distance."
+      ]
+    },
+    {
+      "heading": "Threshold decision",
+      "level": 3,
+      "id": "ux-section-4",
+      "paragraph_count": 6,
+      "word_count": 16,
+      "evidence": "Given:",
+      "paragraphs": [
+        "Given:",
+        "x, y, k",
+        "decide:",
+        "ED(x,y) ≤ k ?",
+        "The output is simply:",
+        "YES or NO"
+      ]
+    },
+    {
+      "heading": "Capped distance",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "Return:",
+      "paragraphs": [
+        "Return:",
+        "BED_k(x,y) = ED(x,y) if ED(x,y) ≤ k and >k otherwise",
+        "An implementation often represents the second case as:",
+        "k + 1",
+        "or:",
+        "∞"
+      ]
+    },
+    {
+      "heading": "Promised bounded distance",
+      "level": 3,
+      "id": "ux-section-6",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "The algorithm may receive the promise:",
+      "paragraphs": [
+        "The algorithm may receive the promise:",
+        "ED(x,y) ≤ k",
+        "and must compute the exact distance.",
+        "Under this promise it is free to use algorithms whose running time depends on k ."
+      ]
+    },
+    {
+      "heading": "Output-sensitive exact distance",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "Instead of receiving k , the algorithm progresses through increasing error layers until the target becomes reachable.",
+      "paragraphs": [
+        "Instead of receiving k , the algorithm progresses through increasing error layers until the target becomes reachable.",
+        "Its running time is then expressed using:",
+        "d = ED(x,y)",
+        "rather than a supplied threshold."
+      ]
+    },
+    {
+      "heading": "Bounded is not approximate",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 12,
+      "word_count": 66,
+      "evidence": "The word bounded does not mean that the distance is approximated.",
+      "paragraphs": [
+        "The word bounded does not mean that the distance is approximated.",
+        "A bounded exact algorithm may determine:",
+        "ED(x,y) = 7",
+        "exactly, provided:",
+        "7 ≤ k",
+        "or report only:",
+        "ED(x,y) > k",
+        "when the threshold is exceeded.",
+        "This is different from an approximation algorithm returning:",
+        "ED(x,y) ≤ D ≤ α · ED(x,y)",
+        "for some approximation factor α .",
+        "See Approximate Edit Distance Algorithms for that separate problem."
+      ]
+    },
+    {
+      "heading": "Parameterized complexity",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 13,
+      "word_count": 87,
+      "evidence": "Classical complexity analysis might describe an algorithm only as:",
+      "paragraphs": [
+        "Classical complexity analysis might describe an algorithm only as:",
+        "T(N)",
+        "where N is input size.",
+        "Parameterized analysis instead asks for:",
+        "T(N,k)",
+        "where k captures some structural property of the instance.",
+        "For bounded edit distance, the natural parameter is:",
+        "k = maximum tolerated edit distance",
+        "or output-sensitively:",
+        "d = actual edit distance",
+        "An algorithm running in:",
+        "O(N + k²)",
+        "is fixed-parameter tractable with respect to k , and more strongly has essentially linear dependence on the full input length plus a separate polynomial dependence on the distance parameter."
+      ]
+    },
+    {
+      "heading": "Why edit distance is naturally parameterizable",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 4,
+      "word_count": 49,
+      "evidence": "Every insertion and deletion changes the difference between the number of consumed symbols in the two strings.",
+      "paragraphs": [
+        "Every insertion and deletion changes the difference between the number of consumed symbols in the two strings.",
+        "Every substitution preserves it.",
+        "Therefore an alignment with only a few edits must remain close to a small set of matrix diagonals.",
+        "This geometric fact is the foundation of bounded edit-distance algorithms."
+      ]
+    },
+    {
+      "heading": "The dynamic-programming matrix",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 12,
+      "word_count": 42,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "D[i][j] = ED( x[1..i], y[1..j] )",
+        "with recurrence:",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + [xᵢ ≠ yⱼ] )",
+        "and:",
+        "D[i][0] = i D[0][j] = j",
+        "The full Wagner–Fischer algorithm evaluates:",
+        "(m+1)(n+1)",
+        "states.",
+        "This gives:",
+        "O(mn)",
+        "time."
+      ]
+    },
+    {
+      "heading": "Diagonal coordinates",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "For a matrix cell:",
+      "paragraphs": [
+        "For a matrix cell:",
+        "(i,j)",
+        "define its diagonal offset:",
+        "δ = j-i",
+        "The main diagonal is:",
+        "δ = 0",
+        "and neighboring diagonals are:",
+        "δ = -1 δ = +1 δ = -2 δ = +2 ..."
+      ]
+    },
+    {
+      "heading": "How edits move between diagonals",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 1,
+      "word_count": 26,
+      "evidence": "Operation Consumed source Consumed target Effect on δ = j-i Match +1 +1 0 Substitution +1 +1 0 Insertion 0 +1 +1 Deletion +1 0 -1",
+      "paragraphs": [
+        "Operation Consumed source Consumed target Effect on δ = j-i Match +1 +1 0 Substitution +1 +1 0 Insertion 0 +1 +1 Deletion +1 0 -1"
+      ]
+    },
+    {
+      "heading": "The fundamental diagonal bound",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 8,
+      "word_count": 56,
+      "evidence": "Suppose an alignment uses at most:",
+      "paragraphs": [
+        "Suppose an alignment uses at most:",
+        "k",
+        "edit operations.",
+        "At any point in its edit path:",
+        "|j-i| ≤ number of insertions and deletions used so far ≤ k",
+        "Therefore every relevant matrix state satisfies:",
+        "|j-i| ≤ k",
+        "Any cell outside this corridor cannot occur on an edit path whose total cost is at most k ."
+      ]
+    },
+    {
+      "heading": "Geometric picture",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 10,
+      "word_count": 146,
+      "evidence": "full DP matrix j → 0 1 2 3 4 5 6 7 ┌───────────────── 0 │ · · · · · · · · 1 │ · · · · · · · · 2 │ · · · · · · · · 3 │ · · · · · · · · 4 │ · · · · · · · · 5 │ · · · · · · · · 6 │ · · · · · · · · i ↓",
+      "paragraphs": [
+        "full DP matrix j → 0 1 2 3 4 5 6 7 ┌───────────────── 0 │ · · · · · · · · 1 │ · · · · · · · · 2 │ · · · · · · · · 3 │ · · · · · · · · 4 │ · · · · · · · · 5 │ · · · · · · · · 6 │ · · · · · · · · i ↓",
+        "With:",
+        "k = 2",
+        "only a diagonal corridor can matter:",
+        "feasible band ╱ ╱ █ █ ╱ █ █ █ █ ╱ █ █ █ █ █ ╱ █ █ █ █ █ █ █ █ █",
+        "Instead of evaluating:",
+        "Θ(mn)",
+        "cells, bounded dynamic programming evaluates only approximately:",
+        "O( k · min(m,n) )",
+        "relevant cells after the necessary input processing."
+      ]
+    },
+    {
+      "heading": "Immediate length lower bound",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 6,
+      "word_count": 33,
+      "evidence": "Insertions and deletions are the only edits capable of changing sequence length.",
+      "paragraphs": [
+        "Insertions and deletions are the only edits capable of changing sequence length.",
+        "Therefore:",
+        "ED(x,y) ≥ ||x|-|y||",
+        "Hence:",
+        "if |m-n| > k then ED(x,y) > k",
+        "and the bounded problem can be rejected immediately."
+      ]
+    },
+    {
+      "heading": "Why the length bound is more than a trivial optimization",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "The final matrix cell:",
+      "paragraphs": [
+        "The final matrix cell:",
+        "(m,n)",
+        "lies on diagonal:",
+        "δ_final = n-m",
+        "Reaching this diagonal requires at least:",
+        "|n-m|",
+        "net insertion/deletion operations.",
+        "So if:",
+        "|n-m| > k",
+        "there is not even a feasible edit path of cost k , regardless of character values."
+      ]
+    },
+    {
+      "heading": "A stronger remaining-length lower bound",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 12,
+      "word_count": 67,
+      "evidence": "Consider an arbitrary state:",
+      "paragraphs": [
+        "Consider an arbitrary state:",
+        "(i,j)",
+        "The remaining suffix lengths are:",
+        "m-i and n-j",
+        "At least:",
+        "LB_remaining(i,j) = | (m-i) - (n-j) |",
+        "insertions or deletions are still necessary merely to reconcile the remaining lengths.",
+        "Therefore if the current accumulated edit cost is:",
+        "c",
+        "a necessary condition for completing within threshold k is:",
+        "c + LB_remaining(i,j) ≤ k",
+        "This produces tighter pruning than the global diagonal band alone."
+      ]
+    },
+    {
+      "heading": "Banded Wagner–Fischer dynamic programming",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 7,
+      "word_count": 28,
+      "evidence": "The simplest bounded algorithm computes the ordinary recurrence only where:",
+      "paragraphs": [
+        "The simplest bounded algorithm computes the ordinary recurrence only where:",
+        "|i-j| ≤ k",
+        "and treats all other cells as:",
+        "∞",
+        "or:",
+        "k+1",
+        "when only the threshold result matters."
+      ]
+    },
+    {
+      "heading": "Banded pseudocode",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 1,
+      "word_count": 114,
+      "evidence": "function bounded_edit_distance(x, y, k): m = length(x) n = length(y) if abs(m-n) > k: return >k INF = k + 1 previous = map / array initialized to INF previous[0] = 0 for j = 1 to min(n,k): previous[j] = j for i = 1 to m: current = all INF left = max(0, i-k) right = min(n, i+k) if left == 0: current[0] = i for j = max(1,left) to right: deletion = previous[j] + 1 insertion = current[j-1] + 1 substitution = previous[j-1] + [x[i-1] != y[j-1]] current[j] = min( deletion, insertion, substitution ) if current[j] > k: current[j] = INF previous = current if previous[n] ≤ k: return previous[n] return >k",
+      "paragraphs": [
+        "function bounded_edit_distance(x, y, k): m = length(x) n = length(y) if abs(m-n) > k: return >k INF = k + 1 previous = map / array initialized to INF previous[0] = 0 for j = 1 to min(n,k): previous[j] = j for i = 1 to m: current = all INF left = max(0, i-k) right = min(n, i+k) if left == 0: current[0] = i for j = max(1,left) to right: deletion = previous[j] + 1 insertion = current[j-1] + 1 substitution = previous[j-1] + [x[i-1] != y[j-1]] current[j] = min( deletion, insertion, substitution ) if current[j] > k: current[j] = INF previous = current if previous[n] ≤ k: return previous[n] return >k"
+      ]
+    },
+    {
+      "heading": "Complexity of banded DP",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 11,
+      "word_count": 53,
+      "evidence": "Each row contains at most:",
+      "paragraphs": [
+        "Each row contains at most:",
+        "2k + 1",
+        "active columns.",
+        "Thus the number of active DP cells is:",
+        "O( k · min(m,n) )",
+        "up to orientation and boundary terms.",
+        "Including explicit input access, it is often clearest to state:",
+        "O( m+n + k·min(m,n) )",
+        "which is normally abbreviated to:",
+        "O(Nk)",
+        "for comparable lengths."
+      ]
+    },
+    {
+      "heading": "When banded DP is already nearly optimal in practice",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 11,
+      "word_count": 49,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "k = 2 or k = 3",
+        "then:",
+        "O(Nk) = O(N)",
+        "as a function of input length.",
+        "A straightforward banded implementation may therefore outperform much more sophisticated algorithms because it has:",
+        "small constant factors;",
+        "simple memory access;",
+        "excellent cache locality;",
+        "no suffix-tree or LCE preprocessing;",
+        "simple vectorization opportunities."
+      ]
+    },
+    {
+      "heading": "Ukkonen's distance-sensitive algorithm",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 14,
+      "word_count": 79,
+      "evidence": "Esko Ukkonen's 1985 work developed algorithms whose running time depends directly on the edit distance rather than evaluating the entire quadratic matrix.",
+      "paragraphs": [
+        "Esko Ukkonen's 1985 work developed algorithms whose running time depends directly on the edit distance rather than evaluating the entire quadratic matrix.",
+        "If:",
+        "s = ED(x,y)",
+        "Ukkonen gave algorithms with time:",
+        "O( s · min(m,n) )",
+        "for the edit-distance computation in the formulations studied there.",
+        "For the threshold problem:",
+        "ED(x,y) ≤ t ?",
+        "the corresponding complexity becomes:",
+        "O( t · min(m,n) )",
+        "with distance-only space:",
+        "O( min(t,m,n) )",
+        "in the relevant implementation.",
+        "See Ukkonen Algorithm for the dedicated derivation."
+      ]
+    },
+    {
+      "heading": "Why Ukkonen's result is conceptually important",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 8,
+      "word_count": 47,
+      "evidence": "The classic recurrence suggests that the natural state space is:",
+      "paragraphs": [
+        "The classic recurrence suggests that the natural state space is:",
+        "all prefix pairs (i,j)",
+        "Ukkonen shows that the real computational structure can instead be:",
+        "only prefix pairs compatible with the observed edit budget",
+        "This changes the useful complexity measure from:",
+        "mn",
+        "to something involving:",
+        "d or k"
+      ]
+    },
+    {
+      "heading": "But O(Nk) still visits every cell in the band",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 10,
+      "word_count": 47,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "N = 1,000,000 k = 1,000",
+        "A banded algorithm can still examine on the order of:",
+        "10^9",
+        "matrix states.",
+        "Yet a low-error alignment often contains:",
+        "very long runs of exact matches",
+        "between consecutive edits.",
+        "Visiting those matches cell by cell wastes work.",
+        "This motivates farthest-reaching algorithms."
+      ]
+    },
+    {
+      "heading": "The farthest-reaching representation",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 11,
+      "word_count": 52,
+      "evidence": "Instead of recording the minimum cost for every cell, maintain:",
+      "paragraphs": [
+        "Instead of recording the minimum cost for every cell, maintain:",
+        "for each edit budget and each diagonal, the farthest prefix position reachable on that diagonal.",
+        "Let:",
+        "F[e][δ]",
+        "represent the greatest source-prefix length:",
+        "i",
+        "reachable on diagonal:",
+        "δ = j-i",
+        "using at most:",
+        "e",
+        "edits, after greedily extending all immediately available exact matches."
+      ]
+    },
+    {
+      "heading": "The wavefront",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 10,
+      "word_count": 58,
+      "evidence": "At edit budget:",
+      "paragraphs": [
+        "At edit budget:",
+        "e",
+        "only diagonals:",
+        "-e ... 0 ... +e",
+        "can be reachable.",
+        "Thus there are only:",
+        "2e+1",
+        "relevant states in layer e .",
+        "The frontier looks conceptually like:",
+        "e = 0: 0 e = 1: -1 0 +1 e = 2: -2 -1 0 +1 +2 e = 3: -3 -2 -1 0 +1 +2 +3"
+      ]
+    },
+    {
+      "heading": "Number of states through threshold k",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 10,
+      "word_count": 31,
+      "evidence": "The total number of diagonal/error states is:",
+      "paragraphs": [
+        "The total number of diagonal/error states is:",
+        "Σ_(e=0)^k (2e+1)",
+        "which equals:",
+        "(k+1)²",
+        "and therefore:",
+        "Θ(k²)",
+        "states.",
+        "This is the origin of the quadratic dependence on k in the classic:",
+        "O(N+k²)",
+        "bound."
+      ]
+    },
+    {
+      "heading": "One additional edit creates three predecessor possibilities",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "Using:",
+      "paragraphs": [
+        "Using:",
+        "δ = j-i",
+        "a state on diagonal δ at error level e can arise from:"
+      ]
+    },
+    {
+      "heading": "Substitution",
+      "level": 3,
+      "id": "ux-section-30",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "Remain on the same diagonal:",
+      "paragraphs": [
+        "Remain on the same diagonal:",
+        "δ → δ",
+        "while consuming one symbol from each sequence."
+      ]
+    },
+    {
+      "heading": "Insertion",
+      "level": 3,
+      "id": "ux-section-31",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "Consume one additional target symbol:",
+      "paragraphs": [
+        "Consume one additional target symbol:",
+        "δ-1 → δ"
+      ]
+    },
+    {
+      "heading": "Deletion",
+      "level": 3,
+      "id": "ux-section-32",
+      "paragraph_count": 4,
+      "word_count": 30,
+      "evidence": "Consume one additional source symbol:",
+      "paragraphs": [
+        "Consume one additional source symbol:",
+        "δ+1 → δ",
+        "Among these predecessors, choose the one that reaches farthest.",
+        "Then extend for free through the longest common prefix of the remaining suffixes."
+      ]
+    },
+    {
+      "heading": "Conceptual farthest-reaching recurrence",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 14,
+      "word_count": 98,
+      "evidence": "Under the convention:",
+      "paragraphs": [
+        "Under the convention:",
+        "δ = j-i",
+        "let:",
+        "r = max( F[e-1][δ] + 1, F[e-1][δ-1], F[e-1][δ+1] + 1 )",
+        "where the three terms correspond conceptually to:",
+        "substitution insertion deletion",
+        "and invalid states are ignored.",
+        "The corresponding target position is:",
+        "j = r + δ",
+        "Then extend:",
+        "ℓ = LCE( x[r..], y[j..] )",
+        "and set:",
+        "F[e][δ] = r + ℓ",
+        "Indexing conventions vary between publications and implementations, so production pseudocode must handle zero-based versus one-based positions carefully. The essential invariant is the farthest prefix reachable on each diagonal after exactly or at most e edits and a maximal exact-match extension."
+      ]
+    },
+    {
+      "heading": "Why greedy exact-match extension is safe",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 7,
+      "word_count": 56,
+      "evidence": "Suppose two suffixes begin with:",
+      "paragraphs": [
+        "Suppose two suffixes begin with:",
+        "abcdefgh...",
+        "in both strings.",
+        "Matching these equal symbols costs:",
+        "0",
+        "There is no benefit to deliberately edit one of them before consuming the free matching run when the state is measuring how far the current edit budget can reach.",
+        "Therefore the algorithm can jump directly over the entire longest common prefix."
+      ]
+    },
+    {
+      "heading": "Longest Common Extension",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 5,
+      "word_count": 42,
+      "evidence": "A longest-common-extension query asks:",
+      "paragraphs": [
+        "A longest-common-extension query asks:",
+        "LCE(i,j) = maximum ℓ such that x[i..i+ℓ-1] = y[j..j+ℓ-1]",
+        "Instead of checking:",
+        "x[i] == y[j] x[i+1] == y[j+1] x[i+2] == y[j+2] ...",
+        "one by one, a suitable preprocessing structure can answer the length of the matching run efficiently."
+      ]
+    },
+    {
+      "heading": "Classical LCE preprocessing",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 7,
+      "word_count": 61,
+      "evidence": "A common theoretical construction concatenates:",
+      "paragraphs": [
+        "A common theoretical construction concatenates:",
+        "x + separator + y",
+        "and builds structures such as:",
+        "a suffix tree plus lowest-common-ancestor queries;",
+        "a suffix array plus LCP and RMQ structures;",
+        "other equivalent longest-common-extension structures.",
+        "Under standard string-algorithm assumptions, preprocessing can be linear or near-linear, after which each LCE query is constant or near-constant time depending on the exact data structure and model."
+      ]
+    },
+    {
+      "heading": "Landau–Vishkin",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "The Landau–Vishkin algorithm uses this farthest-reaching diagonal structure for approximate string matching with up to k differences.",
+      "paragraphs": [
+        "The Landau–Vishkin algorithm uses this farthest-reaching diagonal structure for approximate string matching with up to k differences.",
+        "In the bounded pairwise edit-distance setting, the key complexity consequence is:",
+        "O( N + k² )",
+        "for standard unit-cost edit distance under the corresponding preprocessing assumptions."
+      ]
+    },
+    {
+      "heading": "Myers and the O(ND) perspective",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 8,
+      "word_count": 62,
+      "evidence": "Eugene Myers developed an influential related farthest-reaching framework whose complexity depends on:",
+      "paragraphs": [
+        "Eugene Myers developed an influential related farthest-reaching framework whose complexity depends on:",
+        "N",
+        "and:",
+        "D",
+        "the size of an edit script under the difference formulation considered in that work.",
+        "The conceptual family resemblance is important:",
+        "do not fill the matrix instead: track furthest-reaching states on diagonals by edit budget",
+        "These ideas became foundational for output-sensitive sequence comparison and later practical alignment algorithms."
+      ]
+    },
+    {
+      "heading": "Farthest-reaching bounded pseudocode",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 2,
+      "word_count": 130,
+      "evidence": "function bounded_farthest_reaching(x, y, k): preprocess LCE structure F = empty map F[0][0] = LCE(0,0) if target reached: return 0 for e = 1 to k: for δ = -e to +e: best = -infinity # substitution if F[e-1][δ] exists: best = max( best, F[e-1][δ] + 1 ) # insertion if F[e-1][δ-1] exists: best = max( best, F[e-1][δ-1] ) # deletion if F[e-1][δ+1] exists: best = max( best, F[e-1][δ+1] + 1 ) i = best j = i + δ if i,j are valid: extension = LCE(i,j) F[e][δ] = i + extension if final state is reachable on δ = n-m: return e return >k",
+      "paragraphs": [
+        "function bounded_farthest_reaching(x, y, k): preprocess LCE structure F = empty map F[0][0] = LCE(0,0) if target reached: return 0 for e = 1 to k: for δ = -e to +e: best = -infinity # substitution if F[e-1][δ] exists: best = max( best, F[e-1][δ] + 1 ) # insertion if F[e-1][δ-1] exists: best = max( best, F[e-1][δ-1] ) # deletion if F[e-1][δ+1] exists: best = max( best, F[e-1][δ+1] + 1 ) i = best j = i + δ if i,j are valid: extension = LCE(i,j) F[e][δ] = i + extension if final state is reachable on δ = n-m: return e return >k",
+        "This is conceptual pseudocode intended to expose the state geometry. Exact index arithmetic and boundary handling depend on whether positions denote consumed prefixes or character indices."
+      ]
+    },
+    {
+      "heading": "Why the complexity becomes O(N+k²)",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "There are two components.",
+      "paragraphs": [
+        "There are two components."
+      ]
+    },
+    {
+      "heading": "Preprocessing",
+      "level": 3,
+      "id": "ux-section-41",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "O(N)",
+      "paragraphs": [
+        "O(N)",
+        "or the corresponding near-linear cost for the selected LCE structure."
+      ]
+    },
+    {
+      "heading": "Wavefront states",
+      "level": 3,
+      "id": "ux-section-42",
+      "paragraph_count": 10,
+      "word_count": 31,
+      "evidence": "At level:",
+      "paragraphs": [
+        "At level:",
+        "e",
+        "there are:",
+        "O(e)",
+        "diagonals.",
+        "Across all levels up to k :",
+        "O( Σ e ) = O(k²)",
+        "states.",
+        "With constant-time predecessor and LCE work per state:",
+        "Time: O(N+k²)"
+      ]
+    },
+    {
+      "heading": "Why this improves O(Nk)",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 5,
+      "word_count": 15,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "banded DP: O(Nk) farthest-reaching: O(N+k²)",
+        "For:",
+        "k ≪ N",
+        "the difference can be enormous."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-44",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "N = 1,000,000 k = 100",
+      "paragraphs": [
+        "N = 1,000,000 k = 100",
+        "Banded DP performs work on the scale of:",
+        "Nk = 100,000,000",
+        "whereas:",
+        "N+k² = 1,010,000",
+        "up to implementation constants and preprocessing assumptions."
+      ]
+    },
+    {
+      "heading": "The parameterized phase transition",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 6,
+      "word_count": 18,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "k = N^α",
+        "for:",
+        "0 ≤ α ≤ 1",
+        "Then:",
+        "O(N+k²) = O( N + N^(2α) )"
+      ]
+    },
+    {
+      "heading": "When α ≤ 1/2",
+      "level": 3,
+      "id": "ux-section-46",
+      "paragraph_count": 5,
+      "word_count": 11,
+      "evidence": "k ≤ √N",
+      "paragraphs": [
+        "k ≤ √N",
+        "and:",
+        "k² ≤ N",
+        "so:",
+        "O(N+k²) = O(N)"
+      ]
+    },
+    {
+      "heading": "When α > 1/2",
+      "level": 3,
+      "id": "ux-section-47",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "the parameter term dominates:",
+      "paragraphs": [
+        "the parameter term dominates:",
+        "O( N^(2α) )"
+      ]
+    },
+    {
+      "heading": "When α = 1",
+      "level": 3,
+      "id": "ux-section-48",
+      "paragraph_count": 3,
+      "word_count": 7,
+      "evidence": "k = Θ(N)",
+      "paragraphs": [
+        "k = Θ(N)",
+        "and:",
+        "O(N+k²) = O(N²)"
+      ]
+    },
+    {
+      "heading": "Complexity table by distance regime",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 1,
+      "word_count": 33,
+      "evidence": "Distance bound O(N+k²) complexity k = O(1) O(N) k = O(log N) O(N) k = O(N^0.25) O(N) k = O(√N) O(N) k = N^0.6 O(N^1.2) k = N^0.75 O(N^1.5) k = Θ(N) O(N²)",
+      "paragraphs": [
+        "Distance bound O(N+k²) complexity k = O(1) O(N) k = O(log N) O(N) k = O(N^0.25) O(N) k = O(√N) O(N) k = N^0.6 O(N^1.2) k = N^0.75 O(N^1.5) k = Θ(N) O(N²)"
+      ]
+    },
+    {
+      "heading": "The √N boundary",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 4,
+      "word_count": 45,
+      "evidence": "The most memorable consequence is:",
+      "paragraphs": [
+        "The most memorable consequence is:",
+        "if ED(x,y) ≤ O(√N) then exact bounded edit distance can be computed in O(N)",
+        "under the classical farthest-reaching/LCE framework and its assumptions.",
+        "Thus extremely long strings do not imply expensive exact comparison when their true edit distance is sufficiently small."
+      ]
+    },
+    {
+      "heading": "Output-sensitive computation with unknown d",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 14,
+      "word_count": 64,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "d = ED(x,y)",
+        "is unknown.",
+        "A farthest-reaching algorithm can construct:",
+        "error layer 0 error layer 1 error layer 2 ...",
+        "until the final state becomes reachable.",
+        "The first successful layer is exactly:",
+        "d",
+        "because all smaller edit budgets have already been exhausted.",
+        "The number of explored wavefront states is:",
+        "Σ_(e=0)^d O(e) = O(d²)",
+        "so after preprocessing:",
+        "O(N+d²)",
+        "is obtained in the corresponding model."
+      ]
+    },
+    {
+      "heading": "Threshold k and actual distance d",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 18,
+      "word_count": 48,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "d ≤ k",
+        "an output-sensitive implementation may stop at:",
+        "d",
+        "rather than continue to:",
+        "k",
+        "so its actual work can be:",
+        "O(N+d²)",
+        "even when the configured maximum threshold is much larger.",
+        "If:",
+        "d > k",
+        "it explores all layers through:",
+        "k",
+        "and reports:",
+        ">k",
+        "after:",
+        "O(N+k²)",
+        "work."
+      ]
+    },
+    {
+      "heading": "Why k² rather than k appears",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 14,
+      "word_count": 47,
+      "evidence": "It may initially seem that:",
+      "paragraphs": [
+        "It may initially seem that:",
+        "k edits",
+        "should require only:",
+        "O(k)",
+        "states.",
+        "But at each error level:",
+        "e",
+        "there are approximately:",
+        "2e+1",
+        "possible diagonals.",
+        "Therefore:",
+        "1 + 3 + 5 + ... + (2k+1) = (k+1)²",
+        "The quadratic term counts combinations of:",
+        "edit budget × diagonal displacement"
+      ]
+    },
+    {
+      "heading": "Incremental comparison",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 10,
+      "word_count": 73,
+      "evidence": "Landau, Myers, and Schmidt later studied incremental string comparison.",
+      "paragraphs": [
+        "Landau, Myers, and Schmidt later studied incremental string comparison.",
+        "Given an encoded comparison for:",
+        "A versus B",
+        "they investigated how efficiently one can obtain the corresponding solution after extending one string by a symbol.",
+        "Their results expose additional structure in adjacent bounded-comparison instances and yield:",
+        "O(k)",
+        "incremental update work in the setting studied there, compared with:",
+        "O(k²)",
+        "for constructing a bounded comparison from scratch.",
+        "This line of work foreshadows modern dynamic edit-distance algorithms."
+      ]
+    },
+    {
+      "heading": "Bounded edit distance and fine-grained complexity",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "The general exact edit-distance problem has strong conditional evidence against a polynomial-factor improvement over quadratic worst-case time.",
+      "paragraphs": [
+        "The general exact edit-distance problem has strong conditional evidence against a polynomial-factor improvement over quadratic worst-case time.",
+        "But:",
+        "O(N+k²)",
+        "does not contradict this hardness.",
+        "Worst-case inputs can have:",
+        "k = Θ(N)",
+        "and then:",
+        "N+k² = Θ(N²)"
+      ]
+    },
+    {
+      "heading": "Orthogonal Vectors Hypothesis",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 6,
+      "word_count": 49,
+      "evidence": "A central hypothesis in fine-grained complexity is the Orthogonal Vectors Hypothesis, or OVH.",
+      "paragraphs": [
+        "A central hypothesis in fine-grained complexity is the Orthogonal Vectors Hypothesis, or OVH.",
+        "The Orthogonal Vectors problem asks whether two collections of Boolean vectors contain:",
+        "a and b",
+        "with:",
+        "a · b = 0",
+        "Fine-grained reductions relate substantial improvements for many quadratic-time problems to faster algorithms for Orthogonal Vectors."
+      ]
+    },
+    {
+      "heading": "Conditional optimality of O(N+k²)",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 9,
+      "word_count": 56,
+      "evidence": "Modern bounded-edit-distance literature describes:",
+      "paragraphs": [
+        "Modern bounded-edit-distance literature describes:",
+        "O(N+k²)",
+        "as optimal, up to subpolynomial factors and conditioned on OVH, as a joint function of:",
+        "N and k",
+        "for the standard unit-cost bounded problem.",
+        "This is stronger information than merely observing that:",
+        "k=N",
+        "recovers quadratic time.",
+        "It indicates that the parameter dependence itself closely reflects the fine-grained difficulty of the problem."
+      ]
+    },
+    {
+      "heading": "SETH versus OVH",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 9,
+      "word_count": 79,
+      "evidence": "Both hypotheses appear in edit-distance literature, but they should not be treated as interchangeable labels.",
+      "paragraphs": [
+        "Both hypotheses appear in edit-distance literature, but they should not be treated as interchangeable labels.",
+        "The Strong Exponential Time Hypothesis is frequently used to express the general exact edit-distance barrier:",
+        "no O(N^(2-ε)) exact algorithm for fixed ε>0 unless SETH fails",
+        "OVH is frequently used in more refined lower-bound statements involving bounded and parameterized regimes.",
+        "Both are conditional assumptions.",
+        "Neither proves an unconditional:",
+        "Ω(N²)",
+        "lower bound for exact edit distance.",
+        "See Edit Distance Complexity for the full fine-grained complexity discussion."
+      ]
+    },
+    {
+      "heading": "The bounded algorithm does not \"beat\" quadratic hardness",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 7,
+      "word_count": 40,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "k = N^0.25",
+        "Then:",
+        "O(N+k²) = O(N)",
+        "But the algorithm has been given strong structural information:",
+        "the answer lies in a very small edit-distance ball",
+        "The hard general instances excluded by SETH/OVH-style reductions are not restricted to this regime."
+      ]
+    },
+    {
+      "heading": "Edit-distance balls",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 8,
+      "word_count": 46,
+      "evidence": "For a string:",
+      "paragraphs": [
+        "For a string:",
+        "x",
+        "the edit-distance ball of radius k is:",
+        "B_k(x) = { y : ED(x,y) ≤ k }",
+        "Bounded edit-distance search asks whether:",
+        "y ∈ B_k(x)",
+        "or searches a corpus for members of this ball.",
+        "The geometry is discrete and combinatorial rather than Euclidean."
+      ]
+    },
+    {
+      "heading": "The size of an edit ball can still be enormous",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 8,
+      "word_count": 50,
+      "evidence": "Even when:",
+      "paragraphs": [
+        "Even when:",
+        "k",
+        "is small, explicitly enumerating every string within distance k can be expensive because edits may occur at many positions and insertions can introduce many possible symbols.",
+        "Therefore:",
+        "fast pairwise bounded distance",
+        "does not imply:",
+        "enumerating the entire edit-distance neighborhood is cheap",
+        "This distinction matters in dictionary search."
+      ]
+    },
+    {
+      "heading": "Levenshtein automata and bounded distance",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 10,
+      "word_count": 53,
+      "evidence": "A Levenshtein automaton provides another representation of the bounded problem.",
+      "paragraphs": [
+        "A Levenshtein automaton provides another representation of the bounded problem.",
+        "Given:",
+        "pattern p threshold k",
+        "the automaton recognizes:",
+        "{ s : ED(p,s) ≤ k }",
+        "This shifts the computational structure from:",
+        "pairwise DP matrix",
+        "to:",
+        "finite-state recognition",
+        "and is particularly useful when the pattern is reused against many dictionary paths or indexed terms."
+      ]
+    },
+    {
+      "heading": "Pairwise bounded distance versus indexed bounded search",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "These are different problems.",
+      "paragraphs": [
+        "These are different problems."
+      ]
+    },
+    {
+      "heading": "Pairwise verification",
+      "level": 3,
+      "id": "ux-section-64",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "given: x,y,k determine: ED(x,y) ≤ k",
+      "paragraphs": [
+        "given: x,y,k determine: ED(x,y) ≤ k"
+      ]
+    },
+    {
+      "heading": "Indexed search",
+      "level": 3,
+      "id": "ux-section-65",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "given: query x database S threshold k return: all y ∈ S such that ED(x,y) ≤ k",
+      "paragraphs": [
+        "given: query x database S threshold k return: all y ∈ S such that ED(x,y) ≤ k",
+        "Even an optimal pairwise verifier is insufficient if millions of candidates must still be examined.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Necessary-condition filters",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Before bounded dynamic programming, inexpensive lower bounds can reject impossible candidates.",
+      "paragraphs": [
+        "Before bounded dynamic programming, inexpensive lower bounds can reject impossible candidates."
+      ]
+    },
+    {
+      "heading": "Length difference",
+      "level": 3,
+      "id": "ux-section-67",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "LB_length = |m-n|",
+      "paragraphs": [
+        "LB_length = |m-n|"
+      ]
+    },
+    {
+      "heading": "Character-count imbalance",
+      "level": 3,
+      "id": "ux-section-68",
+      "paragraph_count": 1,
+      "word_count": 26,
+      "evidence": "For some representations, symbol-frequency differences can provide additional lower bounds, although they must be derived carefully because substitution can repair two count discrepancies in one edit.",
+      "paragraphs": [
+        "For some representations, symbol-frequency differences can provide additional lower bounds, although they must be derived carefully because substitution can repair two count discrepancies in one edit."
+      ]
+    },
+    {
+      "heading": "q-gram bounds",
+      "level": 3,
+      "id": "ux-section-69",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "A small edit distance implies a minimum amount of q-gram overlap under standard filtering theorems.",
+      "paragraphs": [
+        "A small edit distance implies a minimum amount of q-gram overlap under standard filtering theorems.",
+        "Therefore:",
+        "insufficient q-gram overlap ⇒ ED > k",
+        "without exact DP."
+      ]
+    },
+    {
+      "heading": "Filter-and-verify architecture",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 2,
+      "word_count": 41,
+      "evidence": "QUERY ↓ NORMALIZATION ↓ CHEAP LENGTH FILTER ↓ Q-GRAM / INDEX FILTER ↓ CANDIDATE SET ↓ BOUNDED EDIT-DISTANCE VERIFIER ↓ MATCHES WITH ED ≤ k",
+      "paragraphs": [
+        "QUERY ↓ NORMALIZATION ↓ CHEAP LENGTH FILTER ↓ Q-GRAM / INDEX FILTER ↓ CANDIDATE SET ↓ BOUNDED EDIT-DISTANCE VERIFIER ↓ MATCHES WITH ED ≤ k",
+        "At scale, reducing the candidate set is often more important than optimizing one pairwise distance computation."
+      ]
+    },
+    {
+      "heading": "Bounded weighted edit distance",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 9,
+      "word_count": 38,
+      "evidence": "The weighted problem replaces:",
+      "paragraphs": [
+        "The weighted problem replaces:",
+        "every edit costs 1",
+        "with a weight function:",
+        "w : Σ̄ × Σ̄ → R≥0",
+        "where:",
+        "Σ̄ = Σ ∪ {ε}",
+        "and the goal is:",
+        "ED_w(x,y) ≤ k ?",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Why weighted bounded distance is harder",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 8,
+      "word_count": 58,
+      "evidence": "Unit-cost algorithms rely on:",
+      "paragraphs": [
+        "Unit-cost algorithms rely on:",
+        "one edit = one unit of budget",
+        "This creates integer error layers:",
+        "0 edits 1 edit 2 edits ... k edits",
+        "For arbitrary weights:",
+        "0.2 0.7 1.6 3.1 ...",
+        "the number of operations and the accumulated cost are no longer equivalent.",
+        "The simple farthest-reaching monotonic structure used by classical unit-cost methods can therefore break."
+      ]
+    },
+    {
+      "heading": "Simple weighted banding",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 13,
+      "word_count": 49,
+      "evidence": "Suppose every nonmatching edit has cost at least:",
+      "paragraphs": [
+        "Suppose every nonmatching edit has cost at least:",
+        "1",
+        "after normalization.",
+        "Then:",
+        "total weighted cost ≤ k",
+        "implies:",
+        "number of nonzero-cost edits ≤ k",
+        "so the ordinary:",
+        "|i-j| ≤ k",
+        "geometric corridor remains a safe outer bound.",
+        "A weighted dynamic program inside that band gives the straightforward:",
+        "O(Nk)",
+        "approach."
+      ]
+    },
+    {
+      "heading": "Why O(N+k²) did not transfer immediately to weighted distance",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "The classical farthest-reaching state asks:",
+      "paragraphs": [
+        "The classical farthest-reaching state asks:",
+        "How far can e edits reach?",
+        "Under arbitrary weights, two scripts with the same number of edits may have entirely different costs.",
+        "Likewise, a script with many cheap edits can cost less than one containing only a few expensive edits.",
+        "The unit-cost dominance relationships required for local wavefront reasoning no longer automatically hold."
+      ]
+    },
+    {
+      "heading": "Das et al. 2023",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 9,
+      "word_count": 66,
+      "evidence": "A major breakthrough in bounded weighted edit distance was the first exact algorithm with:",
+      "paragraphs": [
+        "A major breakthrough in bounded weighted edit distance was the first exact algorithm with:",
+        "O( N + poly(k) )",
+        "dependence for general normalized weighted string edit distance.",
+        "For the string problem, the result gave:",
+        "O( N + k⁵ )",
+        "time in the formulation studied there.",
+        "This established for the first time that weighted bounded edit distance could escape the straightforward:",
+        "O(Nk)",
+        "dependence through genuinely parameterized techniques."
+      ]
+    },
+    {
+      "heading": "Cassis–Kociumaka–Wellnitz 2023",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 8,
+      "word_count": 59,
+      "evidence": "Subsequent work substantially improved arbitrary weighted bounded edit distance to:",
+      "paragraphs": [
+        "Subsequent work substantially improved arbitrary weighted bounded edit distance to:",
+        "Õ( N + √(Nk³) )",
+        "where:",
+        "Õ",
+        "suppresses polylogarithmic factors.",
+        "The authors also established a matching conditional lower bound in a substantial parameter regime under the All-Pairs Shortest Paths hypothesis.",
+        "This produced an important theoretical separation between:",
+        "unweighted bounded ED: O(N+k²) and arbitrary weighted bounded ED: different fine-grained behavior"
+      ]
+    },
+    {
+      "heading": "Small integer weights: STOC 2025",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 13,
+      "word_count": 74,
+      "evidence": "A further development by Gorbachev and Kociumaka showed that much of the unit-cost efficiency can be recovered when edit weights are small integers.",
+      "paragraphs": [
+        "A further development by Gorbachev and Kociumaka showed that much of the unit-cost efficiency can be recovered when edit weights are small integers.",
+        "For integer weights bounded by:",
+        "W",
+        "their static algorithm achieves:",
+        "Õ( N + Wk² )",
+        "and they also give an implementation with:",
+        "Õ( N + k^2.5 )",
+        "time under the alternatives described in the work.",
+        "For a fixed small:",
+        "W",
+        "the first bound becomes, up to polylogarithmic factors:",
+        "near N+k²",
+        "again."
+      ]
+    },
+    {
+      "heading": "Why the 2025 result is conceptually important",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 5,
+      "word_count": 54,
+      "evidence": "It reveals that the weighted problem is not governed by a simple binary division:",
+      "paragraphs": [
+        "It reveals that the weighted problem is not governed by a simple binary division:",
+        "unit costs: easy parameterization weighted costs: hard parameterization",
+        "Instead there is a richer spectrum:",
+        "unit weights ↓ small discrete integer weights ↓ large / arbitrary weighted models",
+        "and the computational structure depends strongly on which regime the weight function occupies."
+      ]
+    },
+    {
+      "heading": "Weighted bounded complexity table",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 1,
+      "word_count": 51,
+      "evidence": "Model Representative bounded complexity Important qualification Unit-cost edit distance O(N+k²) Classical farthest-reaching regime Weighted banded DP O(Nk) Simple baseline after cost normalization General weighted, 2023 O(N+k⁵) First N+poly(k) result Arbitrary weighted, FOCS 2023 Õ(N+√(Nk³)) With matching conditional lower-bound regime Small integer weights, STOC 2025 Õ(N+Wk²) Weights bounded by integer parameter W",
+      "paragraphs": [
+        "Model Representative bounded complexity Important qualification Unit-cost edit distance O(N+k²) Classical farthest-reaching regime Weighted banded DP O(Nk) Simple baseline after cost normalization General weighted, 2023 O(N+k⁵) First N+poly(k) result Arbitrary weighted, FOCS 2023 Õ(N+√(Nk³)) With matching conditional lower-bound regime Small integer weights, STOC 2025 Õ(N+Wk²) Weights bounded by integer parameter W"
+      ]
+    },
+    {
+      "heading": "Parameter normalization matters",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 10,
+      "word_count": 53,
+      "evidence": "Suppose all weighted costs are multiplied by:",
+      "paragraphs": [
+        "Suppose all weighted costs are multiplied by:",
+        "1000",
+        "The optimal alignments remain unchanged, but:",
+        "k",
+        "must also be multiplied by:",
+        "1000",
+        "A parameterized bound expressed in terms of:",
+        "k",
+        "therefore has no invariant meaning unless the cost scale has been normalized.",
+        "This is why weighted-complexity papers state explicit assumptions on the weight function."
+      ]
+    },
+    {
+      "heading": "Zero-cost nonidentity edits",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 9,
+      "word_count": 57,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "w(a,b) = 0 for a != b",
+        "Then a budget:",
+        "k = 0",
+        "may permit arbitrarily many such substitutions.",
+        "The reasoning:",
+        "cost ≤ k ⇒ at most k edits",
+        "fails.",
+        "Thus any bounded algorithm relying on edit count must state a positive lower bound on the cost of nonidentity operations or use a fundamentally different analysis."
+      ]
+    },
+    {
+      "heading": "Damerau–Levenshtein and bounded distance",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 7,
+      "word_count": 59,
+      "evidence": "Adding adjacent transposition changes the wavefront geometry and algorithmic state because one primitive edit can now consume:",
+      "paragraphs": [
+        "Adding adjacent transposition changes the wavefront geometry and algorithmic state because one primitive edit can now consume:",
+        "2 source symbols and 2 target symbols",
+        "in a transposition pattern.",
+        "A bounded algorithm derived for:",
+        "insert delete substitute",
+        "cannot automatically be assumed valid for Damerau–Levenshtein Distance .",
+        "The operation model must be incorporated into the state transition and any filtering theorem."
+      ]
+    },
+    {
+      "heading": "Bounded edit distance versus gap edit distance",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 8,
+      "word_count": 67,
+      "evidence": "Another important distinction is between:",
+      "paragraphs": [
+        "Another important distinction is between:",
+        "exact threshold decision ED(x,y) ≤ k ?",
+        "and a gap problem such as:",
+        "YES if ED(x,y) ≤ k NO if ED(x,y) > αk",
+        "with no requirement in the intermediate region:",
+        "k < ED(x,y) ≤ αk",
+        "The gap formulation is weaker and is central to many sublinear and approximation algorithms.",
+        "Results for gap edit distance must not be described as exact bounded-edit-distance algorithms."
+      ]
+    },
+    {
+      "heading": "Search threshold versus distance threshold",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 12,
+      "word_count": 57,
+      "evidence": "In fuzzy search, a threshold may be defined as:",
+      "paragraphs": [
+        "In fuzzy search, a threshold may be defined as:",
+        "ED(query,candidate) ≤ k",
+        "But some systems instead use:",
+        "normalized distance ≤ τ",
+        "or:",
+        "similarity ≥ s",
+        "These induce candidate-specific raw edit thresholds when string lengths differ.",
+        "For example:",
+        "ED(x,y) / max(|x|,|y|) ≤ 0.2",
+        "implies:",
+        "ED(x,y) ≤ 0.2 · max(|x|,|y|)",
+        "so the effective integer k grows with sequence length."
+      ]
+    },
+    {
+      "heading": "A normalized threshold can destroy the small-k regime",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 12,
+      "word_count": 49,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "τ = 0.2",
+        "and:",
+        "N = 1,000,000",
+        "Then the raw distance threshold may be around:",
+        "k = 200,000",
+        "which is far larger than:",
+        "√N = 1,000",
+        "The attractive:",
+        "O(N+k²)",
+        "low-distance regime can therefore disappear.",
+        "A percentage threshold and a small absolute edit threshold have very different algorithmic consequences."
+      ]
+    },
+    {
+      "heading": "Absolute versus relative error models",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "Threshold model Example Effect as strings grow Absolute ED ≤ 3 k remains constant Relative ED/N ≤ 0.05 k = Θ(N)",
+      "paragraphs": [
+        "Threshold model Example Effect as strings grow Absolute ED ≤ 3 k remains constant Relative ED/N ≤ 0.05 k = Θ(N)",
+        "Under a constant relative-error threshold:",
+        "k = Θ(N)",
+        "so:",
+        "N+k² = Θ(N²)",
+        "in the worst case."
+      ]
+    },
+    {
+      "heading": "Why this matters for application design",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "An application designer may think:",
+      "paragraphs": [
+        "An application designer may think:",
+        "5% error sounds small",
+        "but algorithmically, 5% of an arbitrarily long sequence is:",
+        "Θ(N)",
+        "edits.",
+        "\"Small percentage\" and \"small parameter\" are not equivalent concepts."
+      ]
+    },
+    {
+      "heading": "Unicode and bounded edit distance",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 12,
+      "word_count": 44,
+      "evidence": "The parameter:",
+      "paragraphs": [
+        "The parameter:",
+        "k",
+        "counts edits on whatever sequence representation the algorithm receives.",
+        "If the input is:",
+        "UTF-8 bytes;",
+        "UTF-16 code units;",
+        "Unicode code points;",
+        "grapheme clusters;",
+        "the same visible text can yield different:",
+        "m n d k",
+        "values.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Canonical-equivalence failure can inflate k",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 8,
+      "word_count": 42,
+      "evidence": "The visible character:",
+      "paragraphs": [
+        "The visible character:",
+        "é",
+        "may appear as:",
+        "U+00E9",
+        "or:",
+        "U+0065 U+0301",
+        "Without normalization, a code-point-level comparison can consume edit budget on differences that are canonically meaningless to the application.",
+        "This can move instances out of the small-distance regime for purely representational reasons."
+      ]
+    },
+    {
+      "heading": "Preprocessing may reduce both n and k",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 13,
+      "word_count": 37,
+      "evidence": "Normalization such as:",
+      "paragraphs": [
+        "Normalization such as:",
+        "Unicode normalization;",
+        "case folding;",
+        "token canonicalization;",
+        "domain-specific cleanup",
+        "can reduce:",
+        "N",
+        "and:",
+        "d",
+        "simultaneously.",
+        "Because a parameterized algorithm depends on both:",
+        "N and d²",
+        "reducing the true distance can have a disproportionate algorithmic benefit."
+      ]
+    },
+    {
+      "heading": "But preprocessing changes the metric",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 5,
+      "word_count": 42,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "\"Résumé\" → \"resume\"",
+        "before distance calculation, accent and case differences cease to exist as edits.",
+        "The faster resulting computation measures distance in the normalized representation, not in the original strings.",
+        "Performance optimization must therefore remain subordinate to the intended mathematical model."
+      ]
+    },
+    {
+      "heading": "Short strings versus large k",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "k ≥ max(m,n)",
+        "the threshold no longer provides useful pruning under standard unit costs because:",
+        "ED(x,y) ≤ max(m,n)",
+        "for all pairs.",
+        "In this regime:",
+        "bounded problem ≈ unrestricted exact problem",
+        "and a specialized small- k engine may provide no advantage."
+      ]
+    },
+    {
+      "heading": "Clamping k",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "A robust implementation can therefore use:",
+      "paragraphs": [
+        "A robust implementation can therefore use:",
+        "k_eff = min( k, max(m,n) )",
+        "for unit-cost Levenshtein distance.",
+        "If:",
+        "k ≥ max(m,n)",
+        "a general exact algorithm can be selected directly."
+      ]
+    },
+    {
+      "heading": "Algorithm portfolio",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 2,
+      "word_count": 62,
+      "evidence": "Production systems often benefit from choosing among several algorithms rather than using one universal implementation.",
+      "paragraphs": [
+        "Production systems often benefit from choosing among several algorithms rather than using one universal implementation.",
+        "if abs(m-n) > k: reject else if strings are tiny: scalar DP else if k is tiny: banded DP else if N is large and k ≪ N: farthest-reaching / threshold-sensitive method else if one dimension fits in a machine word: bit-vector method else: general optimized DP"
+      ]
+    },
+    {
+      "heading": "Why asymptotic O(N+k²) may lose to O(Nk)",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 9,
+      "word_count": 45,
+      "evidence": "The former may require:",
+      "paragraphs": [
+        "The former may require:",
+        "LCE preprocessing;",
+        "suffix structures;",
+        "more complex state management;",
+        "less predictable memory access.",
+        "For:",
+        "k = 2",
+        "a tight banded DP may be much simpler and faster.",
+        "Asymptotic complexity predicts scaling, not necessarily the crossover point on a specific CPU and dataset."
+      ]
+    },
+    {
+      "heading": "Memory complexity of banded DP",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "A straightforward implementation can store only the active band of:",
+      "paragraphs": [
+        "A straightforward implementation can store only the active band of:",
+        "previous row + current row",
+        "requiring:",
+        "O(k)",
+        "working space when only the bounded distance value is needed.",
+        "Care is required because active column indices shift as i changes."
+      ]
+    },
+    {
+      "heading": "Traceback complicates memory reduction",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 11,
+      "word_count": 45,
+      "evidence": "If the actual edit script is required, storing only two rows loses predecessor information.",
+      "paragraphs": [
+        "If the actual edit script is required, storing only two rows loses predecessor information.",
+        "Options include:",
+        "store predecessor choices across the band;",
+        "use divide-and-conquer reconstruction;",
+        "rerun subproblems during traceback;",
+        "store wavefront history in farthest-reaching algorithms.",
+        "Therefore:",
+        "distance-only complexity",
+        "and:",
+        "alignment-reconstruction complexity",
+        "should be reported separately."
+      ]
+    },
+    {
+      "heading": "Wavefront storage",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 8,
+      "word_count": 39,
+      "evidence": "If only the threshold decision is required, error layer:",
+      "paragraphs": [
+        "If only the threshold decision is required, error layer:",
+        "e",
+        "depends primarily on:",
+        "e-1",
+        "so the active farthest-reaching frontier itself requires only:",
+        "O(k)",
+        "state values.",
+        "Recovering an edit path may require retaining additional wavefront layers or using recomputation strategies."
+      ]
+    },
+    {
+      "heading": "Safe early rejection in banded computation",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "Cells whose cost exceeds:",
+      "paragraphs": [
+        "Cells whose cost exceeds:",
+        "k",
+        "need not retain their exact value.",
+        "They can be saturated to:",
+        "k+1",
+        "because the bounded problem distinguishes only:",
+        "≤k from >k",
+        "This prevents numerical growth and can simplify compact integer representations."
+      ]
+    },
+    {
+      "heading": "Saturating arithmetic",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "function add1_bounded(v,k): if v >= k: return k+1 return v+1",
+      "paragraphs": [
+        "function add1_bounded(v,k): if v >= k: return k+1 return v+1",
+        "Every DP state can remain inside:",
+        "0..k+1",
+        "instead of storing distances much larger than the requested threshold."
+      ]
+    },
+    {
+      "heading": "Small integer representation",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "k ≤ 255",
+        "a carefully engineered implementation may be able to store saturated DP values using compact integer types.",
+        "This can improve:",
+        "cache density;",
+        "SIMD throughput;",
+        "memory bandwidth.",
+        "But overflow and sentinel representation must be handled correctly."
+      ]
+    },
+    {
+      "heading": "Bit-parallel bounded distance",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "The Myers Bit-Vector Algorithm represents many dynamic-programming relationships inside machine words.",
+      "paragraphs": [
+        "The Myers Bit-Vector Algorithm represents many dynamic-programming relationships inside machine words.",
+        "Its principal parameter is:",
+        "pattern length / machine word size",
+        "rather than solely:",
+        "k",
+        "but thresholding can be layered on top of the computed scores.",
+        "Therefore bounded algorithms may exploit two independent forms of structure:",
+        "small edit threshold and machine-word parallelism"
+      ]
+    },
+    {
+      "heading": "Which parameterization wins depends on the instance",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 41,
+      "evidence": "Instance structure Natural algorithmic advantage Very small k Banded or farthest-reaching methods Short pattern Bit-vector methods Long exact runs LCE / wavefront jumps Many dictionary queries Automata / indexes / filters Arbitrary high distance General optimized DP or Four Russians-style methods",
+      "paragraphs": [
+        "Instance structure Natural algorithmic advantage Very small k Banded or farthest-reaching methods Short pattern Bit-vector methods Long exact runs LCE / wavefront jumps Many dictionary queries Automata / indexes / filters Arbitrary high distance General optimized DP or Four Russians-style methods"
+      ]
+    },
+    {
+      "heading": "Dynamic bounded edit distance",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 9,
+      "word_count": 61,
+      "evidence": "The static problem receives:",
+      "paragraphs": [
+        "The static problem receives:",
+        "x and y",
+        "once.",
+        "The dynamic problem maintains the answer while the strings change through updates.",
+        "The resource being optimized becomes:",
+        "time per update",
+        "after preprocessing.",
+        "Recent results achieve near-linear-in- k update behavior for important bounded regimes and extend the theory to weighted settings.",
+        "Those models are treated separately in Dynamic, Online and Streaming Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Why static and dynamic bounded distance should not be conflated",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "A static:",
+      "paragraphs": [
+        "A static:",
+        "O(N+k²)",
+        "algorithm does not imply that after one character update the answer can be repaired in:",
+        "O(k²)",
+        "without additional data structures.",
+        "Dynamic algorithms must maintain reusable structural information across updates."
+      ]
+    },
+    {
+      "heading": "Quantum bounded edit distance",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 10,
+      "word_count": 59,
+      "evidence": "The classical:",
+      "paragraphs": [
+        "The classical:",
+        "O(N+k²)",
+        "bound includes an:",
+        "O(N)",
+        "input-access component.",
+        "Quantum query models permit a different relationship with the input.",
+        "Research on quantum bounded edit distance has obtained running times of the form:",
+        "Õ( √(Nk) + k² )",
+        "under the corresponding quantum access model.",
+        "This does not contradict the classical linear input-reading floor because the computational model itself has changed."
+      ]
+    },
+    {
+      "heading": "The machine model matters",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "Complexity claims should specify whether operations are counted in:",
+      "paragraphs": [
+        "Complexity claims should specify whether operations are counted in:",
+        "scalar RAM operations;",
+        "word-RAM operations;",
+        "bit operations;",
+        "cell probes;",
+        "parallel work and depth;",
+        "quantum queries.",
+        "Two algorithms with identical Big-O notation can have very different real computational costs."
+      ]
+    },
+    {
+      "heading": "Bounded edit distance in approximate search",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 7,
+      "word_count": 45,
+      "evidence": "Suppose a search engine accepts at most:",
+      "paragraphs": [
+        "Suppose a search engine accepts at most:",
+        "k = 2",
+        "typing errors.",
+        "The pairwise verification problem is naturally parameterized because:",
+        "k",
+        "is a product rule rather than a property that grows with query length.",
+        "This is one reason small-integer fuzzy-search thresholds can be computationally attractive."
+      ]
+    },
+    {
+      "heading": "But candidate generation remains the dominant problem",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 11,
+      "word_count": 42,
+      "evidence": "Suppose there are:",
+      "paragraphs": [
+        "Suppose there are:",
+        "100,000,000",
+        "dictionary terms.",
+        "Even an:",
+        "O(length)",
+        "bounded verifier becomes expensive if it runs against every term.",
+        "A scalable system therefore uses:",
+        "index → filter → bounded verifier",
+        "rather than:",
+        "bounded verifier against everything",
+        "See Fuzzy Search at Scale ."
+      ]
+    },
+    {
+      "heading": "Bounded edit distance in bioinformatics",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 10,
+      "word_count": 80,
+      "evidence": "Read mapping often operates in a low-error regime because a biological read is expected to be close to some genomic region.",
+      "paragraphs": [
+        "Read mapping often operates in a low-error regime because a biological read is expected to be close to some genomic region.",
+        "This naturally suggests:",
+        "small edit threshold + long exact or near-exact blocks + candidate indexing",
+        "However, real biological alignment frequently uses:",
+        "weighted substitutions;",
+        "affine gap costs;",
+        "quality scores;",
+        "domain-specific scoring models.",
+        "Therefore classical unit-cost bounded Levenshtein theory is an important foundation but not a complete model of biological alignment.",
+        "See Edit Distance in Genomic Search and Read Mapping ."
+      ]
+    },
+    {
+      "heading": "Bounded edit distance in entity resolution",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 10,
+      "word_count": 44,
+      "evidence": "A record-matching system might accept:",
+      "paragraphs": [
+        "A record-matching system might accept:",
+        "name distance ≤ 2",
+        "as one candidate-generation signal.",
+        "This gives a small algorithmic parameter.",
+        "But:",
+        "ED(name₁,name₂) ≤ 2",
+        "does not imply:",
+        "same person",
+        "The bounded distance controls lexical variation, not real-world identity.",
+        "See Entity Resolution and Record Linkage ."
+      ]
+    },
+    {
+      "heading": "Testing bounded algorithms",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "A thresholded implementation requires tests that ordinary unrestricted DP may not expose.",
+      "paragraphs": [
+        "A thresholded implementation requires tests that ordinary unrestricted DP may not expose."
+      ]
+    },
+    {
+      "heading": "Distance exactly zero",
+      "level": 3,
+      "id": "ux-section-113",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "x = \"algorithm\" y = \"algorithm\" k = 0 result: 0",
+      "paragraphs": [
+        "x = \"algorithm\" y = \"algorithm\" k = 0 result: 0"
+      ]
+    },
+    {
+      "heading": "Distance exactly k",
+      "level": 3,
+      "id": "ux-section-114",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "x = \"kitten\" y = \"sitting\" k = 3 result: 3",
+      "paragraphs": [
+        "x = \"kitten\" y = \"sitting\" k = 3 result: 3"
+      ]
+    },
+    {
+      "heading": "Distance k+1",
+      "level": 3,
+      "id": "ux-section-115",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "ED(x,y) = 4 k = 3 result: >3",
+      "paragraphs": [
+        "ED(x,y) = 4 k = 3 result: >3"
+      ]
+    },
+    {
+      "heading": "Length rejection",
+      "level": 3,
+      "id": "ux-section-116",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "x = \"a\" y = \"abcdefgh\" k = 3 |1-8| = 7 > 3 result: >3",
+      "paragraphs": [
+        "x = \"a\" y = \"abcdefgh\" k = 3 |1-8| = 7 > 3 result: >3"
+      ]
+    },
+    {
+      "heading": "Empty strings",
+      "level": 3,
+      "id": "ux-section-117",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "x = \"\" y = \"abc\" k = 3: 3 k = 2: >2",
+      "paragraphs": [
+        "x = \"\" y = \"abc\" k = 3: 3 k = 2: >2"
+      ]
+    },
+    {
+      "heading": "Boundary tests are essential",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 8,
+      "word_count": 29,
+      "evidence": "Common bugs occur when the optimal path lies exactly on:",
+      "paragraphs": [
+        "Common bugs occur when the optimal path lies exactly on:",
+        "j-i = +k",
+        "or:",
+        "j-i = -k",
+        "The band must include:",
+        "|i-j| = k",
+        "not only:",
+        "|i-j| < k"
+      ]
+    },
+    {
+      "heading": "Threshold zero",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "For unit-cost edit distance:",
+      "paragraphs": [
+        "For unit-cost edit distance:",
+        "ED(x,y) ≤ 0",
+        "if and only if:",
+        "x = y",
+        "So the bounded problem reduces to exact equality testing.",
+        "A specialized implementation can compare the input sequences directly rather than allocate any dynamic-programming state."
+      ]
+    },
+    {
+      "heading": "Threshold one",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 7,
+      "word_count": 42,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "k = 1",
+        "one can often use specialized linear logic:",
+        "equal lengths → at most one substitution;",
+        "length difference one → at most one insertion/deletion;",
+        "length difference greater than one → reject.",
+        "This can be faster than a general bounded DP."
+      ]
+    },
+    {
+      "heading": "Specialization for tiny k",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "A high-performance library may contain dedicated kernels for:",
+      "paragraphs": [
+        "A high-performance library may contain dedicated kernels for:",
+        "k = 0 k = 1 k = 2",
+        "before falling back to a general banded or wavefront algorithm.",
+        "This is an engineering optimization, not a different mathematical distance."
+      ]
+    },
+    {
+      "heading": "Differential testing",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "Use a trusted unrestricted implementation as a reference:",
+      "paragraphs": [
+        "Use a trusted unrestricted implementation as a reference:",
+        "expected = full_levenshtein(x,y) actual = bounded(x,y,k) if expected ≤ k: assert actual == expected else: assert actual == >k",
+        "Generate thousands or millions of random short pairs for exhaustive or randomized verification."
+      ]
+    },
+    {
+      "heading": "Exhaustive testing on a small alphabet",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 14,
+      "word_count": 36,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "Σ = {a,b}",
+        "generate every string up to length:",
+        "5",
+        "and test every:",
+        "(x,y,k)",
+        "triple for:",
+        "0 ≤ k ≤ 5",
+        "This catches:",
+        "band-edge mistakes;",
+        "wrong initialization;",
+        "incorrect saturation;",
+        "bad unequal-length handling;",
+        "off-by-one wavefront errors."
+      ]
+    },
+    {
+      "heading": "Testing the farthest-reaching invariant",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 8,
+      "word_count": 57,
+      "evidence": "For every:",
+      "paragraphs": [
+        "For every:",
+        "e and δ",
+        "verify that:",
+        "F[e][δ]",
+        "really is the farthest source prefix reachable using at most the allowed error budget on that diagonal.",
+        "For small strings this can be checked against the full DP matrix by finding:",
+        "max i such that D[i][i+δ] ≤ e",
+        "after accounting for the exact state convention used by the implementation."
+      ]
+    },
+    {
+      "heading": "Testing LCE",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 9,
+      "word_count": 35,
+      "evidence": "An incorrect longest-common-extension primitive invalidates the entire farthest-reaching computation.",
+      "paragraphs": [
+        "An incorrect longest-common-extension primitive invalidates the entire farthest-reaching computation.",
+        "Test:",
+        "LCE(i,j)",
+        "against a naive character-by-character implementation over random positions.",
+        "Include:",
+        "identical suffixes;",
+        "mismatch at first symbol;",
+        "match through end of either string;",
+        "highly repetitive strings."
+      ]
+    },
+    {
+      "heading": "Repetitive strings are important adversarial cases",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 6,
+      "word_count": 25,
+      "evidence": "Inputs such as:",
+      "paragraphs": [
+        "Inputs such as:",
+        "aaaaaaaaaaaaaaaa aaaaaaaaaaaaaaab",
+        "contain extremely long LCEs.",
+        "Others such as:",
+        "abababababababab babababababababa",
+        "contain many repeated occurrences and can expose indexing or suffix-structure mistakes."
+      ]
+    },
+    {
+      "heading": "Algorithm-selection table",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 1,
+      "word_count": 70,
+      "evidence": "Situation Strong starting method No threshold, arbitrary distance General exact DP / optimized exact algorithm Known very small k Banded DP Long strings, k ≪ N Farthest-reaching / Landau–Vishkin-style method Unknown but expected small d Output-sensitive wavefront expansion Short pattern fits machine words Myers bit-vector algorithm Many searchable terms Index/filter/automaton before verifier Arbitrary weighted edits Weighted bounded algorithm, not unit-cost LV directly Small integer weighted edits Modern weighted parameterized methods",
+      "paragraphs": [
+        "Situation Strong starting method No threshold, arbitrary distance General exact DP / optimized exact algorithm Known very small k Banded DP Long strings, k ≪ N Farthest-reaching / Landau–Vishkin-style method Unknown but expected small d Output-sensitive wavefront expansion Short pattern fits machine words Myers bit-vector algorithm Many searchable terms Index/filter/automaton before verifier Arbitrary weighted edits Weighted bounded algorithm, not unit-cost LV directly Small integer weighted edits Modern weighted parameterized methods"
+      ]
+    },
+    {
+      "heading": "Complexity comparison",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 1,
+      "word_count": 76,
+      "evidence": "Algorithm / regime Representative time Primary parameter Full Wagner–Fischer O(mn) Input lengths Banded DP O(Nk) Threshold k Ukkonen O(d·min(m,n)) Actual distance d Landau–Vishkin / farthest-reaching bounded ED O(N+k²) Threshold k Output-sensitive farthest-reaching O(N+d²) Actual distance d Bit-vector ED O(n·ceil(m/w)) word operations Word size w Bounded arbitrary weighted baseline O(Nk) Cost threshold Bounded weighted, STOC 2023 O(N+k⁵) Normalized weighted distance Bounded weighted, FOCS 2023 Õ(N+√(Nk³)) Arbitrary normalized weights Small integer weights, STOC 2025 Õ(N+Wk²) Weight bound W",
+      "paragraphs": [
+        "Algorithm / regime Representative time Primary parameter Full Wagner–Fischer O(mn) Input lengths Banded DP O(Nk) Threshold k Ukkonen O(d·min(m,n)) Actual distance d Landau–Vishkin / farthest-reaching bounded ED O(N+k²) Threshold k Output-sensitive farthest-reaching O(N+d²) Actual distance d Bit-vector ED O(n·ceil(m/w)) word operations Word size w Bounded arbitrary weighted baseline O(Nk) Cost threshold Bounded weighted, STOC 2023 O(N+k⁵) Normalized weighted distance Bounded weighted, FOCS 2023 Õ(N+√(Nk³)) Arbitrary normalized weights Small integer weights, STOC 2025 Õ(N+Wk²) Weight bound W"
+      ]
+    },
+    {
+      "heading": "Common misconception: bounded distance is a different distance",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 6,
+      "word_count": 26,
+      "evidence": "Usually it is not.",
+      "paragraphs": [
+        "Usually it is not.",
+        "The mathematical function remains:",
+        "ED(x,y)",
+        "What changes is the computational question:",
+        "only values ≤ k matter",
+        "and that additional information enables pruning."
+      ]
+    },
+    {
+      "heading": "Common misconception: O(Nk) is the best possible bounded algorithm",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Banded DP visits every cell in the feasible corridor.",
+        "Farthest-reaching algorithms skip long zero-cost match runs and achieve the classical:",
+        "O(N+k²)",
+        "bound for unit-cost bounded edit distance."
+      ]
+    },
+    {
+      "heading": "Common misconception: O(N+k²) is always linear",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 9,
+      "word_count": 20,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "It is linear only when:",
+        "k² = O(N)",
+        "equivalently:",
+        "k = O(√N)",
+        "For:",
+        "k = Θ(N)",
+        "it becomes:",
+        "Θ(N²)"
+      ]
+    },
+    {
+      "heading": "Common misconception: a 5% threshold is a small parameter",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 9,
+      "word_count": 22,
+      "evidence": "For strings of length:",
+      "paragraphs": [
+        "For strings of length:",
+        "N",
+        "a 5% threshold means:",
+        "k ≈ 0.05N",
+        "which is:",
+        "Θ(N)",
+        "not:",
+        "o(√N)",
+        "The asymptotic low-distance advantage disappears."
+      ]
+    },
+    {
+      "heading": "Common misconception: Landau–Vishkin works unchanged for arbitrary weights",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Its classical state organization relies strongly on unit error layers.",
+        "Weighted bounded edit distance required separate modern algorithmic developments."
+      ]
+    },
+    {
+      "heading": "Common misconception: SETH proves O(N+k²) is optimal",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 2,
+      "word_count": 32,
+      "evidence": "Not by itself in that simple wording.",
+      "paragraphs": [
+        "Not by itself in that simple wording.",
+        "The precise bounded joint-parameter optimality statements are typically formulated through fine-grained hypotheses such as OVH, while SETH is central to the broader strongly-subquadratic exact-distance barrier."
+      ]
+    },
+    {
+      "heading": "Common misconception: the threshold can be chosen only for performance",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 5,
+      "word_count": 42,
+      "evidence": "The threshold is part of the application model.",
+      "paragraphs": [
+        "The threshold is part of the application model.",
+        "Changing:",
+        "k = 2 to k = 5",
+        "changes which pairs count as matches.",
+        "Performance may improve with a small k , but choosing k merely to make the algorithm faster changes system semantics."
+      ]
+    },
+    {
+      "heading": "Common misconception: small edit distance means semantic similarity",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "cat car",
+        "have distance:",
+        "1",
+        "but different meanings.",
+        "Bounded edit distance defines a lexical neighborhood, not a semantic neighborhood.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Decision procedure for choosing a bounded algorithm",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 1,
+      "word_count": 74,
+      "evidence": "Is there a meaningful threshold k? │ ├── NO │ ↓ │ general exact algorithm │ └── YES │ ├── |m-n| > k │ ↓ │ reject immediately │ └── feasible │ ├── very small strings │ ↓ │ scalar DP │ ├── tiny k │ ↓ │ banded DP │ ├── long strings, │ small k │ ↓ │ farthest-reaching │ O(N+k²) │ └── weighted costs ↓ use algorithm appropriate to weight regime",
+      "paragraphs": [
+        "Is there a meaningful threshold k? │ ├── NO │ ↓ │ general exact algorithm │ └── YES │ ├── |m-n| > k │ ↓ │ reject immediately │ └── feasible │ ├── very small strings │ ↓ │ scalar DP │ ├── tiny k │ ↓ │ banded DP │ ├── long strings, │ small k │ ↓ │ farthest-reaching │ O(N+k²) │ └── weighted costs ↓ use algorithm appropriate to weight regime"
+      ]
+    },
+    {
+      "heading": "The theoretical hierarchy",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 1,
+      "word_count": 100,
+      "evidence": "EDIT DISTANCE │ ├── unrestricted exact computation │ │ │ └── general worst case │ near quadratic │ ├── bounded exact computation │ │ │ ├── threshold k │ ├── diagonal restriction │ ├── banded DP │ │ O(Nk) │ │ │ └── farthest-reaching │ O(N+k²) │ ├── output-sensitive exact computation │ │ │ └── parameter d = actual distance │ O(N+d²) │ in classical low-distance framework │ ├── weighted bounded computation │ │ │ ├── baseline O(Nk) │ ├── arbitrary weights │ └── small-integer-weight methods │ └── approximate / gap computation │ └── separate relaxation with different complexity trade-offs",
+      "paragraphs": [
+        "EDIT DISTANCE │ ├── unrestricted exact computation │ │ │ └── general worst case │ near quadratic │ ├── bounded exact computation │ │ │ ├── threshold k │ ├── diagonal restriction │ ├── banded DP │ │ O(Nk) │ │ │ └── farthest-reaching │ O(N+k²) │ ├── output-sensitive exact computation │ │ │ └── parameter d = actual distance │ O(N+d²) │ in classical low-distance framework │ ├── weighted bounded computation │ │ │ ├── baseline O(Nk) │ ├── arbitrary weights │ └── small-integer-weight methods │ └── approximate / gap computation │ └── separate relaxation with different complexity trade-offs"
+      ]
+    },
+    {
+      "heading": "What makes bounded edit distance scientifically important",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 14,
+      "word_count": 85,
+      "evidence": "Bounded edit distance demonstrates that worst-case complexity alone can hide the structure that actually controls a computational problem.",
+      "paragraphs": [
+        "Bounded edit distance demonstrates that worst-case complexity alone can hide the structure that actually controls a computational problem.",
+        "The unrestricted DP matrix contains:",
+        "Θ(N²)",
+        "potential states.",
+        "But an alignment with:",
+        "k",
+        "edits can reach only:",
+        "O(k)",
+        "diagonals at each error level.",
+        "With exact-match runs compressed into LCE jumps, the relevant state space becomes approximately:",
+        "N input processing + k² error/diagonal states",
+        "rather than:",
+        "N² matrix cells",
+        "This is a canonical example of parameterization turning a nominally quadratic problem into a near-linear one on structured instances."
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 1,
+      "word_count": 126,
+      "evidence": "Question Answer What is bounded edit distance? Exact edit-distance computation or decision restricted to values at most a threshold k . Is it approximate? No. Basic threshold lower bound? ED(x,y) ≥ ||x|-|y|| Why is a diagonal band valid? At most k insertions/deletions can shift an alignment by at most k diagonals. Banded-DP complexity? Approximately O(Nk) Classical farthest-reaching bounded complexity? O(N+k²) When is O(N+k²) linear? When k = O(√N) Can the actual distance be the parameter? Yes; output-sensitive computation can depend on d=ED(x,y) . Does unit-cost Landau–Vishkin directly support arbitrary weights? No. Are weighted bounded algorithms now known? Yes, including N+poly(k) algorithms and stronger results for small integer weights. Is O(N+k²) conditionally near-optimal? Yes, up t",
+      "paragraphs": [
+        "Question Answer What is bounded edit distance? Exact edit-distance computation or decision restricted to values at most a threshold k . Is it approximate? No. Basic threshold lower bound? ED(x,y) ≥ ||x|-|y|| Why is a diagonal band valid? At most k insertions/deletions can shift an alignment by at most k diagonals. Banded-DP complexity? Approximately O(Nk) Classical farthest-reaching bounded complexity? O(N+k²) When is O(N+k²) linear? When k = O(√N) Can the actual distance be the parameter? Yes; output-sensitive computation can depend on d=ED(x,y) . Does unit-cost Landau–Vishkin directly support arbitrary weights? No. Are weighted bounded algorithms now known? Yes, including N+poly(k) algorithms and stronger results for small integer weights. Is O(N+k²) conditionally near-optimal? Yes, up to subpolynomial factors under standard fine-grained hypotheses for the bounded unit-cost problem."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 8,
+      "word_count": 450,
+      "evidence": "Bounded edit distance takes the ordinary exact Levenshtein problem and adds one powerful piece of information: only alignments whose cost is at most a threshold k matter. That parameter radically reduces the relevant state space when k is small.",
+      "paragraphs": [
+        "Bounded edit distance takes the ordinary exact Levenshtein problem and adds one powerful piece of information: only alignments whose cost is at most a threshold k matter. That parameter radically reduces the relevant state space when k is small.",
+        "The first geometric consequence is immediate. Every insertion changes the alignment diagonal by one in one direction and every deletion changes it by one in the other. Therefore an edit path using at most k operations cannot leave the band |i-j|≤k . Computing Wagner–Fischer only inside this corridor reduces the quadratic matrix to roughly O(Nk) active states.",
+        "Ukkonen developed this distance-sensitive principle into algorithms whose running time depends on the actual edit distance or a supplied threshold. But banded DP still visits every state in the corridor. Farthest-reaching methods associated with Myers and Landau–Vishkin compress the state space further by retaining only the most advanced reachable position on each diagonal at each error level and jumping over exact-match runs using longest-common-extension queries.",
+        "At edit level e , only 2e+1 diagonals are relevant. Summing these states through threshold k gives Θ(k²) . Together with linear preprocessing of the strings, this yields the classical bounded unit-cost complexity O(N+k²) . An output-sensitive execution can stop at the actual distance d , giving the corresponding O(N+d²) regime.",
+        "The dependence on k creates a clear phase transition. If k=O(√N) , then k²=O(N) and exact bounded edit distance is asymptotically linear. If k=Θ(N) , the same expression becomes quadratic. Small-distance algorithms therefore coexist perfectly with the fine-grained evidence that general exact edit distance remains near quadratic in the worst case.",
+        "Modern complexity theory goes further: the O(N+k²) dependence for unit-cost bounded edit distance is regarded as optimal up to subpolynomial factors under the Orthogonal Vectors Hypothesis. This is a conditional statement, not an unconditional quadratic lower bound, but it strongly suggests that both the input-length term and the quadratic parameter term reflect genuine computational structure.",
+        "Weighted edit distance changes that structure. Arbitrary edit weights break the simple equivalence between one operation and one unit of error budget, so classical farthest-reaching algorithms do not transfer mechanically. Recent work progressed from an O(N+k⁵) exact weighted algorithm in 2023 to Õ(N+√(Nk³)) for arbitrary weights, while 2025 results recover Õ(N+Wk²) when the weights are small integers bounded by W .",
+        "The broader lesson is that the phrase “edit distance complexity” is incomplete without specifying the regime. General exact edit distance, bounded unit-cost distance, weighted bounded distance, dynamic maintenance, indexed search, and approximate gap problems have different computational structures. For Levenshtein distance in particular, the parameter k provides one of the clearest demonstrations in algorithm theory that a difficult worst-case problem can become dramatically easier when the solution itself has low complexity."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 8,
+      "word_count": 100,
+      "evidence": "Edit Distance Complexity — the general quadratic barrier, SETH/OVH lower bounds, approximation, and machine models.",
+      "paragraphs": [
+        "Edit Distance Complexity — the general quadratic barrier, SETH/OVH lower bounds, approximation, and machine models.",
+        "Ukkonen Algorithm — distance-sensitive dynamic programming and threshold bands.",
+        "Landau–Vishkin Algorithm — farthest-reaching diagonals and longest-common-extension queries.",
+        "Myers Bit-Vector Algorithm — machine-word parallelism for edit-distance dynamic programming.",
+        "Weighted Levenshtein Distance — cost-sensitive edit models and why unit-cost parameterization does not transfer automatically.",
+        "Approximate Edit Distance Algorithms — gap problems and algorithms that relax exactness.",
+        "Dynamic, Online and Streaming Edit Distance — maintaining or computing distance as sequences change or arrive incrementally.",
+        "Indexing and Filtering for Edit Distance — reducing candidate volume before exact bounded verification."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 9,
+      "word_count": 223,
+      "evidence": "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI record .",
+      "paragraphs": [
+        "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI record .",
+        "Eugene W. Myers, “An O(ND) Difference Algorithm and Its Variations,” Algorithmica , 1, 251–266, 1986. DOI record .",
+        "Gad M. Landau and Uzi Vishkin, “Fast String Matching with k Differences,” Journal of Computer and System Sciences , 37(1), 63–78, 1988. DOI record .",
+        "Gad M. Landau, Eugene W. Myers, and Jeanette P. Schmidt, “Incremental String Comparison,” SIAM Journal on Computing , 27(2), 557–582, 1998. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI record .",
+        "Arturs Backurs and Piotr Indyk, “Edit Distance Cannot Be Computed in Strongly Subquadratic Time (Unless SETH Is False),” SIAM Journal on Computing , 47(3), 1087–1097, 2018. DOI record .",
+        "Debarati Das, Jacob Gilbert, MohammadTaghi Hajiaghayi, Tomasz Kociumaka, and Barna Saha, “Weighted Edit Distance Computation: Strings, Trees, and Dyck,” Proceedings of STOC 2023 , 377–390. DOI record .",
+        "Alejandro Cassis, Tomasz Kociumaka, and Philip Wellnitz, “Optimal Algorithms for Bounded Weighted Edit Distance,” 2023 IEEE 64th Annual Symposium on Foundations of Computer Science , 2177–2187. DOI record .",
+        "Egor Gorbachev and Tomasz Kociumaka, “Bounded Edit Distance: Optimal Static and Dynamic Algorithms for Small Integer Weights,” Proceedings of the 57th Annual ACM Symposium on Theory of Computing , 2157–2166, 2025. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-edit-distance-algorithms",
+      "evidence": [
+        {
+          "section": "Bounded is not approximate",
+          "anchor_id": "ux-section-8",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "See Approximate Edit Distance Algorithms for that separate problem."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-142",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "Approximate Edit Distance Algorithms — gap problems and algorithms that relax exactness."
+        }
+      ]
+    },
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Landau–Vishkin",
+          "anchor_id": "ux-section-37",
+          "alias": "approximate string matching",
+          "excerpt": "The Landau–Vishkin algorithm uses this farthest-reaching diagonal structure for approximate string matching with up to k differences."
+        },
+        {
+          "section": "References",
+          "anchor_id": "ux-section-143",
+          "alias": "approximate string matching",
+          "excerpt": "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI record ."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Damerau–Levenshtein and bounded distance",
+          "anchor_id": "ux-section-82",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "cannot automatically be assumed valid for Damerau–Levenshtein Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/dynamic-online-and-streaming-edit-distance",
+      "evidence": [
+        {
+          "section": "Dynamic bounded edit distance",
+          "anchor_id": "ux-section-104",
+          "alias": "dynamic online and streaming edit distance",
+          "excerpt": "Those models are treated separately in Dynamic, Online and Streaming Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-142",
+          "alias": "dynamic online and streaming edit distance",
+          "excerpt": "Dynamic, Online and Streaming Edit Distance — maintaining or computing distance as sequences change or arrive incrementally."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "SETH versus OVH",
+          "anchor_id": "ux-section-58",
+          "alias": "edit distance complexity",
+          "excerpt": "See Edit Distance Complexity for the full fine-grained complexity discussion."
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-141",
+          "alias": "edit distance complexity",
+          "excerpt": "The broader lesson is that the phrase “edit distance complexity” is incomplete without specifying the regime. General exact edit distance, bounded unit-cost distance, weighted bounded distance, dynamic maintenance, indexed search, and approximate gap problems have different computational structures. For Levenshtein distance in particular, the parameter k provides one of the clearest demonstrations in algorithm theory that a difficult worst-case problem can become dramatically easier when the solution itself has low complexity."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-142",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — the general quadratic barrier, SETH/OVH lower bounds, approximation, and machine models."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-in-genomic-search-and-read-mapping",
+      "evidence": [
+        {
+          "section": "Bounded edit distance in bioinformatics",
+          "anchor_id": "ux-section-110",
+          "alias": "edit distance in genomic search and read mapping",
+          "excerpt": "See Edit Distance in Genomic Search and Read Mapping ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Bounded and Parameterized Edit Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Bounded edit distance asks whether two sequences can be transformed into one another using at most a specified number or cost of edits. Parameterized edit distance goes further: instead of analyzing complexity only as a function of input length, it studies how computation changes when the distance itself is treated as a parameter."
+        },
+        {
+          "section": "What does \"bounded edit distance\" mean?",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "Several closely related computational problems are called bounded edit distance."
+        },
+        {
+          "section": "Bounded is not approximate",
+          "anchor_id": "ux-section-8",
+          "alias": "edit distance",
+          "excerpt": "See Approximate Edit Distance Algorithms for that separate problem."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "The fundamental diagonal bound",
+          "anchor_id": "ux-section-14",
+          "alias": "edit operations",
+          "excerpt": "edit operations."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "Bounded edit distance in entity resolution",
+          "anchor_id": "ux-section-111",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "See Entity Resolution and Record Linkage ."
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-at-scale",
+      "evidence": [
+        {
+          "section": "But candidate generation remains the dominant problem",
+          "anchor_id": "ux-section-109",
+          "alias": "fuzzy search at scale",
+          "excerpt": "See Fuzzy Search at Scale ."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Indexed search",
+          "anchor_id": "ux-section-65",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-142",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — reducing candidate volume before exact bounded verification."
+        }
+      ]
+    },
+    {
+      "target": "/landau-vishkin-algorithm",
+      "evidence": [
+        {
+          "section": "Landau–Vishkin",
+          "anchor_id": "ux-section-37",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "The Landau–Vishkin algorithm uses this farthest-reaching diagonal structure for approximate string matching with up to k differences."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-142",
+          "alias": "landau vishkin algorithm",
+          "excerpt": "Landau–Vishkin Algorithm — farthest-reaching diagonals and longest-common-extension queries."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Bit-parallel bounded distance",
+          "anchor_id": "ux-section-102",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "The Myers Bit-Vector Algorithm represents many dynamic-programming relationships inside machine words."
+        },
+        {
+          "section": "Algorithm-selection table",
+          "anchor_id": "ux-section-127",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Situation Strong starting method No threshold, arbitrary distance General exact DP / optimized exact algorithm Known very small k Banded DP Long strings, k ≪ N Farthest-reaching / Landau–Vishkin-style method Unknown but expected small d Output-sensitive wavefront expansion Short pattern fits machine words Myers bit-vector algorithm Many searchable terms Index/filter/automaton before verifier Arbitrary weighted edits Weighted bounded algorithm, not unit-cost LV directly Small integer weighted edits Modern weighted parameterized methods"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-142",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm — machine-word parallelism for edit-distance dynamic programming."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Common misconception: small edit distance means semantic similarity",
+          "anchor_id": "ux-section-136",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Ukkonen's distance-sensitive algorithm",
+          "anchor_id": "ux-section-23",
+          "alias": "ukkonen algorithm",
+          "excerpt": "See Ukkonen Algorithm for the dedicated derivation."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-142",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm — distance-sensitive dynamic programming and threshold bands."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Unicode and bounded edit distance",
+          "anchor_id": "ux-section-88",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "The dynamic-programming matrix",
+          "anchor_id": "ux-section-11",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "The full Wagner–Fischer algorithm evaluates:"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Bounded weighted edit distance",
+          "anchor_id": "ux-section-71",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-142",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — cost-sensitive edit models and why unit-cost parameterization does not transfer automatically."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#page",
+      "type": "WebPage",
+      "name": "Bounded and Parameterized Edit Distance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "type": "TechArticle",
+      "name": "Bounded and Parameterized Edit Distance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept",
+      "type": "DefinedTerm",
+      "name": "Bounded and Parameterized Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "hasPart",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#page",
+      "mainEntity",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#page",
+      "isPartOf",
+      "https://www.levenshtein.net/theory#collection"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#page",
+      "hasPart",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/dynamic-online-and-streaming-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "isPartOf",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/s0019-9958(85)80046-2"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1007/bf01840446"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/0022-0000(88)90045-1"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1137/s0097539794264810"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1137/15m1053128"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/3564246.3585178"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1109/focs57990.2023.00135"
+    ],
+    [
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/3717823.3718168"
+    ],
+    [
+      "https://doi.org/10.1016/s0019-9958(85)80046-2",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1016/s0019-9958(85)80046-2",
+      "about",
+      "https://www.levenshtein.net/ukkonen-algorithm#algorithm"
+    ],
+    [
+      "https://doi.org/10.1007/bf01840446",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1016/0022-0000(88)90045-1",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1016/0022-0000(88)90045-1",
+      "about",
+      "https://www.levenshtein.net/landau-vishkin-algorithm#algorithm"
+    ],
+    [
+      "https://doi.org/10.1137/s0097539794264810",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1137/15m1053128",
+      "about",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3564246.3585178",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3564246.3585178",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1109/focs57990.2023.00135",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1109/focs57990.2023.00135",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1145/3717823.3718168",
+      "about",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1145/3717823.3718168",
+      "about",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1016/s0019-9958(85)80046-2",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1007/bf01840446",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/0022-0000(88)90045-1",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/s0097539794264810",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/15m1053128",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3564246.3585178",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/focs57990.2023.00135",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3717823.3718168",
+      "anchor": "DOI record"
+    }
+  ]
+}

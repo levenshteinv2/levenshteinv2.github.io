@@ -1,0 +1,2721 @@
+{
+  "url": "/damerau-levenshtein-distance",
+  "title": "Damerau–Levenshtein Distance: Transpositions, OSA & Algorithms",
+  "h1": [
+    "Damerau–Levenshtein Distance: Transpositions, OSA & Algorithms"
+  ],
+  "group": "Theory",
+  "provisional_mission": "Transposition và OSA",
+  "content_sha256": "2d25016f39fe8e74bc0bd69ae7b975bbc9252b954cec21e875719ae2393ac3bd",
+  "canonical": "https://www.levenshtein.net/damerau-levenshtein-distance",
+  "primary_entity_candidate": "Damerau–Levenshtein Distance: Transpositions, OSA & Algorithms",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Damerau–Levenshtein Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 3,
+      "word_count": 166,
+      "evidence": "Damerau–Levenshtein distance extends classical Levenshtein distance by adding one additional primitive edit operation: the transposition of two adjacent sequence elements. Under the standard unit-cost model, insertion, deletion, substitution, and adjacent transposition each cost one, and the distance between two strings is the minimum total number of these operations required to transform one string into the other.",
+      "paragraphs": [
+        "Damerau–Levenshtein distance extends classical Levenshtein distance by adding one additional primitive edit operation: the transposition of two adjacent sequence elements. Under the standard unit-cost model, insertion, deletion, substitution, and adjacent transposition each cost one, and the distance between two strings is the minimum total number of these operations required to transform one string into the other.",
+        "The additional operation appears small, but it changes both the mathematical model and the algorithms needed to compute it correctly. A simple dynamic-programming recurrence can detect isolated adjacent swaps, but that recurrence computes a restricted distance known as Optimal String Alignment , or OSA, rather than unrestricted Damerau–Levenshtein distance. The two functions agree on many ordinary spelling errors but differ when a substring participates in more than one edit.",
+        "This distinction is not merely terminological. Unrestricted unit-cost Damerau–Levenshtein distance is a metric. Optimal String Alignment distance is not: it can violate the triangle inequality. Algorithms, metric indexes, thresholds, theoretical guarantees, and software APIs must therefore distinguish the two models explicitly."
+      ]
+    },
+    {
+      "heading": "Definition",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 13,
+      "word_count": 74,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "x = x₁x₂...xₘ y = y₁y₂...yₙ",
+        "be finite sequences over an alphabet:",
+        "Σ",
+        "The standard Damerau–Levenshtein edit operations are:",
+        "insert one symbol;",
+        "delete one symbol;",
+        "substitute one symbol for another;",
+        "transpose two adjacent symbols.",
+        "Under the classical unit-cost model:",
+        "cost(insert) = 1 cost(delete) = 1 cost(substitution) = 1 cost(transposition)= 1 cost(match) = 0",
+        "The Damerau–Levenshtein distance is:",
+        "d_DL(x,y) = minimum number of allowed edit operations in any edit script transforming x into y"
+      ]
+    },
+    {
+      "heading": "Adjacent transposition",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 5,
+      "word_count": 23,
+      "evidence": "The fourth primitive operation has the form:",
+      "paragraphs": [
+        "The fourth primitive operation has the form:",
+        "... a b ... ↓ ... b a ...",
+        "where:",
+        "a and b",
+        "occupy adjacent positions."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-4",
+      "paragraph_count": 11,
+      "word_count": 58,
+      "evidence": "form → from",
+      "paragraphs": [
+        "form → from",
+        "The middle pair:",
+        "o r",
+        "is transposed:",
+        "f o r m ↓ f r o m",
+        "Therefore:",
+        "d_DL( \"form\", \"from\" ) = 1",
+        "Classical Levenshtein distance does not contain transposition as a primitive operation. It normally requires:",
+        "o → r r → o",
+        "or an equivalent two-edit script, giving:",
+        "d_L( \"form\", \"from\" ) = 2"
+      ]
+    },
+    {
+      "heading": "Adjacent does not mean arbitrary transposition",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 12,
+      "word_count": 66,
+      "evidence": "Damerau–Levenshtein distance permits swapping:",
+      "paragraphs": [
+        "Damerau–Levenshtein distance permits swapping:",
+        "positions i and i+1",
+        "not arbitrary positions:",
+        "i and j",
+        "in one operation.",
+        "For example:",
+        "abcd → dbca",
+        "cannot move:",
+        "d",
+        "directly from the fourth position to the first at cost one.",
+        "It would require a sequence of adjacent transpositions or another combination of edit operations.",
+        "A distance allowing arbitrary symbol swaps, substring movement, or block permutation is a different edit model."
+      ]
+    },
+    {
+      "heading": "Historical origin",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 10,
+      "word_count": 93,
+      "evidence": "Fred J. Damerau's 1964 work on spelling-error detection studied four important single-error classes:",
+      "paragraphs": [
+        "Fred J. Damerau's 1964 work on spelling-error detection studied four important single-error classes:",
+        "a wrong letter;",
+        "a missing letter;",
+        "an extra letter;",
+        "a single transposition.",
+        "The first three correspond closely to:",
+        "substitution deletion insertion",
+        "while the fourth motivates adjacent transposition.",
+        "The modern term Damerau–Levenshtein distance combines this transposition-aware error model with the minimum-edit-distance framework associated with Levenshtein.",
+        "A mathematically important later development was the 1975 work of Roy Lowrance and Robert A. Wagner, who extended the string-to-string correction problem to include adjacent character interchange and derived a dynamic-programming algorithm under explicit edit-cost conditions."
+      ]
+    },
+    {
+      "heading": "Levenshtein versus Damerau–Levenshtein",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "Operation Levenshtein Damerau–Levenshtein Insertion Yes Yes Deletion Yes Yes Substitution Yes Yes Adjacent transposition No Yes",
+      "paragraphs": [
+        "Operation Levenshtein Damerau–Levenshtein Insertion Yes Yes Deletion Yes Yes Substitution Yes Yes Adjacent transposition No Yes",
+        "Because every Levenshtein edit script is also a valid Damerau–Levenshtein edit script:",
+        "d_DL(x,y) ≤ d_L(x,y)",
+        "for the standard unit-cost models."
+      ]
+    },
+    {
+      "heading": "A useful relationship between the two distances",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 13,
+      "word_count": 83,
+      "evidence": "Every adjacent transposition can be simulated by at most two Levenshtein substitutions:",
+      "paragraphs": [
+        "Every adjacent transposition can be simulated by at most two Levenshtein substitutions:",
+        "ab → bb → ba",
+        "or by another two-edit Levenshtein transformation.",
+        "Therefore an optimal Damerau–Levenshtein script of length:",
+        "k",
+        "can be converted into a Levenshtein script of length at most:",
+        "2k",
+        "giving:",
+        "d_L(x,y) ≤ 2 d_DL(x,y)",
+        "Hence:",
+        "ceil( d_L(x,y) / 2 ) ≤ d_DL(x,y) ≤ d_L(x,y)",
+        "for standard unit-cost distances.",
+        "This bound is useful when a Levenshtein value is already known and a quick theoretical range for Damerau–Levenshtein distance is required."
+      ]
+    },
+    {
+      "heading": "Basic bounds",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 7,
+      "word_count": 44,
+      "evidence": "Because insertions and deletions are required to compensate for sequence-length differences:",
+      "paragraphs": [
+        "Because insertions and deletions are required to compensate for sequence-length differences:",
+        "d_DL(x,y) ≥ ||x|-|y||",
+        "As substitutions can replace every aligned symbol and insertions can supply any excess target symbols:",
+        "d_DL(x,y) ≤ max( |x|, |y| )",
+        "under unit costs.",
+        "Thus:",
+        "||x|-|y|| ≤ d_DL(x,y) ≤ max(|x|,|y|)"
+      ]
+    },
+    {
+      "heading": "The central complication: two different transposition distances",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 7,
+      "word_count": 54,
+      "evidence": "A great deal of software and documentation uses the label:",
+      "paragraphs": [
+        "A great deal of software and documentation uses the label:",
+        "Damerau-Levenshtein",
+        "for two different functions.",
+        "They are:",
+        "Optimal String Alignment distance , the restricted variant;",
+        "unrestricted Damerau–Levenshtein distance , the true minimum edit distance under the four primitive operations.",
+        "The difference appears when a substring needs to participate in more than one edit operation."
+      ]
+    },
+    {
+      "heading": "Optimal String Alignment distance",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 8,
+      "word_count": 34,
+      "evidence": "Optimal String Alignment distance permits:",
+      "paragraphs": [
+        "Optimal String Alignment distance permits:",
+        "insertion;",
+        "deletion;",
+        "substitution;",
+        "adjacent transposition;",
+        "but imposes a restriction commonly described as:",
+        "no substring may be edited more than once.",
+        "This restriction makes a very simple dynamic-programming recurrence possible."
+      ]
+    },
+    {
+      "heading": "OSA recurrence",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 17,
+      "word_count": 81,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "D[i][j]",
+        "be the OSA distance between:",
+        "x₁...xᵢ",
+        "and:",
+        "y₁...yⱼ",
+        "Initialize:",
+        "D[0][0] = 0 D[i][0] = i D[0][j] = j",
+        "The ordinary Levenshtein candidates are:",
+        "deletion: D[i-1][j] + 1 insertion: D[i][j-1] + 1 match/substitution: D[i-1][j-1] + [xᵢ != yⱼ]",
+        "If:",
+        "i > 1 j > 1 xᵢ = y_(j-1) x_(i-1)= yⱼ",
+        "the final two symbols are reversed relative to one another, so one additional candidate is:",
+        "D[i-2][j-2] + 1",
+        "for a transposition.",
+        "Thus:",
+        "D[i][j] = min( deletion, insertion, match_or_substitution, optional_transposition )"
+      ]
+    },
+    {
+      "heading": "OSA pseudocode",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 1,
+      "word_count": 87,
+      "evidence": "function optimal_string_alignment(a, b): m = length(a) n = length(b) D = matrix( m+1, n+1 ) for i = 0..m: D[i][0] = i for j = 0..n: D[0][j] = j for i = 1..m: for j = 1..n: if a[i-1] == b[j-1]: cost = 0 else: cost = 1 D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + cost ) if i > 1 and j > 1 and a[i-1] == b[j-2] and a[i-2] == b[j-1]: D[i][j] = min( D[i][j], D[i-2][j-2] + 1 ) return D[m][n]",
+      "paragraphs": [
+        "function optimal_string_alignment(a, b): m = length(a) n = length(b) D = matrix( m+1, n+1 ) for i = 0..m: D[i][0] = i for j = 0..n: D[0][j] = j for i = 1..m: for j = 1..n: if a[i-1] == b[j-1]: cost = 0 else: cost = 1 D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + cost ) if i > 1 and j > 1 and a[i-1] == b[j-2] and a[i-2] == b[j-1]: D[i][j] = min( D[i][j], D[i-2][j-2] + 1 ) return D[m][n]"
+      ]
+    },
+    {
+      "heading": "OSA complexity",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 8,
+      "word_count": 45,
+      "evidence": "The OSA matrix has:",
+      "paragraphs": [
+        "The OSA matrix has:",
+        "(m+1)(n+1)",
+        "cells and constant work per cell.",
+        "Therefore:",
+        "Time: O(mn)",
+        "A full matrix uses:",
+        "Space: O(mn)",
+        "but distance-only implementations can reduce memory because the recurrence needs only a small number of previous rows, including the row two positions back for transposition."
+      ]
+    },
+    {
+      "heading": "The example that separates OSA from true Damerau–Levenshtein",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 17,
+      "word_count": 66,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "x = \"ca\" y = \"abc\"",
+        "Unrestricted Damerau–Levenshtein distance is:",
+        "2",
+        "because:",
+        "ca → ac → abc",
+        "using:",
+        "1. transpose c and a 2. insert b",
+        "Therefore:",
+        "d_DL( \"ca\", \"abc\" ) = 2",
+        "OSA does not permit the required interaction of edits after the transposition.",
+        "Its minimum is:",
+        "3",
+        "for example:",
+        "ca → a → ab → abc",
+        "Thus:",
+        "d_OSA( \"ca\", \"abc\" ) = 3"
+      ]
+    },
+    {
+      "heading": "The fundamental ordering",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "Because unrestricted Damerau–Levenshtein permits every edit script available to OSA, while OSA adds transposition possibilities beyond ordinary Levenshtein:",
+      "paragraphs": [
+        "Because unrestricted Damerau–Levenshtein permits every edit script available to OSA, while OSA adds transposition possibilities beyond ordinary Levenshtein:",
+        "d_DL(x,y) ≤ d_OSA(x,y) ≤ d_L(x,y)",
+        "under the standard unit-cost definitions.",
+        "The inequalities may be equal for most ordinary pairs, but they are not identities."
+      ]
+    },
+    {
+      "heading": "Why OSA is not a metric",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 18,
+      "word_count": 97,
+      "evidence": "A metric must satisfy triangle inequality:",
+      "paragraphs": [
+        "A metric must satisfy triangle inequality:",
+        "d(x,z) ≤ d(x,y) + d(y,z)",
+        "Consider:",
+        "x = \"ca\" y = \"ac\" z = \"abc\"",
+        "Under OSA:",
+        "d_OSA( \"ca\", \"ac\" ) = 1",
+        "because one transposition is sufficient.",
+        "Also:",
+        "d_OSA( \"ac\", \"abc\" ) = 1",
+        "because one insertion is sufficient.",
+        "But:",
+        "d_OSA( \"ca\", \"abc\" ) = 3",
+        "Therefore:",
+        "3 > 1 + 1",
+        "and:",
+        "d_OSA( \"ca\", \"abc\" ) > d_OSA( \"ca\", \"ac\" ) + d_OSA( \"ac\", \"abc\" )",
+        "Triangle inequality fails.",
+        "Consequently OSA should not be used as though it were a metric inside algorithms whose correctness depends on metric geometry."
+      ]
+    },
+    {
+      "heading": "Why unrestricted Damerau–Levenshtein is a metric",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "For unit symmetric edit costs, unrestricted Damerau–Levenshtein distance satisfies all four metric axioms.",
+      "paragraphs": [
+        "For unit symmetric edit costs, unrestricted Damerau–Levenshtein distance satisfies all four metric axioms."
+      ]
+    },
+    {
+      "heading": "1. Non-negativity",
+      "level": 3,
+      "id": "ux-section-19",
+      "paragraph_count": 4,
+      "word_count": 12,
+      "evidence": "Every permitted operation has nonnegative cost:",
+      "paragraphs": [
+        "Every permitted operation has nonnegative cost:",
+        "1",
+        "and therefore:",
+        "d_DL(x,y) ≥ 0"
+      ]
+    },
+    {
+      "heading": "2. Identity of indiscernibles",
+      "level": 3,
+      "id": "ux-section-20",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "No edits are needed when:",
+      "paragraphs": [
+        "No edits are needed when:",
+        "x = y",
+        "so:",
+        "d_DL(x,x) = 0",
+        "Conversely, transforming two distinct strings requires at least one positive-cost edit:",
+        "x != y ⇒ d_DL(x,y) > 0"
+      ]
+    },
+    {
+      "heading": "3. Symmetry",
+      "level": 3,
+      "id": "ux-section-21",
+      "paragraph_count": 8,
+      "word_count": 42,
+      "evidence": "Every edit has an inverse of equal cost.",
+      "paragraphs": [
+        "Every edit has an inverse of equal cost.",
+        "insert ↔ delete substitute a→b ↔ substitute b→a transpose ab→ba ↔ transpose ba→ab",
+        "Therefore reversing an optimal script from:",
+        "x → y",
+        "produces an equally costly script:",
+        "y → x",
+        "so:",
+        "d_DL(x,y) = d_DL(y,x)"
+      ]
+    },
+    {
+      "heading": "4. Triangle inequality",
+      "level": 3,
+      "id": "ux-section-22",
+      "paragraph_count": 18,
+      "word_count": 68,
+      "evidence": "Take an optimal script:",
+      "paragraphs": [
+        "Take an optimal script:",
+        "x → y",
+        "of cost:",
+        "d_DL(x,y)",
+        "and an optimal script:",
+        "y → z",
+        "of cost:",
+        "d_DL(y,z)",
+        "Concatenating them produces a valid script:",
+        "x → y → z",
+        "whose total cost is:",
+        "d_DL(x,y) + d_DL(y,z)",
+        "The optimal direct transformation from:",
+        "x → z",
+        "cannot cost more than that valid script.",
+        "Thus:",
+        "d_DL(x,z) ≤ d_DL(x,y) + d_DL(y,z)",
+        "and unit-cost unrestricted Damerau–Levenshtein distance is a true metric."
+      ]
+    },
+    {
+      "heading": "Why the OSA restriction destroys triangle inequality",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 10,
+      "word_count": 89,
+      "evidence": "The preceding triangle-inequality proof relies on one crucial fact:",
+      "paragraphs": [
+        "The preceding triangle-inequality proof relies on one crucial fact:",
+        "two valid edit scripts can always be concatenated into another valid edit script",
+        "OSA removes that closure property.",
+        "A valid transformation:",
+        "x → y",
+        "and another valid transformation:",
+        "y → z",
+        "may compose into a sequence that violates the rule that no substring may be edited more than once.",
+        "Therefore the composition argument behind triangle inequality no longer works.",
+        "This gives a deeper explanation of why OSA is not a metric rather than treating the counterexample as an isolated anomaly."
+      ]
+    },
+    {
+      "heading": "Why unrestricted computation is more difficult",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 9,
+      "word_count": 91,
+      "evidence": "The ordinary Wagner–Fischer recurrence works because the final edit of an optimal transformation depends only on immediately adjacent prefix states.",
+      "paragraphs": [
+        "The ordinary Wagner–Fischer recurrence works because the final edit of an optimal transformation depends only on immediately adjacent prefix states.",
+        "For OSA, an adjacent transposition also has a local predecessor:",
+        "D[i-2][j-2]",
+        "because the transposition is allowed only as one isolated operation on the final pair.",
+        "Unrestricted Damerau–Levenshtein distance is harder.",
+        "Consider a transformation where:",
+        "one character is transposed and characters between the transposed endpoints are inserted or deleted",
+        "The optimal predecessor may occur far earlier in the matrix.",
+        "A correct recurrence therefore needs information about previous occurrences of the symbols involved."
+      ]
+    },
+    {
+      "heading": "The Lowrance–Wagner insight",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 15,
+      "word_count": 76,
+      "evidence": "Lowrance and Wagner showed that, under the appropriate edit-cost condition, one can restrict attention to a structured family of optimal edit traces.",
+      "paragraphs": [
+        "Lowrance and Wagner showed that, under the appropriate edit-cost condition, one can restrict attention to a structured family of optimal edit traces.",
+        "For insertion cost:",
+        "W_I",
+        "deletion cost:",
+        "W_D",
+        "and adjacent swap cost:",
+        "W_T",
+        "their key condition is:",
+        "2W_T ≥ W_I + W_D",
+        "The unit-cost Damerau–Levenshtein model has:",
+        "W_I = 1 W_D = 1 W_T = 1",
+        "so:",
+        "2 · 1 ≥ 1 + 1",
+        "holds exactly.",
+        "This allows a quadratic-time algorithm for the standard distance."
+      ]
+    },
+    {
+      "heading": "Why the cost condition matters",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 8,
+      "word_count": 65,
+      "evidence": "If transpositions become too cheap relative to insertions and deletions, optimal edit traces can develop long chains of interacting crossings.",
+      "paragraphs": [
+        "If transpositions become too cheap relative to insertions and deletions, optimal edit traces can develop long chains of interacting crossings.",
+        "The simple structural characterization used by the Lowrance–Wagner dynamic program no longer suffices.",
+        "Thus one should not assume that:",
+        "arbitrary weighted insertion/deletion/substitution/transposition",
+        "automatically has the same:",
+        "O(mn)",
+        "algorithm as standard unit-cost Damerau–Levenshtein distance.",
+        "The weighted extended string-to-string correction problem has a more complicated complexity landscape."
+      ]
+    },
+    {
+      "heading": "General weighted swaps can fundamentally change complexity",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 6,
+      "word_count": 87,
+      "evidence": "Once the edit costs are generalized beyond the classical regime, the problem is no longer merely:",
+      "paragraphs": [
+        "Once the edit costs are generalized beyond the classical regime, the problem is no longer merely:",
+        "replace every +1 with a custom weight",
+        "The geometry of optimal edit scripts changes.",
+        "Historical complexity work on the extended string-to-string correction problem demonstrated that some cost regimes remain polynomial while more general formulations can become computationally much harder.",
+        "This is an important example of a broader principle:",
+        "Changing the edit operation set or cost system can change not only the numerical distance but also the computational complexity of finding it."
+      ]
+    },
+    {
+      "heading": "The unrestricted O(mn) algorithm",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 8,
+      "word_count": 76,
+      "evidence": "For standard unit costs, a correct unrestricted Damerau–Levenshtein algorithm keeps additional information about the most recent occurrences of characters.",
+      "paragraphs": [
+        "For standard unit costs, a correct unrestricted Damerau–Levenshtein algorithm keeps additional information about the most recent occurrences of characters.",
+        "Let:",
+        "last[c]",
+        "store the most recent row position in the source string where character:",
+        "c",
+        "has appeared.",
+        "During each matrix row, another variable records the most recent column in the target where the current source character matched.",
+        "These values locate the only earlier pair of matching symbols needed to construct the relevant transposition candidate in constant time."
+      ]
+    },
+    {
+      "heading": "Unrestricted pseudocode",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 1,
+      "word_count": 130,
+      "evidence": "function damerau_levenshtein(a, b): m = length(a) n = length(b) INF = m + n H = matrix( m + 2, n + 2 ) H[0][0] = INF for i = 0..m: H[i+1][0] = INF H[i+1][1] = i for j = 0..n: H[0][j+1] = INF H[1][j+1] = j last = map with default value 0 for i = 1..m: last_match_col = 0 for j = 1..n: i1 = last[b[j-1]] j1 = last_match_col if a[i-1] == b[j-1]: cost = 0 last_match_col = j else: cost = 1 substitution = H[i][j] + cost insertion = H[i+1][j] + 1 deletion = H[i][j+1] + 1 transposition = H[i1][j1] + (i - i1 - 1) + 1 + (j - j1 - 1) H[i+1][j+1] = min( substitution, insertion, deletion, transposition ) last[a[i-1]] = i return H[m+1][n+1]",
+      "paragraphs": [
+        "function damerau_levenshtein(a, b): m = length(a) n = length(b) INF = m + n H = matrix( m + 2, n + 2 ) H[0][0] = INF for i = 0..m: H[i+1][0] = INF H[i+1][1] = i for j = 0..n: H[0][j+1] = INF H[1][j+1] = j last = map with default value 0 for i = 1..m: last_match_col = 0 for j = 1..n: i1 = last[b[j-1]] j1 = last_match_col if a[i-1] == b[j-1]: cost = 0 last_match_col = j else: cost = 1 substitution = H[i][j] + cost insertion = H[i+1][j] + 1 deletion = H[i][j+1] + 1 transposition = H[i1][j1] + (i - i1 - 1) + 1 + (j - j1 - 1) H[i+1][j+1] = min( substitution, insertion, deletion, transposition ) last[a[i-1]] = i return H[m+1][n+1]"
+      ]
+    },
+    {
+      "heading": "Why the sentinel border exists",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 9,
+      "word_count": 51,
+      "evidence": "The unrestricted algorithm uses a matrix larger than the ordinary Levenshtein matrix:",
+      "paragraphs": [
+        "The unrestricted algorithm uses a matrix larger than the ordinary Levenshtein matrix:",
+        "(m+2) × (n+2)",
+        "with an artificial sentinel value:",
+        "INF",
+        "along the outer border.",
+        "For unit costs:",
+        "INF = m+n",
+        "is safely greater than any relevant optimal distance.",
+        "The sentinel prevents nonexistent previous occurrences from accidentally producing attractive transposition candidates."
+      ]
+    },
+    {
+      "heading": "The meaning of the transposition term",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 18,
+      "word_count": 98,
+      "evidence": "The most difficult line in the algorithm is:",
+      "paragraphs": [
+        "The most difficult line in the algorithm is:",
+        "H[i1][j1] + (i-i1-1) + 1 + (j-j1-1)",
+        "It summarizes a potentially nonlocal transformation.",
+        "Conceptually:",
+        "H[i1][j1]",
+        "is the best cost before the two symbols involved in the crossing/transposition structure.",
+        "The term:",
+        "i-i1-1",
+        "accounts for source characters between the two relevant occurrences that must effectively be deleted.",
+        "The:",
+        "1",
+        "is the transposition itself.",
+        "The term:",
+        "j-j1-1",
+        "accounts for target characters between the corresponding positions that must effectively be inserted.",
+        "Thus the transition compresses a pattern of:",
+        "delete intermediate symbols ↓ transpose matching endpoints ↓ insert intermediate target symbols",
+        "into one dynamic-programming candidate."
+      ]
+    },
+    {
+      "heading": "Why last occurrence information is enough",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 12,
+      "word_count": 81,
+      "evidence": "Naively, computing an unrestricted transposition candidate could require examining many earlier positions:",
+      "paragraphs": [
+        "Naively, computing an unrestricted transposition candidate could require examining many earlier positions:",
+        "all previous occurrences of b[j] × all previous occurrences of a[i]",
+        "for every matrix cell.",
+        "That would destroy the quadratic bound.",
+        "The Lowrance–Wagner structural result shows that under the relevant cost condition, only the most recent compatible occurrences need to be considered for the optimal restricted trace used by their algorithm.",
+        "The:",
+        "last",
+        "table and:",
+        "last_match_col",
+        "variable allow those positions to be retrieved in:",
+        "O(1)",
+        "time per matrix cell."
+      ]
+    },
+    {
+      "heading": "Time complexity",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 11,
+      "word_count": 33,
+      "evidence": "There are:",
+      "paragraphs": [
+        "There are:",
+        "mn",
+        "interior matrix cells.",
+        "For each cell, the unrestricted algorithm performs:",
+        "constant-time character comparisons;",
+        "constant-time last-occurrence lookups;",
+        "four candidate calculations;",
+        "one minimum operation.",
+        "Therefore:",
+        "Time: O(mn)",
+        "for the standard unit-cost model."
+      ]
+    },
+    {
+      "heading": "Classical space complexity",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 7,
+      "word_count": 54,
+      "evidence": "The straightforward Lowrance–Wagner-style implementation stores:",
+      "paragraphs": [
+        "The straightforward Lowrance–Wagner-style implementation stores:",
+        "O(mn)",
+        "matrix values.",
+        "Unlike ordinary Wagner–Fischer, reducing this matrix to only two rows is not immediate because transposition candidates may refer back to rows associated with earlier occurrences of specific characters.",
+        "The last-occurrence dependency is more global than the:",
+        "previous row + current row",
+        "dependency of ordinary Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Reduced-space algorithms",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 12,
+      "word_count": 76,
+      "evidence": "Later algorithms observed that it is unnecessary to retain every historical row.",
+      "paragraphs": [
+        "Later algorithms observed that it is unnecessary to retain every historical row.",
+        "For each alphabet character, it is sufficient to preserve selected rows associated with its latest relevant occurrence.",
+        "For alphabet size:",
+        "s",
+        "and strings of lengths:",
+        "m and n",
+        "reduced-space algorithms can compute the distance using memory on the order of:",
+        "O( s · min(m,n) + m + n )",
+        "while retaining:",
+        "O(mn)",
+        "time.",
+        "For fixed small alphabets, this becomes linear in the input lengths."
+      ]
+    },
+    {
+      "heading": "Why alphabet size appears in reduced-space algorithms",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "Ordinary Levenshtein DP only needs spatially adjacent matrix rows.",
+      "paragraphs": [
+        "Ordinary Levenshtein DP only needs spatially adjacent matrix rows.",
+        "Unrestricted Damerau–Levenshtein may need the row associated with the previous occurrence of:",
+        "a particular character",
+        "Rather than retaining every row:",
+        "row 1 row 2 ... row m",
+        "one can preserve selected information indexed by:",
+        "character",
+        "Hence memory depends partly on:",
+        "|Σ|"
+      ]
+    },
+    {
+      "heading": "OSA and unrestricted DL side by side",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 1,
+      "word_count": 58,
+      "evidence": "Property Optimal String Alignment Unrestricted Damerau–Levenshtein Insertion Yes Yes Deletion Yes Yes Substitution Yes Yes Adjacent transposition Yes Yes Substring may participate in later edits Restricted Yes Triangle inequality No Yes under standard unit costs Metric No Yes Simple local recurrence Yes No Standard time complexity O(mn) O(mn) Additional character history Not required Required by classical quadratic algorithm",
+      "paragraphs": [
+        "Property Optimal String Alignment Unrestricted Damerau–Levenshtein Insertion Yes Yes Deletion Yes Yes Substitution Yes Yes Adjacent transposition Yes Yes Substring may participate in later edits Restricted Yes Triangle inequality No Yes under standard unit costs Metric No Yes Simple local recurrence Yes No Standard time complexity O(mn) O(mn) Additional character history Not required Required by classical quadratic algorithm"
+      ]
+    },
+    {
+      "heading": "Worked example: a simple transposition",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 13,
+      "word_count": 45,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "x = \"abcd\" y = \"acbd\"",
+        "The strings differ by exchanging:",
+        "b and c",
+        "which are adjacent.",
+        "Therefore:",
+        "abcd → acbd",
+        "in one transposition:",
+        "d_DL( \"abcd\", \"acbd\" ) = 1",
+        "and:",
+        "d_OSA( \"abcd\", \"acbd\" ) = 1",
+        "while:",
+        "d_L( \"abcd\", \"acbd\" ) = 2"
+      ]
+    },
+    {
+      "heading": "Worked example: substitution versus transposition",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 11,
+      "word_count": 52,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "x = \"hte\" y = \"the\"",
+        "Levenshtein can use:",
+        "h → t t → h",
+        "for:",
+        "2 edits",
+        "Damerau–Levenshtein recognizes:",
+        "h t → t h",
+        "as one adjacent transposition:",
+        "d_DL( \"hte\", \"the\" ) = 1",
+        "This is exactly the kind of local typing error for which the transposition-aware model is attractive."
+      ]
+    },
+    {
+      "heading": "Worked example: OSA failure",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 2,
+      "word_count": 33,
+      "evidence": "x = \"ca\" y = \"abc\"",
+      "paragraphs": [
+        "x = \"ca\" y = \"abc\"",
+        "Model Distance Reason Levenshtein 3 No transposition primitive Optimal String Alignment 3 Cannot reuse the transposed substring as required Unrestricted Damerau–Levenshtein 2 ca → ac → abc"
+      ]
+    },
+    {
+      "heading": "Why most typo examples do not reveal the OSA problem",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 13,
+      "word_count": 61,
+      "evidence": "Suppose a misspelling contains one isolated adjacent transposition:",
+      "paragraphs": [
+        "Suppose a misspelling contains one isolated adjacent transposition:",
+        "hte → the",
+        "Both:",
+        "OSA",
+        "and:",
+        "unrestricted DL",
+        "return:",
+        "1",
+        "The difference appears only when edit operations interact.",
+        "Consequently, a test suite containing only ordinary isolated typos can make an OSA implementation appear to be a correct unrestricted Damerau–Levenshtein implementation.",
+        "The pair:",
+        "\"ca\" \"abc\"",
+        "should therefore be treated as a canonical regression test."
+      ]
+    },
+    {
+      "heading": "Relationship to weighted Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 6,
+      "word_count": 45,
+      "evidence": "Damerau–Levenshtein changes the operation set .",
+      "paragraphs": [
+        "Damerau–Levenshtein changes the operation set .",
+        "Weighted Levenshtein Distance changes the cost model .",
+        "The two ideas can be combined:",
+        "insert: W_I delete: W_D substitute: W_S transpose: W_T",
+        "or with symbol-dependent costs.",
+        "But once weights are generalized, the metric and algorithmic properties must be reanalyzed."
+      ]
+    },
+    {
+      "heading": "Weighted adjacent transpositions",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 9,
+      "word_count": 65,
+      "evidence": "A keyboard model might define:",
+      "paragraphs": [
+        "A keyboard model might define:",
+        "transpose adjacent characters: 0.5",
+        "while:",
+        "ordinary substitution: 1.0",
+        "to reflect a belief that adjacent swaps are especially plausible typing errors.",
+        "However, making transposition too inexpensive relative to insertion and deletion can invalidate structural assumptions used by the classical Lowrance–Wagner algorithm.",
+        "The weighted problem therefore cannot be treated as:",
+        "standard DL pseudocode + arbitrary cost constants",
+        "without verifying the relevant conditions."
+      ]
+    },
+    {
+      "heading": "Metricity of weighted Damerau–Levenshtein",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 11,
+      "word_count": 59,
+      "evidence": "Unit-cost unrestricted DL is a metric because every elementary edit has a same-cost inverse and scripts compose freely.",
+      "paragraphs": [
+        "Unit-cost unrestricted DL is a metric because every elementary edit has a same-cost inverse and scripts compose freely.",
+        "A weighted version may lose symmetry if:",
+        "insert(a) != delete(a)",
+        "or:",
+        "substitute(a,b) != substitute(b,a)",
+        "Likewise a directional transposition cost or zero-cost transformation can affect metric properties.",
+        "Thus:",
+        "weighted Damerau-Levenshtein",
+        "is not automatically:",
+        "a metric",
+        "merely because its unit-cost special case is."
+      ]
+    },
+    {
+      "heading": "Relationship to Hamming distance",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 11,
+      "word_count": 59,
+      "evidence": "For equal-length strings, Hamming distance counts positional mismatches:",
+      "paragraphs": [
+        "For equal-length strings, Hamming distance counts positional mismatches:",
+        "d_H(x,y) = number of i for which xᵢ != yᵢ",
+        "A transposition:",
+        "ab → ba",
+        "creates two positional mismatches when:",
+        "a != b",
+        "Therefore:",
+        "d_H( \"ab\", \"ba\" ) = 2",
+        "while:",
+        "d_DL( \"ab\", \"ba\" ) = 1",
+        "Damerau–Levenshtein is therefore better suited when adjacent ordering errors should count as one event."
+      ]
+    },
+    {
+      "heading": "Relationship to edit distance variants",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 9,
+      "word_count": 65,
+      "evidence": "Damerau–Levenshtein belongs to the broader family described in Edit Distance Variants .",
+      "paragraphs": [
+        "Damerau–Levenshtein belongs to the broader family described in Edit Distance Variants .",
+        "Its defining choice is:",
+        "operation set = { insertion, deletion, substitution, adjacent transposition }",
+        "Other variants change different assumptions:",
+        "Hamming removes insertion and deletion;",
+        "indel distance removes substitution as a cheaper primitive;",
+        "weighted distance changes costs;",
+        "affine-gap alignment changes the cost of consecutive gaps;",
+        "tree and graph edit distances change the object structure."
+      ]
+    },
+    {
+      "heading": "Adjacent transposition and human typing",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 9,
+      "word_count": 64,
+      "evidence": "One of the strongest motivations for Damerau–Levenshtein distance is keyboard input.",
+      "paragraphs": [
+        "One of the strongest motivations for Damerau–Levenshtein distance is keyboard input.",
+        "A user intending:",
+        "the",
+        "may type:",
+        "hte",
+        "because two keystrokes were entered in reversed order.",
+        "Classical Levenshtein interprets this as two symbol differences.",
+        "Damerau–Levenshtein interprets it as one transposition event.",
+        "If the application wants the score to approximate human error events rather than raw symbol replacements, the latter model can be more faithful."
+      ]
+    },
+    {
+      "heading": "But transpositions are not always one real-world error",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 10,
+      "word_count": 58,
+      "evidence": "The modeling assumption should still be questioned.",
+      "paragraphs": [
+        "The modeling assumption should still be questioned.",
+        "In some domains:",
+        "ab → ba",
+        "may represent:",
+        "two independent substitutions;",
+        "a structural reorder;",
+        "a severe error;",
+        "an impossible event.",
+        "Adding transposition automatically because it reduces numerical distance is not scientifically justified.",
+        "The operation should be included only when adjacent order reversal corresponds to a meaningful primitive error in the application."
+      ]
+    },
+    {
+      "heading": "Spelling correction",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 6,
+      "word_count": 51,
+      "evidence": "A spelling-correction system can use:",
+      "paragraphs": [
+        "A spelling-correction system can use:",
+        "query token ↓ candidate generation ↓ Damerau-Levenshtein verification ↓ language-model ranking ↓ correction",
+        "The distance handles local lexical errors such as:",
+        "hte → the freind → friend",
+        "while a language model or frequency model resolves ambiguity among several close candidates.",
+        "See Spell and Query Correction ."
+      ]
+    },
+    {
+      "heading": "Why edit distance alone is insufficient for spelling correction",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 11,
+      "word_count": 44,
+      "evidence": "Suppose an observed token is:",
+      "paragraphs": [
+        "Suppose an observed token is:",
+        "form",
+        "Nearby candidates might include:",
+        "from farm foam",
+        "Distance alone cannot determine which candidate is correct in:",
+        "I received it ___ Alice.",
+        "Context is necessary.",
+        "Damerau–Levenshtein should therefore normally serve as:",
+        "error-model evidence",
+        "rather than:",
+        "a complete language-understanding model"
+      ]
+    },
+    {
+      "heading": "OCR correction",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "Transpositions can occur in OCR or handwriting-recognition pipelines, but OCR often also produces transformations such as:",
+      "paragraphs": [
+        "Transpositions can occur in OCR or handwriting-recognition pipelines, but OCR often also produces transformations such as:",
+        "rn → m cl → d 0 ↔ O",
+        "The first two are multi-symbol transformations that ordinary Damerau–Levenshtein cannot represent as one primitive operation.",
+        "A richer OCR model may therefore require:",
+        "weighted substitutions;",
+        "splits;",
+        "merges;",
+        "multi-character substitutions.",
+        "Damerau–Levenshtein is useful but not universally sufficient."
+      ]
+    },
+    {
+      "heading": "Name and record matching",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 11,
+      "word_count": 41,
+      "evidence": "Adjacent transposition can help detect typographical variants in names:",
+      "paragraphs": [
+        "Adjacent transposition can help detect typographical variants in names:",
+        "michael micheal",
+        "where:",
+        "a e",
+        "may appear reversed.",
+        "However:",
+        "small DL distance",
+        "does not prove:",
+        "same person",
+        "Two distinct entities can have nearly identical names.",
+        "See Entity Resolution and Record Linkage ."
+      ]
+    },
+    {
+      "heading": "Biological sequences",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 11,
+      "word_count": 67,
+      "evidence": "Damerau–Levenshtein has also been applied to biological sequence comparison because it provides a general sequence-edit metric.",
+      "paragraphs": [
+        "Damerau–Levenshtein has also been applied to biological sequence comparison because it provides a general sequence-edit metric.",
+        "But biological interpretation requires caution.",
+        "A literal adjacent transposition:",
+        "AC → CA",
+        "is not necessarily a biologically meaningful primitive mutation analogous to a typing transposition.",
+        "Sequence alignment commonly requires:",
+        "substitution matrices;",
+        "gap-open penalties;",
+        "gap-extension penalties;",
+        "evolutionary scoring models.",
+        "Therefore Damerau–Levenshtein may be computationally applicable without being the best biological error model."
+      ]
+    },
+    {
+      "heading": "Log and event sequences",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 9,
+      "word_count": 69,
+      "evidence": "The same mathematics can operate on tokens rather than characters.",
+      "paragraphs": [
+        "The same mathematics can operate on tokens rather than characters.",
+        "Suppose:",
+        "x = [ login, load, save, logout ] y = [ login, save, load, logout ]",
+        "If adjacent event reordering should count as one error:",
+        "load save → save load",
+        "a token-level Damerau–Levenshtein distance may assign:",
+        "1",
+        "to this difference.",
+        "The algorithm does not care whether sequence elements are letters, log event IDs, tokens, or other discrete symbols."
+      ]
+    },
+    {
+      "heading": "Unicode representation matters",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 11,
+      "word_count": 42,
+      "evidence": "Damerau–Levenshtein operates on a sequence of abstract elements.",
+      "paragraphs": [
+        "Damerau–Levenshtein operates on a sequence of abstract elements.",
+        "An implementation must therefore decide what one element is.",
+        "Possible choices include:",
+        "bytes;",
+        "UTF-8 code units;",
+        "UTF-16 code units;",
+        "Unicode code points;",
+        "extended grapheme clusters.",
+        "The meaning of:",
+        "adjacent transposition",
+        "changes with this choice."
+      ]
+    },
+    {
+      "heading": "Code-unit transposition can be invalid text semantics",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 6,
+      "word_count": 51,
+      "evidence": "A user-perceived character may contain multiple Unicode code units.",
+      "paragraphs": [
+        "A user-perceived character may contain multiple Unicode code units.",
+        "Swapping two adjacent code units inside such a character can produce:",
+        "a malformed sequence;",
+        "a different combining structure;",
+        "an operation no user would perceive as transposing two characters.",
+        "For human text, computing Damerau–Levenshtein over raw encoding units may therefore be conceptually wrong."
+      ]
+    },
+    {
+      "heading": "Canonical equivalence",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 14,
+      "word_count": 57,
+      "evidence": "The visible character:",
+      "paragraphs": [
+        "The visible character:",
+        "é",
+        "can be represented as:",
+        "U+00E9",
+        "or:",
+        "U+0065 U+0301",
+        "Without normalization, the two forms have different sequence lengths.",
+        "The distance algorithm may then introduce:",
+        "insertions;",
+        "deletions;",
+        "transpositions involving combining marks",
+        "even though the rendered text is canonically equivalent.",
+        "A robust text pipeline should define normalization before distance computation.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Grapheme-level Damerau–Levenshtein",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "If one edit should correspond to one user-perceived character:",
+      "paragraphs": [
+        "If one edit should correspond to one user-perceived character:",
+        "raw Unicode ↓ Unicode normalization ↓ grapheme segmentation ↓ map graphemes to symbols ↓ Damerau-Levenshtein",
+        "Then adjacent transposition means:",
+        "swap two adjacent grapheme clusters",
+        "rather than:",
+        "swap two code points",
+        "or:",
+        "swap two bytes"
+      ]
+    },
+    {
+      "heading": "Token-level Damerau–Levenshtein",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 9,
+      "word_count": 56,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "x = [the, quick, brown, fox] y = [the, brown, quick, fox]",
+        "At token level, the middle words are adjacent and reversed.",
+        "Therefore:",
+        "d_DL(x,y) = 1",
+        "if one token transposition costs one.",
+        "At character level, the same textual difference can have a much larger distance.",
+        "Again:",
+        "same algorithm + different sequence units = different distance"
+      ]
+    },
+    {
+      "heading": "Normalization",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 10,
+      "word_count": 50,
+      "evidence": "Raw Damerau–Levenshtein distance grows with sequence length.",
+      "paragraphs": [
+        "Raw Damerau–Levenshtein distance grows with sequence length.",
+        "A common derived score is:",
+        "d_norm(x,y) = d_DL(x,y) / max( |x|, |y| )",
+        "for nonempty input pairs.",
+        "Under unit costs:",
+        "0 ≤ d_DL(x,y) ≤ max(|x|,|y|)",
+        "so this normalized value lies in:",
+        "[0,1]",
+        "with an explicit convention needed for:",
+        "x = y = \"\""
+      ]
+    },
+    {
+      "heading": "A common similarity transformation",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 8,
+      "word_count": 35,
+      "evidence": "One can define:",
+      "paragraphs": [
+        "One can define:",
+        "similarity(x,y) = 1 - d_norm(x,y)",
+        "giving:",
+        "1 = identical 0 = maximally distant under this normalization",
+        "This is often convenient for interfaces and ranking.",
+        "But:",
+        "similarity",
+        "is not the original Damerau–Levenshtein metric."
+      ]
+    },
+    {
+      "heading": "Normalization does not automatically preserve metricity",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 11,
+      "word_count": 50,
+      "evidence": "Even though:",
+      "paragraphs": [
+        "Even though:",
+        "d_DL",
+        "is a metric, dividing pairwise distances by a quantity that changes with:",
+        "x and y",
+        "does not automatically preserve triangle inequality.",
+        "Therefore a normalized DL score should not automatically be inserted into:",
+        "BK-trees;",
+        "metric trees;",
+        "metric clustering;",
+        "triangle-inequality pruning",
+        "without proving that the chosen normalization remains metric."
+      ]
+    },
+    {
+      "heading": "Metric indexing",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 16,
+      "word_count": 68,
+      "evidence": "Because unrestricted unit-cost Damerau–Levenshtein distance is a metric, generic metric structures can theoretically use it.",
+      "paragraphs": [
+        "Because unrestricted unit-cost Damerau–Levenshtein distance is a metric, generic metric structures can theoretically use it.",
+        "For a BK-tree pivot:",
+        "p",
+        "query:",
+        "q",
+        "and threshold:",
+        "τ",
+        "suppose:",
+        "d_DL(q,p) = r",
+        "A child branch containing objects whose distance from the pivot is:",
+        "s",
+        "need only be explored when:",
+        "|s-r| ≤ τ",
+        "because of triangle inequality.",
+        "This pruning is valid for true metric DL.",
+        "It is not automatically valid for OSA."
+      ]
+    },
+    {
+      "heading": "Why mislabeling OSA can corrupt an index",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 11,
+      "word_count": 65,
+      "evidence": "Suppose software exposes:",
+      "paragraphs": [
+        "Suppose software exposes:",
+        "damerau_levenshtein()",
+        "but internally computes OSA.",
+        "A developer sees the name and assumes:",
+        "metric distance",
+        "then builds a metric tree around it.",
+        "Because OSA can violate triangle inequality, a pruning rule may eliminate a subtree containing a valid neighbor.",
+        "The result is not merely a slightly different ranking.",
+        "It can become:",
+        "incorrect retrieval with false negatives",
+        "This is one reason nomenclature matters operationally."
+      ]
+    },
+    {
+      "heading": "Threshold filtering",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "For a requested radius:",
+      "paragraphs": [
+        "For a requested radius:",
+        "τ",
+        "the length difference gives an immediate necessary condition:",
+        "||x|-|y|| ≤ τ",
+        "Therefore:",
+        "if ||x|-|y|| > τ reject",
+        "without any matrix computation."
+      ]
+    },
+    {
+      "heading": "Levenshtein as an upper-bound source",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 11,
+      "word_count": 35,
+      "evidence": "Because:",
+      "paragraphs": [
+        "Because:",
+        "d_DL(x,y) ≤ d_L(x,y)",
+        "a Levenshtein distance:",
+        "d_L(x,y) ≤ τ",
+        "immediately guarantees:",
+        "d_DL(x,y) ≤ τ",
+        "However:",
+        "d_L(x,y) > τ",
+        "does not prove:",
+        "d_DL(x,y) > τ",
+        "because a transposition can reduce the required number of edits."
+      ]
+    },
+    {
+      "heading": "Levenshtein lower-bound relation for rejection",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 9,
+      "word_count": 45,
+      "evidence": "From:",
+      "paragraphs": [
+        "From:",
+        "d_L(x,y) ≤ 2d_DL(x,y)",
+        "we obtain:",
+        "d_DL(x,y) ≥ ceil( d_L(x,y)/2 )",
+        "Therefore:",
+        "ceil( d_L(x,y)/2 ) > τ",
+        "is sufficient to prove:",
+        "d_DL(x,y) > τ",
+        "This bound is often too weak to justify computing full Levenshtein distance as a separate filter, but it is useful theoretically."
+      ]
+    },
+    {
+      "heading": "q-gram filtering needs transposition-aware analysis",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 6,
+      "word_count": 65,
+      "evidence": "For classical Levenshtein distance, one edit can disrupt a bounded number of q-grams.",
+      "paragraphs": [
+        "For classical Levenshtein distance, one edit can disrupt a bounded number of q-grams.",
+        "A transposition affects the local order of two neighboring symbols and can disturb overlapping q-grams differently from a single substitution.",
+        "Therefore a q-gram theorem derived specifically for:",
+        "insert delete substitute",
+        "should not automatically be assumed valid with the same constants after transposition is added.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Bit-parallel algorithms with transposition",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 7,
+      "word_count": 83,
+      "evidence": "Bit-parallelism has also been extended to approximate string matching under transposition-aware edit models.",
+      "paragraphs": [
+        "Bit-parallelism has also been extended to approximate string matching under transposition-aware edit models.",
+        "The basic idea is similar to the Myers Bit-Vector Algorithm :",
+        "encode many DP states inside machine words",
+        "but extra state is required to recognize the relationship between:",
+        "current symbols and symbols from the preceding position",
+        "needed for transpositions.",
+        "Such algorithms can be highly useful for short patterns and small thresholds, but the exact semantics must again be checked: some bit-parallel algorithms compute restricted transposition models rather than unrestricted DL."
+      ]
+    },
+    {
+      "heading": "Damerau–Levenshtein automata",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 13,
+      "word_count": 65,
+      "evidence": "A standard Levenshtein automaton represents bounded:",
+      "paragraphs": [
+        "A standard Levenshtein automaton represents bounded:",
+        "insert delete substitute",
+        "errors.",
+        "Adding adjacent transpositions requires extra state remembering enough recent pattern/input information to determine whether:",
+        "ab",
+        "has arrived as:",
+        "ba",
+        "The finite-state construction is therefore larger than for ordinary Levenshtein distance.",
+        "Care is again necessary to determine whether an implementation recognizes:",
+        "restricted transpositions",
+        "or:",
+        "the full unrestricted metric",
+        "rather than assuming the name settles the issue."
+      ]
+    },
+    {
+      "heading": "Transposition-aware fuzzy search",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 7,
+      "word_count": 49,
+      "evidence": "A scalable search architecture may use:",
+      "paragraphs": [
+        "A scalable search architecture may use:",
+        "query ↓ normalization ↓ candidate index ↓ cheap filters ↓ Damerau-Levenshtein threshold verification ↓ ranking",
+        "At corpus scale, the important systems question remains:",
+        "which candidates should be verified?",
+        "not merely:",
+        "how fast can one distance be computed?",
+        "See Fuzzy Search at Scale ."
+      ]
+    },
+    {
+      "heading": "Edit script reconstruction",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 7,
+      "word_count": 55,
+      "evidence": "Computing the numerical distance is different from recovering the actual sequence of edits.",
+      "paragraphs": [
+        "Computing the numerical distance is different from recovering the actual sequence of edits.",
+        "With a full dynamic-programming matrix, each cell can record which transition produced its optimum:",
+        "INSERT DELETE SUBSTITUTE MATCH TRANSPOSE",
+        "Starting at the final state, follow predecessor pointers until:",
+        "(0,0)",
+        "is reached.",
+        "Reverse the resulting operation list to obtain a forward edit script."
+      ]
+    },
+    {
+      "heading": "Transposition traceback contains nonlocal jumps",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 12,
+      "word_count": 61,
+      "evidence": "For unrestricted DL, a transposition predecessor may be:",
+      "paragraphs": [
+        "For unrestricted DL, a transposition predecessor may be:",
+        "H[i1][j1]",
+        "rather than a nearby cell.",
+        "A traceback system must therefore store or reconstruct:",
+        "the earlier matching source occurrence;",
+        "the earlier matching target occurrence;",
+        "intermediate deletions;",
+        "the transposition;",
+        "intermediate insertions.",
+        "Treating the transposition transition as merely:",
+        "jump back 2 rows and 2 columns",
+        "would reconstruct OSA-style transpositions rather than the full Lowrance–Wagner structure."
+      ]
+    },
+    {
+      "heading": "Multiple optimal edit scripts",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 8,
+      "word_count": 50,
+      "evidence": "As with ordinary edit distance, the optimal distance can correspond to several different edit scripts.",
+      "paragraphs": [
+        "As with ordinary edit distance, the optimal distance can correspond to several different edit scripts.",
+        "For example, depending on the string pair:",
+        "two substitutions",
+        "may tie with:",
+        "delete + insert",
+        "or:",
+        "transposition + another edit",
+        "A deterministic implementation should define a tie-breaking order if the actual edit script is exposed."
+      ]
+    },
+    {
+      "heading": "Suggested tie-breaking policy",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 4,
+      "word_count": 38,
+      "evidence": "One possible policy is:",
+      "paragraphs": [
+        "One possible policy is:",
+        "1. MATCH 2. TRANSPOSE 3. SUBSTITUTE 4. DELETE 5. INSERT",
+        "but this is a presentation choice, not part of the mathematical distance.",
+        "Another application may prefer fewer gap operations or preserve source positions differently."
+      ]
+    },
+    {
+      "heading": "Testing an implementation",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "A Damerau–Levenshtein implementation should not be validated using only random spelling mistakes.",
+      "paragraphs": [
+        "A Damerau–Levenshtein implementation should not be validated using only random spelling mistakes.",
+        "Tests must explicitly distinguish restricted and unrestricted semantics."
+      ]
+    },
+    {
+      "heading": "Identity",
+      "level": 3,
+      "id": "ux-section-77",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "DL( \"algorithm\", \"algorithm\" ) = 0",
+      "paragraphs": [
+        "DL( \"algorithm\", \"algorithm\" ) = 0"
+      ]
+    },
+    {
+      "heading": "One insertion",
+      "level": 3,
+      "id": "ux-section-78",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "DL( \"cat\", \"cart\" ) = 1",
+      "paragraphs": [
+        "DL( \"cat\", \"cart\" ) = 1"
+      ]
+    },
+    {
+      "heading": "One deletion",
+      "level": 3,
+      "id": "ux-section-79",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "DL( \"cart\", \"cat\" ) = 1",
+      "paragraphs": [
+        "DL( \"cart\", \"cat\" ) = 1"
+      ]
+    },
+    {
+      "heading": "One substitution",
+      "level": 3,
+      "id": "ux-section-80",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "DL( \"cat\", \"cut\" ) = 1",
+      "paragraphs": [
+        "DL( \"cat\", \"cut\" ) = 1"
+      ]
+    },
+    {
+      "heading": "One transposition",
+      "level": 3,
+      "id": "ux-section-81",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "DL( \"form\", \"from\" ) = 1",
+      "paragraphs": [
+        "DL( \"form\", \"from\" ) = 1"
+      ]
+    },
+    {
+      "heading": "OSA discriminator",
+      "level": 3,
+      "id": "ux-section-82",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "DL( \"ca\", \"abc\" ) = 2 OSA( \"ca\", \"abc\" ) = 3",
+      "paragraphs": [
+        "DL( \"ca\", \"abc\" ) = 2 OSA( \"ca\", \"abc\" ) = 3"
+      ]
+    },
+    {
+      "heading": "Empty strings",
+      "level": 3,
+      "id": "ux-section-83",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "DL( \"\", \"\" ) = 0",
+      "paragraphs": [
+        "DL( \"\", \"\" ) = 0",
+        "DL( \"\", \"abc\" ) = 3"
+      ]
+    },
+    {
+      "heading": "Length lower bound",
+      "level": 3,
+      "id": "ux-section-84",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "x = \"a\" y = \"abcdefgh\" DL(x,y) ≥ 7",
+      "paragraphs": [
+        "x = \"a\" y = \"abcdefgh\" DL(x,y) ≥ 7"
+      ]
+    },
+    {
+      "heading": "Metric regression testing",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 8,
+      "word_count": 50,
+      "evidence": "For unrestricted unit-cost DL, generate many triples:",
+      "paragraphs": [
+        "For unrestricted unit-cost DL, generate many triples:",
+        "x y z",
+        "and verify:",
+        "DL(x,z) ≤ DL(x,y) + DL(y,z)",
+        "OSA should not be expected to pass this test universally.",
+        "Running this test against a library is an effective way to detect whether a function advertised as:",
+        "Damerau-Levenshtein",
+        "may actually be implementing OSA."
+      ]
+    },
+    {
+      "heading": "Exhaustive small-alphabet testing",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 16,
+      "word_count": 47,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "Σ = {a,b}",
+        "Generate every string up to length:",
+        "4",
+        "or:",
+        "5",
+        "Then compare:",
+        "a trusted unrestricted implementation;",
+        "the optimized implementation under test;",
+        "an OSA implementation;",
+        "ordinary Levenshtein distance.",
+        "Useful invariants include:",
+        "DL(x,y) ≤ OSA(x,y) ≤ LEV(x,y)",
+        "and:",
+        "LEV(x,y) ≤ 2 · DL(x,y)",
+        "for unit-cost models."
+      ]
+    },
+    {
+      "heading": "Differential testing",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "for every small pair (x,y): expected = trusted_unrestricted_DL(x,y) actual = implementation_under_test(x,y) assert expected == actual",
+      "paragraphs": [
+        "for every small pair (x,y): expected = trusted_unrestricted_DL(x,y) actual = implementation_under_test(x,y) assert expected == actual",
+        "Then separately confirm that:",
+        "OSA(\"ca\",\"abc\") = 3",
+        "and:",
+        "DL(\"ca\",\"abc\") = 2",
+        "This catches one of the most common implementation substitutions."
+      ]
+    },
+    {
+      "heading": "Testing last-occurrence handling",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "Repeated symbols are especially important because unrestricted DL depends on previous occurrences.",
+      "paragraphs": [
+        "Repeated symbols are especially important because unrestricted DL depends on previous occurrences.",
+        "Include cases such as:",
+        "abab baba aabca abaca aaaa aaaa",
+        "to test:",
+        "last-occurrence updates;",
+        "repeated-character transpositions;",
+        "incorrect reuse of stale positions."
+      ]
+    },
+    {
+      "heading": "Implementation bug: updating last occurrence too early",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 7,
+      "word_count": 49,
+      "evidence": "The:",
+      "paragraphs": [
+        "The:",
+        "last",
+        "table must represent occurrences from rows already completely processed.",
+        "If:",
+        "last[a[i]]",
+        "is updated before the current row finishes, later cells in that same row can incorrectly treat the current source position as a previous occurrence.",
+        "The update should occur after the inner loop for that source symbol."
+      ]
+    },
+    {
+      "heading": "Implementation bug: confusing source and target last positions",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 3,
+      "word_count": 30,
+      "evidence": "The unrestricted algorithm uses two conceptually different histories:",
+      "paragraphs": [
+        "The unrestricted algorithm uses two conceptually different histories:",
+        "last occurrence in source rows and last matching target column within current row",
+        "Reversing or conflating them corrupts the nonlocal transposition candidate."
+      ]
+    },
+    {
+      "heading": "Implementation bug: using OSA recurrence and naming it DL",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "This is arguably the most common conceptual bug.",
+      "paragraphs": [
+        "This is arguably the most common conceptual bug.",
+        "The presence of:",
+        "D[i-2][j-2] + 1",
+        "does not by itself mean an implementation computes unrestricted Damerau–Levenshtein distance.",
+        "That simple recurrence computes OSA."
+      ]
+    },
+    {
+      "heading": "Implementation bug: treating arbitrary swaps as one edit",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 7,
+      "word_count": 25,
+      "evidence": "A function that permits:",
+      "paragraphs": [
+        "A function that permits:",
+        "swap positions i and j",
+        "for arbitrary:",
+        "|i-j|",
+        "is not computing standard Damerau–Levenshtein distance.",
+        "The primitive operation is:",
+        "adjacent transposition only"
+      ]
+    },
+    {
+      "heading": "Implementation bug: ignoring Unicode segmentation",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "Computing over UTF-16 units, for example, can allow a transposition to swap pieces of a surrogate pair.",
+      "paragraphs": [
+        "Computing over UTF-16 units, for example, can allow a transposition to swap pieces of a surrogate pair.",
+        "The numerical result may be internally consistent at the code-unit level while being meaningless as human-character distance."
+      ]
+    },
+    {
+      "heading": "Implementation bug: applying metric pruning to OSA",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "Because OSA lacks triangle inequality, code such as:",
+      "paragraphs": [
+        "Because OSA lacks triangle inequality, code such as:",
+        "if branch_distance outside metric interval: prune branch",
+        "may create false negatives.",
+        "The distance contract must be known before selecting an index."
+      ]
+    },
+    {
+      "heading": "Performance engineering",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "For large numbers of pairwise calculations, important implementation details include:",
+      "paragraphs": [
+        "For large numbers of pairwise calculations, important implementation details include:",
+        "mapping symbols to compact integer IDs;",
+        "using contiguous matrices;",
+        "avoiding per-cell object allocation;",
+        "using arrays instead of hash maps when the alphabet is small;",
+        "reusing memory buffers;",
+        "applying length rejection before dynamic programming;",
+        "normalizing Unicode once rather than inside the hot loop."
+      ]
+    },
+    {
+      "heading": "Array versus map for last occurrences",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 8,
+      "word_count": 46,
+      "evidence": "If the alphabet is small:",
+      "paragraphs": [
+        "If the alphabet is small:",
+        "DNA: 4 symbols ASCII: small fixed universe",
+        "use:",
+        "last[symbol_id]",
+        "as a compact integer array.",
+        "For large or sparse Unicode/token vocabularies, a map may be more memory efficient.",
+        "The appropriate data structure depends on:",
+        "|Σ| and number of distinct symbols actually present"
+      ]
+    },
+    {
+      "heading": "Alphabet compression",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 7,
+      "word_count": 37,
+      "evidence": "Before computation, collect the symbols present in:",
+      "paragraphs": [
+        "Before computation, collect the symbols present in:",
+        "x ∪ y",
+        "and map them to:",
+        "0 1 2 ... s-1",
+        "Then the last-occurrence table can have size:",
+        "s",
+        "instead of the size of the entire nominal Unicode universe."
+      ]
+    },
+    {
+      "heading": "Why preprocessing can improve cache behavior",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "Compact integer symbol IDs allow:",
+      "paragraphs": [
+        "Compact integer symbol IDs allow:",
+        "dense last-occurrence arrays;",
+        "fewer pointer dereferences;",
+        "smaller working sets;",
+        "better locality.",
+        "For long sequences, memory behavior can matter as much as arithmetic complexity.",
+        "See Levenshtein Performance Engineering ."
+      ]
+    },
+    {
+      "heading": "When OSA can still be appropriate",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 9,
+      "word_count": 56,
+      "evidence": "OSA is not inherently wrong.",
+      "paragraphs": [
+        "OSA is not inherently wrong.",
+        "It is a different distance.",
+        "It can be attractive when:",
+        "transpositions are expected to be isolated;",
+        "strings are short;",
+        "the metric property is not required;",
+        "implementation simplicity is important;",
+        "the restricted model matches the intended application.",
+        "The problem occurs when OSA is described or used as though it were unrestricted DL."
+      ]
+    },
+    {
+      "heading": "When unrestricted DL is preferable",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "Use unrestricted Damerau–Levenshtein when:",
+      "paragraphs": [
+        "Use unrestricted Damerau–Levenshtein when:",
+        "the mathematical definition truly requires arbitrary sequences of the four edit operations;",
+        "transposed symbols may participate in later edits;",
+        "metricity matters;",
+        "a metric index will be used;",
+        "the distinction from OSA can affect correctness."
+      ]
+    },
+    {
+      "heading": "When classical Levenshtein may be better",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "Do not add transposition merely because it exists.",
+      "paragraphs": [
+        "Do not add transposition merely because it exists.",
+        "Classical Levenshtein can be preferable when:",
+        "order reversal is not a plausible primitive error;",
+        "the application already has optimized Levenshtein infrastructure;",
+        "word-parallel methods dominate performance requirements;",
+        "transposition has little effect on ranking quality."
+      ]
+    },
+    {
+      "heading": "When neither model is sufficient",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Use a richer model when errors include:",
+      "paragraphs": [
+        "Use a richer model when errors include:",
+        "rn → m colour → color ph → f multi-token reorderings long affine gaps semantic replacements",
+        "These transformations cannot always be represented faithfully by:",
+        "single-character insert delete substitute adjacent transpose"
+      ]
+    },
+    {
+      "heading": "Damerau–Levenshtein is lexical, not semantic",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 10,
+      "word_count": 34,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "car cat",
+        "Their distance is:",
+        "1",
+        "despite different meanings.",
+        "Meanwhile:",
+        "car automobile",
+        "are semantically related but lexically distant.",
+        "Adding adjacent transposition does not change this limitation.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Algorithm-selection table",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 57,
+      "evidence": "Requirement Strong starting point Insert/delete/substitute only Classical Levenshtein Isolated adjacent typos, simple implementation OSA may be sufficient True four-operation edit metric Unrestricted Damerau–Levenshtein Need triangle inequality Unrestricted unit-cost DL, not OSA Arbitrary edit weights Analyze weighted model separately Short pattern, threshold search Consider transposition-aware bit-parallel methods Huge dictionary Index/filter before exact verification Semantic similarity Use semantic representations",
+      "paragraphs": [
+        "Requirement Strong starting point Insert/delete/substitute only Classical Levenshtein Isolated adjacent typos, simple implementation OSA may be sufficient True four-operation edit metric Unrestricted Damerau–Levenshtein Need triangle inequality Unrestricted unit-cost DL, not OSA Arbitrary edit weights Analyze weighted model separately Short pattern, threshold search Consider transposition-aware bit-parallel methods Huge dictionary Index/filter before exact verification Semantic similarity Use semantic representations"
+      ]
+    },
+    {
+      "heading": "Complexity comparison",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 1,
+      "word_count": 43,
+      "evidence": "Model Classical time Typical classical space Levenshtein / Wagner–Fischer O(mn) O(mn) , reducible for distance only Optimal String Alignment O(mn) O(mn) , reducible for distance only Unrestricted DL / Lowrance–Wagner O(mn) O(mn) in classical implementation Reduced-space unrestricted DL O(mn) O(s·min(m,n)+m+n) in later algorithms",
+      "paragraphs": [
+        "Model Classical time Typical classical space Levenshtein / Wagner–Fischer O(mn) O(mn) , reducible for distance only Optimal String Alignment O(mn) O(mn) , reducible for distance only Unrestricted DL / Lowrance–Wagner O(mn) O(mn) in classical implementation Reduced-space unrestricted DL O(mn) O(s·min(m,n)+m+n) in later algorithms"
+      ]
+    },
+    {
+      "heading": "Conceptual view as shortest paths",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "Unrestricted Damerau–Levenshtein can be understood as a shortest-path distance in a huge graph whose vertices are strings.",
+      "paragraphs": [
+        "Unrestricted Damerau–Levenshtein can be understood as a shortest-path distance in a huge graph whose vertices are strings.",
+        "There is an edge of cost one whenever one string can be obtained from another by:",
+        "insert delete substitute adjacent transpose",
+        "Then:",
+        "d_DL(x,y)",
+        "is the shortest path between vertices:",
+        "x and y",
+        "This viewpoint immediately explains several properties."
+      ]
+    },
+    {
+      "heading": "Symmetry",
+      "level": 3,
+      "id": "ux-section-107",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "The unit-cost edit graph is effectively undirected because every operation has an equal-cost inverse.",
+      "paragraphs": [
+        "The unit-cost edit graph is effectively undirected because every operation has an equal-cost inverse."
+      ]
+    },
+    {
+      "heading": "Triangle inequality",
+      "level": 3,
+      "id": "ux-section-108",
+      "paragraph_count": 1,
+      "word_count": 2,
+      "evidence": "Paths concatenate.",
+      "paragraphs": [
+        "Paths concatenate."
+      ]
+    },
+    {
+      "heading": "Metricity",
+      "level": 3,
+      "id": "ux-section-109",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "Shortest-path distance in such a positive undirected graph is a metric.",
+      "paragraphs": [
+        "Shortest-path distance in such a positive undirected graph is a metric.",
+        "OSA does not correspond to the same unrestricted graph because its path legality depends on edit history."
+      ]
+    },
+    {
+      "heading": "Conceptual hierarchy",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 1,
+      "word_count": 63,
+      "evidence": "EDIT DISTANCE │ ├── Levenshtein │ │ │ ├── insertion │ ├── deletion │ └── substitution │ └── transposition-aware family │ ├── Optimal String Alignment │ │ │ ├── insert │ ├── delete │ ├── substitute │ ├── adjacent transpose │ └── restricted edit interaction │ └── Unrestricted Damerau-Levenshtein │ ├── insert ├── delete ├── substitute ├── adjacent transpose └── unrestricted edit composition",
+      "paragraphs": [
+        "EDIT DISTANCE │ ├── Levenshtein │ │ │ ├── insertion │ ├── deletion │ └── substitution │ └── transposition-aware family │ ├── Optimal String Alignment │ │ │ ├── insert │ ├── delete │ ├── substitute │ ├── adjacent transpose │ └── restricted edit interaction │ └── Unrestricted Damerau-Levenshtein │ ├── insert ├── delete ├── substitute ├── adjacent transpose └── unrestricted edit composition"
+      ]
+    },
+    {
+      "heading": "The important distinctions in one table",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 1,
+      "word_count": 75,
+      "evidence": "Question Answer Does Levenshtein include transposition? No Does Damerau–Levenshtein include arbitrary swaps? No; the primitive swap is adjacent Is OSA the same as unrestricted DL? No Can OSA differ numerically from DL? Yes Is OSA a metric? No Is standard unrestricted DL a metric? Yes Does unrestricted DL have an O(mn) algorithm? Yes for the standard unit-cost model Can arbitrary weighted transpositions use the same theorem unchanged? No Does adding transposition make distance semantic? No",
+      "paragraphs": [
+        "Question Answer Does Levenshtein include transposition? No Does Damerau–Levenshtein include arbitrary swaps? No; the primitive swap is adjacent Is OSA the same as unrestricted DL? No Can OSA differ numerically from DL? Yes Is OSA a metric? No Is standard unrestricted DL a metric? Yes Does unrestricted DL have an O(mn) algorithm? Yes for the standard unit-cost model Can arbitrary weighted transpositions use the same theorem unchanged? No Does adding transposition make distance semantic? No"
+      ]
+    },
+    {
+      "heading": "\"Damerau–Levenshtein is Levenshtein with one extra if statement\"",
+      "level": 3,
+      "id": "ux-section-113",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "That describes the common OSA recurrence, not unrestricted Damerau–Levenshtein distance.",
+      "paragraphs": [
+        "That describes the common OSA recurrence, not unrestricted Damerau–Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "\"OSA and Damerau–Levenshtein always give the same answer\"",
+      "level": 3,
+      "id": "ux-section-114",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "DL(\"ca\",\"abc\") = 2 OSA(\"ca\",\"abc\") = 3"
+      ]
+    },
+    {
+      "heading": "\"Any swap counts as one transposition\"",
+      "level": 3,
+      "id": "ux-section-115",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "No. The primitive operation swaps adjacent symbols only.",
+      "paragraphs": [
+        "No. The primitive operation swaps adjacent symbols only."
+      ]
+    },
+    {
+      "heading": "\"OSA is a metric because all edit operations cost one\"",
+      "level": 3,
+      "id": "ux-section-116",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "No. Its restriction on repeated editing breaks closure under concatenation and triangle inequality can fail.",
+      "paragraphs": [
+        "No. Its restriction on repeated editing breaks closure under concatenation and triangle inequality can fail."
+      ]
+    },
+    {
+      "heading": "\"Unrestricted DL has to be slower than quadratic\"",
+      "level": 3,
+      "id": "ux-section-117",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "No. Standard unit-cost DL has an O(mn) Lowrance–Wagner-style algorithm.",
+      "paragraphs": [
+        "No. Standard unit-cost DL has an O(mn) Lowrance–Wagner-style algorithm."
+      ]
+    },
+    {
+      "heading": "\"Weighted DL is always metric\"",
+      "level": 3,
+      "id": "ux-section-118",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "No. Metric properties depend on the cost system.",
+      "paragraphs": [
+        "No. Metric properties depend on the cost system."
+      ]
+    },
+    {
+      "heading": "\"If two names have distance one, they are the same entity\"",
+      "level": 3,
+      "id": "ux-section-119",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "No. String distance measures sequence edits, not identity.",
+      "paragraphs": [
+        "No. String distance measures sequence edits, not identity."
+      ]
+    },
+    {
+      "heading": "\"Normalization keeps all properties of the original metric\"",
+      "level": 3,
+      "id": "ux-section-120",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Not automatically. Triangle inequality must be reconsidered for the normalized function.",
+      "paragraphs": [
+        "Not automatically. Triangle inequality must be reconsidered for the normalized function."
+      ]
+    },
+    {
+      "heading": "Correctness checklist",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 10,
+      "word_count": 80,
+      "evidence": "Decide whether the required function is OSA or unrestricted DL.",
+      "paragraphs": [
+        "Decide whether the required function is OSA or unrestricted DL.",
+        "Define the sequence unit. Bytes, code points, graphemes, tokens?",
+        "Confirm that transposition means adjacent transposition.",
+        "Use the canonical \"ca\" versus \"abc\" test.",
+        "Verify symmetry for the standard unit-cost implementation.",
+        "Verify triangle inequality if the result is advertised as unrestricted DL.",
+        "Do not apply metric pruning to OSA.",
+        "Audit weighted costs before reusing the standard algorithm.",
+        "Normalize Unicode before distance computation when required.",
+        "Differential-test optimized implementations against a trusted full algorithm."
+      ]
+    },
+    {
+      "heading": "Implementation checklist",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 10,
+      "word_count": 94,
+      "evidence": "Map sequence symbols to compact IDs when practical.",
+      "paragraphs": [
+        "Map sequence symbols to compact IDs when practical.",
+        "Initialize the unrestricted matrix with a safe sentinel border.",
+        "Initialize the last-occurrence structure to zero/no occurrence.",
+        "Reset the current row's last matching target column before each inner loop.",
+        "Retrieve the previous source occurrence before updating it.",
+        "Compute insertion, deletion, substitution, and transposition candidates separately.",
+        "Update the current source character's global last occurrence only after finishing its row.",
+        "Store predecessor metadata if edit-script reconstruction is required.",
+        "Apply the length lower bound before allocating a large matrix when using thresholds.",
+        "Benchmark memory traffic as well as arithmetic runtime."
+      ]
+    },
+    {
+      "heading": "Testing matrix",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 33,
+      "evidence": "Input A Input B Levenshtein OSA Unrestricted DL cat cat 0 0 0 cat cut 1 1 1 form from 2 1 1 abcd acbd 2 1 1 ca abc 3 3 2",
+      "paragraphs": [
+        "Input A Input B Levenshtein OSA Unrestricted DL cat cat 0 0 0 cat cut 1 1 1 form from 2 1 1 abcd acbd 2 1 1 ca abc 3 3 2"
+      ]
+    },
+    {
+      "heading": "Why this distance remains important",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 9,
+      "word_count": 98,
+      "evidence": "Damerau–Levenshtein distance occupies an important position between very simple positional comparison and more elaborate probabilistic or domain-specific sequence models.",
+      "paragraphs": [
+        "Damerau–Levenshtein distance occupies an important position between very simple positional comparison and more elaborate probabilistic or domain-specific sequence models.",
+        "Compared with ordinary Levenshtein distance, it captures a common class of local ordering errors with only one additional primitive operation.",
+        "Compared with unrestricted language or probabilistic models, it remains:",
+        "mathematically clean;",
+        "exact;",
+        "interpretable;",
+        "computable in quadratic time under the standard model;",
+        "metric when unrestricted and unit-cost.",
+        "Its greatest conceptual challenge is not the definition of transposition itself. It is maintaining the distinction between a genuinely unrestricted edit metric and restricted approximations that happen to agree on many common examples."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 9,
+      "word_count": 459,
+      "evidence": "Damerau–Levenshtein distance extends classical Levenshtein distance by treating the transposition of two adjacent sequence elements as one primitive edit alongside insertion, deletion, and substitution. Under the standard unit-cost model, the distance is the minimum number of these four operations required to transform one sequence into another.",
+      "paragraphs": [
+        "Damerau–Levenshtein distance extends classical Levenshtein distance by treating the transposition of two adjacent sequence elements as one primitive edit alongside insertion, deletion, and substitution. Under the standard unit-cost model, the distance is the minimum number of these four operations required to transform one sequence into another.",
+        "Adding transposition can materially change results. For example, form → from has Levenshtein distance 2 but Damerau–Levenshtein distance 1. More generally, because the Damerau model contains every ordinary Levenshtein operation, d_DL(x,y) ≤ d_L(x,y) . A transposition can be simulated by at most two Levenshtein edits, yielding the useful unit-cost bound ceil(d_L/2) ≤ d_DL ≤ d_L .",
+        "The most important distinction is between Optimal String Alignment distance and unrestricted Damerau–Levenshtein distance. OSA uses a simple extension of Wagner–Fischer in which a reversed final pair can be reached from D[i-2][j-2] with one transposition. That algorithm is quadratic and useful, but it restricts substrings from participating repeatedly in edits. Consequently it can produce different values from true DL.",
+        "The canonical example is \"ca\" versus \"abc\" . Unrestricted Damerau–Levenshtein gives 2 through ca → ac → abc , whereas OSA gives 3. The same example also exposes a deeper distinction: OSA does not satisfy triangle inequality and is not a metric.",
+        "Unrestricted unit-cost Damerau–Levenshtein distance is a metric. Non-negativity and identity follow from positive edit costs; symmetry follows because every edit has an equal-cost inverse; and triangle inequality follows because valid unrestricted edit scripts can be concatenated. These properties make true DL suitable for metric reasoning and metric indexes in ways that OSA is not.",
+        "Computing unrestricted DL requires more than the local OSA transposition recurrence. The classical Lowrance–Wagner method retains the most recent occurrences of characters and uses them to construct nonlocal transposition candidates. Under the standard unit-cost model, this gives O(mn) time. The classical implementation uses O(mn) space, while later algorithms reduce memory substantially by preserving only character-dependent historical rows.",
+        "The Lowrance–Wagner result also reveals why weighted transpositions need special care. Their quadratic algorithm relies on a relationship between swap, insertion, and deletion costs; arbitrary cost systems can produce more complex interacting edit traces. Weighted Damerau–Levenshtein is therefore a distinct theoretical problem rather than a mechanical replacement of every unit cost by an arbitrary number.",
+        "Finally, the sequence representation remains part of the model. An adjacent transposition over UTF-8 bytes, Unicode code points, grapheme clusters, words, or biological symbols represents a different operation. A scientifically correct implementation must define this representation before assigning meaning to the numerical distance.",
+        "The core lesson is simple but important: Damerau–Levenshtein distance is not merely Levenshtein distance with an extra transposition condition. The unrestricted metric has a richer dependency structure, stronger mathematical properties, and a different algorithm from the restricted OSA recurrence that is frequently mislabeled with the same name."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 8,
+      "word_count": 111,
+      "evidence": "Edit Distance Variants — the broader taxonomy of Levenshtein, Hamming, indel, weighted, transposition-aware, normalized, and structured distances.",
+      "paragraphs": [
+        "Edit Distance Variants — the broader taxonomy of Levenshtein, Hamming, indel, weighted, transposition-aware, normalized, and structured distances.",
+        "Weighted Levenshtein Distance — how nonuniform edit costs change metric and algorithmic properties.",
+        "Wagner–Fischer Algorithm — the dynamic-programming foundation from which the restricted OSA recurrence is naturally derived.",
+        "Edit Distance Complexity — exact, parameterized, weighted, and generalized complexity results.",
+        "Bounded and Parameterized Edit Distance — algorithms that exploit small edit thresholds.",
+        "Indexing and Filtering for Edit Distance — candidate generation and metric pruning before exact verification.",
+        "Unicode and Grapheme-Safe Levenshtein — choosing the correct sequence unit for human text.",
+        "String Similarity vs Semantic Similarity — why low lexical distance does not imply semantic equivalence."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 7,
+      "word_count": 159,
+      "evidence": "Fred J. Damerau, “A Technique for Computer Detection and Correction of Spelling Errors,” Communications of the ACM , 7(3), 171–176, 1964. DOI record .",
+      "paragraphs": [
+        "Fred J. Damerau, “A Technique for Computer Detection and Correction of Spelling Errors,” Communications of the ACM , 7(3), 171–176, 1964. DOI record .",
+        "V. I. Levenshtein, “Binary Codes Capable of Correcting Deletions, Insertions, and Reversals,” Soviet Physics Doklady , 10(8), 707–710, 1966.",
+        "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI record .",
+        "Roy Lowrance and Robert A. Wagner, “An Extension of the String-to-String Correction Problem,” Journal of the ACM , 22(2), 177–183, 1975. DOI record .",
+        "Robert A. Wagner, “On the Complexity of the Extended String-to-String Correction Problem,” Proceedings of the Seventh Annual ACM Symposium on Theory of Computing , 218–223, 1975. DOI record .",
+        "Heikki Hyyrö, “Bit-Parallel Approximate String Matching Algorithms with Transposition,” Journal of Discrete Algorithms , 3(2–4), 215–229, 2005. DOI record .",
+        "Chunchun Zhao and Sartaj Sahni, “String Correction Using the Damerau-Levenshtein Distance,” BMC Bioinformatics , 20(Suppl 11), 277, 2019. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Bit-parallel algorithms with transposition",
+          "anchor_id": "ux-section-69",
+          "alias": "approximate string matching",
+          "excerpt": "Bit-parallelism has also been extended to approximate string matching under transposition-aware edit models."
+        },
+        {
+          "section": "References",
+          "anchor_id": "ux-section-127",
+          "alias": "approximate string matching",
+          "excerpt": "Heikki Hyyrö, “Bit-Parallel Approximate String Matching Algorithms with Transposition,” Journal of Discrete Algorithms , 3(2–4), 215–229, 2005. DOI record ."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-126",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — algorithms that exploit small edit thresholds."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-126",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — exact, parameterized, weighted, and generalized complexity results."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-variants",
+      "evidence": [
+        {
+          "section": "Relationship to edit distance variants",
+          "anchor_id": "ux-section-46",
+          "alias": "edit distance variants",
+          "excerpt": "Damerau–Levenshtein belongs to the broader family described in Edit Distance Variants ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-126",
+          "alias": "edit distance variants",
+          "excerpt": "Edit Distance Variants — the broader taxonomy of Levenshtein, Hamming, indel, weighted, transposition-aware, normalized, and structured distances."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Historical origin",
+          "anchor_id": "ux-section-6",
+          "alias": "edit distance",
+          "excerpt": "The modern term Damerau–Levenshtein distance combines this transposition-aware error model with the minimum-edit-distance framework associated with Levenshtein."
+        },
+        {
+          "section": "The central complication: two different transposition distances",
+          "anchor_id": "ux-section-10",
+          "alias": "edit distance",
+          "excerpt": "unrestricted Damerau–Levenshtein distance , the true minimum edit distance under the four primitive operations."
+        },
+        {
+          "section": "Relationship to edit distance variants",
+          "anchor_id": "ux-section-46",
+          "alias": "edit distance",
+          "excerpt": "Damerau–Levenshtein belongs to the broader family described in Edit Distance Variants ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Definition",
+          "anchor_id": "ux-section-2",
+          "alias": "edit operations",
+          "excerpt": "The standard Damerau–Levenshtein edit operations are:"
+        },
+        {
+          "section": "Adjacent does not mean arbitrary transposition",
+          "anchor_id": "ux-section-5",
+          "alias": "edit operations",
+          "excerpt": "It would require a sequence of adjacent transpositions or another combination of edit operations."
+        },
+        {
+          "section": "Why most typo examples do not reveal the OSA problem",
+          "anchor_id": "ux-section-41",
+          "alias": "edit operations",
+          "excerpt": "The difference appears only when edit operations interact."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "Name and record matching",
+          "anchor_id": "ux-section-52",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "See Entity Resolution and Record Linkage ."
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-at-scale",
+      "evidence": [
+        {
+          "section": "Transposition-aware fuzzy search",
+          "anchor_id": "ux-section-71",
+          "alias": "fuzzy search at scale",
+          "excerpt": "See Fuzzy Search at Scale ."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "q-gram filtering needs transposition-aware analysis",
+          "anchor_id": "ux-section-68",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-126",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — candidate generation and metric pruning before exact verification."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-performance-engineering",
+      "evidence": [
+        {
+          "section": "Why preprocessing can improve cache behavior",
+          "anchor_id": "ux-section-98",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "See Levenshtein Performance Engineering ."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Bit-parallel algorithms with transposition",
+          "anchor_id": "ux-section-69",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "The basic idea is similar to the Myers Bit-Vector Algorithm :"
+        }
+      ]
+    },
+    {
+      "target": "/spell-and-query-correction",
+      "evidence": [
+        {
+          "section": "Spelling correction",
+          "anchor_id": "ux-section-49",
+          "alias": "spell and query correction",
+          "excerpt": "See Spell and Query Correction ."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Damerau–Levenshtein is lexical, not semantic",
+          "anchor_id": "ux-section-103",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-126",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "String Similarity vs Semantic Similarity — why low lexical distance does not imply semantic equivalence."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Canonical equivalence",
+          "anchor_id": "ux-section-57",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-126",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "Unicode and Grapheme-Safe Levenshtein — choosing the correct sequence unit for human text."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-126",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "Wagner–Fischer Algorithm — the dynamic-programming foundation from which the restricted OSA recurrence is naturally derived."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Relationship to weighted Levenshtein distance",
+          "anchor_id": "ux-section-42",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance changes the cost model ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-126",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — how nonuniform edit costs change metric and algorithmic properties."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/damerau-levenshtein-distance#page",
+      "type": "WebPage",
+      "name": "Damerau–Levenshtein Distance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "type": "TechArticle",
+      "name": "Damerau–Levenshtein Distance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/damerau-levenshtein-distance#optimal-string-alignment"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/damerau-levenshtein-distance#term",
+      "type": "DefinedTerm",
+      "name": "Damerau–Levenshtein Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/damerau-levenshtein-distance#optimal-string-alignment",
+      "type": "DefinedTerm",
+      "name": "Optimal String Alignment Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/damerau-levenshtein-distance#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "hasPart",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#page",
+      "about",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#page",
+      "mainEntity",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#page",
+      "isPartOf",
+      "https://www.levenshtein.net/theory#collection"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#page",
+      "hasPart",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "about",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "about",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#optimal-string-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-variants#concept"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/wagner-fischer-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "isPartOf",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1145/363958.363994"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1145/321796.321811"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1145/321879.321880"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1145/800116.803771"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1016/j.jda.2004.08.006"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#article",
+      "citation",
+      "https://doi.org/10.1186/s12859-019-2819-0"
+    ],
+    [
+      "https://www.levenshtein.net/damerau-levenshtein-distance#optimal-string-alignment",
+      "isPartOf",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#page"
+    ],
+    [
+      "https://doi.org/10.1145/363958.363994",
+      "about",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1145/321796.321811",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://doi.org/10.1145/321879.321880",
+      "about",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1145/800116.803771",
+      "about",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1016/j.jda.2004.08.006",
+      "about",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://doi.org/10.1186/s12859-019-2819-0",
+      "about",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1145/363958.363994",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/321879.321880",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/800116.803771",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.jda.2004.08.006",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1186/s12859-019-2819-0",
+      "anchor": "DOI record"
+    }
+  ]
+}

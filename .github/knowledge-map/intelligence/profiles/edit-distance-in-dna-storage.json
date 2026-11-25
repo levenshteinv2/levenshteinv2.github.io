@@ -1,0 +1,3322 @@
+{
+  "url": "/edit-distance-in-dna-storage",
+  "title": "Edit Distance in DNA Storage: Indel Channels, Synchronization Codes, Reconstruction, and Error Correction",
+  "h1": [
+    "Edit Distance in DNA Storage: Indel Channels, Synchronization Codes, Reconstruction, and Error Correction"
+  ],
+  "group": "Bioinformatics",
+  "provisional_mission": "Lỗi indel và reconstruction DNA",
+  "content_sha256": "ed7f664a5b6e460e9807cf6a42abd5f17b3632ad1f0dd80582a7bf3a59babf39",
+  "canonical": "https://www.levenshtein.net/edit-distance-in-dna-storage",
+  "primary_entity_candidate": "Edit Distance in DNA Storage: Indel Channels, Synchronization Codes, Reconstruction, and Error Correction",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Edit Distance in DNA Storage",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 8,
+      "word_count": 299,
+      "evidence": "DNA data storage converts digital information into synthetic nucleotide sequences, stores those molecules physically, and later reconstructs the original information by sequencing them. At first glance, this appears to be a natural application of Levenshtein distance : synthesis, storage, amplification, and sequencing can produce substitutions, insertions, and deletions, exactly the three primitive operations of classical edit distance.",
+      "paragraphs": [
+        "DNA data storage converts digital information into synthetic nucleotide sequences, stores those molecules physically, and later reconstructs the original information by sequencing them. At first glance, this appears to be a natural application of Levenshtein distance : synthesis, storage, amplification, and sequencing can produce substitutions, insertions, and deletions, exactly the three primitive operations of classical edit distance.",
+        "That connection is real, but incomplete.",
+        "A DNA storage system does not transmit one ordered string through one ordinary edit channel. A file is usually divided across many short DNA strands. The strands are physically unordered. Some strands may be observed many times, others only a few times, and some may disappear entirely. Individual copies can contain substitutions, insertions, and deletions. Addresses used to identify strands can themselves be corrupted. PCR and sampling introduce coverage bias. Biological sequence constraints reduce the set of DNA words that should be synthesized. Finally, the decoder must reconstruct a digital file whose error tolerance is usually far stricter than the tolerance required for ordinary biological sequence analysis.",
+        "The appropriate abstraction is therefore multilayered:",
+        "digital data | v source coding / compression | v outer error-control coding | v fragmentation + strand addresses | v inner / synchronization coding | v DNA-constrained sequence generation | v synthesis | v physical DNA pool | v storage / amplification / sampling | v sequencing | v noisy unordered reads | v clustering / strand assignment | v alignment / consensus / indel correction | v outer decoding | v original digital data",
+        "This immediately establishes the most important distinction:",
+        "edit distance != DNA storage reliability.",
+        "Edit distance models one important class of within-strand errors. DNA storage additionally contains strand loss, unorderedness, coverage variation, biochemical constraints, addressing problems, and reconstruction uncertainty that cannot be represented by ordinary Levenshtein distance alone."
+      ]
+    },
+    {
+      "heading": "1. Why DNA can represent digital information",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 12,
+      "word_count": 75,
+      "evidence": "DNA uses a four-symbol alphabet:",
+      "paragraphs": [
+        "DNA uses a four-symbol alphabet:",
+        "ΣDNA = {A, C, G, T}.",
+        "An unconstrained nucleotide therefore carries at most:",
+        "log2(4) = 2 bits",
+        "of symbolic information.",
+        "A naïve binary mapping could be:",
+        "00 -> A 01 -> C 10 -> G 11 -> T.",
+        "Then:",
+        "00011011",
+        "becomes:",
+        "A C G T.",
+        "Real DNA storage encoders are more sophisticated because arbitrary binary-to-base conversion can generate sequences that are difficult to synthesize, amplify, sequence, address, or decode reliably."
+      ]
+    },
+    {
+      "heading": "2. The theoretical two-bit limit is not the effective storage rate",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 15,
+      "word_count": 61,
+      "evidence": "If a DNA strand contains n freely selectable nucleotides, the unconstrained alphabet contains:",
+      "paragraphs": [
+        "If a DNA strand contains n freely selectable nucleotides, the unconstrained alphabet contains:",
+        "4^n",
+        "possible strings.",
+        "The corresponding information capacity is:",
+        "log2(4^n) = 2n bits.",
+        "But a practical strand also needs space for:",
+        "addresses or indexes;",
+        "error-correcting redundancy;",
+        "primer-binding regions;",
+        "sequence constraints;",
+        "possibly synchronization markers;",
+        "possibly checksums or integrity data.",
+        "Thus:",
+        "effective user bits per nucleotide < 2",
+        "in practical systems."
+      ]
+    },
+    {
+      "heading": "3. DNA storage is fundamentally a short-strand system",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 8,
+      "word_count": 60,
+      "evidence": "Large digital files cannot usually be represented as one enormous synthesized DNA molecule.",
+      "paragraphs": [
+        "Large digital files cannot usually be represented as one enormous synthesized DNA molecule.",
+        "The information is split into many oligonucleotides:",
+        "FILE | +--> strand 0 +--> strand 1 +--> strand 2 +--> ... +--> strand M-1.",
+        "This changes the coding problem completely.",
+        "The decoder must recover both:",
+        "the content of each strand",
+        "and:",
+        "the logical organization of the strand collection."
+      ]
+    },
+    {
+      "heading": "4. DNA pools are not naturally ordered",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 11,
+      "word_count": 62,
+      "evidence": "A conventional file system has an ordered sequence of blocks:",
+      "paragraphs": [
+        "A conventional file system has an ordered sequence of blocks:",
+        "block 0 block 1 block 2 ...",
+        "A molecular DNA pool instead behaves more like:",
+        "{ molecule, molecule, molecule, ... }",
+        "with no inherent physical ordering corresponding to the original file.",
+        "Consequently, a DNA storage system must create order computationally using:",
+        "strand indexes;",
+        "addresses;",
+        "coding structure;",
+        "sequence clustering;",
+        "or combinations of these."
+      ]
+    },
+    {
+      "heading": "5. Index overhead grows with the number of strands",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 7,
+      "word_count": 57,
+      "evidence": "If a file is divided into:",
+      "paragraphs": [
+        "If a file is divided into:",
+        "M",
+        "independently indexed strands, identifying one strand among all M possibilities requires on the order of:",
+        "log2(M)",
+        "bits of addressing information.",
+        "As the archive grows, addressing becomes a non-negligible part of the storage rate.",
+        "This is one reason theoretical DNA-storage models treat unorderedness and indexing as fundamental rather than implementation details."
+      ]
+    },
+    {
+      "heading": "6. A better channel model has at least two error scales",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 5,
+      "word_count": 41,
+      "evidence": "DNA storage errors can be separated conceptually into:",
+      "paragraphs": [
+        "DNA storage errors can be separated conceptually into:",
+        "WITHIN-STRAND ERRORS substitution insertion deletion possibly local corruption",
+        "and:",
+        "STRAND-LEVEL ERRORS whole-strand loss duplicate observations coverage variation incorrect clustering address loss/corruption unordered arrival.",
+        "Only the first group fits directly into ordinary edit distance."
+      ]
+    },
+    {
+      "heading": "7. Strand dropout is not an edit operation",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 9,
+      "word_count": 61,
+      "evidence": "Suppose the archive contains:",
+      "paragraphs": [
+        "Suppose the archive contains:",
+        "strand 0 strand 1 strand 2 strand 3.",
+        "After storage and sequencing:",
+        "strand 0 -> many reads strand 1 -> several reads strand 2 -> no reads strand 3 -> many reads.",
+        "Strand 2 has experienced:",
+        "dropout.",
+        "This is not equivalent to deleting one nucleotide from a sequence.",
+        "It is closer to:",
+        "erasing an entire coded packet."
+      ]
+    },
+    {
+      "heading": "8. Duplicate reads are not insertions in the Levenshtein sense",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "If one stored oligo produces 100 sequencing reads, the archive has not experienced:",
+      "paragraphs": [
+        "If one stored oligo produces 100 sequencing reads, the archive has not experienced:",
+        "99 Levenshtein insertions.",
+        "Instead, the readout process has sampled the same molecular species repeatedly.",
+        "Multiplicity belongs to the sampling model, not the edit model."
+      ]
+    },
+    {
+      "heading": "9. The unordered-set model",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 9,
+      "word_count": 63,
+      "evidence": "A useful abstraction represents stored information as an unordered set or multiset of DNA strings:",
+      "paragraphs": [
+        "A useful abstraction represents stored information as an unordered set or multiset of DNA strings:",
+        "S = { s1, s2, ..., sM }.",
+        "The output can contain:",
+        "missing members;",
+        "multiple noisy observations of some members;",
+        "substitutions inside members;",
+        "insertions inside members;",
+        "deletions inside members.",
+        "Lenz, Siegel, Wachter-Zeh, and Yaakobi formalized coding problems of this kind in Coding over Sets for DNA Storage ."
+      ]
+    },
+    {
+      "heading": "10. Edit distance is still the natural strand-level baseline",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 7,
+      "word_count": 49,
+      "evidence": "For two DNA strings:",
+      "paragraphs": [
+        "For two DNA strings:",
+        "x = x1 x2 ... xn y = y1 y2 ... ym,",
+        "classic Levenshtein distance asks for the minimum number of:",
+        "substitutions + insertions + deletions",
+        "required to transform x into y .",
+        "For the DNA alphabet, nothing about the mathematics changes:",
+        "Σ = {A,C,G,T}."
+      ]
+    },
+    {
+      "heading": "11. DNA edit-distance recurrence",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 13,
+      "word_count": 60,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "D[i][j]",
+        "as the minimum number of edits transforming:",
+        "x1...xi",
+        "into:",
+        "y1...yj.",
+        "Then:",
+        "D[0][0] = 0 D[i][0] = i D[0][j] = j.",
+        "For:",
+        "c = 0 if xi = yj 1 otherwise,",
+        "the recurrence is:",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + c ).",
+        "This is the same dynamic-programming structure used by the Wagner-Fischer algorithm ."
+      ]
+    },
+    {
+      "heading": "12. A deletion creates synchronization loss",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 13,
+      "word_count": 90,
+      "evidence": "Consider the stored strand:",
+      "paragraphs": [
+        "Consider the stored strand:",
+        "A C G T A C",
+        "and a sequenced copy missing the second symbol:",
+        "A G T A C.",
+        "The correct edit interpretation is:",
+        "A C G T A C | deletion of C A - G T A C",
+        "so:",
+        "Levenshtein distance = 1.",
+        "But if symbols are compared purely position by position after the deletion:",
+        "stored: A C G T A C received: A G T A C ?",
+        "many subsequent positions appear different.",
+        "This is why insertions and deletions are called:",
+        "synchronization errors."
+      ]
+    },
+    {
+      "heading": "13. Substitution errors preserve synchronization",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "stored: A C G T A C received: A C A T A C.",
+        "The strings remain aligned by position.",
+        "Only one coordinate differs:",
+        "G -> A.",
+        "A Hamming-style decoder can still reason positionally."
+      ]
+    },
+    {
+      "heading": "14. Indels destroy the coordinate system",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 6,
+      "word_count": 58,
+      "evidence": "After an insertion:",
+      "paragraphs": [
+        "After an insertion:",
+        "stored: A C G T A C received: A C G G T A C,",
+        "everything after the new G is shifted by one coordinate.",
+        "Until synchronization is restored, a position-wise error-correcting code may interpret the shifted suffix as many substitutions.",
+        "This is the core reason:",
+        "indel correction is fundamentally harder than ordinary substitution correction."
+      ]
+    },
+    {
+      "heading": "15. Hamming distance is the wrong metric after indels",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 7,
+      "word_count": 42,
+      "evidence": "Hamming distance assumes:",
+      "paragraphs": [
+        "Hamming distance assumes:",
+        "position i in one codeword corresponds to position i in the other.",
+        "An insertion or deletion violates that assumption.",
+        "Therefore:",
+        "Hamming distance is appropriate for substitution-only synchronized channels,",
+        "while:",
+        "Levenshtein / insertion-deletion distance is appropriate when synchronization can change."
+      ]
+    },
+    {
+      "heading": "16. One deletion can create many apparent Hamming mismatches",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 11,
+      "word_count": 59,
+      "evidence": "Take:",
+      "paragraphs": [
+        "Take:",
+        "x = A C G T A C G T y = A G T A C G T.",
+        "The actual transformation requires:",
+        "one deletion.",
+        "So:",
+        "dL(x,y) = 1.",
+        "A naïve positional comparison after the deletion cannot even be applied directly without choosing padding or truncation.",
+        "This simple example captures the difference between:",
+        "symbol corruption",
+        "and:",
+        "synchronization corruption."
+      ]
+    },
+    {
+      "heading": "17. Minimum edit distance of a code",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 8,
+      "word_count": 40,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "C",
+        "be a set of valid DNA codewords.",
+        "Define:",
+        "dmin(C) = min dL(x,y)",
+        "over all distinct:",
+        "x,y in C.",
+        "The code's minimum edit distance determines how many adversarial edits can be corrected by nearest-codeword decoding under the metric model."
+      ]
+    },
+    {
+      "heading": "18. Unique correction radius",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "dmin(C) >= 2t + 1,",
+        "then balls of Levenshtein radius t around distinct codewords cannot overlap.",
+        "Therefore up to:",
+        "t",
+        "adversarial edits can be uniquely corrected under the ideal metric model.",
+        "The proof follows directly from triangle inequality."
+      ]
+    },
+    {
+      "heading": "19. Why the 2t+1 rule works",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 7,
+      "word_count": 45,
+      "evidence": "Suppose a received sequence r were within distance t of two distinct codewords x and y :",
+      "paragraphs": [
+        "Suppose a received sequence r were within distance t of two distinct codewords x and y :",
+        "d(x,r) <= t d(r,y) <= t.",
+        "Then triangle inequality gives:",
+        "d(x,y) <= d(x,r) + d(r,y) <= 2t.",
+        "But this contradicts:",
+        "dmin >= 2t+1.",
+        "Hence unique decoding is possible."
+      ]
+    },
+    {
+      "heading": "20. Error correction consumes sequence space",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 4,
+      "word_count": 39,
+      "evidence": "Larger minimum distance requires codewords to be more widely separated.",
+      "paragraphs": [
+        "Larger minimum distance requires codewords to be more widely separated.",
+        "This reduces the number of legal codewords available at fixed length.",
+        "The central coding trade-off is therefore:",
+        "more redundancy | v greater error tolerance | v lower information rate."
+      ]
+    },
+    {
+      "heading": "21. Quaternary code rate",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 9,
+      "word_count": 38,
+      "evidence": "If a length- n DNA code contains:",
+      "paragraphs": [
+        "If a length- n DNA code contains:",
+        "|C|",
+        "possible codewords, its information content per codeword is:",
+        "log2 |C|",
+        "bits.",
+        "A natural bits-per-nucleotide rate is:",
+        "R = log2 |C| / n.",
+        "The unconstrained theoretical maximum is:",
+        "R = 2."
+      ]
+    },
+    {
+      "heading": "22. Redundancy relative to the unconstrained alphabet",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "A simple logical redundancy measure is:",
+      "paragraphs": [
+        "A simple logical redundancy measure is:",
+        "2n - log2 |C|",
+        "bits per length- n strand.",
+        "Practical systems incur additional overhead from addressing and molecular access structures, so coding redundancy is not the entire physical-storage overhead."
+      ]
+    },
+    {
+      "heading": "23. Substitution codes alone do not solve synchronization",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 6,
+      "word_count": 50,
+      "evidence": "Codes such as Reed-Solomon are extremely powerful once symbols or blocks are correctly aligned.",
+      "paragraphs": [
+        "Codes such as Reed-Solomon are extremely powerful once symbols or blocks are correctly aligned.",
+        "But if a deletion shifts every subsequent symbol boundary, the decoder may see:",
+        "one deletion",
+        "as:",
+        "a long burst of apparent substitutions.",
+        "Therefore synchronization must often be restored before ordinary outer error correction becomes maximally effective."
+      ]
+    },
+    {
+      "heading": "24. Inner and outer coding",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "A powerful architecture separates responsibilities:",
+      "paragraphs": [
+        "A powerful architecture separates responsibilities:",
+        "INNER CODE handles: local substitutions insertions deletions synchronization sequence constraints OUTER CODE handles: residual symbol errors strand dropout erasures reconstruction across strands.",
+        "This separation is central to modern DNA-storage codec design."
+      ]
+    },
+    {
+      "heading": "25. Why layered coding is attractive",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "A single code could theoretically attempt to model every failure mode jointly.",
+      "paragraphs": [
+        "A single code could theoretically attempt to model every failure mode jointly.",
+        "But the physical channel has several qualitatively different error mechanisms.",
+        "Layering permits specialized codes:",
+        "indel-aware inner decoder | v cleaner synchronized symbols | v powerful conventional outer ECC."
+      ]
+    },
+    {
+      "heading": "26. Outer erasure correction is especially important",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 5,
+      "word_count": 36,
+      "evidence": "If an entire oligo is missing, there is no noisy local sequence to align.",
+      "paragraphs": [
+        "If an entire oligo is missing, there is no noisy local sequence to align.",
+        "The decoder needs redundancy distributed across strands.",
+        "From the outer code's perspective, the missing strand behaves like:",
+        "an erasure",
+        "or missing packet."
+      ]
+    },
+    {
+      "heading": "27. Erasure is easier than unknown substitution when location is known",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "In conventional coding theory, knowing:",
+      "paragraphs": [
+        "In conventional coding theory, knowing:",
+        "this symbol is missing",
+        "is easier than receiving:",
+        "a wrong but plausible symbol",
+        "whose location is unknown.",
+        "DNA-storage pipelines therefore benefit when failed strands can be reliably classified as missing rather than decoded into incorrect payloads."
+      ]
+    },
+    {
+      "heading": "28. Addresses are themselves vulnerable",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "Suppose each strand begins with:",
+      "paragraphs": [
+        "Suppose each strand begins with:",
+        "INDEX | PAYLOAD.",
+        "If one deletion corrupts the index, the read can be assigned to the wrong logical strand.",
+        "This can be more damaging than an error confined to the payload because it changes the reconstruction topology."
+      ]
+    },
+    {
+      "heading": "29. Address protection deserves its own design",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 8,
+      "word_count": 29,
+      "evidence": "Possible approaches include:",
+      "paragraphs": [
+        "Possible approaches include:",
+        "error-protected indexes;",
+        "redundant addressing;",
+        "sequence-based clustering independent of exact address;",
+        "robust indexing schemes;",
+        "joint index-payload decoding.",
+        "The key principle is:",
+        "address corruption != ordinary payload corruption."
+      ]
+    },
+    {
+      "heading": "30. The historical Levenshtein connection is unusually direct",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 4,
+      "word_count": 60,
+      "evidence": "Levenshtein's foundational coding work did not begin with spelling correction. His classic paper studied codes capable of correcting deletions, insertions, and symbol reversals/substitutions in communication channels.",
+      "paragraphs": [
+        "Levenshtein's foundational coding work did not begin with spelling correction. His classic paper studied codes capable of correcting deletions, insertions, and symbol reversals/substitutions in communication channels.",
+        "The historical work is treated separately in Levenshtein's 1966 paper on deletion, insertion, and substitution correction .",
+        "DNA storage therefore returns edit distance to one of its original conceptual domains:",
+        "communication through insertion/deletion channels."
+      ]
+    },
+    {
+      "heading": "31. Varshamov-Tenengolts codes",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "Varshamov-Tenengolts codes are among the classical constructions for correcting a single insertion or deletion.",
+      "paragraphs": [
+        "Varshamov-Tenengolts codes are among the classical constructions for correcting a single insertion or deletion.",
+        "For a binary word:",
+        "x = (x1, x2, ..., xn),",
+        "a binary VT code can be defined by a modular checksum:",
+        "VT_a(n) = { x in {0,1}^n : sum(i * xi) ≡ a mod (n+1) }.",
+        "Different values of a partition the binary words into checksum classes."
+      ]
+    },
+    {
+      "heading": "32. Why VT codes are remarkable",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 6,
+      "word_count": 44,
+      "evidence": "A deletion removes:",
+      "paragraphs": [
+        "A deletion removes:",
+        "one symbol;",
+        "its original coordinate;",
+        "and shifts the suffix.",
+        "Yet the weighted checksum contains enough global positional structure to reconstruct the deleted symbol and its location for a single deletion.",
+        "The dedicated theory is covered in Varshamov-Tenengolts and Levenshtein codes ."
+      ]
+    },
+    {
+      "heading": "33. A checksum for synchronization differs from an ordinary parity bit",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "Ordinary parity answers roughly:",
+      "paragraphs": [
+        "Ordinary parity answers roughly:",
+        "How many 1s modulo 2?",
+        "A VT checksum incorporates position:",
+        "sum(i * xi).",
+        "Position weighting is precisely what helps recover synchronization after a deletion."
+      ]
+    },
+    {
+      "heading": "34. Single-indel codes are not a complete DNA-storage codec",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "A real strand can suffer:",
+      "paragraphs": [
+        "A real strand can suffer:",
+        "multiple indels;",
+        "substitutions;",
+        "burst errors;",
+        "complete dropout.",
+        "Therefore classical single-deletion codes are foundational building blocks and theoretical benchmarks, not sufficient end-to-end architectures for every DNA-storage system."
+      ]
+    },
+    {
+      "heading": "35. Insertion/deletion coding is a distinct research field",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 9,
+      "word_count": 32,
+      "evidence": "The broader theory is developed in insertion-deletion codes and synchronization errors .",
+      "paragraphs": [
+        "The broader theory is developed in insertion-deletion codes and synchronization errors .",
+        "Important questions include:",
+        "minimum redundancy for correcting indels;",
+        "multiple-deletion correction;",
+        "burst indels;",
+        "q-ary codes;",
+        "synchronization strings;",
+        "trace reconstruction;",
+        "efficient decoding."
+      ]
+    },
+    {
+      "heading": "36. DNA's alphabet is naturally q-ary",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "DNA sequences use:",
+      "paragraphs": [
+        "DNA sequences use:",
+        "q = 4",
+        "symbols.",
+        "Binary synchronization codes can be adapted or generalized, but direct quaternary constructions can better use the native alphabet.",
+        "This avoids treating DNA as merely a binary channel with an arbitrary final remapping."
+      ]
+    },
+    {
+      "heading": "37. Mapping bits to bases after coding can interact with constraints",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 7,
+      "word_count": 49,
+      "evidence": "Suppose a binary codeword maps to:",
+      "paragraphs": [
+        "Suppose a binary codeword maps to:",
+        "00 -> A 01 -> C 10 -> G 11 -> T.",
+        "A valid binary error-correcting codeword can map to an undesirable DNA sequence such as:",
+        "AAAAAAAAAA...",
+        "if the binary output contains repeated 00 pairs.",
+        "Thus:",
+        "coding correctness does not guarantee molecular suitability."
+      ]
+    },
+    {
+      "heading": "38. DNA sequence constraints",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 8,
+      "word_count": 32,
+      "evidence": "Practical encoders often constrain sequence properties associated with synthesis, amplification, sequencing, or molecular stability.",
+      "paragraphs": [
+        "Practical encoders often constrain sequence properties associated with synthesis, amplification, sequencing, or molecular stability.",
+        "Common considerations include:",
+        "homopolymer run length;",
+        "GC balance;",
+        "undesired motifs;",
+        "primer interactions;",
+        "secondary-structure propensity;",
+        "sequence uniqueness for addressing."
+      ]
+    },
+    {
+      "heading": "39. Homopolymers",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "A homopolymer is a run such as:",
+      "paragraphs": [
+        "A homopolymer is a run such as:",
+        "AAAAAA",
+        "or:",
+        "GGGGGG.",
+        "Long runs can be problematic for some synthesis and sequencing processes.",
+        "Many DNA-storage systems therefore reject or avoid excessive homopolymer lengths."
+      ]
+    },
+    {
+      "heading": "40. GC-content constraints",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 4,
+      "word_count": 41,
+      "evidence": "For a sequence of length n , define:",
+      "paragraphs": [
+        "For a sequence of length n , define:",
+        "GC fraction = (#G + #C) / n.",
+        "DNA storage encoders often avoid extreme GC compositions and may constrain local as well as global GC balance.",
+        "This further reduces the usable sequence space."
+      ]
+    },
+    {
+      "heading": "41. Constrained coding is not error correction",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "A constrained encoder asks:",
+      "paragraphs": [
+        "A constrained encoder asks:",
+        "Which sequences should never be synthesized?",
+        "An error-correcting code asks:",
+        "How can the intended data be recovered after corruption?",
+        "These are complementary but different problems."
+      ]
+    },
+    {
+      "heading": "42. Constraints can reduce errors indirectly",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "If difficult molecular patterns have higher experimental failure rates, avoiding them can improve effective channel quality.",
+      "paragraphs": [
+        "If difficult molecular patterns have higher experimental failure rates, avoiding them can improve effective channel quality.",
+        "Thus sequence constraints can reduce the amount of ECC required.",
+        "But they do so by changing:",
+        "the allowed transmitted sequences,",
+        "not by correcting errors after they occur."
+      ]
+    },
+    {
+      "heading": "43. Constrained coding consumes rate",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 7,
+      "word_count": 30,
+      "evidence": "If only a subset:",
+      "paragraphs": [
+        "If only a subset:",
+        "S_n subset {A,C,G,T}^n",
+        "is considered safe to synthesize, the maximum usable information becomes:",
+        "log2 |S_n|",
+        "rather than:",
+        "2n.",
+        "Biochemical robustness therefore competes directly with logical density."
+      ]
+    },
+    {
+      "heading": "44. Error-control redundancy and biochemical redundancy interact",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 5,
+      "word_count": 26,
+      "evidence": "It is misleading to optimize:",
+      "paragraphs": [
+        "It is misleading to optimize:",
+        "ECC rate",
+        "without considering:",
+        "sequence constraints.",
+        "A high-rate error-correcting code that frequently emits rejected DNA strings may have poor effective throughput."
+      ]
+    },
+    {
+      "heading": "45. DNA Fountain",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 3,
+      "word_count": 51,
+      "evidence": "Erlich and Zielinski introduced DNA Fountain, a storage architecture based on fountain coding and sequence screening. See DNA Fountain enables a robust and efficient storage architecture .",
+      "paragraphs": [
+        "Erlich and Zielinski introduced DNA Fountain, a storage architecture based on fountain coding and sequence screening. See DNA Fountain enables a robust and efficient storage architecture .",
+        "Conceptually:",
+        "source blocks | v fountain droplets | v map to DNA | v screen for valid molecular constraints | v synthesize accepted strands."
+      ]
+    },
+    {
+      "heading": "46. Fountain coding primarily solves a different problem from Levenshtein coding",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 8,
+      "word_count": 47,
+      "evidence": "A fountain code is especially useful when some encoded packets are:",
+      "paragraphs": [
+        "A fountain code is especially useful when some encoded packets are:",
+        "missing",
+        "or:",
+        "not observed.",
+        "This resembles an erasure problem across strands.",
+        "It does not inherently mean each individual DNA strand can correct arbitrary insertion and deletion errors.",
+        "Therefore:",
+        "fountain / erasure coding != indel synchronization coding."
+      ]
+    },
+    {
+      "heading": "47. DNA Fountain demonstrates codec layering",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "A DNA storage strand can simultaneously participate in:",
+      "paragraphs": [
+        "A DNA storage strand can simultaneously participate in:",
+        "outer erasure redundancy + sequence constraints + strand-level read reconstruction.",
+        "No one component needs to solve the entire channel alone."
+      ]
+    },
+    {
+      "heading": "48. Reed-Solomon coding",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 3,
+      "word_count": 52,
+      "evidence": "Reed-Solomon codes are frequently attractive as outer codes because they can correct symbol errors and erasures across properly synchronized blocks.",
+      "paragraphs": [
+        "Reed-Solomon codes are frequently attractive as outer codes because they can correct symbol errors and erasures across properly synchronized blocks.",
+        "But they assume that the decoder knows where outer symbols begin.",
+        "Therefore a severe indel inside a strand should ideally be corrected, localized, or converted into an erasure before outer Reed-Solomon decoding."
+      ]
+    },
+    {
+      "heading": "49. HEDGES",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 3,
+      "word_count": 38,
+      "evidence": "Press, Hawkins, Jones, Schaub, and Finkelstein introduced HEDGES—Hash Encoded, Decoded by Greedy Exhaustive Search—as an indel-aware DNA-storage code. See HEDGES error-correcting code for DNA storage corrects indels and allows sequence constraints .",
+      "paragraphs": [
+        "Press, Hawkins, Jones, Schaub, and Finkelstein introduced HEDGES—Hash Encoded, Decoded by Greedy Exhaustive Search—as an indel-aware DNA-storage code. See HEDGES error-correcting code for DNA storage corrects indels and allows sequence constraints .",
+        "HEDGES directly addresses:",
+        "insertions deletions substitutions."
+      ]
+    },
+    {
+      "heading": "50. HEDGES is designed around synchronization recovery",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "Rather than assuming the received symbols are still positionally aligned, decoding considers hypotheses involving:",
+      "paragraphs": [
+        "Rather than assuming the received symbols are still positionally aligned, decoding considers hypotheses involving:",
+        "correct symbol;",
+        "substitution;",
+        "insertion;",
+        "deletion.",
+        "The search tracks alternative synchronization states and prunes unlikely branches."
+      ]
+    },
+    {
+      "heading": "51. Hash dependence creates contextual code symbols",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 4,
+      "word_count": 34,
+      "evidence": "In HEDGES, encoded DNA symbols depend on message/history-related state through hashing.",
+      "paragraphs": [
+        "In HEDGES, encoded DNA symbols depend on message/history-related state through hashing.",
+        "A wrong synchronization hypothesis tends to make subsequent expected symbols inconsistent.",
+        "This gives the decoder evidence for deciding:",
+        "which insertion/deletion history is plausible."
+      ]
+    },
+    {
+      "heading": "52. HEDGES and outer Reed-Solomon coding",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 5,
+      "word_count": 45,
+      "evidence": "The HEDGES architecture is particularly instructive because it separates:",
+      "paragraphs": [
+        "The HEDGES architecture is particularly instructive because it separates:",
+        "indel synchronization repair",
+        "from:",
+        "residual outer-code correction.",
+        "The HEDGES paper describes using a standard outer Reed-Solomon code after the inner decoder has restored synchronization and converted unresolved compound errors into a more manageable residual error form."
+      ]
+    },
+    {
+      "heading": "53. Inner decoding need not be perfect to help the outer code",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "A useful inner decoder can transform:",
+      "paragraphs": [
+        "A useful inner decoder can transform:",
+        "catastrophic synchronization loss",
+        "into:",
+        "localized substitutions or erasures.",
+        "The outer code can then correct the remaining damage.",
+        "This is a powerful general coding principle."
+      ]
+    },
+    {
+      "heading": "54. Edit distance and HEDGES are related but not identical",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 9,
+      "word_count": 43,
+      "evidence": "Levenshtein distance asks:",
+      "paragraphs": [
+        "Levenshtein distance asks:",
+        "What is the minimum edit cost between two known strings?",
+        "HEDGES asks something closer to:",
+        "Which valid encoded message most plausibly generated this corrupted DNA observation under an insertion/deletion/substitution process?",
+        "The latter combines:",
+        "code structure;",
+        "search;",
+        "synchronization state;",
+        "sequence constraints."
+      ]
+    },
+    {
+      "heading": "55. Minimum-distance decoding is not always maximum-likelihood decoding",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 10,
+      "word_count": 50,
+      "evidence": "If every edit is equally likely and independent under a simple model, minimizing edit count can approximate maximum likelihood.",
+      "paragraphs": [
+        "If every edit is equally likely and independent under a simple model, minimizing edit count can approximate maximum likelihood.",
+        "But real channels may have:",
+        "P(substitution) != P(insertion) != P(deletion).",
+        "Errors may also depend on:",
+        "sequence context;",
+        "run length;",
+        "synthesis technology;",
+        "sequencing technology.",
+        "Then:",
+        "minimum unit-cost Levenshtein distance != maximum-likelihood decoding."
+      ]
+    },
+    {
+      "heading": "56. Weighted edit distance",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "A channel-aware decoder can use costs such as:",
+      "paragraphs": [
+        "A channel-aware decoder can use costs such as:",
+        "csub(a,b) cins(b) cdel(a).",
+        "A generic weighted recurrence is:",
+        "D[i][j] = min( D[i-1][j] + cdel(xi), D[i][j-1] + cins(yj), D[i-1][j-1] + csub(xi,yj) ).",
+        "This relates DNA decoding to weighted Levenshtein distance ."
+      ]
+    },
+    {
+      "heading": "57. Negative log probabilities give natural edit costs",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 7,
+      "word_count": 42,
+      "evidence": "If an error model provides probabilities, one can use costs such as:",
+      "paragraphs": [
+        "If an error model provides probabilities, one can use costs such as:",
+        "c(event) = -log P(event).",
+        "Then minimizing total cost approximately corresponds to maximizing path likelihood under assumptions of factorization.",
+        "This creates a direct bridge between:",
+        "edit-distance decoding",
+        "and:",
+        "probabilistic channel decoding."
+      ]
+    },
+    {
+      "heading": "58. Arbitrary weighted edit distance need not be a metric",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "If insertion and deletion costs differ, or if some substitutions have zero cost, properties such as symmetry and identity of indiscernibles may fail.",
+      "paragraphs": [
+        "If insertion and deletion costs differ, or if some substitutions have zero cost, properties such as symmetry and identity of indiscernibles may fail.",
+        "Therefore:",
+        "channel decoding score",
+        "should not automatically be described as a mathematical metric."
+      ]
+    },
+    {
+      "heading": "59. Error rates are process dependent",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 11,
+      "word_count": 44,
+      "evidence": "DNA storage does not have one universal error rate.",
+      "paragraphs": [
+        "DNA storage does not have one universal error rate.",
+        "The observed channel depends on:",
+        "synthesis method;",
+        "oligo design;",
+        "storage conditions;",
+        "amplification protocol;",
+        "number of PCR cycles;",
+        "sequencing technology;",
+        "base-calling pipeline;",
+        "sequence context.",
+        "A codec tuned to one experimental pipeline may be miscalibrated for another."
+      ]
+    },
+    {
+      "heading": "60. Channel mismatch wastes either density or reliability",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "If the codec assumes much more noise than actually exists:",
+      "paragraphs": [
+        "If the codec assumes much more noise than actually exists:",
+        "too much redundancy -> lower density.",
+        "If it assumes too little:",
+        "insufficient redundancy -> decoding failure.",
+        "This motivates quantitative characterization of the complete DNA-storage workflow."
+      ]
+    },
+    {
+      "heading": "61. Error and bias must both be modeled",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "Within-strand errors answer:",
+      "paragraphs": [
+        "Within-strand errors answer:",
+        "How is a sequence corrupted?",
+        "Coverage bias answers:",
+        "How often is each strand observed?",
+        "These are different statistical processes.",
+        "A strand can be perfectly sequenced but effectively lost if it receives zero coverage."
+      ]
+    },
+    {
+      "heading": "62. PCR amplification can change coverage distribution",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 4,
+      "word_count": 47,
+      "evidence": "Amplification does not necessarily multiply every oligo equally.",
+      "paragraphs": [
+        "Amplification does not necessarily multiply every oligo equally.",
+        "After PCR, some sequence species may be overrepresented while others are underrepresented.",
+        "Therefore read coverage can be highly nonuniform:",
+        "strand A -> 500 reads strand B -> 80 reads strand C -> 2 reads strand D -> 0 reads."
+      ]
+    },
+    {
+      "heading": "63. Coverage is not the same as unique molecular count",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 6,
+      "word_count": 33,
+      "evidence": "Many sequencing reads can descend from copies of the same original molecule.",
+      "paragraphs": [
+        "Many sequencing reads can descend from copies of the same original molecule.",
+        "Thus:",
+        "100 reads",
+        "do not necessarily mean:",
+        "100 independent original molecules.",
+        "This distinction matters when estimating storage diversity and loss probability."
+      ]
+    },
+    {
+      "heading": "64. Sampling introduces a coupon-collector-like problem",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "If the pool contains many strand species and sequencing samples molecules randomly, sufficient total read count does not guarantee every strand has been observed.",
+      "paragraphs": [
+        "If the pool contains many strand species and sequencing samples molecules randomly, sufficient total read count does not guarantee every strand has been observed.",
+        "Coverage requirements depend on:",
+        "number of strand species;",
+        "copy-number distribution;",
+        "sampling bias;",
+        "outer-code redundancy."
+      ]
+    },
+    {
+      "heading": "65. Outer codes reduce the need to observe every strand",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "If the archive can reconstruct the original file from:",
+      "paragraphs": [
+        "If the archive can reconstruct the original file from:",
+        "any sufficiently large subset",
+        "of encoded strands, the sequencer does not need to recover every physical oligo.",
+        "This is one major advantage of erasure and fountain coding."
+      ]
+    },
+    {
+      "heading": "66. Random access adds another molecular layer",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 3,
+      "word_count": 47,
+      "evidence": "Large DNA archives should not require sequencing the entire pool whenever one file is requested.",
+      "paragraphs": [
+        "Large DNA archives should not require sequencing the entire pool whenever one file is requested.",
+        "Random-access systems use mechanisms such as primer-addressed PCR to selectively retrieve subsets of the archive.",
+        "Tabatabaei Yazdi and colleagues demonstrated a rewritable random-access architecture in A Rewritable, Random-Access DNA-Based Storage System ."
+      ]
+    },
+    {
+      "heading": "67. Random access can introduce selection errors",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "A random-access operation can fail through:",
+      "paragraphs": [
+        "A random-access operation can fail through:",
+        "poor primer specificity;",
+        "unequal amplification;",
+        "off-target amplification;",
+        "primer-region mutation;",
+        "cross-talk among addresses.",
+        "These failures are not captured by payload edit distance."
+      ]
+    },
+    {
+      "heading": "68. Random-access primers consume sequence space",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "If each oligo contains:",
+      "paragraphs": [
+        "If each oligo contains:",
+        "LEFT PRIMER + ADDRESS / PAYLOAD / ECC + RIGHT PRIMER,",
+        "the primer regions contribute no direct user payload.",
+        "Effective storage rate should therefore distinguish:",
+        "logical code rate",
+        "from:",
+        "physical synthesized-base efficiency."
+      ]
+    },
+    {
+      "heading": "69. Large-scale random-access demonstration",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 3,
+      "word_count": 56,
+      "evidence": "Organick and colleagues demonstrated random access in a pool representing more than 200 MB of data and over 13 million DNA oligonucleotides, recovering individual files without sequencing the entire archive. See Random access in large-scale DNA data storage .",
+      "paragraphs": [
+        "Organick and colleagues demonstrated random access in a pool representing more than 200 MB of data and over 13 million DNA oligonucleotides, recovering individual files without sequencing the entire archive. See Random access in large-scale DNA data storage .",
+        "The experiment illustrates why:",
+        "DNA storage is a storage-system architecture problem, not merely a nucleotide encoding problem."
+      ]
+    },
+    {
+      "heading": "70. Multiple noisy reads create an opportunity for consensus",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "Suppose one stored strand generates five reads:",
+      "paragraphs": [
+        "Suppose one stored strand generates five reads:",
+        "stored: ACGTACGT read 1: ACGTACGT read 2: ACGTTCGT read 3: ACGTACGT read 4: ACGACGT read 5: ACGTTACGT.",
+        "Individual reads contain substitutions or indels, but the collection provides redundant evidence about the original strand."
+      ]
+    },
+    {
+      "heading": "71. Consensus is not ordinary majority vote when indels exist",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "If every read has equal length and only substitutions occur, a column-wise majority vote is straightforward.",
+      "paragraphs": [
+        "If every read has equal length and only substitutions occur, a column-wise majority vote is straightforward.",
+        "With indels:",
+        "read coordinates are no longer synchronized.",
+        "The reads must first be aligned or otherwise reconstructed."
+      ]
+    },
+    {
+      "heading": "72. Consensus pipeline",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "A simplified reconstruction procedure is:",
+      "paragraphs": [
+        "A simplified reconstruction procedure is:",
+        "reads | v cluster by originating strand | v align cluster members | v estimate consensus | v inner-code validation/decoding | v outer-code reconstruction.",
+        "Both clustering and consensus can fail."
+      ]
+    },
+    {
+      "heading": "73. Clustering errors can be more dangerous than base errors",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "If reads from two distinct stored oligos are placed into the same cluster, consensus can produce a sequence that never existed.",
+      "paragraphs": [
+        "If reads from two distinct stored oligos are placed into the same cluster, consensus can produce a sequence that never existed.",
+        "This creates:",
+        "cross-strand contamination.",
+        "A perfect consensus algorithm cannot repair an incorrect clustering decision if the cluster itself mixes unrelated source strands."
+      ]
+    },
+    {
+      "heading": "74. Index-based clustering is fast but index errors matter",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 3,
+      "word_count": 39,
+      "evidence": "If a protected index can be decoded reliably, reads can be assigned directly to strand groups.",
+      "paragraphs": [
+        "If a protected index can be decoded reliably, reads can be assigned directly to strand groups.",
+        "If the index contains an indel, direct lookup can fail.",
+        "One solution is approximate index matching, but aggressive fuzzy matching creates collision risk."
+      ]
+    },
+    {
+      "heading": "75. Sequence-based clustering can use edit distance",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "Without a perfectly reliable address, one can group reads according to sequence similarity:",
+      "paragraphs": [
+        "Without a perfectly reliable address, one can group reads according to sequence similarity:",
+        "dL(read_i, read_j) <= threshold.",
+        "This makes edit distance useful at a second level:",
+        "not only decoding, but also read clustering."
+      ]
+    },
+    {
+      "heading": "76. All-pairs clustering does not scale",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 13,
+      "word_count": 35,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "N",
+        "sequencing reads, comparing every pair requires:",
+        "O(N^2)",
+        "pair evaluations.",
+        "If each comparison itself uses dynamic programming, computation becomes expensive rapidly.",
+        "Practical systems therefore use:",
+        "indexes;",
+        "hashes;",
+        "k-mer signatures;",
+        "addresses;",
+        "filtering;",
+        "approximate nearest-neighbor structures."
+      ]
+    },
+    {
+      "heading": "77. Cluster threshold design is a precision-recall problem",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "A small edit-distance threshold can split reads from one source strand:",
+      "paragraphs": [
+        "A small edit-distance threshold can split reads from one source strand:",
+        "false separation.",
+        "A large threshold can merge neighboring codewords:",
+        "false merging.",
+        "The threshold should be calibrated relative to:",
+        "within-strand error distribution",
+        "and:",
+        "between-codeword distance distribution."
+      ]
+    },
+    {
+      "heading": "78. Code design can help clustering",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "If valid DNA strands are designed to have substantial mutual distance, reads corrupted by modest noise remain closer to their own source strand than to other legal strands.",
+      "paragraphs": [
+        "If valid DNA strands are designed to have substantial mutual distance, reads corrupted by modest noise remain closer to their own source strand than to other legal strands.",
+        "Thus codeword separation improves both:",
+        "error correction;",
+        "cluster assignment."
+      ]
+    },
+    {
+      "heading": "79. Sequence addresses can also be designed as codes",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "Instead of arbitrary strand identifiers, addresses can be chosen from a code with controlled minimum edit distance.",
+      "paragraphs": [
+        "Instead of arbitrary strand identifiers, addresses can be chosen from a code with controlled minimum edit distance.",
+        "Then corrupted indexes can be decoded by nearest valid address.",
+        "This creates an error-correcting barcode system."
+      ]
+    },
+    {
+      "heading": "80. Address distance and payload distance have different objectives",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "An address code prioritizes:",
+      "paragraphs": [
+        "An address code prioritizes:",
+        "unique classification among many labels.",
+        "A payload code prioritizes:",
+        "recovering information at high rate.",
+        "Using identical design parameters for both is not necessarily optimal."
+      ]
+    },
+    {
+      "heading": "81. Consensus can reduce random substitution noise",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 3,
+      "word_count": 37,
+      "evidence": "If substitution errors are approximately independent across multiple copies, repeated sequencing provides repeated observations of the same position.",
+      "paragraphs": [
+        "If substitution errors are approximately independent across multiple copies, repeated sequencing provides repeated observations of the same position.",
+        "Consensus can dramatically reduce uncertainty.",
+        "But systematic errors and biased sequence contexts do not vanish merely by increasing depth."
+      ]
+    },
+    {
+      "heading": "82. Consensus can also repair indels through alignment",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 5,
+      "word_count": 31,
+      "evidence": "Suppose most reads contain:",
+      "paragraphs": [
+        "Suppose most reads contain:",
+        "ACGTTAC",
+        "while one contains:",
+        "ACGTAC.",
+        "A multiple-alignment or consensus algorithm can infer that one read likely contains a deletion rather than treating every downstream position as wrong."
+      ]
+    },
+    {
+      "heading": "83. Multiple sequence alignment is not the only reconstruction method",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "DNA-storage reconstruction can use:",
+      "paragraphs": [
+        "DNA-storage reconstruction can use:",
+        "progressive alignment;",
+        "partial-order alignment;",
+        "de Bruijn-style methods;",
+        "probabilistic consensus;",
+        "code-aware reconstruction;",
+        "trace-reconstruction algorithms.",
+        "The optimal method depends on strand length, read depth, error structure, and codec design."
+      ]
+    },
+    {
+      "heading": "84. Trace reconstruction",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 3,
+      "word_count": 45,
+      "evidence": "Trace reconstruction asks how to recover an original sequence from multiple independently corrupted observations, often under deletion or insertion/deletion channels.",
+      "paragraphs": [
+        "Trace reconstruction asks how to recover an original sequence from multiple independently corrupted observations, often under deletion or insertion/deletion channels.",
+        "The key distinction is:",
+        "single-trace decoding asks \"can this one corrupted sequence identify the codeword?\" trace reconstruction asks \"can many noisy observations collectively identify it?\""
+      ]
+    },
+    {
+      "heading": "85. Multiple weak traces can contain strong combined information",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 4,
+      "word_count": 45,
+      "evidence": "A sequence may be impossible to reconstruct uniquely from one heavily deleted copy.",
+      "paragraphs": [
+        "A sequence may be impossible to reconstruct uniquely from one heavily deleted copy.",
+        "But many independent traces can reveal different surviving positions and collectively determine the source.",
+        "This is another reason DNA storage should not be modeled solely as:",
+        "one codeword -> one corrupted codeword."
+      ]
+    },
+    {
+      "heading": "86. Edit distance does not use multiplicity information",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "If ten reads all support the same candidate sequence and one supports a different candidate with equal distance, ordinary nearest-neighbor edit distance sees only:",
+      "paragraphs": [
+        "If ten reads all support the same candidate sequence and one supports a different candidate with equal distance, ordinary nearest-neighbor edit distance sees only:",
+        "distance.",
+        "A statistical decoder can additionally exploit:",
+        "read count + quality + consistency."
+      ]
+    },
+    {
+      "heading": "87. Read quality can inform decoding",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "Sequencing systems can provide per-base confidence information.",
+      "paragraphs": [
+        "Sequencing systems can provide per-base confidence information.",
+        "A mismatch at a low-confidence base and a mismatch at a high-confidence base need not deserve equal decoding cost.",
+        "Thus:",
+        "quality-aware probabilistic decoding",
+        "can outperform:",
+        "uniform edit counting",
+        "when the quality scores are calibrated."
+      ]
+    },
+    {
+      "heading": "88. Data integrity requires more than error correction",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 4,
+      "word_count": 48,
+      "evidence": "An ECC decoder can occasionally output a valid but wrong codeword if corruption exceeds its correction capability.",
+      "paragraphs": [
+        "An ECC decoder can occasionally output a valid but wrong codeword if corruption exceeds its correction capability.",
+        "Checksums or cryptographic hashes can provide an additional integrity test:",
+        "decode | v verify checksum/hash | +--> valid | +--> detected failure.",
+        "Error detection and error correction should be treated separately."
+      ]
+    },
+    {
+      "heading": "89. Undetected error is often worse than declared failure",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 8,
+      "word_count": 29,
+      "evidence": "For archival storage, returning:",
+      "paragraphs": [
+        "For archival storage, returning:",
+        "\"decoding failed\"",
+        "can be safer than silently returning corrupted data.",
+        "A robust decoder should therefore distinguish:",
+        "successful verified decoding;",
+        "recoverable erasure;",
+        "uncertain reconstruction;",
+        "integrity failure."
+      ]
+    },
+    {
+      "heading": "90. Compression increases sensitivity to residual errors",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 6,
+      "word_count": 42,
+      "evidence": "Many stored files are compressed before DNA encoding.",
+      "paragraphs": [
+        "Many stored files are compressed before DNA encoding.",
+        "A single residual bit error in a compressed or structured file can affect much more than one visible character or pixel.",
+        "Therefore DNA storage generally targets:",
+        "bit-exact recovery,",
+        "not merely:",
+        "approximately similar reconstructed data."
+      ]
+    },
+    {
+      "heading": "91. This distinguishes DNA storage from many bioinformatics tasks",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 4,
+      "word_count": 41,
+      "evidence": "In biological sequence analysis, a few sequencing errors may be tolerable if the downstream inference remains correct.",
+      "paragraphs": [
+        "In biological sequence analysis, a few sequencing errors may be tolerable if the downstream inference remains correct.",
+        "In digital storage:",
+        "one uncorrected bit can corrupt a cryptographic hash, compressed block, executable, or archive structure.",
+        "The reliability objective is therefore much stricter."
+      ]
+    },
+    {
+      "heading": "92. Edit-distance similarity is not sufficient as a recovery criterion",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "Suppose the decoded DNA payload differs from the original by:",
+      "paragraphs": [
+        "Suppose the decoded DNA payload differs from the original by:",
+        "one nucleotide.",
+        "Its normalized sequence similarity may be extremely high.",
+        "Yet if that nucleotide encodes critical binary data:",
+        "the recovered file is wrong.",
+        "Thus:",
+        "low edit distance != successful storage recovery."
+      ]
+    },
+    {
+      "heading": "93. DNA storage has an end-to-end success criterion",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 8,
+      "word_count": 34,
+      "evidence": "The strongest criterion is:",
+      "paragraphs": [
+        "The strongest criterion is:",
+        "decoded digital bits = original digital bits.",
+        "Intermediate metrics such as:",
+        "read error rate;",
+        "strand edit distance;",
+        "consensus accuracy;",
+        "oligo recovery rate;",
+        "are diagnostic quantities, not the final correctness criterion."
+      ]
+    },
+    {
+      "heading": "94. Density and reliability should be reported together",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 5,
+      "word_count": 36,
+      "evidence": "A system can increase reliability by synthesizing enormous redundancy.",
+      "paragraphs": [
+        "A system can increase reliability by synthesizing enormous redundancy.",
+        "It can increase nominal density by removing error correction.",
+        "Neither extreme is useful alone.",
+        "The real engineering problem is:",
+        "maximize useful density subject to required reconstruction reliability."
+      ]
+    },
+    {
+      "heading": "95. Logical density versus physical density",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "Logical density might count:",
+      "paragraphs": [
+        "Logical density might count:",
+        "user bits / encoded nucleotide.",
+        "Physical density can additionally depend on:",
+        "number of DNA copies;",
+        "molecular mass;",
+        "storage container;",
+        "redundant molecules;",
+        "access architecture.",
+        "Claims about DNA density should therefore state which denominator is being used."
+      ]
+    },
+    {
+      "heading": "96. Synthesis redundancy and coding redundancy differ",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "If one logical strand is physically synthesized in many copies, this increases molecular redundancy but not necessarily sequence-code redundancy.",
+      "paragraphs": [
+        "If one logical strand is physically synthesized in many copies, this increases molecular redundancy but not necessarily sequence-code redundancy.",
+        "Likewise an outer fountain code creates additional distinct encoded strands.",
+        "These are different forms of redundancy:",
+        "copy redundancy",
+        "versus:",
+        "information-theoretic coding redundancy."
+      ]
+    },
+    {
+      "heading": "97. Random access and redundancy can conflict",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "Outer codes may distribute information broadly across many strands.",
+      "paragraphs": [
+        "Outer codes may distribute information broadly across many strands.",
+        "Random access wants one file or block to be recoverable without reading unrelated strands.",
+        "Therefore code structure must balance:",
+        "global redundancy efficiency",
+        "with:",
+        "local retrievability."
+      ]
+    },
+    {
+      "heading": "98. Early DNA-storage demonstrations established the pipeline",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 2,
+      "word_count": 44,
+      "evidence": "Church, Gao, and Kosuri demonstrated large-scale digital information encoding in synthetic DNA in 2012. See Next-generation digital information storage in DNA .",
+      "paragraphs": [
+        "Church, Gao, and Kosuri demonstrated large-scale digital information encoding in synthetic DNA in 2012. See Next-generation digital information storage in DNA .",
+        "Goldman and colleagues subsequently demonstrated an explicitly redundant DNA archive design in Towards practical, high-capacity, low-maintenance information storage in synthesized DNA ."
+      ]
+    },
+    {
+      "heading": "99. Physical preservation and coding solve different failure modes",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 6,
+      "word_count": 58,
+      "evidence": "DNA can chemically degrade during storage.",
+      "paragraphs": [
+        "DNA can chemically degrade during storage.",
+        "Physical preservation can reduce molecular damage and loss.",
+        "Error-correcting codes provide logical tolerance for damage that still occurs.",
+        "Grass and colleagues combined silica encapsulation with ECC in Robust Chemical Preservation of Digital Information on DNA in Silica with Error-Correcting Codes .",
+        "The architecture illustrates:",
+        "prevent errors physically + correct remaining errors computationally."
+      ]
+    },
+    {
+      "heading": "100. Coding cannot replace preservation",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "If storage conditions destroy enough molecules to exceed outer-code redundancy, no decoder can recover information that is no longer represented in the surviving pool.",
+      "paragraphs": [
+        "If storage conditions destroy enough molecules to exceed outer-code redundancy, no decoder can recover information that is no longer represented in the surviving pool.",
+        "Likewise excellent preservation does not eliminate synthesis or sequencing errors.",
+        "Physical and coding reliability are complementary."
+      ]
+    },
+    {
+      "heading": "101. Preservation changes the channel over time",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 10,
+      "word_count": 35,
+      "evidence": "A DNA archive does not necessarily have a stationary error distribution over decades or centuries.",
+      "paragraphs": [
+        "A DNA archive does not necessarily have a stationary error distribution over decades or centuries.",
+        "Age can change:",
+        "molecule survival;",
+        "fragmentation patterns;",
+        "chemical damage;",
+        "readability.",
+        "Long-term codecs should therefore distinguish:",
+        "write/read errors",
+        "from:",
+        "storage-age errors."
+      ]
+    },
+    {
+      "heading": "102. DNA storage is a communication channel with memory and bias",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 9,
+      "word_count": 37,
+      "evidence": "A simplistic model assumes every nucleotide experiences independent error probability:",
+      "paragraphs": [
+        "A simplistic model assumes every nucleotide experiences independent error probability:",
+        "P(error) = p.",
+        "Real molecular pipelines can exhibit:",
+        "sequence-dependent synthesis failures;",
+        "homopolymer-related indels;",
+        "coverage bias;",
+        "PCR amplification bias;",
+        "correlated errors.",
+        "Thus the channel may not be memoryless."
+      ]
+    },
+    {
+      "heading": "103. Error composition matters even at equal total error rate",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "Compare two channels:",
+      "paragraphs": [
+        "Compare two channels:",
+        "Channel A: 1% substitutions 0% indels Channel B: 0% substitutions 1% indels.",
+        "The total nucleotide-error rate is numerically equal.",
+        "But the decoding difficulty can be dramatically different because Channel B loses synchronization."
+      ]
+    },
+    {
+      "heading": "104. A single aggregate error rate is incomplete",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "At minimum, report:",
+      "paragraphs": [
+        "At minimum, report:",
+        "substitution rate insertion rate deletion rate strand dropout rate coverage distribution.",
+        "Where relevant, also report:",
+        "burst-error statistics;",
+        "sequence-context dependence;",
+        "strand-length dependence;",
+        "index-region error rate."
+      ]
+    },
+    {
+      "heading": "105. Edit error rate and strand dropout rate use different denominators",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 5,
+      "word_count": 34,
+      "evidence": "A nucleotide substitution rate might be measured as:",
+      "paragraphs": [
+        "A nucleotide substitution rate might be measured as:",
+        "substituted bases / aligned reference bases.",
+        "Dropout can be measured as:",
+        "unrecovered intended strands / intended strands.",
+        "Combining these into one percentage hides distinct failure mechanisms."
+      ]
+    },
+    {
+      "heading": "106. Consensus accuracy also requires a defined denominator",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "Possible metrics include:",
+      "paragraphs": [
+        "Possible metrics include:",
+        "per-base edit rate",
+        "or:",
+        "fraction of strands reconstructed exactly.",
+        "These can tell very different stories.",
+        "A consensus with one error in every strand may have excellent per-base accuracy but zero exact-strand recovery."
+      ]
+    },
+    {
+      "heading": "107. Exact-strand recovery is often the more useful codec metric",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 4,
+      "word_count": 30,
+      "evidence": "If an outer code expects correctly reconstructed symbols or blocks, the relevant question can be:",
+      "paragraphs": [
+        "If an outer code expects correctly reconstructed symbols or blocks, the relevant question can be:",
+        "How many strands are exactly correct?",
+        "rather than only:",
+        "What is the average edit distance?"
+      ]
+    },
+    {
+      "heading": "108. Outer decoding can convert imperfect strand recovery into perfect file recovery",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "95% of strands are reconstructed exactly",
+        "while:",
+        "5% are known erasures.",
+        "A sufficiently strong outer code can still produce:",
+        "100% correct file recovery.",
+        "This explains why intermediate error rates should not be equated directly with user-visible failure rates."
+      ]
+    },
+    {
+      "heading": "109. Error localization matters",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "If the system knows:",
+      "paragraphs": [
+        "If the system knows:",
+        "strand 217 is unreliable,",
+        "the outer decoder can treat it as an erasure.",
+        "If the system confidently supplies the wrong strand 217:",
+        "undetected error",
+        "can consume substantially more decoding capability."
+      ]
+    },
+    {
+      "heading": "110. Confidence-aware decoding",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 7,
+      "word_count": 37,
+      "evidence": "A sophisticated reconstruction system can attach a confidence value to each strand:",
+      "paragraphs": [
+        "A sophisticated reconstruction system can attach a confidence value to each strand:",
+        "strand + decoded payload + confidence.",
+        "The outer decoder can then choose to:",
+        "accept high-confidence strands;",
+        "erase low-confidence strands;",
+        "request more sequencing;",
+        "perform alternative decoding."
+      ]
+    },
+    {
+      "heading": "111. Sequencing depth can be adaptive",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 3,
+      "word_count": 45,
+      "evidence": "Instead of sequencing to a fixed large depth, a system can monitor decoding progress:",
+      "paragraphs": [
+        "Instead of sequencing to a fixed large depth, a system can monitor decoding progress:",
+        "sequence reads | v attempt reconstruction | +--> enough information | | | v | stop | +--> insufficient | v sequence more.",
+        "This turns readout into a sequential decision problem."
+      ]
+    },
+    {
+      "heading": "112. Fountain codes naturally support progressive recovery",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 2,
+      "word_count": 35,
+      "evidence": "Rateless or near-rateless code structures allow the system to recover data after receiving a sufficient number of suitable droplets rather than requiring one exact predetermined strand set.",
+      "paragraphs": [
+        "Rateless or near-rateless code structures allow the system to recover data after receiving a sufficient number of suitable droplets rather than requiring one exact predetermined strand set.",
+        "This is particularly compatible with stochastic molecular sampling."
+      ]
+    },
+    {
+      "heading": "113. Inner-code decoding complexity matters",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 9,
+      "word_count": 35,
+      "evidence": "An indel-correcting code with exceptional theoretical redundancy can still be impractical if decoding requires:",
+      "paragraphs": [
+        "An indel-correcting code with exceptional theoretical redundancy can still be impractical if decoding requires:",
+        "exponential search",
+        "at realistic strand lengths and error rates.",
+        "Codec design must consider:",
+        "redundancy;",
+        "error tolerance;",
+        "encoding complexity;",
+        "decoding complexity;",
+        "parallelizability."
+      ]
+    },
+    {
+      "heading": "114. Dynamic programming as an inner decoder",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 7,
+      "word_count": 44,
+      "evidence": "For a candidate codeword c and received strand r :",
+      "paragraphs": [
+        "For a candidate codeword c and received strand r :",
+        "dL(c,r)",
+        "can be computed in:",
+        "O(|c||r|)",
+        "time using conventional DP.",
+        "But decoding by comparing against every possible codeword would be infeasible for a high-rate code.",
+        "Efficient codes need structure that avoids exhaustive codebook search."
+      ]
+    },
+    {
+      "heading": "115. Coding structure converts search into decoding",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "A useful code permits:",
+      "paragraphs": [
+        "A useful code permits:",
+        "received sequence | v syndrome / checksum / state information | v small candidate set | v corrected message.",
+        "VT checksums and HEDGES state searches are examples of this broader principle."
+      ]
+    },
+    {
+      "heading": "116. List decoding",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "When noise exceeds unique-decoding radius, a decoder can sometimes return:",
+      "paragraphs": [
+        "When noise exceeds unique-decoding radius, a decoder can sometimes return:",
+        "{ candidate 1, candidate 2, ... candidate L }",
+        "rather than declaring immediate failure.",
+        "Outer codes, hashes, or multiple reads can then disambiguate the list."
+      ]
+    },
+    {
+      "heading": "117. List decoding is particularly natural in layered storage",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "If an inner decoder outputs several plausible strand reconstructions, additional evidence may come from:",
+      "paragraphs": [
+        "If an inner decoder outputs several plausible strand reconstructions, additional evidence may come from:",
+        "outer parity constraints;",
+        "file-level checksum;",
+        "other reads of the same oligo;",
+        "neighboring strand indexes.",
+        "This can recover information beyond simple nearest-codeword decoding."
+      ]
+    },
+    {
+      "heading": "118. Soft decoding preserves uncertainty",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "A hard decoder outputs:",
+      "paragraphs": [
+        "A hard decoder outputs:",
+        "A",
+        "or:",
+        "C.",
+        "A soft decoder may output:",
+        "P(A)=0.55 P(C)=0.40 P(G)=0.03 P(T)=0.02.",
+        "Passing this uncertainty to the outer decoder can improve performance when the outer code supports soft information."
+      ]
+    },
+    {
+      "heading": "119. Edit distance discards this uncertainty",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 8,
+      "word_count": 34,
+      "evidence": "Classic Levenshtein reduces the observation to:",
+      "paragraphs": [
+        "Classic Levenshtein reduces the observation to:",
+        "minimum integer edit count.",
+        "It does not preserve:",
+        "base quality;",
+        "alternative alignments;",
+        "posterior probabilities;",
+        "read multiplicity.",
+        "This is why edit distance is a foundation, not the entire decoder."
+      ]
+    },
+    {
+      "heading": "120. Multiple optimal edit alignments can occur",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "stored: AAAAAA received: AAAAA.",
+        "One deletion occurred, but every repeated A is an equally valid deletion location under the string model.",
+        "The distance is unambiguous:",
+        "dL = 1,",
+        "while the exact edit path is ambiguous."
+      ]
+    },
+    {
+      "heading": "121. For storage decoding, codeword recovery can matter more than event localization",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 4,
+      "word_count": 34,
+      "evidence": "If the goal is:",
+      "paragraphs": [
+        "If the goal is:",
+        "recover the original data,",
+        "knowing exactly which physical copy lost which repeated base may be unnecessary.",
+        "This differs from biological variant analysis, where edit coordinates themselves may carry scientific meaning."
+      ]
+    },
+    {
+      "heading": "122. DNA storage and bioinformatics use similar algorithms for different goals",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 49,
+      "evidence": "Dimension Bioinformatics DNA data storage Input Natural biological sequence Artificially encoded digital information Main goal Biological inference Exact digital reconstruction Edit interpretation Mutation/error/alignment difference Storage-channel corruption Approximate output Often scientifically useful Usually unacceptable for exact files ECC Usually not intrinsic Central Sequence design Given by biology Chosen by encoder",
+      "paragraphs": [
+        "Dimension Bioinformatics DNA data storage Input Natural biological sequence Artificially encoded digital information Main goal Biological inference Exact digital reconstruction Edit interpretation Mutation/error/alignment difference Storage-channel corruption Approximate output Often scientifically useful Usually unacceptable for exact files ECC Usually not intrinsic Central Sequence design Given by biology Chosen by encoder"
+      ]
+    },
+    {
+      "heading": "123. The ability to choose the stored sequence is a major advantage",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 10,
+      "word_count": 44,
+      "evidence": "Bioinformatics must accept naturally occurring sequences.",
+      "paragraphs": [
+        "Bioinformatics must accept naturally occurring sequences.",
+        "DNA storage can deliberately choose codewords that are:",
+        "far apart in edit distance;",
+        "balanced in GC content;",
+        "free from long homopolymers;",
+        "compatible with primers;",
+        "easy to decode.",
+        "This transforms sequence analysis into a joint:",
+        "code-design + channel-design",
+        "problem."
+      ]
+    },
+    {
+      "heading": "124. But code constraints can conflict",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "A sequence that maximizes:",
+      "paragraphs": [
+        "A sequence that maximizes:",
+        "minimum edit distance",
+        "may have poor:",
+        "GC balance.",
+        "A sequence set with perfect molecular constraints may have:",
+        "low coding rate.",
+        "A good DNA codec solves a multi-objective optimization problem."
+      ]
+    },
+    {
+      "heading": "125. Joint constrained error-correcting codes",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "Rather than applying:",
+      "paragraphs": [
+        "Rather than applying:",
+        "ECC then filter bad DNA strings,",
+        "one can design codes whose valid codewords already satisfy molecular constraints.",
+        "This can improve coding efficiency but makes code construction and decoding more difficult."
+      ]
+    },
+    {
+      "heading": "126. Sequence screening is rejection coding",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "Another approach generates candidate encoded sequences and rejects those violating constraints:",
+      "paragraphs": [
+        "Another approach generates candidate encoded sequences and rejects those violating constraints:",
+        "candidate | +--> valid -> synthesize | +--> invalid -> regenerate.",
+        "DNA Fountain uses this general idea.",
+        "Rejection simplifies constraint logic but introduces encoding overhead because not every candidate droplet is usable."
+      ]
+    },
+    {
+      "heading": "127. Constraint density matters",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 4,
+      "word_count": 39,
+      "evidence": "If a large fraction of possible strands violate constraints, rejection can become expensive.",
+      "paragraphs": [
+        "If a large fraction of possible strands violate constraints, rejection can become expensive.",
+        "The usable code space is then much smaller than:",
+        "4^n.",
+        "Constrained coding can avoid repeatedly generating invalid candidates by encoding directly into the legal sequence set."
+      ]
+    },
+    {
+      "heading": "128. File-level fragmentation creates an erasure-code opportunity",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "Suppose a file is divided into:",
+      "paragraphs": [
+        "Suppose a file is divided into:",
+        "K",
+        "source chunks.",
+        "An outer code generates:",
+        "N > K",
+        "encoded chunks.",
+        "If the original can be reconstructed from a sufficiently informative subset of the N strands, the system can tolerate strand dropout."
+      ]
+    },
+    {
+      "heading": "129. Storage overhead can be expressed as N/K",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "A simple outer redundancy factor is:",
+      "paragraphs": [
+        "A simple outer redundancy factor is:",
+        "rho = N / K.",
+        "For example:",
+        "rho = 1.10",
+        "corresponds to roughly:",
+        "10% more encoded strands",
+        "than the number of source chunks, before additional molecular overhead."
+      ]
+    },
+    {
+      "heading": "130. More strands do not always mean better storage",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 8,
+      "word_count": 23,
+      "evidence": "Adding redundancy increases:",
+      "paragraphs": [
+        "Adding redundancy increases:",
+        "synthesis cost;",
+        "pool complexity;",
+        "indexing burden;",
+        "sequencing volume.",
+        "Error-control design must optimize:",
+        "reliability per synthesized nucleotide,",
+        "not simply maximize redundancy."
+      ]
+    },
+    {
+      "heading": "131. The storage channel changes with archive scale",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "As the number of oligos grows:",
+      "paragraphs": [
+        "As the number of oligos grows:",
+        "index lengths increase;",
+        "primer design becomes more difficult;",
+        "collision risk increases;",
+        "coverage requirements change;",
+        "random-access architecture becomes more important.",
+        "A codec demonstrated on a tiny experiment does not automatically scale without architectural changes."
+      ]
+    },
+    {
+      "heading": "132. Fundamental-limit analyses explicitly model unordered molecules",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 3,
+      "word_count": 48,
+      "evidence": "Heckel, Shomorony, Ramchandran, and Tse studied theoretical limits under a model where information is written onto many short unordered molecules and read by random sampling. See Fundamental Limits of DNA Storage Systems .",
+      "paragraphs": [
+        "Heckel, Shomorony, Ramchandran, and Tse studied theoretical limits under a model where information is written onto many short unordered molecules and read by random sampling. See Fundamental Limits of DNA Storage Systems .",
+        "The model highlights two facts that ordinary edit distance omits:",
+        "unordered storage + random sampling."
+      ]
+    },
+    {
+      "heading": "133. The correct metric depends on the layer being analyzed",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 1,
+      "word_count": 40,
+      "evidence": "Layer Useful error model Nucleotide inside one strand Edit distance / probabilistic indel channel Address Error-correcting index / edit-aware code Read cluster Sequence similarity + consensus model Set of strands Set code + erasures/dropout File Outer ECC / integrity code",
+      "paragraphs": [
+        "Layer Useful error model Nucleotide inside one strand Edit distance / probabilistic indel channel Address Error-correcting index / edit-aware code Read cluster Sequence similarity + consensus model Set of strands Set code + erasures/dropout File Outer ECC / integrity code"
+      ]
+    },
+    {
+      "heading": "134. There is no single scalar “DNA storage distance”",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "One could attempt to combine:",
+      "paragraphs": [
+        "One could attempt to combine:",
+        "within-strand edit distance + number of missing strands + index errors + misclustered reads.",
+        "But the relative cost of these events depends on the codec architecture.",
+        "It is usually clearer to model the layers separately."
+      ]
+    },
+    {
+      "heading": "135. A strand deletion and a nucleotide deletion differ by orders of abstraction",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 9,
+      "word_count": 34,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "delete one nucleotide",
+        "with:",
+        "delete one complete 200-symbol strand.",
+        "Both might be called a “deletion” informally, but their coding consequences are completely different.",
+        "Terminology should distinguish:",
+        "symbol deletion",
+        "from:",
+        "strand dropout / erasure."
+      ]
+    },
+    {
+      "heading": "136. Common failure mode: modeling DNA storage as one long Levenshtein string",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "If all oligos are concatenated conceptually:",
+      "paragraphs": [
+        "If all oligos are concatenated conceptually:",
+        "strand0 strand1 strand2 ...",
+        "then one missing strand looks like a huge deletion.",
+        "But physical DNA strands are unordered independent molecules.",
+        "Concatenation invents an adjacency relationship that does not physically exist."
+      ]
+    },
+    {
+      "heading": "137. Common failure mode: using Hamming distance when indels occur",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "One deletion can shift an entire suffix.",
+      "paragraphs": [
+        "One deletion can shift an entire suffix.",
+        "A synchronization-aware metric or decoder is required."
+      ]
+    },
+    {
+      "heading": "138. Common failure mode: treating all errors equally",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "A one-base substitution and one missing strand can both be recorded as “one error” only by discarding the difference in consequence.",
+      "paragraphs": [
+        "A one-base substitution and one missing strand can both be recorded as “one error” only by discarding the difference in consequence."
+      ]
+    },
+    {
+      "heading": "139. Common failure mode: assuming fountain codes correct nucleotide indels",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "Fountain coding primarily provides redundancy against missing encoded packets.",
+      "paragraphs": [
+        "Fountain coding primarily provides redundancy against missing encoded packets.",
+        "Indel correction inside each DNA sequence still needs another mechanism unless the reconstruction pipeline absorbs those errors elsewhere."
+      ]
+    },
+    {
+      "heading": "140. Common failure mode: assuming Reed-Solomon restores synchronization",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Reed-Solomon is powerful after symbols are aligned.",
+      "paragraphs": [
+        "Reed-Solomon is powerful after symbols are aligned.",
+        "It does not automatically identify an unknown insertion/deletion shift inside an unframed sequence."
+      ]
+    },
+    {
+      "heading": "141. Common failure mode: treating VT codes as a complete archive design",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "VT codes solve a foundational synchronization problem but do not independently solve:",
+      "paragraphs": [
+        "VT codes solve a foundational synchronization problem but do not independently solve:",
+        "multiple strand dropout;",
+        "unordered pool indexing;",
+        "biochemical constraints;",
+        "random access;",
+        "high-multiplicity consensus."
+      ]
+    },
+    {
+      "heading": "142. Common failure mode: assuming minimum edit distance predicts empirical reliability perfectly",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 3,
+      "word_count": 39,
+      "evidence": "The minimum-distance guarantee is worst-case and combinatorial.",
+      "paragraphs": [
+        "The minimum-distance guarantee is worst-case and combinatorial.",
+        "Real channel probability depends on which errors actually occur and how frequently.",
+        "A code with smaller minimum distance can sometimes perform better empirically if it is better matched to the channel distribution."
+      ]
+    },
+    {
+      "heading": "143. Common failure mode: interpreting average edit rate as file error probability",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 2,
+      "word_count": 33,
+      "evidence": "A tiny average nucleotide error rate can still produce catastrophic file corruption if errors hit unprotected critical positions.",
+      "paragraphs": [
+        "A tiny average nucleotide error rate can still produce catastrophic file corruption if errors hit unprotected critical positions.",
+        "Conversely, a substantial raw read error rate can be completely corrected by consensus and ECC."
+      ]
+    },
+    {
+      "heading": "144. Common failure mode: ignoring strand dropout",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "A perfect inner indel code cannot reconstruct a strand that was never observed.",
+      "paragraphs": [
+        "A perfect inner indel code cannot reconstruct a strand that was never observed."
+      ]
+    },
+    {
+      "heading": "145. Common failure mode: ignoring coverage bias",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "Average sequencing depth can look high while some oligos remain uncovered.",
+      "paragraphs": [
+        "Average sequencing depth can look high while some oligos remain uncovered.",
+        "Coverage distribution matters more than the mean alone."
+      ]
+    },
+    {
+      "heading": "146. Common failure mode: decoding an uncertain strand as confident data",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 1,
+      "word_count": 24,
+      "evidence": "If the inner decoder is uncertain, marking the strand as an erasure may be safer than supplying a wrong payload to the outer decoder.",
+      "paragraphs": [
+        "If the inner decoder is uncertain, marking the strand as an erasure may be safer than supplying a wrong payload to the outer decoder."
+      ]
+    },
+    {
+      "heading": "147. Common failure mode: using one edit threshold for all technologies",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "Different synthesis and sequencing pipelines produce different mixtures of:",
+      "paragraphs": [
+        "Different synthesis and sequencing pipelines produce different mixtures of:",
+        "substitutions insertions deletions.",
+        "Thresholds should be calibrated to the actual channel."
+      ]
+    },
+    {
+      "heading": "148. Common failure mode: ignoring sequence context",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 6,
+      "word_count": 21,
+      "evidence": "Error rates may depend on:",
+      "paragraphs": [
+        "Error rates may depend on:",
+        "homopolymers;",
+        "GC content;",
+        "specific motifs;",
+        "secondary structure.",
+        "A memoryless uniform error model can therefore mispredict performance."
+      ]
+    },
+    {
+      "heading": "149. Common failure mode: reporting nominal 2 bits per nucleotide as practical density",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 6,
+      "word_count": 10,
+      "evidence": "That value ignores:",
+      "paragraphs": [
+        "That value ignores:",
+        "addresses;",
+        "ECC;",
+        "primers;",
+        "constraints;",
+        "redundant physical copies."
+      ]
+    },
+    {
+      "heading": "150. Common failure mode: ignoring the cost of discarded candidate sequences",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 1,
+      "word_count": 24,
+      "evidence": "If a codec generates many invalid DNA candidates and rejects them, effective encoding cost rises even if the accepted sequences have high nominal rate.",
+      "paragraphs": [
+        "If a codec generates many invalid DNA candidates and rejects them, effective encoding cost rises even if the accepted sequences have high nominal rate."
+      ]
+    },
+    {
+      "heading": "151. Common failure mode: confusing consensus with error-correcting coding",
+      "level": 2,
+      "id": "ux-section-152",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "Consensus uses multiple observations of the same logical strand.",
+      "paragraphs": [
+        "Consensus uses multiple observations of the same logical strand.",
+        "ECC introduces structured redundancy into the data representation.",
+        "Both improve reliability, but through different mechanisms."
+      ]
+    },
+    {
+      "heading": "152. Common failure mode: confusing multiple reads with independent redundancy",
+      "level": 2,
+      "id": "ux-section-153",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "PCR duplicates may share early molecular errors or amplification biases.",
+      "paragraphs": [
+        "PCR duplicates may share early molecular errors or amplification biases.",
+        "Read count does not automatically equal independent evidence count."
+      ]
+    },
+    {
+      "heading": "153. Common failure mode: using ordinary majority vote after indels",
+      "level": 2,
+      "id": "ux-section-154",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Reads must first be synchronized or aligned.",
+      "paragraphs": [
+        "Reads must first be synchronized or aligned."
+      ]
+    },
+    {
+      "heading": "154. Common failure mode: clustering reads solely by exact index",
+      "level": 2,
+      "id": "ux-section-155",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "One corrupted address can orphan an otherwise recoverable read.",
+      "paragraphs": [
+        "One corrupted address can orphan an otherwise recoverable read.",
+        "Error-tolerant indexing or sequence-aware clustering can improve robustness."
+      ]
+    },
+    {
+      "heading": "155. Common failure mode: clustering only by payload edit distance",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Two legitimate codewords can be close enough that aggressive clustering merges them.",
+      "paragraphs": [
+        "Two legitimate codewords can be close enough that aggressive clustering merges them.",
+        "Codebook structure and address information should be exploited."
+      ]
+    },
+    {
+      "heading": "156. Common failure mode: ignoring integrity verification",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "A decoder that always returns some nearest codeword can silently produce incorrect files when the noise exceeds its model.",
+      "paragraphs": [
+        "A decoder that always returns some nearest codeword can silently produce incorrect files when the noise exceeds its model."
+      ]
+    },
+    {
+      "heading": "157. Common failure mode: treating a reconstructed near-match as successful archival recovery",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Digital storage requires exact bits unless the application explicitly supports lossy recovery.",
+      "paragraphs": [
+        "Digital storage requires exact bits unless the application explicitly supports lossy recovery."
+      ]
+    },
+    {
+      "heading": "158. Common failure mode: assuming physical longevity implies information longevity",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "DNA molecules may remain chemically detectable while particular information-bearing strands are lost or corrupted beyond correction.",
+      "paragraphs": [
+        "DNA molecules may remain chemically detectable while particular information-bearing strands are lost or corrupted beyond correction.",
+        "Archive longevity is jointly physical and computational."
+      ]
+    },
+    {
+      "heading": "159. Common failure mode: optimizing one channel layer in isolation",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "A codec with excellent indel correction may perform poorly if:",
+      "paragraphs": [
+        "A codec with excellent indel correction may perform poorly if:",
+        "its sequence constraints are weak;",
+        "its strand overhead is too high;",
+        "its outer erasure protection is insufficient;",
+        "its decoder is computationally impractical."
+      ]
+    },
+    {
+      "heading": "160. Recommended end-to-end architecture",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 1,
+      "word_count": 105,
+      "evidence": "DIGITAL FILE | v compress / source-code | v integrity checksum | v outer erasure/error code | v fragment into logical blocks | v protect strand addresses | v inner indel/synchronization code | v apply DNA sequence constraints | v attach access primers | v SYNTHESIS | v DNA POOL | v storage / preservation | v random access / PCR if needed | v SEQUENCING | v quality-aware read processing | v address decoding / clustering | v indel-aware alignment / consensus | v inner decoding | v confidence / erasure decision | v outer decoding | v integrity verification | v ORIGINAL FILE",
+      "paragraphs": [
+        "DIGITAL FILE | v compress / source-code | v integrity checksum | v outer erasure/error code | v fragment into logical blocks | v protect strand addresses | v inner indel/synchronization code | v apply DNA sequence constraints | v attach access primers | v SYNTHESIS | v DNA POOL | v storage / preservation | v random access / PCR if needed | v SEQUENCING | v quality-aware read processing | v address decoding / clustering | v indel-aware alignment / consensus | v inner decoding | v confidence / erasure decision | v outer decoding | v integrity verification | v ORIGINAL FILE"
+      ]
+    },
+    {
+      "heading": "161. A simplified strand-decoding algorithm",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 4,
+      "word_count": 66,
+      "evidence": "function decode_strand(reads): cluster = collect_reads_for_candidate_strand(reads) if cluster is empty: return ERASURE consensus, confidence = indel_aware_consensus(cluster) candidates = inner_decode(consensus) if candidates is empty: return ERASURE if candidates has one high-confidence valid codeword: return decoded_payload candidates = verify_with_address_and_checksum( candidates ) if one candidate remains: return decoded_payload return ERASURE",
+      "paragraphs": [
+        "function decode_strand(reads): cluster = collect_reads_for_candidate_strand(reads) if cluster is empty: return ERASURE consensus, confidence = indel_aware_consensus(cluster) candidates = inner_decode(consensus) if candidates is empty: return ERASURE if candidates has one high-confidence valid codeword: return decoded_payload candidates = verify_with_address_and_checksum( candidates ) if one candidate remains: return decoded_payload return ERASURE",
+        "The important design decision is the final line:",
+        "uncertainty -> erasure",
+        "rather than forcing an unreliable strand into outer decoding."
+      ]
+    },
+    {
+      "heading": "162. Simplified archive reconstruction",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 1,
+      "word_count": 33,
+      "evidence": "function reconstruct_archive(all_reads): groups = cluster_reads(all_reads) recovered_blocks = {} for group in groups: result = decode_strand(group) if result is valid: recovered_blocks.add(result) file = outer_decode( recovered_blocks ) if hash(file) != stored_integrity_hash: return FAILURE return file",
+      "paragraphs": [
+        "function reconstruct_archive(all_reads): groups = cluster_reads(all_reads) recovered_blocks = {} for group in groups: result = decode_strand(group) if result is valid: recovered_blocks.add(result) file = outer_decode( recovered_blocks ) if hash(file) != stored_integrity_hash: return FAILURE return file"
+      ]
+    },
+    {
+      "heading": "163. Coding-layer decision table",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 1,
+      "word_count": 116,
+      "evidence": "Problem Appropriate mechanism Why Levenshtein alone is insufficient Single substitution Substitution ECC / edit decoder Levenshtein can measure it but does not add redundancy Insertion/deletion Synchronization / indel code Need code structure for correction Single indel VT/Levenshtein-style code Distance alone does not identify transmitted codeword efficiently Multiple indels Stronger indel code / HEDGES-like architecture Unit nearest-neighbor search may be impractical Missing strand Outer erasure/fountain code No sequence remains to compare Uneven coverage Sampling-aware redundancy Not an edit process Mixed noisy reads Clustering + consensus Need multiple-observation model Bad homopolymers/GC Constrained coding Not a decoding error Random access Primer/address architecture Not represented",
+      "paragraphs": [
+        "Problem Appropriate mechanism Why Levenshtein alone is insufficient Single substitution Substitution ECC / edit decoder Levenshtein can measure it but does not add redundancy Insertion/deletion Synchronization / indel code Need code structure for correction Single indel VT/Levenshtein-style code Distance alone does not identify transmitted codeword efficiently Multiple indels Stronger indel code / HEDGES-like architecture Unit nearest-neighbor search may be impractical Missing strand Outer erasure/fountain code No sequence remains to compare Uneven coverage Sampling-aware redundancy Not an edit process Mixed noisy reads Clustering + consensus Need multiple-observation model Bad homopolymers/GC Constrained coding Not a decoding error Random access Primer/address architecture Not represented by string distance File integrity Checksum/hash + outer ECC Small distance still means incorrect file"
+      ]
+    },
+    {
+      "heading": "164. Metric decision table",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 1,
+      "word_count": 63,
+      "evidence": "Question Useful metric/model How many basic indels/substitutions separate two strands? Levenshtein distance Only substitutions, lengths fixed? Hamming distance Errors have different probabilities? Weighted/probabilistic edit model How many whole oligos are missing? Strand-erasure rate How similar are reads before clustering? Edit/k-mer similarity + indexing How accurate is consensus? CER/edit rate + exact-strand recovery Did the archive recover correctly? Exact file equality / integrity verification",
+      "paragraphs": [
+        "Question Useful metric/model How many basic indels/substitutions separate two strands? Levenshtein distance Only substitutions, lengths fixed? Hamming distance Errors have different probabilities? Weighted/probabilistic edit model How many whole oligos are missing? Strand-erasure rate How similar are reads before clustering? Edit/k-mer similarity + indexing How accurate is consensus? CER/edit rate + exact-strand recovery Did the archive recover correctly? Exact file equality / integrity verification"
+      ]
+    },
+    {
+      "heading": "165. Benchmarking an indel code",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 9,
+      "word_count": 27,
+      "evidence": "A useful benchmark should vary:",
+      "paragraphs": [
+        "A useful benchmark should vary:",
+        "substitution probability insertion probability deletion probability strand length code rate.",
+        "Measure:",
+        "exact strand recovery;",
+        "decoder failure rate;",
+        "undetected-error rate;",
+        "runtime;",
+        "memory;",
+        "redundancy."
+      ]
+    },
+    {
+      "heading": "166. Benchmarking an archive requires more dimensions",
+      "level": 2,
+      "id": "ux-section-167",
+      "paragraph_count": 8,
+      "word_count": 22,
+      "evidence": "Also vary:",
+      "paragraphs": [
+        "Also vary:",
+        "strand dropout;",
+        "coverage distribution;",
+        "cluster contamination;",
+        "read depth;",
+        "sequence constraints;",
+        "archive size.",
+        "An inner-code benchmark alone cannot establish archive-level reliability."
+      ]
+    },
+    {
+      "heading": "167. Separate raw channel performance from codec performance",
+      "level": 2,
+      "id": "ux-section-168",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "Report:",
+      "paragraphs": [
+        "Report:",
+        "RAW CHANNEL substitution / insertion / deletion coverage / dropout then AFTER CONSENSUS then AFTER INNER DECODING then AFTER OUTER DECODING.",
+        "This shows where reliability improvement comes from."
+      ]
+    },
+    {
+      "heading": "168. Error-rate cascade table",
+      "level": 2,
+      "id": "ux-section-169",
+      "paragraph_count": 1,
+      "word_count": 33,
+      "evidence": "Stage Example metric Raw reads Base edit rate Clustered reads Misclustering rate Consensus Consensus edit rate Inner decoder Exact strand success rate Outer decoder Recovered block fraction Final archive Exact file recovery rate",
+      "paragraphs": [
+        "Stage Example metric Raw reads Base edit rate Clustered reads Misclustering rate Consensus Consensus edit rate Inner decoder Exact strand success rate Outer decoder Recovered block fraction Final archive Exact file recovery rate"
+      ]
+    },
+    {
+      "heading": "169. Ablation studies reveal which coding layer matters",
+      "level": 2,
+      "id": "ux-section-170",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "A. no ECC B. outer code only C. inner indel code only D. consensus + outer E. inner + outer F. constraints + inner + outer.",
+        "This reveals whether performance is driven by:",
+        "molecular constraints;",
+        "consensus;",
+        "synchronization correction;",
+        "erasure correction."
+      ]
+    },
+    {
+      "heading": "170. Benchmark with error composition, not only total error rate",
+      "level": 2,
+      "id": "ux-section-171",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "Test channels such as:",
+      "paragraphs": [
+        "Test channels such as:",
+        "1% substitutions only 1% deletions only 1% insertions only mixed 1% burst indels sequence-dependent indels.",
+        "Equal total rates can produce very different decoder behavior."
+      ]
+    },
+    {
+      "heading": "171. Benchmark low-noise and high-noise regimes",
+      "level": 2,
+      "id": "ux-section-172",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "An aggressive inner code may waste redundancy when raw reads are already highly accurate.",
+      "paragraphs": [
+        "An aggressive inner code may waste redundancy when raw reads are already highly accurate.",
+        "A weak code may collapse abruptly at higher indel rates.",
+        "Plotting performance across a noise curve reveals:",
+        "failure threshold",
+        "and:",
+        "graceful versus catastrophic degradation."
+      ]
+    },
+    {
+      "heading": "172. Failure curves matter more than one operating point",
+      "level": 2,
+      "id": "ux-section-173",
+      "paragraph_count": 10,
+      "word_count": 19,
+      "evidence": "Instead of reporting:",
+      "paragraphs": [
+        "Instead of reporting:",
+        "100% recovery at one experiment,",
+        "measure:",
+        "P(success)",
+        "across:",
+        "coverage;",
+        "dropout;",
+        "indel rate;",
+        "substitution rate;",
+        "archive size."
+      ]
+    },
+    {
+      "heading": "173. Reproducibility checklist",
+      "level": 2,
+      "id": "ux-section-174",
+      "paragraph_count": 1,
+      "word_count": 77,
+      "evidence": "Layer Report Source data Original size and compression Outer code Code family, rate, block structure Addresses Length and protection method Inner code Indel/substitution coding method Constraints GC, homopolymer, motif rules Oligo structure Primer/index/payload/ECC lengths Synthesis Technology/provider conditions Storage Medium, duration, environment Amplification PCR/access procedure Sequencing Technology and base-calling workflow Raw channel S/I/D rates and dropout Coverage Distribution, not only mean Clustering Algorithm and thresholds Consensus Algorithm and confidence rule Decoder Parameters and failure policy Integrity Checksum/hash validation",
+      "paragraphs": [
+        "Layer Report Source data Original size and compression Outer code Code family, rate, block structure Addresses Length and protection method Inner code Indel/substitution coding method Constraints GC, homopolymer, motif rules Oligo structure Primer/index/payload/ECC lengths Synthesis Technology/provider conditions Storage Medium, duration, environment Amplification PCR/access procedure Sequencing Technology and base-calling workflow Raw channel S/I/D rates and dropout Coverage Distribution, not only mean Clustering Algorithm and thresholds Consensus Algorithm and confidence rule Decoder Parameters and failure policy Integrity Checksum/hash validation"
+      ]
+    },
+    {
+      "heading": "174. Why edit distance remains indispensable",
+      "level": 2,
+      "id": "ux-section-175",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "After all these qualifications, Levenshtein distance remains central because DNA storage is one of the clearest real systems in which:",
+      "paragraphs": [
+        "After all these qualifications, Levenshtein distance remains central because DNA storage is one of the clearest real systems in which:",
+        "insertions deletions substitutions",
+        "are not metaphorical operations.",
+        "They are literal corruption events in the stored symbol sequence."
+      ]
+    },
+    {
+      "heading": "175. Edit distance provides a canonical baseline",
+      "level": 2,
+      "id": "ux-section-176",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "It gives a reproducible answer to:",
+      "paragraphs": [
+        "It gives a reproducible answer to:",
+        "How many primitive synchronization/substitution edits separate this received sequence from this candidate codeword?",
+        "This enables:",
+        "channel measurement;",
+        "decoder evaluation;",
+        "clustering;",
+        "consensus evaluation;",
+        "code minimum-distance analysis."
+      ]
+    },
+    {
+      "heading": "176. But the decoder needs structure beyond distance",
+      "level": 2,
+      "id": "ux-section-177",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "Given a received strand:",
+      "paragraphs": [
+        "Given a received strand:",
+        "r,",
+        "naïve minimum-distance decoding is:",
+        "c* = argmin dL(c,r) over all c in code C.",
+        "If:",
+        "|C|",
+        "is enormous, exhaustive evaluation is impossible.",
+        "Practical codes therefore provide algebraic, probabilistic, or search structure."
+      ]
+    },
+    {
+      "heading": "177. Code design and distance design are inseparable",
+      "level": 2,
+      "id": "ux-section-178",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "A distance metric tells us:",
+      "paragraphs": [
+        "A distance metric tells us:",
+        "which corruptions are considered close.",
+        "A code determines:",
+        "which transmitted strings are legal.",
+        "Reliable storage comes from separating valid strings far enough under the relevant channel geometry."
+      ]
+    },
+    {
+      "heading": "178. The Levenshtein geometry is appropriate only when edit count is the intended geometry",
+      "level": 2,
+      "id": "ux-section-179",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "If the real channel heavily favors:",
+      "paragraphs": [
+        "If the real channel heavily favors:",
+        "one long burst deletion",
+        "over:",
+        "many isolated deletions,",
+        "unit Levenshtein may misrepresent likelihood.",
+        "A burst-indel or channel-specific code may be more efficient."
+      ]
+    },
+    {
+      "heading": "179. DNA storage motivates modern synchronization-code research",
+      "level": 2,
+      "id": "ux-section-180",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "Insertion/deletion coding was historically motivated by communication channels.",
+      "paragraphs": [
+        "Insertion/deletion coding was historically motivated by communication channels.",
+        "DNA storage has renewed practical interest because molecular systems naturally exhibit exactly these synchronization failures.",
+        "Recent q-ary and burst-indel constructions are therefore directly relevant to DNA's four-symbol alphabet."
+      ]
+    },
+    {
+      "heading": "180. Coding theory and bioinformatics meet at the DNA storage channel",
+      "level": 2,
+      "id": "ux-section-181",
+      "paragraph_count": 4,
+      "word_count": 56,
+      "evidence": "DNA storage combines:",
+      "paragraphs": [
+        "DNA storage combines:",
+        "BIOINFORMATICS: sequence alignment sequencing consensus oligo handling CODING THEORY: indel codes erasure codes minimum distance channel capacity SYSTEMS: random access indexing archival organization integrity verification.",
+        "This is why the topic naturally bridges the Bioinformatics and Coding Theory sections of Levenshtein.net.",
+        "The coding-theoretic foundations are developed further in Levenshtein distance in coding theory ."
+      ]
+    },
+    {
+      "heading": "181. Final conceptual model",
+      "level": 2,
+      "id": "ux-section-182",
+      "paragraph_count": 1,
+      "word_count": 121,
+      "evidence": "DIGITAL INFORMATION | v source / outer coding | v addresses + fragmentation | v indel / synchronization code | v constrained DNA encoding | v SYNTHESIS | v UNORDERED DNA POOL | +------------------------+------------------------+ | | | v v v strand coverage local dropout bias edits | +-------------+-------------+ | | | v v v substitution insertion deletion \\ | / \\ | / +-----------+-----------+ | v edit-distance channel | +----------------------+------------------+ | | v v multiple noisy reads missing strands | | v v clustering + consensus outer erasures | v synchronization decode | v corrected strands | +----------------+----------------+ | | v v valid data erasures | | +----------------+----------------+ | v outer decoding | v integrity verification | v ORIGINAL DIGITAL FILE",
+      "paragraphs": [
+        "DIGITAL INFORMATION | v source / outer coding | v addresses + fragmentation | v indel / synchronization code | v constrained DNA encoding | v SYNTHESIS | v UNORDERED DNA POOL | +------------------------+------------------------+ | | | v v v strand coverage local dropout bias edits | +-------------+-------------+ | | | v v v substitution insertion deletion \\ | / \\ | / +-----------+-----------+ | v edit-distance channel | +----------------------+------------------+ | | v v multiple noisy reads missing strands | | v v clustering + consensus outer erasures | v synchronization decode | v corrected strands | +----------------+----------------+ | | v v valid data erasures | | +----------------+----------------+ | v outer decoding | v integrity verification | v ORIGINAL DIGITAL FILE"
+      ]
+    },
+    {
+      "heading": "182. Final interpretation",
+      "level": 2,
+      "id": "ux-section-183",
+      "paragraph_count": 10,
+      "word_count": 356,
+      "evidence": "Edit distance is foundational to DNA storage because the molecular channel naturally creates the same three primitive errors that define Levenshtein distance:",
+      "paragraphs": [
+        "Edit distance is foundational to DNA storage because the molecular channel naturally creates the same three primitive errors that define Levenshtein distance:",
+        "substitution insertion deletion.",
+        "Insertions and deletions are especially important because they destroy symbol synchronization. A single deletion can shift every subsequent coordinate, making substitution-oriented codes and Hamming distance inadequate until synchronization is restored.",
+        "This gives classical Levenshtein and Varshamov-Tenengolts coding theory an unusually direct modern application. Minimum edit distance defines combinatorial correction guarantees; VT-style checksums illustrate how synchronization can be recovered; modern systems such as HEDGES incorporate indel-aware inner decoding; and edit-distance algorithms remain useful for read alignment, clustering, and consensus.",
+        "But DNA storage is not one Levenshtein channel.",
+        "The physical medium creates an unordered collection of short molecules. Entire strands can disappear. Some strands can be sampled hundreds of times while others are never observed. Sequence constraints remove large regions of the nominal quaternary sequence space. Random-access primers and strand addresses introduce additional overhead and error modes. Multiple noisy copies can be combined by consensus. Outer erasure and error-correcting codes reconstruct missing or unreliable strands.",
+        "The most important distinctions are therefore:",
+        "nucleotide deletion != strand dropout duplicate read != Levenshtein insertion Hamming error != synchronization error edit distance != error-correcting code minimum edit distance != maximum-likelihood decoding VT code != complete DNA-storage architecture fountain code != indel code Reed-Solomon correction != synchronization recovery consensus != error-correcting coding sequence constraint != error correction raw read accuracy != strand recovery strand recovery != file recovery low edit distance != correct digital file 2 bits per nucleotide != practical user-data density physical DNA longevity != guaranteed information longevity.",
+        "The strongest DNA-storage architecture therefore uses edit distance at the layer where it is mathematically appropriate: modeling and correcting substitutions, insertions, and deletions inside sequences. Around that layer, it adds constrained coding, protected addressing, clustering, consensus reconstruction, outer erasure protection, random-access mechanisms, and integrity verification.",
+        "In this architecture, Levenshtein distance is neither a peripheral analogy nor a complete solution. It is the mathematical geometry of one of the channel's most difficult error mechanisms—loss of synchronization—and a foundation on which the rest of the storage system must be built."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-184",
+      "paragraph_count": 11,
+      "word_count": 274,
+      "evidence": "Church, G. M., Gao, Y., and Kosuri, S. Next-generation digital information storage in DNA. Science, 2012. https://doi.org/10.1126/science.1226355 .",
+      "paragraphs": [
+        "Church, G. M., Gao, Y., and Kosuri, S. Next-generation digital information storage in DNA. Science, 2012. https://doi.org/10.1126/science.1226355 .",
+        "Goldman, N., Bertone, P., Chen, S., et al. Towards practical, high-capacity, low-maintenance information storage in synthesized DNA. Nature, 2013. https://doi.org/10.1038/nature11875 .",
+        "Grass, R. N., Heckel, R., Puddu, M., Paunescu, D., and Stark, W. J. Robust Chemical Preservation of Digital Information on DNA in Silica with Error-Correcting Codes. Angewandte Chemie International Edition, 2015. https://doi.org/10.1002/anie.201411378 .",
+        "Tabatabaei Yazdi, S. M. H., Yuan, Y., Ma, J., Zhao, H., and Milenkovic, O. A Rewritable, Random-Access DNA-Based Storage System. Scientific Reports, 2015. https://doi.org/10.1038/srep14138 .",
+        "Bornholt, J., Lopez, R., Carmean, D. M., Ceze, L., Seelig, G., and Strauss, K. A DNA-Based Archival Storage System. ASPLOS, 2016. https://doi.org/10.1145/2872362.2872397 .",
+        "Erlich, Y., and Zielinski, D. DNA Fountain enables a robust and efficient storage architecture. Science, 2017. https://doi.org/10.1126/science.aaj2038 .",
+        "Heckel, R., Shomorony, I., Ramchandran, K., and Tse, D. N. C. Fundamental Limits of DNA Storage Systems. IEEE International Symposium on Information Theory, 2017. https://doi.org/10.1109/ISIT.2017.8007106 .",
+        "Organick, L., Ang, S. D., Chen, Y.-J., et al. Random access in large-scale DNA data storage. Nature Biotechnology, 2018. https://doi.org/10.1038/nbt.4079 .",
+        "Lenz, A., Siegel, P. H., Wachter-Zeh, A., and Yaakobi, E. Coding over Sets for DNA Storage. IEEE Transactions on Information Theory, 2020. https://doi.org/10.1109/TIT.2019.2961265 .",
+        "Press, W. H., Hawkins, J. A., Jones, S. K. Jr., Schaub, J. M., and Finkelstein, I. J. HEDGES error-correcting code for DNA storage corrects indels and allows sequence constraints. Proceedings of the National Academy of Sciences, 2020. https://doi.org/10.1073/pnas.2004821117 .",
+        "Pan, C., Tabatabaei, S. K., Tabatabaei Yazdi, S. M. H., et al. Rewritable two-dimensional DNA-based data storage with machine learning reconstruction. Nature Communications, 2022. https://doi.org/10.1038/s41467-022-30140-x ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/coding-theory",
+      "evidence": [
+        {
+          "section": "27. Erasure is easier than unknown substitution when location is known",
+          "anchor_id": "ux-section-28",
+          "alias": "coding theory",
+          "excerpt": "In conventional coding theory, knowing:"
+        },
+        {
+          "section": "180. Coding theory and bioinformatics meet at the DNA storage channel",
+          "anchor_id": "ux-section-181",
+          "alias": "coding theory",
+          "excerpt": "BIOINFORMATICS: sequence alignment sequencing consensus oligo handling CODING THEORY: indel codes erasure codes minimum distance channel capacity SYSTEMS: random access indexing archival organization integrity verification."
+        },
+        {
+          "section": "182. Final interpretation",
+          "anchor_id": "ux-section-183",
+          "alias": "coding theory",
+          "excerpt": "This gives classical Levenshtein and Varshamov-Tenengolts coding theory an unusually direct modern application. Minimum edit distance defines combinatorial correction guarantees; VT-style checksums illustrate how synchronization can be recovered; modern systems such as HEDGES incorporate indel-aware inner decoding; and edit-distance algorithms remain useful for read alignment, clustering, and consensus."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Edit Distance in DNA Storage",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "DNA data storage converts digital information into synthetic nucleotide sequences, stores those molecules physically, and later reconstructs the original information by sequencing them. At first glance, this appears to be a natural application of Levenshtein distance : synthesis, storage, amplification, and sequencing can produce substitutions, insertions, and deletions, exactly the three primitive operations of classical edit distance."
+        },
+        {
+          "section": "6. A better channel model has at least two error scales",
+          "anchor_id": "ux-section-7",
+          "alias": "edit distance",
+          "excerpt": "Only the first group fits directly into ordinary edit distance."
+        },
+        {
+          "section": "17. Minimum edit distance of a code",
+          "anchor_id": "ux-section-18",
+          "alias": "edit distance",
+          "excerpt": "The code's minimum edit distance determines how many adversarial edits can be corrected by nearest-codeword decoding under the metric model."
+        }
+      ]
+    },
+    {
+      "target": "/insertion-deletion-codes-and-synchronization-errors",
+      "evidence": [
+        {
+          "section": "35. Insertion/deletion coding is a distinct research field",
+          "anchor_id": "ux-section-36",
+          "alias": "insertion deletion codes and synchronization errors",
+          "excerpt": "The broader theory is developed in insertion-deletion codes and synchronization errors ."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-in-coding-theory",
+      "evidence": [
+        {
+          "section": "180. Coding theory and bioinformatics meet at the DNA storage channel",
+          "anchor_id": "ux-section-181",
+          "alias": "levenshtein distance in coding theory",
+          "excerpt": "The coding-theoretic foundations are developed further in Levenshtein distance in coding theory ."
+        }
+      ]
+    },
+    {
+      "target": "/varshamov-tenengolts-and-levenshtein-codes",
+      "evidence": [
+        {
+          "section": "32. Why VT codes are remarkable",
+          "anchor_id": "ux-section-33",
+          "alias": "varshamov tenengolts and levenshtein codes",
+          "excerpt": "The dedicated theory is covered in Varshamov-Tenengolts and Levenshtein codes ."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "11. DNA edit-distance recurrence",
+          "anchor_id": "ux-section-12",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "This is the same dynamic-programming structure used by the Wagner-Fischer algorithm ."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "56. Weighted edit distance",
+          "anchor_id": "ux-section-57",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "This relates DNA decoding to weighted Levenshtein distance ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#page",
+      "type": "WebPage",
+      "name": "Edit Distance in DNA Storage: Indel Channels, Synchronization Codes, Reconstruction, and Error Correction",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/edit-distance-in-dna-storage#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-in-dna-storage#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-data-storage"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-storage-channel"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-in-dna-storage#synchronization-error"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "type": "TechArticle",
+      "name": "Edit Distance in DNA Storage: Indel Channels, Synchronization Codes, Reconstruction, and Error Correction",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-in-dna-storage#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-data-storage"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-storage-channel"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-in-dna-storage#synchronization-error"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#concept",
+      "type": "DefinedTerm",
+      "name": "Edit Distance in DNA Storage",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-data-storage",
+      "type": "DefinedTerm",
+      "name": "DNA Data Storage",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-storage-channel",
+      "type": "DefinedTerm",
+      "name": "DNA Storage Channel",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#indel",
+      "type": "DefinedTerm",
+      "name": "Insertion and Deletion Error",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#synchronization-error",
+      "type": "DefinedTerm",
+      "name": "Synchronization Error",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#strand-dropout",
+      "type": "DefinedTerm",
+      "name": "DNA Strand Dropout",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#constrained-coding",
+      "type": "DefinedTerm",
+      "name": "Constrained Coding for DNA Storage",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#inner-code",
+      "type": "DefinedTerm",
+      "name": "Inner DNA Storage Code",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#outer-code",
+      "type": "DefinedTerm",
+      "name": "Outer DNA Storage Code",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#vt-code",
+      "type": "DefinedTerm",
+      "name": "Varshamov-Tenengolts Code",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#hedges",
+      "type": "DefinedTerm",
+      "name": "HEDGES",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#consensus-reconstruction",
+      "type": "DefinedTerm",
+      "name": "DNA Storage Consensus Reconstruction",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#trace-reconstruction",
+      "type": "DefinedTerm",
+      "name": "Trace Reconstruction",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-in-dna-storage#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-data-storage"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-storage-channel"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#synchronization-error"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#page",
+      "mainEntity",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#page",
+      "isPartOf",
+      "https://www.levenshtein.net/bioinformatics#collection"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-data-storage"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#dna-storage-channel"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#synchronization-error"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#indel"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#strand-dropout"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#constrained-coding"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#inner-code"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#outer-code"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#vt-code"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#hedges"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#consensus-reconstruction"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#trace-reconstruction"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "isPartOf",
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#page"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1126/science.1226355"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1038/nature11875"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1002/anie.201411378"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1038/srep14138"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1145/2872362.2872397"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1126/science.aaj2038"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1109/ISIT.2017.8007106"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1038/nbt.4079"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1109/TIT.2019.2961265"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1073/pnas.2004821117"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-in-dna-storage#article",
+      "citation",
+      "https://doi.org/10.1038/s41467-022-30140-x"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1109/TIT.2019.2961265",
+      "anchor": "https://doi.org/10.1109/TIT.2019.2961265"
+    },
+    {
+      "url": "https://doi.org/10.1126/science.aaj2038",
+      "anchor": "https://doi.org/10.1126/science.aaj2038"
+    },
+    {
+      "url": "https://doi.org/10.1073/pnas.2004821117",
+      "anchor": "https://doi.org/10.1073/pnas.2004821117"
+    },
+    {
+      "url": "https://doi.org/10.1038/srep14138",
+      "anchor": "https://doi.org/10.1038/srep14138"
+    },
+    {
+      "url": "https://doi.org/10.1038/nbt.4079",
+      "anchor": "https://doi.org/10.1038/nbt.4079"
+    },
+    {
+      "url": "https://doi.org/10.1126/science.1226355",
+      "anchor": "https://doi.org/10.1126/science.1226355"
+    },
+    {
+      "url": "https://doi.org/10.1038/nature11875",
+      "anchor": "https://doi.org/10.1038/nature11875"
+    },
+    {
+      "url": "https://doi.org/10.1002/anie.201411378",
+      "anchor": "https://doi.org/10.1002/anie.201411378"
+    },
+    {
+      "url": "https://doi.org/10.1109/ISIT.2017.8007106",
+      "anchor": "https://doi.org/10.1109/ISIT.2017.8007106"
+    },
+    {
+      "url": "https://doi.org/10.1145/2872362.2872397",
+      "anchor": "https://doi.org/10.1145/2872362.2872397"
+    },
+    {
+      "url": "https://doi.org/10.1038/s41467-022-30140-x",
+      "anchor": "https://doi.org/10.1038/s41467-022-30140-x"
+    }
+  ]
+}

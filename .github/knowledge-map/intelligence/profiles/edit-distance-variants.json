@@ -1,0 +1,2544 @@
+{
+  "url": "/edit-distance-variants",
+  "title": "Edit Distance Variants: Models, Metrics and Generalizations",
+  "h1": [
+    "Edit Distance Variants: Models, Metrics and Generalizations"
+  ],
+  "group": "Theory",
+  "provisional_mission": "Phân loại mô hình",
+  "content_sha256": "d47a5940fc7739ddae50f76557207aa335ff195123e487e307197afc99540b9c",
+  "canonical": "https://www.levenshtein.net/edit-distance-variants",
+  "primary_entity_candidate": "Edit Distance Variants: Models, Metrics and Generalizations",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Edit Distance Variants",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 3,
+      "word_count": 163,
+      "evidence": "Edit distance is not a single immutable formula. It is a family of optimization problems defined by the operations that may transform one sequence into another, the costs assigned to those operations, the representation of the sequence itself, and the way the resulting transformation cost is interpreted.",
+      "paragraphs": [
+        "Edit distance is not a single immutable formula. It is a family of optimization problems defined by the operations that may transform one sequence into another, the costs assigned to those operations, the representation of the sequence itself, and the way the resulting transformation cost is interpreted.",
+        "The familiar Levenshtein distance is one particularly important member of this family: insertion, deletion, and substitution are permitted, each with unit cost. But changing even one assumption produces a different mathematical object. Removing insertions and deletions gives Hamming distance. Removing substitution produces insertion-deletion distance and a direct relationship with longest common subsequences. Adding adjacent transposition leads toward Damerau–Levenshtein distance. Assigning nonuniform costs gives weighted edit distance. Changing gap costs produces sequence-alignment models. Normalizing the score changes its scale and can change its metric properties. Replacing characters with tokens, grapheme clusters, trees, or graphs changes the underlying domain.",
+        "Understanding these distinctions is essential because two algorithms can both be called “edit distance” while solving meaningfully different problems."
+      ]
+    },
+    {
+      "heading": "A General Mathematical Definition",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 20,
+      "word_count": 129,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "x ∈ Σ* y ∈ Σ*",
+        "be finite sequences over an alphabet Σ .",
+        "Let:",
+        "Ω",
+        "be a collection of permitted edit operations.",
+        "Each operation:",
+        "o ∈ Ω",
+        "has nonnegative cost:",
+        "w(o) ≥ 0",
+        "An edit script:",
+        "E = (o₁,o₂,...,o_r)",
+        "transforms:",
+        "x → y",
+        "when applying its operations sequentially converts x into y .",
+        "The generalized edit cost is:",
+        "d_Ω,w(x,y) = min over edit scripts E transforming x into y Σ_(o∈E) w(o)",
+        "This one formulation contains many familiar distances.",
+        "A variant can therefore arise by changing:",
+        "Ω = allowed operations w = operation costs Σ = sequence alphabet / representation boundary conditions = which prefixes or suffixes may be ignored normalization = how the raw transformation cost is scaled object domain = strings, tokens, trees, graphs, sequences, etc."
+      ]
+    },
+    {
+      "heading": "The Six Major Axes of Edit-Distance Variation",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 1,
+      "word_count": 72,
+      "evidence": "Axis Question Examples Operation set What transformations are permitted? Insert, delete, substitute, transpose, block replace Cost model What does each operation cost? Unit, weighted, probabilistic, context-dependent Sequence unit What counts as one element? Byte, code point, grapheme, token, residue Boundary model Must complete sequences be aligned? Global, semiglobal, substring, local Score transformation How is raw cost interpreted? Raw distance, normalized distance, similarity Object structure Are the objects linear strings? Strings, trees, graphs",
+      "paragraphs": [
+        "Axis Question Examples Operation set What transformations are permitted? Insert, delete, substitute, transpose, block replace Cost model What does each operation cost? Unit, weighted, probabilistic, context-dependent Sequence unit What counts as one element? Byte, code point, grapheme, token, residue Boundary model Must complete sequences be aligned? Global, semiglobal, substring, local Score transformation How is raw cost interpreted? Raw distance, normalized distance, similarity Object structure Are the objects linear strings? Strings, trees, graphs"
+      ]
+    },
+    {
+      "heading": "Classical Levenshtein Distance",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 13,
+      "word_count": 82,
+      "evidence": "The standard Levenshtein operation set is:",
+      "paragraphs": [
+        "The standard Levenshtein operation set is:",
+        "Ω_L = { insertion, deletion, substitution }",
+        "with:",
+        "cost(insert) = 1 cost(delete) = 1 cost(substitute) = 1 cost(match) = 0",
+        "Its dynamic-programming recurrence is:",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + [x_i ≠ y_j] )",
+        "where:",
+        "[condition] = 1 if condition is true 0 otherwise",
+        "with:",
+        "D[i][0] = i D[0][j] = j",
+        "The resulting value is:",
+        "d_L(x,y) = D[|x|][|y|]",
+        "For additional foundations, see Edit Distance and Edit Operations and Edit Scripts ."
+      ]
+    },
+    {
+      "heading": "Historical Terminology: \"Reversal\" Did Not Mean Transposition",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 10,
+      "word_count": 87,
+      "evidence": "A historical terminology trap is worth making explicit.",
+      "paragraphs": [
+        "A historical terminology trap is worth making explicit.",
+        "Vladimir Levenshtein's original coding-theory work discussed binary:",
+        "deletions insertions reversals",
+        "In that context, a binary “reversal” referred to:",
+        "0 → 1 or 1 → 0",
+        "what modern string-algorithm terminology normally calls a substitution or symbol error.",
+        "It should not be confused with:",
+        "ab → ba",
+        "which is an adjacent transposition and belongs to the Damerau family of edit models.",
+        "This historical distinction prevents an important conceptual error: classical Levenshtein distance does not contain adjacent transposition as a primitive edit."
+      ]
+    },
+    {
+      "heading": "Weighted Edit Distance",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "The most direct generalization replaces uniform unit costs with symbol-dependent costs.",
+      "paragraphs": [
+        "The most direct generalization replaces uniform unit costs with symbol-dependent costs.",
+        "Define:",
+        "c_del(a) c_ins(b) c_sub(a,b)",
+        "Then:",
+        "D[i][j] = min( D[i-1][j] + c_del(x_i), D[i][j-1] + c_ins(y_j), D[i-1][j-1] + c_sub(x_i,y_j) )",
+        "The boundary conditions become:",
+        "D[i][0] = Σ_(r=1)^i c_del(x_r) D[0][j] = Σ_(r=1)^j c_ins(y_r)"
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 9,
+      "word_count": 47,
+      "evidence": "Suppose a keyboard model assigns:",
+      "paragraphs": [
+        "Suppose a keyboard model assigns:",
+        "substitute(i,o) = 0.25 substitute(i,z) = 1.00",
+        "because i and o are adjacent keys.",
+        "Then:",
+        "d(\"kit\",\"kot\")",
+        "can be smaller than:",
+        "d(\"kit\",\"kzt\")",
+        "even though both pairs require one substitution under unit-cost Levenshtein distance.",
+        "This model is treated in depth in Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "The Effective Substitution Cost",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 14,
+      "word_count": 101,
+      "evidence": "A subtle property of weighted models is that the direct substitution cost is not necessarily the cost ultimately paid by the edit distance.",
+      "paragraphs": [
+        "A subtle property of weighted models is that the direct substitution cost is not necessarily the cost ultimately paid by the edit distance.",
+        "Suppose:",
+        "c_sub(a,b) = 10 c_del(a) = 1 c_ins(b) = 1",
+        "Then the optimal transformation:",
+        "a → b",
+        "will not use the direct substitution.",
+        "It can instead use:",
+        "delete a insert b",
+        "for total cost:",
+        "2",
+        "Therefore the effective transformation cost is:",
+        "min( c_sub(a,b), c_del(a) + c_ins(b) )",
+        "when no other operation offers an even cheaper route.",
+        "The edit distance is a shortest-path cost over edit scripts, not necessarily the value written in one entry of a cost matrix."
+      ]
+    },
+    {
+      "heading": "Symmetric and Asymmetric Edit Distance",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 16,
+      "word_count": 65,
+      "evidence": "Classical Levenshtein distance satisfies:",
+      "paragraphs": [
+        "Classical Levenshtein distance satisfies:",
+        "d(x,y) = d(y,x)",
+        "Weighted edit cost need not.",
+        "Suppose:",
+        "insert(a) = 1 delete(a) = 4",
+        "Then transforming:",
+        "\"\" → \"a\"",
+        "costs:",
+        "1",
+        "while:",
+        "\"a\" → \"\"",
+        "costs:",
+        "4",
+        "The resulting function is directed:",
+        "d(x,y) ≠ d(y,x)",
+        "Such a score may still be useful—for example when modeling an asymmetric noisy channel— but it is not a metric in the usual symmetric sense."
+      ]
+    },
+    {
+      "heading": "Metric Conditions Matter",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 13,
+      "word_count": 151,
+      "evidence": "A function:",
+      "paragraphs": [
+        "A function:",
+        "d : X × X → ℝ",
+        "is a metric when it satisfies:",
+        "1. d(x,y) ≥ 0 2. d(x,y) = 0 iff x = y 3. d(x,y) = d(y,x) 4. d(x,z) ≤ d(x,y) + d(y,z)",
+        "Classical unit-cost Levenshtein distance satisfies these conditions.",
+        "A generalized edit cost with nonnegative operation costs does not automatically satisfy all of them.",
+        "Potential violations include:",
+        "zero-cost transformations between distinct sequences, which can violate identity of indiscernibles;",
+        "asymmetric insertion, deletion, or substitution costs;",
+        "normalizations that do not preserve triangle inequality;",
+        "restricted edit rules that prevent the required path-composition behavior.",
+        "If a still broader formulation allows negative edit costs, even non-negativity is no longer guaranteed and repeated negative-cost cycles can make a shortest-path formulation ill-defined. Such models lie outside the nonnegative-cost definition used above.",
+        "Metricity is not merely theoretical. Structures such as BK-trees and other metric indexes rely directly on the triangle inequality for correct pruning."
+      ]
+    },
+    {
+      "heading": "Hamming Distance",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 5,
+      "word_count": 22,
+      "evidence": "Hamming distance permits only substitutions and requires equal-length sequences.",
+      "paragraphs": [
+        "Hamming distance permits only substitutions and requires equal-length sequences.",
+        "For:",
+        "|x| = |y| = n",
+        "define:",
+        "d_H(x,y) = Σ_(i=1)^n [x_i ≠ y_i]"
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-12",
+      "paragraph_count": 5,
+      "word_count": 16,
+      "evidence": "x = abcdef y = abqdez",
+      "paragraphs": [
+        "x = abcdef y = abqdez",
+        "The differing positions are:",
+        "c/q f/z",
+        "therefore:",
+        "d_H(x,y) = 2"
+      ]
+    },
+    {
+      "heading": "Why Hamming Distance Is Not Simply \"Fast Levenshtein\"",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 14,
+      "word_count": 62,
+      "evidence": "Hamming distance solves a different mathematical problem.",
+      "paragraphs": [
+        "Hamming distance solves a different mathematical problem.",
+        "Consider:",
+        "x = abc y = bca",
+        "Hamming distance is:",
+        "3",
+        "because all three aligned positions differ.",
+        "Levenshtein distance is:",
+        "2",
+        "because:",
+        "abc → bc → bca",
+        "using one deletion and one insertion.",
+        "Thus for equal-length strings:",
+        "d_L(x,y) ≤ d_H(x,y)",
+        "but the difference can be substantial when a short insertion/deletion shift realigns a long suffix."
+      ]
+    },
+    {
+      "heading": "Complexity of Hamming Distance",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 5,
+      "word_count": 34,
+      "evidence": "A direct implementation requires only one pass:",
+      "paragraphs": [
+        "A direct implementation requires only one pass:",
+        "for i: if x[i] != y[i]: errors++",
+        "so:",
+        "Time: O(n) Space: O(1)",
+        "Hamming distance therefore belongs to a much simpler computational regime than unrestricted insertion/deletion edit distance."
+      ]
+    },
+    {
+      "heading": "Insertion-Deletion Distance",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "Another important simplification removes substitution as a primitive operation.",
+      "paragraphs": [
+        "Another important simplification removes substitution as a primitive operation.",
+        "Allowed operations are only:",
+        "insert delete",
+        "with unit cost.",
+        "This is often called:",
+        "insertion-deletion distance;",
+        "Indel distance;",
+        "LCS distance in appropriate formulations."
+      ]
+    },
+    {
+      "heading": "Relationship to the Longest Common Subsequence",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 9,
+      "word_count": 56,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "L = LCS(x,y)",
+        "be the length of a longest common subsequence.",
+        "To transform x into y using only insertions and deletions:",
+        "retain an LCS of length L ;",
+        "delete the other |x|-L symbols from x ;",
+        "insert the remaining |y|-L symbols required by y .",
+        "Therefore:",
+        "d_ID(x,y) = |x| + |y| - 2 · LCS(x,y)"
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-17",
+      "paragraph_count": 9,
+      "word_count": 26,
+      "evidence": "x = abc y = acb",
+      "paragraphs": [
+        "x = abc y = acb",
+        "An LCS has length:",
+        "2",
+        "for example:",
+        "ab",
+        "or:",
+        "ac",
+        "Thus:",
+        "d_ID(x,y) = 3 + 3 - 2·2 = 2"
+      ]
+    },
+    {
+      "heading": "Relationship Between Indel and Levenshtein Distance",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 6,
+      "word_count": 51,
+      "evidence": "Every Levenshtein substitution can be simulated by:",
+      "paragraphs": [
+        "Every Levenshtein substitution can be simulated by:",
+        "one deletion + one insertion",
+        "Therefore, under unit costs:",
+        "d_L(x,y) ≤ d_ID(x,y) ≤ 2 d_L(x,y)",
+        "The first inequality follows because Levenshtein permits every Indel script plus direct substitutions.",
+        "The second follows by replacing every substitution in an optimal Levenshtein script with two Indel operations."
+      ]
+    },
+    {
+      "heading": "Why Indel Distance Matters",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "Insertion-deletion distance is fundamental in:",
+      "paragraphs": [
+        "Insertion-deletion distance is fundamental in:",
+        "coding theory;",
+        "sequence synchronization;",
+        "Longest Common Subsequence theory;",
+        "DNA insertion/deletion channels;",
+        "document difference algorithms.",
+        "It should not be treated as identical to unit-cost Levenshtein distance simply because both allow length-changing edits."
+      ]
+    },
+    {
+      "heading": "Damerau–Levenshtein Distance",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 5,
+      "word_count": 22,
+      "evidence": "Damerau-style distances add adjacent transposition:",
+      "paragraphs": [
+        "Damerau-style distances add adjacent transposition:",
+        "ab → ba",
+        "as a primitive operation.",
+        "The operation set becomes:",
+        "insert delete substitute transpose adjacent symbols"
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-21",
+      "paragraph_count": 10,
+      "word_count": 53,
+      "evidence": "x = abc y = acb",
+      "paragraphs": [
+        "x = abc y = acb",
+        "Standard Levenshtein distance is:",
+        "2",
+        "because the final two symbols require two substitutions or an equivalent delete/insert script.",
+        "With adjacent transposition:",
+        "abc → acb",
+        "costs:",
+        "1",
+        "This is important for typing-error models because adjacent symbol swaps are common human errors.",
+        "See Damerau–Levenshtein Distance for the complete theory."
+      ]
+    },
+    {
+      "heading": "Optimal String Alignment Distance Is Not Unrestricted Damerau–Levenshtein Distance",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 6,
+      "word_count": 79,
+      "evidence": "One of the most common errors in string-similarity software is labeling the simple transposition recurrence as full Damerau–Levenshtein distance.",
+      "paragraphs": [
+        "One of the most common errors in string-similarity software is labeling the simple transposition recurrence as full Damerau–Levenshtein distance.",
+        "The commonly implemented recurrence:",
+        "D[i][j] = min( insertion, deletion, substitution, D[i-2][j-2] + 1 if x_i = y_(j-1) and x_(i-1) = y_j )",
+        "normally computes the Optimal String Alignment distance , also called a restricted Damerau–Levenshtein distance.",
+        "It restricts how substrings can participate in multiple edit operations.",
+        "The unrestricted Damerau–Levenshtein problem allows interacting transpositions that this simple recurrence cannot represent correctly."
+      ]
+    },
+    {
+      "heading": "A Diagnostic Example",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 11,
+      "word_count": 49,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "x = \"ca\" y = \"abc\"",
+        "Unrestricted Damerau–Levenshtein can use:",
+        "ca → ac → abc",
+        "with:",
+        "transpose ca → ac insert b",
+        "for total cost:",
+        "2",
+        "The restricted Optimal String Alignment formulation gives:",
+        "3",
+        "because its transposed substring cannot subsequently participate in the same way in another edit."
+      ]
+    },
+    {
+      "heading": "Optimal String Alignment Is Not a Metric",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 18,
+      "word_count": 78,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "x = \"ca\" y = \"ac\" z = \"abc\"",
+        "Under Optimal String Alignment:",
+        "d(x,y) = 1",
+        "because:",
+        "ca → ac",
+        "is one transposition.",
+        "Also:",
+        "d(y,z) = 1",
+        "because:",
+        "ac → abc",
+        "is one insertion.",
+        "But:",
+        "d(x,z) = 3",
+        "so:",
+        "3 > 1 + 1",
+        "and the triangle inequality fails.",
+        "This is not merely an academic distinction. A metric index designed for classical Levenshtein or unrestricted metric Damerau–Levenshtein distance cannot automatically be reused with Optimal String Alignment distance."
+      ]
+    },
+    {
+      "heading": "Generalized Transpositions",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 12,
+      "word_count": 78,
+      "evidence": "Adjacent transposition is only one possible permutation operation.",
+      "paragraphs": [
+        "Adjacent transposition is only one possible permutation operation.",
+        "More general models may permit:",
+        "ab → ba",
+        "only when symbols are adjacent, or permit:",
+        "moving a symbol swapping distant symbols moving substrings reordering blocks",
+        "These are different edit models.",
+        "Changing from adjacent transposition to arbitrary block movement can radically alter:",
+        "the dynamic-programming state;",
+        "metric properties;",
+        "computational complexity;",
+        "the interpretation of one edit.",
+        "The phrase “edit distance with transpositions” is therefore incomplete unless the permitted transposition operation is specified precisely."
+      ]
+    },
+    {
+      "heading": "Substring and Block Edit Operations",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 13,
+      "word_count": 60,
+      "evidence": "Classical edit distance operates on one symbol at a time.",
+      "paragraphs": [
+        "Classical edit distance operates on one symbol at a time.",
+        "A generalized operation can replace a substring:",
+        "u",
+        "with another substring:",
+        "v",
+        "at cost:",
+        "c(u,v)",
+        "Examples include:",
+        "\"tion\" → \"sion\" \"colour\" → \"color\" \"ph\" → \"f\"",
+        "Such operations can better represent linguistic or domain-specific transformations.",
+        "A generalized recurrence may need to examine:",
+        "D[i-|u|][j-|v|] + c(u,v)",
+        "for many possible substring pairs."
+      ]
+    },
+    {
+      "heading": "Gap-Cost Variants",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "Classical Levenshtein assigns:",
+      "paragraphs": [
+        "Classical Levenshtein assigns:",
+        "cost of deleting ℓ consecutive symbols = ℓ",
+        "and similarly for insertions.",
+        "Many sequence-alignment problems instead use a gap cost:",
+        "g(ℓ)",
+        "for a complete run of ℓ inserted or deleted symbols."
+      ]
+    },
+    {
+      "heading": "Linear Gap Cost",
+      "level": 3,
+      "id": "ux-section-28",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "g(ℓ) = ℓ",
+      "paragraphs": [
+        "g(ℓ) = ℓ"
+      ]
+    },
+    {
+      "heading": "Affine Gap Cost",
+      "level": 3,
+      "id": "ux-section-29",
+      "paragraph_count": 3,
+      "word_count": 10,
+      "evidence": "g(ℓ) = g_open + (ℓ-1)g_extend",
+      "paragraphs": [
+        "g(ℓ) = g_open + (ℓ-1)g_extend",
+        "where typically:",
+        "g_open > g_extend"
+      ]
+    },
+    {
+      "heading": "Why Affine Gaps Need Additional State",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 4,
+      "word_count": 62,
+      "evidence": "The algorithm must know whether the current operation opens a new gap or extends an existing gap.",
+      "paragraphs": [
+        "The algorithm must know whether the current operation opens a new gap or extends an existing gap.",
+        "A common formulation uses three states:",
+        "M[i][j] = best alignment ending in a matched/substituted pair I_x[i][j] = best alignment ending inside a gap in one sequence I_y[i][j] = best alignment ending inside a gap in the other sequence",
+        "See Sequence Alignment and Gap Models ."
+      ]
+    },
+    {
+      "heading": "Affine-Gap Alignment Is Not Simply Weighted Levenshtein",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 6,
+      "word_count": 52,
+      "evidence": "A symbol-dependent insertion cost such as:",
+      "paragraphs": [
+        "A symbol-dependent insertion cost such as:",
+        "insert(a) = 2",
+        "is still local to one symbol.",
+        "Affine gap cost depends on whether adjacent insertions or deletions belong to the same run.",
+        "cost of current edit depends on previous edit context",
+        "This moves beyond the memoryless edit-operation model used by ordinary weighted Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Global Edit Distance",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "Standard Levenshtein distance is a global sequence comparison.",
+      "paragraphs": [
+        "Standard Levenshtein distance is a global sequence comparison.",
+        "x[1..m] → y[1..n]",
+        "Unmatched prefixes or suffixes incur edit costs."
+      ]
+    },
+    {
+      "heading": "Semiglobal Edit Objectives",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 3,
+      "word_count": 39,
+      "evidence": "Applications sometimes wish to align a complete query against part of another sequence while allowing selected terminal gaps to be free.",
+      "paragraphs": [
+        "Applications sometimes wish to align a complete query against part of another sequence while allowing selected terminal gaps to be free.",
+        "query: abc text: xxxxxabcxxxxx",
+        "A semiglobal formulation can avoid charging for unrelated text outside the aligned query region."
+      ]
+    },
+    {
+      "heading": "Approximate Substring Matching",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 4,
+      "word_count": 45,
+      "evidence": "A search formulation may ask:",
+      "paragraphs": [
+        "A search formulation may ask:",
+        "min over substrings y[a..b] d_L( x, y[a..b] )",
+        "This is a change in the alignment objective, not necessarily a new edit operation.",
+        "The distinction is important in approximate string-matching algorithms and in bit-parallel search methods. See Myers Bit-Vector Algorithm ."
+      ]
+    },
+    {
+      "heading": "Local Alignment Is Not Ordinary Edit Distance",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 4,
+      "word_count": 39,
+      "evidence": "Local sequence alignment searches for the best pair of subsequences:",
+      "paragraphs": [
+        "Local sequence alignment searches for the best pair of subsequences:",
+        "x[a..b] and y[c..d]",
+        "rather than requiring either full sequence to be transformed.",
+        "It is better understood as a related sequence-alignment objective than as merely another normalization of Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Normalized Levenshtein Distance and Similarity",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 11,
+      "word_count": 100,
+      "evidence": "Raw Levenshtein distance measures an absolute edit cost. That value is often appropriate when the application asks:",
+      "paragraphs": [
+        "Raw Levenshtein distance measures an absolute edit cost. That value is often appropriate when the application asks:",
+        "How many edits separate x and y?",
+        "But raw distance is strongly affected by sequence length.",
+        "Consider:",
+        "d(\"a\",\"b\") = 1",
+        "and:",
+        "d( \"internationalization\", \"internationalisation\" ) = 1",
+        "The raw edit cost is identical, but one edit represents a much larger relative change in the first pair.",
+        "Normalization therefore introduces a second modeling decision:",
+        "raw edit cost + chosen denominator or path objective = normalized edit score",
+        "There is no single universal definition of normalized Levenshtein distance. The normalization rule must be stated explicitly."
+      ]
+    },
+    {
+      "heading": "Post-Normalized Levenshtein Distance",
+      "level": 3,
+      "id": "ux-section-37",
+      "paragraph_count": 10,
+      "word_count": 78,
+      "evidence": "A common family of normalized scores first computes classical Levenshtein distance:",
+      "paragraphs": [
+        "A common family of normalized scores first computes classical Levenshtein distance:",
+        "d_L(x,y)",
+        "and then divides that already-optimized raw distance by a length-based denominator.",
+        "A common definition is:",
+        "d_max(x,y) = d_L(x,y) / max(|x|,|y|)",
+        "For nonempty input pairs under ordinary unit-cost Levenshtein distance on the same sequence representation:",
+        "0 ≤ d_max(x,y) ≤ 1",
+        "with:",
+        "0 = identical sequences",
+        "and larger values representing greater relative edit burden. The both-empty case requires an explicit software convention because the formula becomes 0/0 ."
+      ]
+    },
+    {
+      "heading": "Normalization Is Not Unique",
+      "level": 3,
+      "id": "ux-section-38",
+      "paragraph_count": 5,
+      "word_count": 138,
+      "evidence": "Different denominators encode different notions of relative error.",
+      "paragraphs": [
+        "Different denominators encode different notions of relative error.",
+        "Normalization Interpretation Important consequence d / max(m,n) Error burden relative to the longer sequence Bounded by 1 for ordinary unit-cost Levenshtein; undefined by the raw formula when both lengths are zero d / min(m,n) Error burden relative to the shorter sequence Can exceed 1; denominator is zero whenever either sequence is empty 2d / (m+n) Symmetric normalization by average length Different scale from max-length normalization; undefined by the raw formula when both sequences are empty d / reference_length Error burden relative to a designated reference Directional interpretation; may exceed 1 and needs a policy when reference length is zero Cost per edit-path step Average transformation cost along a path Different optimization problem",
+        "Therefore a statement such as:",
+        "normalized edit distance = 0.2",
+        "is incomplete unless the normalization formula is known."
+      ]
+    },
+    {
+      "heading": "Zero-Denominator Cases Are Formula-Specific",
+      "level": 3,
+      "id": "ux-section-39",
+      "paragraph_count": 9,
+      "word_count": 127,
+      "evidence": "Different normalization formulas fail on different empty-input cases.",
+      "paragraphs": [
+        "Different normalization formulas fail on different empty-input cases.",
+        "d / max(m,n) denominator = 0 only when: m = 0 and n = 0",
+        "d / min(m,n) denominator = 0 when: m = 0 or n = 0",
+        "2d / (m+n) denominator = 0 only when: m = 0 and n = 0",
+        "d / reference_length denominator = 0 whenever the designated reference is empty",
+        "A production implementation must therefore define edge-case semantics for the exact formula it uses. It should not rely on accidental language-level division behavior.",
+        "For max-length normalized unit-cost Levenshtein similarity, a common explicit convention is:",
+        "normalized_distance(\"\", \"\") = 0 normalized_similarity(\"\", \"\") = 1",
+        "For formulas involving min(m,n) or a designated reference length, the application must state its own behavior when that denominator is zero."
+      ]
+    },
+    {
+      "heading": "The Numerator and Denominator Must Use the Same Sequence Semantics",
+      "level": 3,
+      "id": "ux-section-40",
+      "paragraph_count": 9,
+      "word_count": 100,
+      "evidence": "The distance numerator and the length denominator should refer to the same underlying sequence representation.",
+      "paragraphs": [
+        "The distance numerator and the length denominator should refer to the same underlying sequence representation.",
+        "For example, do not silently compute:",
+        "distance on Unicode code points ÷ length in UTF-16 code units",
+        "or:",
+        "distance on grapheme clusters ÷ length in Unicode code points",
+        "Those expressions combine two different sequence spaces. The resulting number can be computed, but its meaning is no longer a coherent normalization of the distance that was measured.",
+        "A reproducible definition should therefore specify:",
+        "sequence unit + edit model + raw distance + denominator = normalized distance semantics",
+        "For multilingual text, see Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Normalized Levenshtein Similarity",
+      "level": 3,
+      "id": "ux-section-41",
+      "paragraph_count": 8,
+      "word_count": 88,
+      "evidence": "A normalized distance can be converted to a similarity when its scale has been defined appropriately.",
+      "paragraphs": [
+        "A normalized distance can be converted to a similarity when its scale has been defined appropriately.",
+        "For max-length normalized unit-cost Levenshtein distance:",
+        "s_max(x,y) = 1 - d_L(x,y) / max(|x|,|y|)",
+        "for nonempty input pairs, giving:",
+        "1 = identical 0 = maximum raw Levenshtein distance relative to the longer sequence",
+        "For the both-empty case, the application should use its documented convention rather than evaluate 1 - 0/0 .",
+        "This is a convenient similarity score, but it is not the original Levenshtein metric.",
+        "Levenshtein distance ≠ normalized distance ≠ normalized similarity"
+      ]
+    },
+    {
+      "heading": "Not Every Distance-to-Similarity Transformation Produces a 0–1 Score",
+      "level": 3,
+      "id": "ux-section-42",
+      "paragraph_count": 10,
+      "word_count": 83,
+      "evidence": "The formula:",
+      "paragraphs": [
+        "The formula:",
+        "similarity = 1 - normalized_distance",
+        "only behaves as a conventional 0..1 similarity when the normalized distance itself has the intended 0..1 range.",
+        "For example:",
+        "d / min(m,n)",
+        "can exceed 1 when the denominator is nonzero. Therefore:",
+        "1 - d/min(m,n)",
+        "can become negative.",
+        "Likewise, weighted edit distances can exceed the ordinary unit-cost upper bound when insertion, deletion, or substitution costs are larger than 1.",
+        "A similarity transformation must therefore be derived from the actual distance range, not copied mechanically from another metric."
+      ]
+    },
+    {
+      "heading": "Post-Normalization Does Not Change the Optimal Edit Script",
+      "level": 3,
+      "id": "ux-section-43",
+      "paragraph_count": 3,
+      "word_count": 54,
+      "evidence": "If the denominator depends only on the two input sequences and not on the particular edit path, then post-normalization occurs after the raw distance has already been minimized:",
+      "paragraphs": [
+        "If the denominator depends only on the two input sequences and not on the particular edit path, then post-normalization occurs after the raw distance has already been minimized:",
+        "find argmin_P C(P) then compute min_P C(P) / N(x,y)",
+        "The selected edit script is therefore still the raw minimum-cost script. Only its reported score is rescaled."
+      ]
+    },
+    {
+      "heading": "Normalized Edit Distance of Marzal and Vidal",
+      "level": 3,
+      "id": "ux-section-44",
+      "paragraph_count": 20,
+      "word_count": 102,
+      "evidence": "A deeper formulation optimizes a normalized path objective directly rather than first finding the minimum raw-cost path and dividing afterward.",
+      "paragraphs": [
+        "A deeper formulation optimizes a normalized path objective directly rather than first finding the minimum raw-cost path and dividing afterward.",
+        "If an edit path:",
+        "P",
+        "has total cost:",
+        "C(P)",
+        "and path length:",
+        "L(P)",
+        "a normalized path objective can be written conceptually as:",
+        "C(P) / L(P)",
+        "The desired path is then:",
+        "argmin_P C(P) / L(P)",
+        "This need not be the same path as:",
+        "argmin_P C(P)",
+        "followed by division afterward.",
+        "Therefore:",
+        "minimum raw edit cost then normalize",
+        "and:",
+        "minimum normalized path cost",
+        "are distinct optimization problems.",
+        "This distinction is important because the phrase normalized edit distance is used for different constructions in technical literature."
+      ]
+    },
+    {
+      "heading": "Normalization Does Not Automatically Preserve Metricity",
+      "level": 3,
+      "id": "ux-section-45",
+      "paragraph_count": 12,
+      "word_count": 98,
+      "evidence": "One should never assume:",
+      "paragraphs": [
+        "One should never assume:",
+        "metric distance ↓ divide by arbitrary pair-dependent denominator ↓ still a metric",
+        "Even when the raw Levenshtein distance satisfies non-negativity, identity, symmetry, and triangle inequality, an arbitrary transformed score does not automatically inherit all those properties.",
+        "The particular normalization must be analyzed.",
+        "This statement does not mean that every normalized edit-distance construction is nonmetric. Specialized normalized Levenshtein formulations can be designed specifically to satisfy metric properties under stated cost conditions.",
+        "This matters when normalized scores are used inside:",
+        "metric indexes;",
+        "BK-trees;",
+        "nearest-neighbor structures;",
+        "clustering methods;",
+        "geometric embeddings;",
+        "algorithms whose pruning proofs require triangle inequality."
+      ]
+    },
+    {
+      "heading": "Normalized Distance Is Not Probability",
+      "level": 3,
+      "id": "ux-section-46",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "normalized distance = 0.2",
+        "This does not imply:",
+        "80% probability that x and y represent the same object",
+        "Likewise:",
+        "similarity = 0.8",
+        "does not automatically mean:",
+        "80% confidence of identity",
+        "Normalization changes numerical scale. Probability calibration requires a separate probabilistic or empirical model."
+      ]
+    },
+    {
+      "heading": "Thresholds Are Formula-Specific",
+      "level": 3,
+      "id": "ux-section-47",
+      "paragraph_count": 9,
+      "word_count": 84,
+      "evidence": "A threshold such as:",
+      "paragraphs": [
+        "A threshold such as:",
+        "normalized distance ≤ 0.2",
+        "has meaning only relative to a named formula and sequence representation.",
+        "For reproducibility, report:",
+        "1. sequence representation 2. allowed edit operations 3. operation costs 4. raw distance definition 5. normalization denominator or path objective 6. zero-denominator policy 7. score direction 8. score range 9. threshold",
+        "For example:",
+        "unit-cost Levenshtein over Unicode code points normalized by max(code_point_length(x), code_point_length(y)) with: d(\"\", \"\") = 0 accept if normalized_distance ≤ 0.2",
+        "is substantially more precise than:",
+        "Levenshtein similarity ≥ 80%"
+      ]
+    },
+    {
+      "heading": "Canonical Interpretation",
+      "level": 3,
+      "id": "ux-section-48",
+      "paragraph_count": 6,
+      "word_count": 64,
+      "evidence": "When this site uses the phrase normalized Levenshtein distance without another model being explicitly named, the safest interpretation is:",
+      "paragraphs": [
+        "When this site uses the phrase normalized Levenshtein distance without another model being explicitly named, the safest interpretation is:",
+        "classical unit-cost Levenshtein distance + an explicitly stated post-normalization formula",
+        "When path-normalized Marzal–Vidal NED is intended, it should be named separately because it optimizes a different objective.",
+        "This distinction keeps:",
+        "raw Levenshtein post-normalized Levenshtein normalized similarity path-normalized edit distance",
+        "as related but separate mathematical objects."
+      ]
+    },
+    {
+      "heading": "Probabilistic Edit Models",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 5,
+      "word_count": 48,
+      "evidence": "A noisy-channel model can associate probabilities with operations:",
+      "paragraphs": [
+        "A noisy-channel model can associate probabilities with operations:",
+        "P(delete a) P(insert b) P(substitute a→b) P(match a)",
+        "A common transformation is:",
+        "cost(o) = -log P(o)",
+        "Then minimizing total edit cost corresponds to maximizing the probability of a single edit path when the operation probabilities factor according to the model."
+      ]
+    },
+    {
+      "heading": "Viterbi Edit Distance Versus Total Sequence Probability",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 6,
+      "word_count": 47,
+      "evidence": "A crucial probabilistic distinction is:",
+      "paragraphs": [
+        "A crucial probabilistic distinction is:",
+        "best single edit path",
+        "versus:",
+        "sum of probabilities of all edit paths",
+        "A min-cost dynamic program with negative log probabilities computes the analogue of a Viterbi path. It does not generally compute:",
+        "P(y | x) = Σ over all scripts E P(E)"
+      ]
+    },
+    {
+      "heading": "Context-Dependent Edit Costs",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 7,
+      "word_count": 53,
+      "evidence": "A cost can depend on more than one symbol.",
+      "paragraphs": [
+        "A cost can depend on more than one symbol.",
+        "substitute(\"m\",\"n\") after \"r\" may have a different cost than the same substitution after \"a\"",
+        "When edit cost depends on context, the dynamic-programming state must remember enough history to evaluate future operations.",
+        "The mathematical model becomes closer to:",
+        "finite-state transduction;",
+        "hidden-state sequence models;",
+        "weighted automata."
+      ]
+    },
+    {
+      "heading": "The Sequence Representation Is Itself a Variant",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 3,
+      "word_count": 46,
+      "evidence": "An edit distance operates on a sequence of abstract symbols. The same formula gives different answers depending on what those symbols are.",
+      "paragraphs": [
+        "An edit distance operates on a sequence of abstract symbols. The same formula gives different answers depending on what those symbols are.",
+        "Possible units include:",
+        "bytes code units Unicode code points Unicode scalar values grapheme clusters characters after normalization words tokens phonemes DNA bases amino acids"
+      ]
+    },
+    {
+      "heading": "Byte-Level Distance",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 1,
+      "word_count": 24,
+      "evidence": "A UTF-8 character may occupy multiple bytes. If edit distance is computed directly on bytes, replacing one user-perceived character can create several byte edits.",
+      "paragraphs": [
+        "A UTF-8 character may occupy multiple bytes. If edit distance is computed directly on bytes, replacing one user-perceived character can create several byte edits."
+      ]
+    },
+    {
+      "heading": "Code-Point Distance",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "Decoding Unicode to code points is better for many tasks but still does not make one code point equal one user-perceived character.",
+      "paragraphs": [
+        "Decoding Unicode to code points is better for many tasks but still does not make one code point equal one user-perceived character.",
+        "For example:",
+        "é",
+        "can be represented as:",
+        "U+00E9",
+        "or:",
+        "U+0065 U+0301",
+        "Without normalization, these canonically equivalent strings have different code-point sequences."
+      ]
+    },
+    {
+      "heading": "Grapheme-Cluster Distance",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 4,
+      "word_count": 55,
+      "evidence": "If one user-perceived text unit should count as one edit unit, a pipeline may be:",
+      "paragraphs": [
+        "If one user-perceived text unit should count as one edit unit, a pipeline may be:",
+        "raw Unicode ↓ normalization ↓ grapheme segmentation ↓ sequence of grapheme clusters ↓ edit distance",
+        "Extended grapheme clusters approximate user-perceived characters for many text-processing purposes; they are not identical to glyphs or visual shapes.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Token-Level Edit Distance",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 7,
+      "word_count": 44,
+      "evidence": "x = [the, quick, brown, fox] y = [the, fast, brown, fox]",
+      "paragraphs": [
+        "x = [the, quick, brown, fox] y = [the, fast, brown, fox]",
+        "At token level:",
+        "d_L(x,y) = 1",
+        "because:",
+        "quick → fast",
+        "is one token substitution.",
+        "At character level, the distance is larger. Neither answer is intrinsically more correct. They represent different sequence models."
+      ]
+    },
+    {
+      "heading": "Phoneme-Level and Transliteration Edit Distance",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "Names and language data can be converted into:",
+      "paragraphs": [
+        "Names and language data can be converted into:",
+        "phonemes;",
+        "romanized forms;",
+        "phonetic codes;",
+        "language-specific normalized units.",
+        "Edit distance applied after such a transformation measures differences in the transformed representation rather than the original orthography."
+      ]
+    },
+    {
+      "heading": "Tree Edit Distance",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 5,
+      "word_count": 34,
+      "evidence": "Strings are linear structures. A tree contains hierarchical relationships.",
+      "paragraphs": [
+        "Strings are linear structures. A tree contains hierarchical relationships.",
+        "Tree edit distance generalizes edit operations to nodes:",
+        "insert node delete node relabel node",
+        "subject to structural constraints.",
+        "See Tree and Graph Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Graph Edit Distance",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 8,
+      "word_count": 33,
+      "evidence": "Graph edit distance may permit:",
+      "paragraphs": [
+        "Graph edit distance may permit:",
+        "vertex insertion;",
+        "vertex deletion;",
+        "vertex relabeling;",
+        "edge insertion;",
+        "edge deletion;",
+        "edge relabeling.",
+        "General graph edit distance belongs to a substantially harder computational regime than ordinary string edit distance."
+      ]
+    },
+    {
+      "heading": "Learned Edit Costs",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "Instead of manually choosing:",
+      "paragraphs": [
+        "Instead of manually choosing:",
+        "c_sub(a,b) c_ins(a) c_del(a)",
+        "one can learn these values from data.",
+        "training pairs + known matches / labels ↓ optimize edit costs ↓ task-specific weighted edit distance",
+        "Its metric properties depend on the learned constraints."
+      ]
+    },
+    {
+      "heading": "Edit-Distance Embeddings",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 8,
+      "word_count": 33,
+      "evidence": "A different approach maps strings into vectors:",
+      "paragraphs": [
+        "A different approach maps strings into vectors:",
+        "φ : Σ* → ℝ^d",
+        "so that:",
+        "||φ(x)-φ(y)||",
+        "approximates:",
+        "d_edit(x,y)",
+        "This vector distance is a surrogate for edit distance.",
+        "See Learned Edit Distance and Embeddings ."
+      ]
+    },
+    {
+      "heading": "Differentiable and Soft Edit-Distance Variants",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 5,
+      "word_count": 41,
+      "evidence": "Ordinary dynamic programming uses:",
+      "paragraphs": [
+        "Ordinary dynamic programming uses:",
+        "min(a,b,c)",
+        "Machine-learning formulations sometimes replace it with a differentiable approximation such as:",
+        "softmin_γ(a,b,c)",
+        "For nonzero smoothing, the resulting objective is generally not identical to classical edit distance and should not automatically be assumed to satisfy metric axioms."
+      ]
+    },
+    {
+      "heading": "Bounded Edit Distance Is Usually Not a Different Distance",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 10,
+      "word_count": 43,
+      "evidence": "Suppose an algorithm receives threshold:",
+      "paragraphs": [
+        "Suppose an algorithm receives threshold:",
+        "k",
+        "and asks only:",
+        "d_L(x,y) ≤ k ?",
+        "The underlying mathematical function remains d_L . What changed is the computational problem.",
+        "Examples include:",
+        "Ukkonen's algorithm ;",
+        "Landau–Vishkin ;",
+        "banded dynamic programming.",
+        "See Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Approximate Edit-Distance Algorithms Are Not Approximate Distance Definitions",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 3,
+      "word_count": 11,
+      "evidence": "The phrase:",
+      "paragraphs": [
+        "The phrase:",
+        "approximate edit distance",
+        "can mean two very different things."
+      ]
+    },
+    {
+      "heading": "Approximate String Matching",
+      "level": 3,
+      "id": "ux-section-65",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "The distance itself is exact, but the task searches for strings within an allowed error threshold.",
+      "paragraphs": [
+        "The distance itself is exact, but the task searches for strings within an allowed error threshold."
+      ]
+    },
+    {
+      "heading": "Approximation Algorithm",
+      "level": 3,
+      "id": "ux-section-66",
+      "paragraph_count": 5,
+      "word_count": 41,
+      "evidence": "The algorithm may return an estimate:",
+      "paragraphs": [
+        "The algorithm may return an estimate:",
+        "d(x,y) ≤ d̃(x,y) ≤ α · d(x,y)",
+        "for an approximation formulation providing this type of multiplicative guarantee.",
+        "The first is approximate matching ; the second is approximate computation .",
+        "See Approximate Edit Distance Algorithms ."
+      ]
+    },
+    {
+      "heading": "Dynamic, Online, and Streaming Edit Distance Are Computational Models",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 3,
+      "word_count": 47,
+      "evidence": "These terms usually describe how the input arrives or changes, not a different local edit operation.",
+      "paragraphs": [
+        "These terms usually describe how the input arrives or changes, not a different local edit operation.",
+        "dynamic: characters may be inserted, deleted or changed in maintained strings streaming: one sequence arrives incrementally online: answers are required as prefixes arrive",
+        "See Dynamic, Online and Streaming Edit Distance ."
+      ]
+    },
+    {
+      "heading": "A Taxonomy of Important Variants",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 1,
+      "word_count": 145,
+      "evidence": "Variant Allowed operations / model Different lengths? Metric in standard form? Levenshtein Insert, delete, substitute Yes Yes Weighted Levenshtein Insert, delete, substitute with variable costs Yes Depends on costs Hamming Substitution only No in ordinary definition Yes on equal-length strings Indel / LCS distance Insert, delete Yes Yes under unit symmetric costs Damerau–Levenshtein Insert, delete, substitute, adjacent transpose Yes Yes in the unrestricted symmetric unit-cost form Optimal String Alignment Restricted adjacent transposition Yes No Affine-gap alignment Gap-open and gap-extension costs Yes Depends on formulation Post-normalized Levenshtein Raw Levenshtein followed by explicit normalization Yes Depends on normalization Path-normalized edit distance Optimize normalized path cost",
+      "paragraphs": [
+        "Variant Allowed operations / model Different lengths? Metric in standard form? Levenshtein Insert, delete, substitute Yes Yes Weighted Levenshtein Insert, delete, substitute with variable costs Yes Depends on costs Hamming Substitution only No in ordinary definition Yes on equal-length strings Indel / LCS distance Insert, delete Yes Yes under unit symmetric costs Damerau–Levenshtein Insert, delete, substitute, adjacent transpose Yes Yes in the unrestricted symmetric unit-cost form Optimal String Alignment Restricted adjacent transposition Yes No Affine-gap alignment Gap-open and gap-extension costs Yes Depends on formulation Post-normalized Levenshtein Raw Levenshtein followed by explicit normalization Yes Depends on normalization Path-normalized edit distance Optimize normalized path cost directly Yes Depends on formulation Probabilistic edit model Operation probabilities / negative-log costs Yes Not automatically Tree edit distance Node insertion, deletion, relabeling Different tree sizes Depends on cost model Graph edit distance Vertex/edge edits Different graph sizes Depends on cost model"
+      ]
+    },
+    {
+      "heading": "Same Strings, Different Distances",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 3,
+      "word_count": 53,
+      "evidence": "x = \"abc\" y = \"acb\"",
+      "paragraphs": [
+        "x = \"abc\" y = \"acb\"",
+        "Distance Value Reason Hamming 2 Positions 2 and 3 differ Levenshtein 2 No primitive transposition Indel distance 2 LCS length is 2 Optimal String Alignment 1 One adjacent transposition Unrestricted Damerau–Levenshtein 1 One adjacent transposition",
+        "The “correct” answer therefore depends on what the application considers one error."
+      ]
+    },
+    {
+      "heading": "A Second Example: The Restricted-Transposition Boundary",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "x = \"ca\" y = \"abc\"",
+      "paragraphs": [
+        "x = \"ca\" y = \"abc\"",
+        "Distance Value Levenshtein 3 Optimal String Alignment 3 Unrestricted Damerau–Levenshtein 2"
+      ]
+    },
+    {
+      "heading": "Operation-Set Containment Gives Useful Inequalities",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "If one distance allows every operation of another distance at no higher cost, its optimum cannot be larger.",
+      "paragraphs": [
+        "If one distance allows every operation of another distance at no higher cost, its optimum cannot be larger.",
+        "d_L(x,y) ≤ d_ID(x,y)",
+        "For equal-length strings:",
+        "d_L(x,y) ≤ d_H(x,y)",
+        "And under matching unit costs:",
+        "d_DL(x,y) ≤ d_L(x,y)"
+      ]
+    },
+    {
+      "heading": "More Operations Do Not Mean a Better Distance",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 2,
+      "word_count": 35,
+      "evidence": "more allowed edit scripts ↓ minimum cost can stay same or decrease",
+      "paragraphs": [
+        "more allowed edit scripts ↓ minimum cost can stay same or decrease",
+        "But a smaller numerical distance is not automatically more meaningful. The operation set should model the phenomenon being measured, not simply maximize similarity."
+      ]
+    },
+    {
+      "heading": "Cost Choice Is a Modeling Assumption",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "Classical Levenshtein assumes:",
+      "paragraphs": [
+        "Classical Levenshtein assumes:",
+        "insert delete substitute are equally costly",
+        "This is rarely literally true in real processes."
+      ]
+    },
+    {
+      "heading": "Typing",
+      "level": 3,
+      "id": "ux-section-74",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "A nearby keyboard substitution may be more probable than a distant substitution.",
+      "paragraphs": [
+        "A nearby keyboard substitution may be more probable than a distant substitution."
+      ]
+    },
+    {
+      "heading": "OCR",
+      "level": 3,
+      "id": "ux-section-75",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "O ↔ 0 l ↔ 1 rn ↔ m",
+      "paragraphs": [
+        "O ↔ 0 l ↔ 1 rn ↔ m"
+      ]
+    },
+    {
+      "heading": "Speech Recognition",
+      "level": 3,
+      "id": "ux-section-76",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Phonetically similar word substitutions may deserve lower costs.",
+      "paragraphs": [
+        "Phonetically similar word substitutions may deserve lower costs."
+      ]
+    },
+    {
+      "heading": "Biology",
+      "level": 3,
+      "id": "ux-section-77",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Substitution scores and gap penalties reflect evolutionary models rather than uniform text-edit costs.",
+      "paragraphs": [
+        "Substitution scores and gap penalties reflect evolutionary models rather than uniform text-edit costs."
+      ]
+    },
+    {
+      "heading": "Edit Distance Versus Sequence Alignment",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 2,
+      "word_count": 32,
+      "evidence": "Both can often be written as dynamic programs over prefix coordinates, but edit distance traditionally minimizes transformation cost, while biological alignment often maximizes an alignment score.",
+      "paragraphs": [
+        "Both can often be written as dynamic programs over prefix coordinates, but edit distance traditionally minimizes transformation cost, while biological alignment often maximizes an alignment score.",
+        "See Levenshtein vs Sequence Alignment ."
+      ]
+    },
+    {
+      "heading": "Edit Distance Versus Dynamic Time Warping",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 2,
+      "word_count": 35,
+      "evidence": "Dynamic Time Warping aligns ordered observations through temporal stretching and compression. It does not model insertion, deletion, and substitution in the same discrete transformation sense as Levenshtein distance.",
+      "paragraphs": [
+        "Dynamic Time Warping aligns ordered observations through temporal stretching and compression. It does not model insertion, deletion, and substitution in the same discrete transformation sense as Levenshtein distance.",
+        "similar DP structure ≠ same distance family"
+      ]
+    },
+    {
+      "heading": "Edit Distance Versus Jaro and Jaro–Winkler",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Jaro-style similarity is not derived from the minimum cost of insertion/deletion/substitution edit scripts.",
+      "paragraphs": [
+        "Jaro-style similarity is not derived from the minimum cost of insertion/deletion/substitution edit scripts.",
+        "See Levenshtein vs Jaro–Winkler and Phonetic Matching ."
+      ]
+    },
+    {
+      "heading": "Edit Distance Versus Set, Vector, and n-Gram Similarity",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "string → multiset / vector of substrings",
+      "paragraphs": [
+        "string → multiset / vector of substrings",
+        "Such methods can correlate with edit distance but discard some sequence-order information.",
+        "See Edit Distance vs Set, Vector and N-Gram Similarity ."
+      ]
+    },
+    {
+      "heading": "Edit Distance Versus Semantic Similarity",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 8,
+      "word_count": 35,
+      "evidence": "No choice among ordinary character-level edit variants solves semantic similarity.",
+      "paragraphs": [
+        "No choice among ordinary character-level edit variants solves semantic similarity.",
+        "car automobile",
+        "can be semantically close but lexically distant.",
+        "car cat",
+        "have Levenshtein distance:",
+        "1",
+        "despite different meanings.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Complexity Changes with the Variant",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 2,
+      "word_count": 73,
+      "evidence": "Model Classical baseline complexity Hamming O(n) Levenshtein O(mn) Weighted symbol edit distance O(mn) Indel / LCS distance O(mn) classical DP Optimal String Alignment O(mn) Unrestricted adjacent-transposition edit distance O(mn) under classical suitable-cost formulations Affine-gap alignment O(mn) using a constant number of DP states Tree edit distance Depends strongly on ordered/unordered structure and model Graph edit distance Substantially harder in the general case",
+      "paragraphs": [
+        "Model Classical baseline complexity Hamming O(n) Levenshtein O(mn) Weighted symbol edit distance O(mn) Indel / LCS distance O(mn) classical DP Optimal String Alignment O(mn) Unrestricted adjacent-transposition edit distance O(mn) under classical suitable-cost formulations Affine-gap alignment O(mn) using a constant number of DP states Tree edit distance Depends strongly on ordered/unordered structure and model Graph edit distance Substantially harder in the general case",
+        "Modern complexity results are treated separately in Edit Distance Complexity ."
+      ]
+    },
+    {
+      "heading": "Myers Bit Vectors",
+      "level": 3,
+      "id": "ux-section-85",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "The classical representation depends on unit-cost neighboring DP differences. Arbitrary weighted costs destroy this simple state representation.",
+      "paragraphs": [
+        "The classical representation depends on unit-cost neighboring DP differences. Arbitrary weighted costs destroy this simple state representation."
+      ]
+    },
+    {
+      "heading": "Levenshtein Automata",
+      "level": 3,
+      "id": "ux-section-86",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "Classical degree- k automata assume each insertion, deletion, and substitution consumes one integer error unit.",
+      "paragraphs": [
+        "Classical degree- k automata assume each insertion, deletion, and substitution consumes one integer error unit."
+      ]
+    },
+    {
+      "heading": "q-Gram Filters",
+      "level": 3,
+      "id": "ux-section-87",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Standard threshold arguments assume that the threshold bounds the number of unit edit operations.",
+      "paragraphs": [
+        "Standard threshold arguments assume that the threshold bounds the number of unit edit operations."
+      ]
+    },
+    {
+      "heading": "Metric Indexes",
+      "level": 3,
+      "id": "ux-section-88",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "BK-tree pruning requires triangle inequality. Switching to a nonmetric normalized or restricted-transposition score can invalidate that pruning proof.",
+      "paragraphs": [
+        "BK-tree pruning requires triangle inequality. Switching to a nonmetric normalized or restricted-transposition score can invalidate that pruning proof."
+      ]
+    },
+    {
+      "heading": "Do All Strings Have the Same Length?",
+      "level": 3,
+      "id": "ux-section-90",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "YES ↓ Are only positional substitutions meaningful? ↓ Hamming distance",
+      "paragraphs": [
+        "YES ↓ Are only positional substitutions meaningful? ↓ Hamming distance"
+      ]
+    },
+    {
+      "heading": "Are Insertions and Deletions Meaningful?",
+      "level": 3,
+      "id": "ux-section-91",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "YES ↓ Classical Levenshtein or Indel distance",
+      "paragraphs": [
+        "YES ↓ Classical Levenshtein or Indel distance"
+      ]
+    },
+    {
+      "heading": "Are Adjacent Swaps Genuine Single Errors?",
+      "level": 3,
+      "id": "ux-section-92",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "YES ↓ Damerau-style model",
+      "paragraphs": [
+        "YES ↓ Damerau-style model"
+      ]
+    },
+    {
+      "heading": "Do Operation Probabilities Differ?",
+      "level": 3,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "YES ↓ Weighted / probabilistic edit model",
+      "paragraphs": [
+        "YES ↓ Weighted / probabilistic edit model"
+      ]
+    },
+    {
+      "heading": "Do Long Gaps Behave as One Event?",
+      "level": 3,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "YES ↓ Affine or nonlinear gap model",
+      "paragraphs": [
+        "YES ↓ Affine or nonlinear gap model"
+      ]
+    },
+    {
+      "heading": "Must Scores Be Comparable Across Lengths?",
+      "level": 3,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "YES ↓ Choose and explicitly define a normalization",
+      "paragraphs": [
+        "YES ↓ Choose and explicitly define a normalization"
+      ]
+    },
+    {
+      "heading": "Are the Objects Hierarchical?",
+      "level": 3,
+      "id": "ux-section-96",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "YES ↓ Tree / graph edit distance",
+      "paragraphs": [
+        "YES ↓ Tree / graph edit distance"
+      ]
+    },
+    {
+      "heading": "Is the Objective Semantic Rather Than Lexical?",
+      "level": 3,
+      "id": "ux-section-97",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "YES ↓ Edit distance may be the wrong representation",
+      "paragraphs": [
+        "YES ↓ Edit distance may be the wrong representation"
+      ]
+    },
+    {
+      "heading": "Decision Table",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 1,
+      "word_count": 66,
+      "evidence": "Application requirement Strong starting model Generic typo tolerance Levenshtein Keyboard-specific typing errors Weighted Levenshtein Adjacent character swaps are important Damerau–Levenshtein Fixed-length error-correcting code Hamming Insertions/deletions only Indel/LCS distance Biological gaps have event structure Affine-gap sequence alignment Compare relative error burden across lengths Explicitly defined normalized edit distance Hierarchical objects Tree edit distance Graphs Graph edit distance Semantic retrieval Semantic representation rather than lexical edit distance alone",
+      "paragraphs": [
+        "Application requirement Strong starting model Generic typo tolerance Levenshtein Keyboard-specific typing errors Weighted Levenshtein Adjacent character swaps are important Damerau–Levenshtein Fixed-length error-correcting code Hamming Insertions/deletions only Indel/LCS distance Biological gaps have event structure Affine-gap sequence alignment Compare relative error burden across lengths Explicitly defined normalized edit distance Hierarchical objects Tree edit distance Graphs Graph edit distance Semantic retrieval Semantic representation rather than lexical edit distance alone"
+      ]
+    },
+    {
+      "heading": "Failure Mode: Changing Costs Without Changing Assumptions",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "A pairwise weighted dynamic program can be correct while surrounding search/indexing assumptions become invalid.",
+      "paragraphs": [
+        "A pairwise weighted dynamic program can be correct while surrounding search/indexing assumptions become invalid.",
+        "Changing the distance requires auditing every algorithmic assumption built on top of it."
+      ]
+    },
+    {
+      "heading": "Failure Mode: Using an Operation That Cannot Represent the Real Error Process",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "Suppose OCR frequently transforms:",
+      "paragraphs": [
+        "Suppose OCR frequently transforms:",
+        "rn → m",
+        "A block substitution could model it as one event, while character-level Levenshtein requires a different edit script.",
+        "The standard distance is not wrong; it models a different process."
+      ]
+    },
+    {
+      "heading": "Failure Mode: Confusing Normalization with Calibration",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "normalized distance = 0.2",
+      "paragraphs": [
+        "normalized distance = 0.2",
+        "does not imply:",
+        "80% probability that the strings represent the same entity",
+        "Normalization changes scale. Calibration requires a separate model."
+      ]
+    },
+    {
+      "heading": "Failure Mode: Treating a Learned Score as a Metric",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "d(a,b) = 0.1 d(b,c) = 0.1 d(a,c) = 1.8",
+      "paragraphs": [
+        "d(a,b) = 0.1 d(b,c) = 0.1 d(a,c) = 1.8",
+        "violates triangle inequality. The score may still be useful for ranking, but cannot safely drive algorithms that depend on metric geometry."
+      ]
+    },
+    {
+      "heading": "Failure Mode: Mixing Representation Levels",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "An index might operate on:",
+      "paragraphs": [
+        "An index might operate on:",
+        "UTF-8 bytes",
+        "while the final verifier uses:",
+        "Unicode grapheme clusters",
+        "A filtering theorem proved in one representation may not remain valid for the other."
+      ]
+    },
+    {
+      "heading": "How to Specify an Edit-Distance Variant Rigorously",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 14,
+      "word_count": 108,
+      "evidence": "What is the input domain? Strings, bytes, code points, graphemes, tokens, trees, or graphs?",
+      "paragraphs": [
+        "What is the input domain? Strings, bytes, code points, graphemes, tokens, trees, or graphs?",
+        "What operations are permitted? Insert, delete, substitute, transpose, block replace, move?",
+        "What does each operation cost?",
+        "Do costs depend on symbols or context?",
+        "Are complete objects aligned globally?",
+        "Are terminal gaps free?",
+        "Is the output raw or normalized?",
+        "If normalized, what exact denominator or path objective is used?",
+        "What is the zero-denominator policy?",
+        "What sequence unit is used for both distance and length?",
+        "What is the score range and direction?",
+        "Does the function need to be a metric?",
+        "Must the algorithm return only a distance or also an edit script?",
+        "Is exact computation required?"
+      ]
+    },
+    {
+      "heading": "A Generic Implementation Template",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 1,
+      "word_count": 39,
+      "evidence": "function generalized_edit_distance(x, y): define sequence representation define allowed operations Ω define operation cost w initialize boundary states for each state (i,j,...): for each operation applicable at that state: candidate = predecessor_cost + operation_cost state_cost = min(candidate costs) return target_state_cost",
+      "paragraphs": [
+        "function generalized_edit_distance(x, y): define sequence representation define allowed operations Ω define operation cost w initialize boundary states for each state (i,j,...): for each operation applicable at that state: candidate = predecessor_cost + operation_cost state_cost = min(candidate costs) return target_state_cost"
+      ]
+    },
+    {
+      "heading": "Operation Witnesses",
+      "level": 3,
+      "id": "ux-section-107",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Verify an edit script whose cost equals the returned result.",
+      "paragraphs": [
+        "Verify an edit script whose cost equals the returned result."
+      ]
+    },
+    {
+      "heading": "Empty Sequence",
+      "level": 3,
+      "id": "ux-section-108",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "For ordinary unit-cost Levenshtein distance:",
+      "paragraphs": [
+        "For ordinary unit-cost Levenshtein distance:",
+        "d(\"\",y) = |y| d(x,\"\") = |x|",
+        "For normalized variants, test the denominator policy separately."
+      ]
+    },
+    {
+      "heading": "Identity",
+      "level": 3,
+      "id": "ux-section-109",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "d(x,x) = 0",
+      "paragraphs": [
+        "d(x,x) = 0"
+      ]
+    },
+    {
+      "heading": "Symmetry",
+      "level": 3,
+      "id": "ux-section-110",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "d(x,y) = d(y,x)",
+      "paragraphs": [
+        "d(x,y) = d(y,x)",
+        "when symmetry is intended."
+      ]
+    },
+    {
+      "heading": "Triangle Inequality",
+      "level": 3,
+      "id": "ux-section-111",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "d(x,z) ≤ d(x,y) + d(y,z)",
+      "paragraphs": [
+        "d(x,z) ≤ d(x,y) + d(y,z)",
+        "when the function is intended to be a metric."
+      ]
+    },
+    {
+      "heading": "Restricted Versus Unrestricted Transposition",
+      "level": 3,
+      "id": "ux-section-112",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "\"ca\" \"abc\"",
+      "paragraphs": [
+        "\"ca\" \"abc\"",
+        "should be included as a regression case."
+      ]
+    },
+    {
+      "heading": "Weighted Substitution Domination",
+      "level": 3,
+      "id": "ux-section-113",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Set substitution cost greater than deletion plus insertion and verify that the composite path is selected.",
+      "paragraphs": [
+        "Set substitution cost greater than deletion plus insertion and verify that the composite path is selected."
+      ]
+    },
+    {
+      "heading": "Unicode Canonical Equivalence",
+      "level": 3,
+      "id": "ux-section-114",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "Test normalized and non-normalized forms of accented text to ensure that the implementation matches the intended sequence definition.",
+      "paragraphs": [
+        "Test normalized and non-normalized forms of accented text to ensure that the implementation matches the intended sequence definition."
+      ]
+    },
+    {
+      "heading": "Normalized-Score Tests",
+      "level": 3,
+      "id": "ux-section-115",
+      "paragraph_count": 10,
+      "word_count": 59,
+      "evidence": "Include at least:",
+      "paragraphs": [
+        "Include at least:",
+        "identical non-empty sequences;",
+        "two empty sequences;",
+        "one empty and one non-empty sequence;",
+        "large length imbalance;",
+        "a d/min(m,n) case with nonzero denominator where the score exceeds 1;",
+        "the zero-denominator case for d/min(m,n) ;",
+        "an empty designated reference for reference-length normalization;",
+        "weighted distances whose raw cost exceeds the longer length;",
+        "Unicode inputs where code-point and grapheme lengths differ."
+      ]
+    },
+    {
+      "heading": "Exhaustive Small-Alphabet Testing",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "For alphabet:",
+      "paragraphs": [
+        "For alphabet:",
+        "Σ = {a,b}",
+        "generate every short string and calculate all pairwise distances. This makes it practical to check symmetry, identity, triangle inequality, known formulas, and agreement with a slow reference implementation."
+      ]
+    },
+    {
+      "heading": "Metric-Property Comparison",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 1,
+      "word_count": 67,
+      "evidence": "Distance Nonnegative Identity Symmetric Triangle inequality Unit Levenshtein Yes Yes Yes Yes Hamming on Σⁿ Yes Yes Yes Yes Unit Indel distance Yes Yes Yes Yes Unrestricted unit Damerau–Levenshtein Yes Yes Yes Yes Optimal String Alignment Yes Yes Yes in ordinary unit model No Arbitrary weighted edit score Depends on permitted cost model Depends Depends Depends Arbitrary normalized score Depends on transformation Depends Depends Must be proved",
+      "paragraphs": [
+        "Distance Nonnegative Identity Symmetric Triangle inequality Unit Levenshtein Yes Yes Yes Yes Hamming on Σⁿ Yes Yes Yes Yes Unit Indel distance Yes Yes Yes Yes Unrestricted unit Damerau–Levenshtein Yes Yes Yes Yes Optimal String Alignment Yes Yes Yes in ordinary unit model No Arbitrary weighted edit score Depends on permitted cost model Depends Depends Depends Arbitrary normalized score Depends on transformation Depends Depends Must be proved"
+      ]
+    },
+    {
+      "heading": "Terminology Should Reflect the Mathematical Object",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "Prefer precise names such as:",
+      "paragraphs": [
+        "Prefer precise names such as:",
+        "unit-cost Levenshtein distance weighted edit distance Optimal String Alignment distance unrestricted Damerau–Levenshtein distance insertion-deletion distance post-normalized Levenshtein distance normalized Levenshtein similarity Marzal–Vidal Normalized Edit Distance affine-gap global alignment",
+        "rather than the generic phrase:",
+        "fuzzy distance"
+      ]
+    },
+    {
+      "heading": "The Conceptual Hierarchy",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 1,
+      "word_count": 134,
+      "evidence": "EDIT DISTANCE │ ├── operation-set variants │ ├── Hamming │ ├── insertion-deletion │ ├── Levenshtein │ ├── Damerau–Levenshtein │ └── block / generalized edits │ ├── cost variants │ ├── unit costs │ ├── weighted costs │ ├── asymmetric costs │ ├── probabilistic costs │ └── learned costs │ ├── gap models │ ├── linear gaps │ ├── affine gaps │ └── nonlinear gaps │ ├── boundary/objective variants │ ├── global │ ├── semiglobal │ ├── substring │ └── local alignment │ ├── score variants │ ├── raw cost │ ├── post-normalized distance │ ├── normalized similarity │ └── path-normalized distance │ ├── representation variants │ ├── byte │ ├── code point │ ├── grapheme │ ├── token │ └── biological symbol │ └── structured generalizations ├── tree edit distance └── graph edit distance",
+      "paragraphs": [
+        "EDIT DISTANCE │ ├── operation-set variants │ ├── Hamming │ ├── insertion-deletion │ ├── Levenshtein │ ├── Damerau–Levenshtein │ └── block / generalized edits │ ├── cost variants │ ├── unit costs │ ├── weighted costs │ ├── asymmetric costs │ ├── probabilistic costs │ └── learned costs │ ├── gap models │ ├── linear gaps │ ├── affine gaps │ └── nonlinear gaps │ ├── boundary/objective variants │ ├── global │ ├── semiglobal │ ├── substring │ └── local alignment │ ├── score variants │ ├── raw cost │ ├── post-normalized distance │ ├── normalized similarity │ └── path-normalized distance │ ├── representation variants │ ├── byte │ ├── code point │ ├── grapheme │ ├── token │ └── biological symbol │ └── structured generalizations ├── tree edit distance └── graph edit distance"
+      ]
+    },
+    {
+      "heading": "What Is Not an Edit-Distance Variant",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 1,
+      "word_count": 65,
+      "evidence": "Concept Why it is different Ukkonen algorithm Computes or bounds an edit distance more efficiently; does not define a new distance Myers bit-vector algorithm Alternative computational representation of unit-cost edit distance Levenshtein automaton Recognizes a bounded edit-distance language q-gram filter Uses a necessary condition to avoid distance computations Approximate string matching Search task using a distance/error model Semantic embedding Represents meaning rather than edit scripts",
+      "paragraphs": [
+        "Concept Why it is different Ukkonen algorithm Computes or bounds an edit distance more efficiently; does not define a new distance Myers bit-vector algorithm Alternative computational representation of unit-cost edit distance Levenshtein automaton Recognizes a bounded edit-distance language q-gram filter Uses a necessary condition to avoid distance computations Approximate string matching Search task using a distance/error model Semantic embedding Represents meaning rather than edit scripts"
+      ]
+    },
+    {
+      "heading": "Why This Distinction Matters Scientifically",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "MATHEMATICAL OBJECT Levenshtein distance ↓ ALGORITHM Myers bit-vector ↓ CANDIDATE-REDUCTION SYSTEM q-gram filter ↓ APPLICATION fuzzy search",
+      "paragraphs": [
+        "MATHEMATICAL OBJECT Levenshtein distance ↓ ALGORITHM Myers bit-vector ↓ CANDIDATE-REDUCTION SYSTEM q-gram filter ↓ APPLICATION fuzzy search",
+        "Mixing these abstraction levels makes it difficult to reason about correctness and performance."
+      ]
+    },
+    {
+      "heading": "Choosing a Variant Is Ultimately Choosing an Error Model",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 9,
+      "word_count": 95,
+      "evidence": "The most important question is not:",
+      "paragraphs": [
+        "The most important question is not:",
+        "Which distance gives the smallest number?",
+        "It is:",
+        "Which edit operations correspond to meaningful changes in this application?",
+        "If adjacent character swaps are genuine one-step errors, Damerau-style distance may be appropriate.",
+        "If insertions and deletions represent synchronization errors, Indel distance may be the right object.",
+        "If substitutions have highly unequal probabilities, weighted edit distance is more faithful.",
+        "If long gaps correspond to one biological event, affine-gap alignment may be better.",
+        "If meaning rather than surface form matters, character edit distance may not be the appropriate primary model at all."
+      ]
+    },
+    {
+      "heading": "Key Facts",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 232,
+      "evidence": "Question Answer Is Levenshtein the only edit distance? No. It is one important member of a broad family. What defines an edit-distance variant? Operation set, costs, sequence representation, boundaries, normalization, and object domain. Does classical Levenshtein include transposition? No. Is Hamming distance a special restricted edit model? It can be viewed that way on equal-length sequences: substitution only. How is Indel distance related to LCS? d_ID(x,y)=|x|+|y|-2LCS(x,y) Is Optimal String Alignment full Damerau–Levenshtein? No. Is Optimal String Alignment a metric? No; triangle inequality can fail. Are arbitrary weighted edit scores metrics? Not automatically. Is there one universal normalized Levenshtein formula? No. The denominator or path objective must be stated explicitly. Is po",
+      "paragraphs": [
+        "Question Answer Is Levenshtein the only edit distance? No. It is one important member of a broad family. What defines an edit-distance variant? Operation set, costs, sequence representation, boundaries, normalization, and object domain. Does classical Levenshtein include transposition? No. Is Hamming distance a special restricted edit model? It can be viewed that way on equal-length sequences: substitution only. How is Indel distance related to LCS? d_ID(x,y)=|x|+|y|-2LCS(x,y) Is Optimal String Alignment full Damerau–Levenshtein? No. Is Optimal String Alignment a metric? No; triangle inequality can fail. Are arbitrary weighted edit scores metrics? Not automatically. Is there one universal normalized Levenshtein formula? No. The denominator or path objective must be stated explicitly. Is post-normalized Levenshtein the same as Marzal–Vidal NED? No. One normalizes an already-minimized raw cost; the other optimizes a normalized path objective directly. Does normalization preserve metricity? Not automatically. Some specialized normalized formulations are metrics, but arbitrary normalization must be proved. Does normalized similarity represent probability? No. Calibration is a separate problem. Must distance and length use the same sequence unit? Yes, if the normalized score is to have coherent sequence semantics. Must zero-denominator behavior be defined? Yes. Different formulas encounter zero denominators under different empty-input conditions. Is bounded edit distance a new distance definition? Usually no; it is a thresholded computational problem. Are tree and graph edit distances identical to string edit distance? No; they generalize the edit concept to structured objects."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 7,
+      "word_count": 375,
+      "evidence": "Edit distance is best understood as a general optimization framework rather than one fixed formula. A sequence transformation is described by an allowed set of edit operations, each operation receives a cost, and the distance is the minimum total cost of an edit script converting one object into another.",
+      "paragraphs": [
+        "Edit distance is best understood as a general optimization framework rather than one fixed formula. A sequence transformation is described by an allowed set of edit operations, each operation receives a cost, and the distance is the minimum total cost of an edit script converting one object into another.",
+        "Classical Levenshtein distance chooses unit-cost insertion, deletion, and substitution. Hamming distance restricts the problem to positional substitutions on equal-length sequences. Insertion-deletion distance removes substitution and becomes directly related to the Longest Common Subsequence. Damerau–Levenshtein adds adjacent transposition. Weighted models change operation costs, while affine-gap models introduce state-dependent costs for runs of insertions or deletions.",
+        "Normalized Levenshtein scores form another distinct layer. Raw Levenshtein distance, post-normalized distance, normalized similarity, and path-normalized edit distance are related but not interchangeable. There is no universal normalized formula: the denominator, sequence representation, score range, zero-denominator policy, and transformation must be stated explicitly. The numerator and denominator should use the same sequence semantics, and normalization should never be confused with probability calibration.",
+        "Not every superficially similar formulation has the same mathematical properties. Classical Levenshtein and unrestricted symmetric unit-cost Damerau–Levenshtein are metrics, while Optimal String Alignment can violate triangle inequality. Arbitrary weighted costs may introduce asymmetry, and arbitrary normalized scores do not automatically inherit metricity. Specialized normalized constructions can preserve metric properties, but those properties must come from the specific definition rather than from the word “normalized.”",
+        "Some commonly discussed “variants” are actually changes at another abstraction level. Bounded edit distance changes the computational question rather than the underlying distance. Myers, Ukkonen, Landau–Vishkin, and Wagner–Fischer are algorithms for computing or exploiting edit-distance models. Approximate string matching is an application/search problem. q-Gram filters and indexes reduce candidates before exact computation.",
+        "The representation of the sequence is equally fundamental. Computing exactly the same recurrence over bytes, Unicode code points, grapheme clusters, words, phonemes, or DNA bases produces different mathematical distances. Likewise, moving from strings to trees or graphs changes both the edit operations and the computational problem.",
+        "There is therefore no universally best edit-distance variant. The correct model is the one whose primitive operations correspond to the errors, transformations, or structural changes that the application intends to measure. Only after that model has been defined should algorithm selection, indexing, normalization, thresholding, and performance engineering begin."
+      ]
+    },
+    {
+      "heading": "Continue Studying",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 10,
+      "word_count": 127,
+      "evidence": "Weighted Levenshtein Distance — symbol-dependent, asymmetric, and application-specific edit costs.",
+      "paragraphs": [
+        "Weighted Levenshtein Distance — symbol-dependent, asymmetric, and application-specific edit costs.",
+        "Damerau–Levenshtein Distance — adjacent transpositions and the distinction between unrestricted and restricted formulations.",
+        "String Metrics — relationships between distance, similarity, Indel/LCS scores, normalization, and metric properties.",
+        "Unicode and Grapheme-Safe Levenshtein — sequence-unit semantics for multilingual text.",
+        "Edit Distance Complexity — computational bounds across exact, bounded, approximate, and generalized models.",
+        "Bounded and Parameterized Edit Distance — when the edit threshold or actual distance is small.",
+        "Approximate Edit Distance Algorithms — algorithms that estimate rather than exactly compute the distance.",
+        "Dynamic, Online and Streaming Edit Distance — edit-distance computation under evolving and incremental inputs.",
+        "Tree and Graph Edit Distance — edit operations over structured objects.",
+        "Learned Edit Distance and Embeddings — learned costs and vector approximations of edit structure."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 9,
+      "word_count": 211,
+      "evidence": "V. I. Levenshtein, “Binary Codes Capable of Correcting Deletions, Insertions, and Reversals,” Soviet Physics Doklady , 10(8), 707–710, English translation published 1966; original Russian work published 1965.",
+      "paragraphs": [
+        "V. I. Levenshtein, “Binary Codes Capable of Correcting Deletions, Insertions, and Reversals,” Soviet Physics Doklady , 10(8), 707–710, English translation published 1966; original Russian work published 1965.",
+        "Richard W. Hamming, “Error Detecting and Error Correcting Codes,” Bell System Technical Journal , 29(2), 147–160, 1950. DOI record .",
+        "Fred J. Damerau, “A Technique for Computer Detection and Correction of Spelling Errors,” Communications of the ACM , 7(3), 171–176, 1964. DOI record .",
+        "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI record .",
+        "Peter H. Sellers, “On the Theory and Computation of Evolutionary Distances,” SIAM Journal on Applied Mathematics , 26(4), 787–793, 1974. DOI record .",
+        "Roy Lowrance and Robert A. Wagner, “An Extension of the String-to-String Correction Problem,” Journal of the ACM , 22(2), 177–183, 1975. DOI record .",
+        "Andrés Marzal and Enrique Vidal, “Computation of Normalized Edit Distance and Applications,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 15(9), 926–932, 1993. DOI record .",
+        "Li Yujian and Liu Bo, “A Normalized Levenshtein Distance Metric,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 29(6), 1091–1095, 2007. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-edit-distance-algorithms",
+      "evidence": [
+        {
+          "section": "Approximation Algorithm",
+          "anchor_id": "ux-section-66",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "See Approximate Edit Distance Algorithms ."
+        },
+        {
+          "section": "Continue Studying",
+          "anchor_id": "ux-section-125",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "Approximate Edit Distance Algorithms — algorithms that estimate rather than exactly compute the distance."
+        }
+      ]
+    },
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Approximate Substring Matching",
+          "anchor_id": "ux-section-34",
+          "alias": "approximate string matching",
+          "excerpt": "The distinction is important in approximate string-matching algorithms and in bit-parallel search methods. See Myers Bit-Vector Algorithm ."
+        },
+        {
+          "section": "What Is Not an Edit-Distance Variant",
+          "anchor_id": "ux-section-120",
+          "alias": "approximate string matching",
+          "excerpt": "Concept Why it is different Ukkonen algorithm Computes or bounds an edit distance more efficiently; does not define a new distance Myers bit-vector algorithm Alternative computational representation of unit-cost edit distance Levenshtein automaton Recognizes a bounded edit-distance language q-gram filter Uses a necessary condition to avoid distance computations Approximate string matching Search task using a distance/error model Semantic embedding Represents meaning rather than edit scripts"
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-124",
+          "alias": "approximate string matching",
+          "excerpt": "Some commonly discussed “variants” are actually changes at another abstraction level. Bounded edit distance changes the computational question rather than the underlying distance. Myers, Ukkonen, Landau–Vishkin, and Wagner–Fischer are algorithms for computing or exploiting edit-distance models. Approximate string matching is an application/search problem. q-Gram filters and indexes reduce candidates before exact computation."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Bounded Edit Distance Is Usually Not a Different Distance",
+          "anchor_id": "ux-section-63",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Continue Studying",
+          "anchor_id": "ux-section-125",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — when the edit threshold or actual distance is small."
+        }
+      ]
+    },
+    {
+      "target": "/coding-theory",
+      "evidence": [
+        {
+          "section": "Historical Terminology: \"Reversal\" Did Not Mean Transposition",
+          "anchor_id": "ux-section-5",
+          "alias": "coding theory",
+          "excerpt": "Vladimir Levenshtein's original coding-theory work discussed binary:"
+        },
+        {
+          "section": "Why Indel Distance Matters",
+          "anchor_id": "ux-section-19",
+          "alias": "coding theory",
+          "excerpt": "coding theory;"
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Edit Distance Variants",
+          "anchor_id": "ux-section-1",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "The familiar Levenshtein distance is one particularly important member of this family: insertion, deletion, and substitution are permitted, each with unit cost. But changing even one assumption produces a different mathematical object. Removing insertions and deletions gives Hamming distance. Removing substitution produces insertion-deletion distance and a direct relationship with longest common subsequences. Adding adjacent transposition leads toward Damerau–Levenshtein distance. Assigning nonuniform costs gives weighted edit distance. Changing gap costs produces sequence-alignment models. Normalizing the score changes its scale and can change its metric properties. Replacing characters wit"
+        },
+        {
+          "section": "Example",
+          "anchor_id": "ux-section-21",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau–Levenshtein Distance for the complete theory."
+        },
+        {
+          "section": "Optimal String Alignment Distance Is Not Unrestricted Damerau–Levenshtein Distance",
+          "anchor_id": "ux-section-22",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "One of the most common errors in string-similarity software is labeling the simple transposition recurrence as full Damerau–Levenshtein distance."
+        }
+      ]
+    },
+    {
+      "target": "/dynamic-online-and-streaming-edit-distance",
+      "evidence": [
+        {
+          "section": "Dynamic, Online, and Streaming Edit Distance Are Computational Models",
+          "anchor_id": "ux-section-67",
+          "alias": "dynamic online and streaming edit distance",
+          "excerpt": "See Dynamic, Online and Streaming Edit Distance ."
+        },
+        {
+          "section": "Continue Studying",
+          "anchor_id": "ux-section-125",
+          "alias": "dynamic online and streaming edit distance",
+          "excerpt": "Dynamic, Online and Streaming Edit Distance — edit-distance computation under evolving and incremental inputs."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Complexity Changes with the Variant",
+          "anchor_id": "ux-section-83",
+          "alias": "edit distance complexity",
+          "excerpt": "Modern complexity results are treated separately in Edit Distance Complexity ."
+        },
+        {
+          "section": "Continue Studying",
+          "anchor_id": "ux-section-125",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — computational bounds across exact, bounded, approximate, and generalized models."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-vs-set-vector-and-ngram-similarity",
+      "evidence": [
+        {
+          "section": "Edit Distance Versus Set, Vector, and n-Gram Similarity",
+          "anchor_id": "ux-section-81",
+          "alias": "edit distance vs set vector and n gram similarity",
+          "excerpt": "See Edit Distance vs Set, Vector and N-Gram Similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Edit Distance Variants",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Edit distance is not a single immutable formula. It is a family of optimization problems defined by the operations that may transform one sequence into another, the costs assigned to those operations, the representation of the sequence itself, and the way the resulting transformation cost is interpreted."
+        },
+        {
+          "section": "Classical Levenshtein Distance",
+          "anchor_id": "ux-section-4",
+          "alias": "edit distance",
+          "excerpt": "For additional foundations, see Edit Distance and Edit Operations and Edit Scripts ."
+        },
+        {
+          "section": "The Effective Substitution Cost",
+          "anchor_id": "ux-section-8",
+          "alias": "edit distance",
+          "excerpt": "A subtle property of weighted models is that the direct substitution cost is not necessarily the cost ultimately paid by the edit distance."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "A General Mathematical Definition",
+          "anchor_id": "ux-section-2",
+          "alias": "edit operations",
+          "excerpt": "be a collection of permitted edit operations."
+        },
+        {
+          "section": "Classical Levenshtein Distance",
+          "anchor_id": "ux-section-4",
+          "alias": "edit operations",
+          "excerpt": "For additional foundations, see Edit Distance and Edit Operations and Edit Scripts ."
+        },
+        {
+          "section": "Optimal String Alignment Distance Is Not Unrestricted Damerau–Levenshtein Distance",
+          "anchor_id": "ux-section-22",
+          "alias": "edit operations",
+          "excerpt": "It restricts how substrings can participate in multiple edit operations."
+        }
+      ]
+    },
+    {
+      "target": "/learned-edit-distance-and-embeddings",
+      "evidence": [
+        {
+          "section": "Edit-Distance Embeddings",
+          "anchor_id": "ux-section-61",
+          "alias": "learned edit distance and embeddings",
+          "excerpt": "See Learned Edit Distance and Embeddings ."
+        },
+        {
+          "section": "Continue Studying",
+          "anchor_id": "ux-section-125",
+          "alias": "learned edit distance and embeddings",
+          "excerpt": "Learned Edit Distance and Embeddings — learned costs and vector approximations of edit structure."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-jaro-winkler-and-phonetic-matching",
+      "evidence": [
+        {
+          "section": "Edit Distance Versus Jaro and Jaro–Winkler",
+          "anchor_id": "ux-section-80",
+          "alias": "levenshtein vs jaro winkler and phonetic matching",
+          "excerpt": "See Levenshtein vs Jaro–Winkler and Phonetic Matching ."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-sequence-alignment",
+      "evidence": [
+        {
+          "section": "Edit Distance Versus Sequence Alignment",
+          "anchor_id": "ux-section-78",
+          "alias": "levenshtein vs sequence alignment",
+          "excerpt": "See Levenshtein vs Sequence Alignment ."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Approximate Substring Matching",
+          "anchor_id": "ux-section-34",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "The distinction is important in approximate string-matching algorithms and in bit-parallel search methods. See Myers Bit-Vector Algorithm ."
+        },
+        {
+          "section": "What Is Not an Edit-Distance Variant",
+          "anchor_id": "ux-section-120",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Concept Why it is different Ukkonen algorithm Computes or bounds an edit distance more efficiently; does not define a new distance Myers bit-vector algorithm Alternative computational representation of unit-cost edit distance Levenshtein automaton Recognizes a bounded edit-distance language q-gram filter Uses a necessary condition to avoid distance computations Approximate string matching Search task using a distance/error model Semantic embedding Represents meaning rather than edit scripts"
+        }
+      ]
+    },
+    {
+      "target": "/sequence-alignment-and-gap-models",
+      "evidence": [
+        {
+          "section": "Why Affine Gaps Need Additional State",
+          "anchor_id": "ux-section-30",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "See Sequence Alignment and Gap Models ."
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Continue Studying",
+          "anchor_id": "ux-section-125",
+          "alias": "string metrics",
+          "excerpt": "String Metrics — relationships between distance, similarity, Indel/LCS scores, normalization, and metric properties."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Edit Distance Versus Semantic Similarity",
+          "anchor_id": "ux-section-82",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/tree-and-graph-edit-distance",
+      "evidence": [
+        {
+          "section": "Tree Edit Distance",
+          "anchor_id": "ux-section-58",
+          "alias": "tree and graph edit distance",
+          "excerpt": "See Tree and Graph Edit Distance ."
+        },
+        {
+          "section": "Are the Objects Hierarchical?",
+          "anchor_id": "ux-section-96",
+          "alias": "tree graph edit distance",
+          "excerpt": "YES ↓ Tree / graph edit distance"
+        },
+        {
+          "section": "Continue Studying",
+          "anchor_id": "ux-section-125",
+          "alias": "tree and graph edit distance",
+          "excerpt": "Tree and Graph Edit Distance — edit operations over structured objects."
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "What Is Not an Edit-Distance Variant",
+          "anchor_id": "ux-section-120",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Concept Why it is different Ukkonen algorithm Computes or bounds an edit distance more efficiently; does not define a new distance Myers bit-vector algorithm Alternative computational representation of unit-cost edit distance Levenshtein automaton Recognizes a bounded edit-distance language q-gram filter Uses a necessary condition to avoid distance computations Approximate string matching Search task using a distance/error model Semantic embedding Represents meaning rather than edit scripts"
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "The Numerator and Denominator Must Use the Same Sequence Semantics",
+          "anchor_id": "ux-section-40",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "For multilingual text, see Unicode and Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Grapheme-Cluster Distance",
+          "anchor_id": "ux-section-55",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Continue Studying",
+          "anchor_id": "ux-section-125",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "Unicode and Grapheme-Safe Levenshtein — sequence-unit semantics for multilingual text."
+        }
+      ]
+    },
+    {
+      "target": "/vladimir-levenshtein",
+      "evidence": [
+        {
+          "section": "Historical Terminology: \"Reversal\" Did Not Mean Transposition",
+          "anchor_id": "ux-section-5",
+          "alias": "vladimir levenshtein",
+          "excerpt": "Vladimir Levenshtein's original coding-theory work discussed binary:"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Example",
+          "anchor_id": "ux-section-7",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "This model is treated in depth in Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Affine-Gap Alignment Is Not Simply Weighted Levenshtein",
+          "anchor_id": "ux-section-31",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "This moves beyond the memoryless edit-operation model used by ordinary weighted Levenshtein distance."
+        },
+        {
+          "section": "Continue Studying",
+          "anchor_id": "ux-section-125",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — symbol-dependent, asymmetric, and application-specific edit costs."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/edit-distance-variants#page",
+      "type": "WebPage",
+      "name": "Edit Distance Variants",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/edit-distance-variants#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-variants#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-variants#article",
+      "type": "TechArticle",
+      "name": "Edit Distance Variants",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-variants#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-variants#concept",
+      "type": "DefinedTerm",
+      "name": "Edit Distance Variants",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-variants#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "hasPart",
+      "https://www.levenshtein.net/edit-distance-variants#page"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance-variants#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#page",
+      "mainEntity",
+      "https://www.levenshtein.net/edit-distance-variants#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#page",
+      "isPartOf",
+      "https://www.levenshtein.net/theory#collection"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#page",
+      "hasPart",
+      "https://www.levenshtein.net/edit-distance-variants#article"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-variants#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "mentions",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "mentions",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "mentions",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "mentions",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "isPartOf",
+      "https://www.levenshtein.net/edit-distance-variants#page"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "citation",
+      "https://doi.org/10.1002/j.1538-7305.1950.tb00463.x"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "citation",
+      "https://doi.org/10.1145/363958.363994"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "citation",
+      "https://doi.org/10.1145/321796.321811"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "citation",
+      "https://doi.org/10.1137/0126070"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "citation",
+      "https://doi.org/10.1145/321879.321880"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "citation",
+      "https://doi.org/10.1109/34.232078"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-variants#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1002/j.1538-7305.1950.tb00463.x",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/363958.363994",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/0126070",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/321879.321880",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/34.232078",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/TPAMI.2007.1078",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    }
+  ]
+}

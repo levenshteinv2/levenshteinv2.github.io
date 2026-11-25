@@ -1,0 +1,775 @@
+{
+  "url": "/unicode-text-transformations",
+  "title": "Unicode Text Transformations & Edit Distance | Levenshtein.net",
+  "h1": [
+    "Unicode Text Transformations & Edit Distance | Levenshtein.net"
+  ],
+  "group": "Unicode",
+  "provisional_mission": "Biến đổi Unicode; cầu nối kỹ thuật",
+  "content_sha256": "2f682f649782955a55764c4f17af1715cd5dd197312beba3d7f30304d23a5487",
+  "canonical": "https://www.levenshtein.net/unicode-text-transformations",
+  "primary_entity_candidate": "Unicode Text Transformations & Edit Distance | Levenshtein.net",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Unicode Text Transformations & Edit Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 4,
+      "word_count": 121,
+      "evidence": "Unicode text can be transformed in many different ways before it is compared, searched, indexed, displayed, or passed to another text-processing system.",
+      "paragraphs": [
+        "Unicode text can be transformed in many different ways before it is compared, searched, indexed, displayed, or passed to another text-processing system.",
+        "Some transformations make canonically equivalent text easier to compare. Others deliberately map text into another representation, writing system, case form, or set of Unicode characters. These operations can change the sequence presented to a Levenshtein algorithm even when the result still appears similar or communicates the same text to a reader.",
+        "This matters because Levenshtein distance operates on sequences. The resulting distance therefore depends not only on what a user sees, but also on the transformations, representation, and segmentation applied before the comparison.",
+        "source text ↓ transformation policy ↓ transformed text ↓ sequence representation ↓ segmentation ↓ Levenshtein distance"
+      ]
+    },
+    {
+      "heading": "What Is a Text Transformation?",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 10,
+      "word_count": 104,
+      "evidence": "A text transformation is a function that maps one sequence to another. Let a transformation be represented by T . For an input string x , the transformed result is:",
+      "paragraphs": [
+        "A text transformation is a function that maps one sequence to another. Let a transformation be represented by T . For an input string x , the transformed result is:",
+        "T(x)",
+        "Two strings can be compared before transformation:",
+        "ED(x, y)",
+        "or after applying the same transformation policy:",
+        "ED(T(x), T(y))",
+        "These values do not have to be equal. The transformation can change the underlying sequence and therefore change the insertions, deletions, and substitutions required by the edit-distance calculation.",
+        "A system can also measure how much a transformation itself changed one string:",
+        "ED(x, T(x))",
+        "These are different uses of Levenshtein distance and should not be confused."
+      ]
+    },
+    {
+      "heading": "Transformation and Levenshtein Are Separate Operations",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 4,
+      "word_count": 71,
+      "evidence": "Levenshtein distance does not normalize text, transliterate scripts, change case, generate styled characters, or decide which Unicode representations should be considered equivalent.",
+      "paragraphs": [
+        "Levenshtein distance does not normalize text, transliterate scripts, change case, generate styled characters, or decide which Unicode representations should be considered equivalent.",
+        "Those decisions belong to the preprocessing or transformation layer. Levenshtein distance begins only after the system has defined the sequences to compare.",
+        "transformation → defines or changes the sequence Levenshtein distance → measures edits between sequences",
+        "Keeping these layers separate makes the resulting distance easier to interpret and reproduce."
+      ]
+    },
+    {
+      "heading": "Four Important Transformation Classes",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "Several kinds of transformation are common in Unicode-aware text systems. They solve different problems and should not be treated as interchangeable.",
+      "paragraphs": [
+        "Several kinds of transformation are common in Unicode-aware text systems. They solve different problems and should not be treated as interchangeable."
+      ]
+    },
+    {
+      "heading": "1. Canonical Unicode Normalization",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 8,
+      "word_count": 107,
+      "evidence": "Unicode can represent canonically equivalent text using different code-point sequences.",
+      "paragraphs": [
+        "Unicode can represent canonically equivalent text using different code-point sequences.",
+        "A familiar example is an accented character:",
+        "é and e + ◌́",
+        "The first form can use a precomposed character while the second uses a base character followed by a combining mark.",
+        "Unicode defines NFC and NFD for canonical normalization. These forms allow applications to process canonically equivalent representations in a consistent way.",
+        "raw text ↓ NFC or NFD ↓ normalized sequence",
+        "If an edit-distance application considers canonical representation differences irrelevant, normalizing both inputs before comparison can prevent those differences from being counted as meaningful edits.",
+        "For the broader matching pipeline, see Text Normalization and Transliteration ."
+      ]
+    },
+    {
+      "heading": "2. Compatibility Normalization",
+      "level": 3,
+      "id": "ux-section-6",
+      "paragraph_count": 5,
+      "word_count": 85,
+      "evidence": "NFKC and NFKD use compatibility decomposition in addition to canonical normalization.",
+      "paragraphs": [
+        "NFKC and NFKD use compatibility decomposition in addition to canonical normalization.",
+        "Compatibility normalization can collapse distinctions such as width variants, superscripts, circled forms, and some presentation-oriented character variants into simpler representations.",
+        "original representation ↓ NFKC / NFKD ↓ compatibility-normalized representation",
+        "This can be useful when an application wants certain presentation differences to be ignored during matching.",
+        "It is not universally appropriate. Compatibility normalization can remove distinctions that are meaningful to the application, so it should be selected deliberately rather than applied automatically to every string."
+      ]
+    },
+    {
+      "heading": "3. Transliteration and Script Transformation",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 4,
+      "word_count": 78,
+      "evidence": "Transliteration maps text from one writing system or representation into another while generally attempting to preserve a written or phonetic relationship rather than translating meaning.",
+      "paragraphs": [
+        "Transliteration maps text from one writing system or representation into another while generally attempting to preserve a written or phonetic relationship rather than translating meaning.",
+        "Москва ↓ Moskva",
+        "The resulting string contains a different sequence. If Levenshtein distance is calculated after transliteration, the algorithm operates on that transformed representation rather than on the original script.",
+        "This can be useful when an application deliberately wants names or terms written in different scripts to be compared within a shared representation."
+      ]
+    },
+    {
+      "heading": "4. Presentation-Oriented Unicode Transformation",
+      "level": 3,
+      "id": "ux-section-8",
+      "paragraph_count": 4,
+      "word_count": 67,
+      "evidence": "Some transformations deliberately replace ordinary characters with other Unicode characters that produce a different visual appearance.",
+      "paragraphs": [
+        "Some transformations deliberately replace ordinary characters with other Unicode characters that produce a different visual appearance.",
+        "Hello 𝐇𝐞𝐥𝐥𝐨 𝑯𝒆𝒍𝒍𝒐 𝙷𝚎𝚕𝚕𝚘 ℍ𝕖𝕝𝕝𝕠",
+        "These are not necessarily the same underlying characters rendered with a different CSS font. Many presentation-oriented forms use different Unicode code points, including characters with mathematical or compatibility semantics.",
+        "A human reader may recognize the same word while a string algorithm receives a substantially different sequence."
+      ]
+    },
+    {
+      "heading": "Normalization and Transformation Are Not Synonyms",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 10,
+      "word_count": 62,
+      "evidence": "Unicode normalization is a formally defined operation with specific equivalence rules. The term text transformation is broader.",
+      "paragraphs": [
+        "Unicode normalization is a formally defined operation with specific equivalence rules. The term text transformation is broader.",
+        "A transformation pipeline can include:",
+        "Unicode normalization,",
+        "case mapping or case folding,",
+        "transliteration,",
+        "character substitution,",
+        "presentation-oriented Unicode mappings,",
+        "application-specific cleanup,",
+        "or several of these operations in sequence.",
+        "The application should therefore document which transformations are applied instead of describing every preprocessing operation simply as “normalization.”"
+      ]
+    },
+    {
+      "heading": "Transformation Order Can Change the Result",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 6,
+      "word_count": 81,
+      "evidence": "When several transformations are used, their order can matter.",
+      "paragraphs": [
+        "When several transformations are used, their order can matter.",
+        "A simplified processing pipeline might be:",
+        "input ↓ Unicode normalization ↓ case processing ↓ transliteration or mapping ↓ sequence segmentation ↓ Levenshtein distance",
+        "Another application may intentionally preserve compatibility or presentation distinctions:",
+        "input ↓ presentation-oriented transformation ↓ preserve transformed Unicode sequence ↓ segment ↓ compare with source or another result",
+        "There is no single transformation order that is correct for every task. The pipeline has to follow the meaning of the comparison."
+      ]
+    },
+    {
+      "heading": "Representation Still Matters After Transformation",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 10,
+      "word_count": 64,
+      "evidence": "Transforming text does not answer the next important question:",
+      "paragraphs": [
+        "Transforming text does not answer the next important question:",
+        "What counts as one element of the sequence?",
+        "Depending on the implementation, Levenshtein distance may operate over:",
+        "bytes,",
+        "UTF-16 code units,",
+        "Unicode code points,",
+        "extended grapheme clusters,",
+        "or another application-defined token.",
+        "These representations can produce different edit distances even when the visible text is identical.",
+        "For the implementation details, see Unicode & Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "A More Complete Comparison Model",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "If T is the selected transformation and S is the sequence-segmentation function, a Unicode-aware comparison can be expressed as:",
+      "paragraphs": [
+        "If T is the selected transformation and S is the sequence-segmentation function, a Unicode-aware comparison can be expressed as:",
+        "dT,S(x, y) = ED( S(T(x)), S(T(y)) )",
+        "This model makes two independent choices explicit:",
+        "T determines how the text is normalized or transformed.",
+        "S determines the sequence units supplied to the Levenshtein algorithm.",
+        "The Levenshtein recurrence itself does not need to change."
+      ]
+    },
+    {
+      "heading": "Example: Canonically Equivalent Text",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 8,
+      "word_count": 70,
+      "evidence": "Consider two visually equivalent representations:",
+      "paragraphs": [
+        "Consider two visually equivalent representations:",
+        "A = \"café\" B = \"cafe◌́\"",
+        "At the raw code-point level, the final character sequences differ.",
+        "If the comparison policy applies NFC to both strings first:",
+        "NFC(A) = NFC(B)",
+        "the resulting Levenshtein distance can become:",
+        "distance = 0",
+        "The result means that canonical representation differences have been defined as irrelevant by the comparison policy. It does not mean that the original encoded sequences were identical."
+      ]
+    },
+    {
+      "heading": "Example: Styled Unicode Transformation",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 7,
+      "word_count": 103,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "source: ABC transformed: 𝐀𝐁𝐂",
+        "A reader may immediately recognize both strings as the letters A, B, and C. At the Unicode level, however, the transformed result contains different code points.",
+        "ABC ↓ presentation-oriented Unicode mapping ↓ 𝐀𝐁𝐂 ↓ sequence segmentation ↓ Levenshtein comparison",
+        "Levenshtein distance can measure the sequence change created by the transformation.",
+        "It does not measure visual similarity. A large sequence distance can exist between strings that look very similar, while a small edit distance does not guarantee that two strings look alike.",
+        "See Levenshtein Distance Limitations for the limits of interpreting edit distance as a more general similarity measure."
+      ]
+    },
+    {
+      "heading": "Compatibility Normalization Can Collapse Styled Forms",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 5,
+      "word_count": 87,
+      "evidence": "Some presentation-oriented Unicode characters have compatibility mappings. As a result, applying NFKC or NFKD can collapse certain styled or presentation-specific distinctions into simpler character sequences.",
+      "paragraphs": [
+        "Some presentation-oriented Unicode characters have compatibility mappings. As a result, applying NFKC or NFKD can collapse certain styled or presentation-specific distinctions into simpler character sequences.",
+        "styled Unicode ↓ compatibility normalization ↓ simplified representation",
+        "Whether this is desirable depends entirely on the task.",
+        "A search or matching system may want to ignore some of these distinctions. A system whose purpose is to preserve or generate styled text usually does not.",
+        "This is an important example of why transformation policy has to be defined before interpreting an edit-distance result."
+      ]
+    },
+    {
+      "heading": "Sequence Similarity",
+      "level": 3,
+      "id": "ux-section-17",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Levenshtein distance belongs primarily to the sequence layer. It measures edit operations between explicitly defined sequence elements.",
+      "paragraphs": [
+        "Levenshtein distance belongs primarily to the sequence layer. It measures edit operations between explicitly defined sequence elements."
+      ]
+    },
+    {
+      "heading": "Visual Similarity",
+      "level": 3,
+      "id": "ux-section-18",
+      "paragraph_count": 3,
+      "word_count": 41,
+      "evidence": "Different Unicode characters can produce similar glyphs while remaining distinct sequence elements.",
+      "paragraphs": [
+        "Different Unicode characters can produce similar glyphs while remaining distinct sequence elements.",
+        "Latin, Greek, Cyrillic, mathematical, and other Unicode characters can sometimes appear similar depending on the typeface and context.",
+        "For the security implications, see Unicode Homoglyph and Confusable Attacks ."
+      ]
+    },
+    {
+      "heading": "Semantic Similarity",
+      "level": 3,
+      "id": "ux-section-19",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "Two strings can express similar meanings while having little character overlap. Conversely, two strings can have a very small edit distance while referring to entirely different concepts.",
+      "paragraphs": [
+        "Two strings can express similar meanings while having little character overlap. Conversely, two strings can have a very small edit distance while referring to entirely different concepts.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Normalization Does Not Solve Unicode Confusables",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 4,
+      "word_count": 50,
+      "evidence": "Unicode normalization addresses defined canonical and compatibility relationships. It is not a universal visual-similarity or spoofing detector.",
+      "paragraphs": [
+        "Unicode normalization addresses defined canonical and compatibility relationships. It is not a universal visual-similarity or spoofing detector.",
+        "Similar-looking characters from unrelated scripts can remain distinct after normalization.",
+        "normalization ≠ visual-confusable detection",
+        "Security-sensitive systems therefore require additional Unicode security and identifier policies rather than relying on edit distance or normalization alone."
+      ]
+    },
+    {
+      "heading": "Relationship to Edit Operations",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 4,
+      "word_count": 76,
+      "evidence": "Standard Levenshtein distance uses insertion, deletion, and substitution. When a transformation changes the sequence representation, it can also change which edit operations appear in the optimal alignment.",
+      "paragraphs": [
+        "Standard Levenshtein distance uses insertion, deletion, and substitution. When a transformation changes the sequence representation, it can also change which edit operations appear in the optimal alignment.",
+        "A representation change may turn what appears to a user as one character replacement into several code-point edits, or several code-point changes into one grapheme-level substitution.",
+        "For the underlying edit model, see Edit Operations .",
+        "For the broader family of measures used to compare strings, see String Metrics ."
+      ]
+    },
+    {
+      "heading": "Transformation as a Measurement Pipeline",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 4,
+      "word_count": 86,
+      "evidence": "Levenshtein distance can also be used to measure how much a transformation changed its source.",
+      "paragraphs": [
+        "Levenshtein distance can also be used to measure how much a transformation changed its source.",
+        "source ↓ transformation ↓ result ↓ Levenshtein distance ↓ sequence-change measurement",
+        "This does not mean that Levenshtein distance generates the transformed text. The generator or transformation function produces the new sequence. Levenshtein distance only measures the edit relationship between the source and the result.",
+        "This distinction is particularly useful when an application produces several candidate transformations and wants to inspect or compare how far each result is from the original sequence."
+      ]
+    },
+    {
+      "heading": "Unicode Text Transformation Is Not the Same as Changing a Font",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 7,
+      "word_count": 67,
+      "evidence": "On the web, changing a CSS font usually changes how the same Unicode characters are rendered:",
+      "paragraphs": [
+        "On the web, changing a CSS font usually changes how the same Unicode characters are rendered:",
+        "ABC → ABC",
+        "The underlying text remains the same.",
+        "A presentation-oriented Unicode transformation can instead replace the underlying characters:",
+        "ABC → 𝐀𝐁𝐂",
+        "The visual result may resemble a font change, but the sequence itself is different.",
+        "This distinction can affect copying, searching, indexing, string length, normalization, security analysis, and edit-distance calculations."
+      ]
+    },
+    {
+      "heading": "Styled Unicode Text as a Downstream Transformation",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 5,
+      "word_count": 86,
+      "evidence": "Styled Unicode text is one practical branch of the broader transformation model described on this page.",
+      "paragraphs": [
+        "Styled Unicode text is one practical branch of the broader transformation model described on this page.",
+        "Instead of changing only the typeface used to render ordinary characters, these transformations can map source characters to alternative Unicode characters or combine them with symbols and other Unicode elements.",
+        "ordinary text ↓ Unicode mapping ↓ transformed Unicode sequence ↓ styled text",
+        "The resulting sequence can then be analyzed using the same representation principles described above.",
+        "Continue with Styled Unicode Text for the character and transformation layer in more detail."
+      ]
+    },
+    {
+      "heading": "Unicode Text Tools Are One Application Branch",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 4,
+      "word_count": 70,
+      "evidence": "Practical text tools can apply Unicode mappings and transformations to generate alternative text representations for copying and reuse.",
+      "paragraphs": [
+        "Practical text tools can apply Unicode mappings and transformations to generate alternative text representations for copying and reuse.",
+        "These tools are an application of Unicode transformation; they are not the definition of Unicode text transformation itself, and they do not change the definition of Levenshtein distance.",
+        "Unicode text processing ↓ Unicode transformation ↓ styled Unicode representation ↓ practical text tools",
+        "The application layer is organized under Unicode Text Tools ."
+      ]
+    },
+    {
+      "heading": "Practical Applications",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 13,
+      "word_count": 79,
+      "evidence": "Unicode-aware transformations appear in many different systems, including:",
+      "paragraphs": [
+        "Unicode-aware transformations appear in many different systems, including:",
+        "normalization before fuzzy matching,",
+        "multilingual name and text matching,",
+        "transliteration between writing systems,",
+        "search and query normalization,",
+        "case-insensitive comparison,",
+        "identifier and username processing,",
+        "Unicode security analysis,",
+        "OCR and language-processing pipelines,",
+        "presentation-oriented Unicode generation,",
+        "source-versus-output comparison,",
+        "and browser-based text transformation tools.",
+        "The common principle is that text representation is part of the computation. An edit-distance value becomes meaningful only after the system defines the transformation and sequence model used to produce it."
+      ]
+    },
+    {
+      "heading": "A Practical Processing Model",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 10,
+      "word_count": 79,
+      "evidence": "A reproducible Unicode-aware comparison pipeline can be expressed as:",
+      "paragraphs": [
+        "A reproducible Unicode-aware comparison pipeline can be expressed as:",
+        "Decode the source text correctly.",
+        "Define which distinctions should be preserved or ignored.",
+        "Choose the required normalization or transformation policy.",
+        "Apply the same policy consistently to comparable inputs.",
+        "Choose the sequence unit used for comparison.",
+        "Segment or tokenize both inputs consistently.",
+        "Run Levenshtein distance on the resulting sequences.",
+        "Interpret the result within that processing model.",
+        "raw input ↓ policy ↓ transformation ↓ representation ↓ segmentation ↓ Levenshtein distance ↓ interpretation"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 6,
+      "word_count": 94,
+      "evidence": "Unicode text transformation changes the sequence that downstream string algorithms receive.",
+      "paragraphs": [
+        "Unicode text transformation changes the sequence that downstream string algorithms receive.",
+        "Canonical normalization can align canonically equivalent representations. Compatibility normalization can deliberately collapse additional distinctions. Transliteration maps text into another writing representation, while presentation-oriented mappings can replace ordinary characters with visually distinctive Unicode characters.",
+        "None of these operations is Levenshtein distance. They define or modify the sequence on which Levenshtein distance operates.",
+        "The resulting comparison therefore depends on two explicit choices:",
+        "what transformation is applied + what sequence units are compared",
+        "A transformation defines the sequence. Levenshtein distance measures the edits between defined sequences."
+      ]
+    },
+    {
+      "heading": "Technical References",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Unicode Standard Annex #15: Unicode Normalization Forms",
+      "paragraphs": [
+        "Unicode Standard Annex #15: Unicode Normalization Forms",
+        "Unicode Standard Annex #29: Unicode Text Segmentation",
+        "Unicode Technical Standard #39: Unicode Security Mechanisms"
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "What Is a Text Transformation?",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "These values do not have to be equal. The transformation can change the underlying sequence and therefore change the insertions, deletions, and substitutions required by the edit-distance calculation."
+        },
+        {
+          "section": "1. Canonical Unicode Normalization",
+          "anchor_id": "ux-section-5",
+          "alias": "edit distance",
+          "excerpt": "If an edit-distance application considers canonical representation differences irrelevant, normalizing both inputs before comparison can prevent those differences from being counted as meaningful edits."
+        },
+        {
+          "section": "Example: Styled Unicode Transformation",
+          "anchor_id": "ux-section-14",
+          "alias": "edit distance",
+          "excerpt": "It does not measure visual similarity. A large sequence distance can exist between strings that look very similar, while a small edit distance does not guarantee that two strings look alike."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Sequence Similarity",
+          "anchor_id": "ux-section-17",
+          "alias": "edit operations",
+          "excerpt": "Levenshtein distance belongs primarily to the sequence layer. It measures edit operations between explicitly defined sequence elements."
+        },
+        {
+          "section": "Relationship to Edit Operations",
+          "anchor_id": "ux-section-21",
+          "alias": "edit operations",
+          "excerpt": "Standard Levenshtein distance uses insertion, deletion, and substitution. When a transformation changes the sequence representation, it can also change which edit operations appear in the optimal alignment."
+        }
+      ]
+    },
+    {
+      "target": "/language-processing",
+      "evidence": [
+        {
+          "section": "Practical Applications",
+          "anchor_id": "ux-section-26",
+          "alias": "language processing",
+          "excerpt": "OCR and language-processing pipelines,"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-distance-limitations",
+      "evidence": [
+        {
+          "section": "Example: Styled Unicode Transformation",
+          "anchor_id": "ux-section-14",
+          "alias": "levenshtein distance limitations",
+          "excerpt": "See Levenshtein Distance Limitations for the limits of interpreting edit distance as a more general similarity measure."
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Relationship to Edit Operations",
+          "anchor_id": "ux-section-21",
+          "alias": "string metrics",
+          "excerpt": "For the broader family of measures used to compare strings, see String Metrics ."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Semantic Similarity",
+          "anchor_id": "ux-section-19",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/styled-unicode-text",
+      "evidence": [
+        {
+          "section": "Styled Unicode Text as a Downstream Transformation",
+          "anchor_id": "ux-section-24",
+          "alias": "styled unicode text",
+          "excerpt": "Styled Unicode text is one practical branch of the broader transformation model described on this page."
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "1. Canonical Unicode Normalization",
+          "anchor_id": "ux-section-5",
+          "alias": "text normalization and transliteration",
+          "excerpt": "For the broader matching pipeline, see Text Normalization and Transliteration ."
+        }
+      ]
+    },
+    {
+      "target": "/text-tools",
+      "evidence": [
+        {
+          "section": "Unicode Text Tools Are One Application Branch",
+          "anchor_id": "ux-section-25",
+          "alias": "text tools",
+          "excerpt": "Practical text tools can apply Unicode mappings and transformations to generate alternative text representations for copying and reuse."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Representation Still Matters After Transformation",
+          "anchor_id": "ux-section-11",
+          "alias": "unicode grapheme safe levenshtein",
+          "excerpt": "For the implementation details, see Unicode & Grapheme-Safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-homoglyph-and-confusable-attacks",
+      "evidence": [
+        {
+          "section": "Visual Similarity",
+          "anchor_id": "ux-section-18",
+          "alias": "unicode homoglyph and confusable attacks",
+          "excerpt": "For the security implications, see Unicode Homoglyph and Confusable Attacks ."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-text-tools",
+      "evidence": [
+        {
+          "section": "Unicode Text Tools Are One Application Branch",
+          "anchor_id": "ux-section-25",
+          "alias": "unicode text tools",
+          "excerpt": "The application layer is organized under Unicode Text Tools ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/unicode-text-transformations#webpage",
+      "type": "WebPage",
+      "name": "Unicode Text Transformations & Edit Distance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/unicode-text-transformations#article"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/unicode-text-transformations#unicode-text-transformation"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-text-transformations#unicode-normalization"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-text-transformations#article",
+      "type": "Article",
+      "name": "Unicode Text Transformations & Edit Distance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/unicode-text-transformations#unicode-text-transformation"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-text-transformations#unicode-normalization"
+        },
+        {
+          "@id": "https://www.levenshtein.net/unicode-text-transformations#transliteration"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-text-transformations#unicode-text-transformation",
+      "type": "DefinedTerm",
+      "name": "Unicode Text Transformation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-text-transformations#unicode-normalization",
+      "type": "DefinedTerm",
+      "name": "Unicode Normalization",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-text-transformations#transliteration",
+      "type": "DefinedTerm",
+      "name": "Transliteration",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-text-transformations#grapheme-cluster",
+      "type": "DefinedTerm",
+      "name": "Extended Grapheme Cluster",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-text-transformations#unicode-text-segmentation",
+      "type": "DefinedTerm",
+      "name": "Unicode Text Segmentation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/unicode-text-transformations#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#webpage",
+      "about",
+      "https://www.levenshtein.net/unicode-text-transformations#unicode-text-transformation"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#webpage",
+      "about",
+      "https://www.levenshtein.net/unicode-text-transformations#unicode-normalization"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/unicode-text-transformations#article"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#article",
+      "about",
+      "https://www.levenshtein.net/unicode-text-transformations#unicode-text-transformation"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#article",
+      "about",
+      "https://www.levenshtein.net/unicode-text-transformations#unicode-normalization"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#article",
+      "about",
+      "https://www.levenshtein.net/unicode-text-transformations#transliteration"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-text-transformations#grapheme-cluster"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-text-transformations#unicode-text-segmentation"
+    ],
+    [
+      "https://www.levenshtein.net/unicode-text-transformations#article",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://www.unicode.org/reports/tr15/",
+      "anchor": "Unicode Standard Annex #15: Unicode Normalization Forms"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr29/",
+      "anchor": "Unicode Standard Annex #29: Unicode Text Segmentation"
+    },
+    {
+      "url": "https://www.unicode.org/reports/tr39/",
+      "anchor": "Unicode Technical Standard #39: Unicode Security Mechanisms"
+    }
+  ]
+}

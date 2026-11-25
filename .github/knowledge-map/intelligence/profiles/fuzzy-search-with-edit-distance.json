@@ -1,0 +1,2890 @@
+{
+  "url": "/fuzzy-search-with-edit-distance",
+  "title": "Fuzzy Search with Edit Distance: Algorithms, Thresholds & Ranking",
+  "h1": [
+    "Fuzzy Search with Edit Distance: Algorithms, Thresholds & Ranking"
+  ],
+  "group": "Search",
+  "provisional_mission": "Retrieval và ranking gần đúng",
+  "content_sha256": "45e3c39543cb643a4dc10ef8f4801f35ed5d883336121aafe589108083d6b689",
+  "canonical": "https://www.levenshtein.net/fuzzy-search-with-edit-distance",
+  "primary_entity_candidate": "Fuzzy Search with Edit Distance: Algorithms, Thresholds & Ranking",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Fuzzy Search with Edit Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 21,
+      "word_count": 267,
+      "evidence": "Fuzzy search retrieves useful results even when a query does not exactly match the stored text. Misspellings, missing characters, extra characters, OCR noise, transcription errors, transliteration differences, and inconsistent data entry can all prevent ordinary exact matching from finding a result that a user clearly intended.",
+      "paragraphs": [
+        "Fuzzy search retrieves useful results even when a query does not exactly match the stored text. Misspellings, missing characters, extra characters, OCR noise, transcription errors, transliteration differences, and inconsistent data entry can all prevent ordinary exact matching from finding a result that a user clearly intended.",
+        "Levenshtein distance provides one of the most important mathematical foundations for this problem. For two strings x and y , Levenshtein distance measures the minimum number of insertions, deletions, and substitutions required to transform one into the other under the classical unit-cost model.",
+        "ED(\"kitten\", \"sitting\") = 3",
+        "That makes a natural fuzzy-search rule:",
+        "return candidate y if ED(query, y) ≤ k",
+        "where k is a maximum tolerated edit distance.",
+        "But a production fuzzy-search system is much more than this inequality. Several distinct problems must be separated:",
+        "What exactly is being compared: complete terms, substrings, tokens, fields, or entire queries?",
+        "What edit operations are allowed?",
+        "Should adjacent transpositions count as one edit?",
+        "How should the threshold vary with string length?",
+        "How are millions of impossible candidates eliminated before exact verification?",
+        "How should matches with equal edit distance be ranked?",
+        "What text normalization should occur before distance is measured?",
+        "Should Unicode code points or grapheme clusters be the comparison units?",
+        "When is Levenshtein distance the wrong similarity signal entirely?",
+        "The correct mental model is therefore not:",
+        "FUZZY SEARCH = LEVENSHTEIN(query, every_document)",
+        "but rather:",
+        "query ↓ representation / normalization ↓ search semantics ↓ candidate generation ↓ cheap pruning ↓ edit-distance verification ↓ ranking ↓ final results",
+        "Levenshtein distance is often a central component of this pipeline, but it is rarely the entire retrieval system."
+      ]
+    },
+    {
+      "heading": "Fuzzy search, approximate string matching, and approximate algorithms are different concepts",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Three terms are frequently confused.",
+      "paragraphs": [
+        "Three terms are frequently confused."
+      ]
+    },
+    {
+      "heading": "Fuzzy search",
+      "level": 3,
+      "id": "ux-section-3",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "Fuzzy search is an application-level retrieval problem:",
+      "paragraphs": [
+        "Fuzzy search is an application-level retrieval problem:",
+        "Given query q, retrieve useful candidates that are not necessarily exactly equal to q.",
+        "The retrieval system may use edit distance, phonetic algorithms, token similarity, language models, learned representations, or several signals together."
+      ]
+    },
+    {
+      "heading": "Approximate string matching",
+      "level": 3,
+      "id": "ux-section-4",
+      "paragraph_count": 4,
+      "word_count": 63,
+      "evidence": "Approximate string matching is the algorithmic problem of locating strings or substrings that differ from a pattern by some bounded amount.",
+      "paragraphs": [
+        "Approximate string matching is the algorithmic problem of locating strings or substrings that differ from a pattern by some bounded amount.",
+        "A classical formulation is:",
+        "Given: pattern P text T threshold k find positions or substrings S in T such that: ED(P,S) ≤ k",
+        "This is one of the central historical applications of edit distance and is treated extensively in the approximate-string-matching literature."
+      ]
+    },
+    {
+      "heading": "Approximate edit-distance algorithms",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "An approximate edit-distance algorithm solves a different problem:",
+      "paragraphs": [
+        "An approximate edit-distance algorithm solves a different problem:",
+        "estimate ED(x,y) without necessarily computing its exact value",
+        "For example, it might produce:",
+        "ED(x,y) ≤ D̂ ≤ 2·ED(x,y)",
+        "Fuzzy search can use an exact Levenshtein distance internally. The word \"fuzzy\" therefore does not mean that the distance algorithm itself is approximate.",
+        "See Approximate String Matching and Approximate Edit Distance Algorithms for the distinction."
+      ]
+    },
+    {
+      "heading": "The first design decision: what counts as a match?",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Several fuzzy-search problems look similar but require different algorithms.",
+      "paragraphs": [
+        "Several fuzzy-search problems look similar but require different algorithms."
+      ]
+    },
+    {
+      "heading": "Whole-string fuzzy matching",
+      "level": 3,
+      "id": "ux-section-7",
+      "paragraph_count": 10,
+      "word_count": 30,
+      "evidence": "Given:",
+      "paragraphs": [
+        "Given:",
+        "query: \"levenshten\" candidate: \"levenshtein\"",
+        "compare the entire strings:",
+        "ED( \"levenshten\", \"levenshtein\" ) = 1",
+        "This model is natural for:",
+        "dictionary terms;",
+        "product codes;",
+        "usernames;",
+        "short names;",
+        "controlled vocabulary entries."
+      ]
+    },
+    {
+      "heading": "Approximate substring matching",
+      "level": 3,
+      "id": "ux-section-8",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "pattern: \"levenshten\" text: \"the levenshtein algorithm\"",
+        "Comparing the complete strings is inappropriate:",
+        "ED( \"levenshten\", \"the levenshtein algorithm\" )",
+        "includes the surrounding text as insertions.",
+        "The actual search problem is:",
+        "find a substring S of text minimizing: ED(pattern,S)"
+      ]
+    },
+    {
+      "heading": "Term-level fuzzy retrieval",
+      "level": 3,
+      "id": "ux-section-9",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "A search index may tokenize:",
+      "paragraphs": [
+        "A search index may tokenize:",
+        "\"The Levenshtein Algorithm\" → [ \"the\", \"levenshtein\", \"algorithm\" ]",
+        "and compare the query term:",
+        "\"levenshten\"",
+        "against indexed terms rather than against the complete document string."
+      ]
+    },
+    {
+      "heading": "Multi-token query correction",
+      "level": 3,
+      "id": "ux-section-10",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "\"levenshten algoritm\"",
+        "the system might fuzzy-match each token independently:",
+        "\"levenshten\" → \"levenshtein\" \"algoritm\" → \"algorithm\"",
+        "This is different from calculating one character-level edit distance over the complete query."
+      ]
+    },
+    {
+      "heading": "Whole-query Levenshtein can be the wrong abstraction",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 13,
+      "word_count": 83,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "query: \"new york hotel\" candidate: \"hotel new york\"",
+        "The terms are almost identical semantically, but character-level Levenshtein distance is relatively large because large blocks have moved.",
+        "Similarly:",
+        "\"john smith\" \"smith john\"",
+        "may refer to the same name components while ordinary Levenshtein treats the reordering as many edits.",
+        "For multi-token retrieval, the system may need:",
+        "token-level matching;",
+        "token-set similarity;",
+        "field-aware comparison;",
+        "phrase proximity;",
+        "semantic retrieval.",
+        "Edit distance remains useful at the token level without necessarily being the correct distance over the entire query."
+      ]
+    },
+    {
+      "heading": "The classical whole-string recurrence",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 12,
+      "word_count": 57,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "P = p₁p₂...pₘ Q = q₁q₂...qₙ",
+        "define:",
+        "D[i][j] = ED( P[1..i], Q[1..j] )",
+        "with:",
+        "D[i][0] = i D[0][j] = j",
+        "and recurrence:",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + [pᵢ != qⱼ] )",
+        "The final result:",
+        "D[m][n]",
+        "is the whole-string edit distance.",
+        "This is appropriate when both strings must be consumed completely."
+      ]
+    },
+    {
+      "heading": "Approximate substring search uses a different initialization",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 11,
+      "word_count": 67,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "P = pattern of length m T = text of length n",
+        "and we want to find approximate occurrences of P anywhere inside T .",
+        "Define:",
+        "D[i][j]",
+        "with the same recurrence, but initialize:",
+        "D[i][0] = i D[0][j] = 0",
+        "rather than:",
+        "D[0][j] = j",
+        "The zero-valued top row means:",
+        "The pattern may begin after any prefix of the text without paying for that skipped text prefix."
+      ]
+    },
+    {
+      "heading": "Why the modified boundary works",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 9,
+      "word_count": 46,
+      "evidence": "Imagine:",
+      "paragraphs": [
+        "Imagine:",
+        "T = xxxxxxxxPATTERNyyyyyyyy",
+        "The prefix:",
+        "xxxxxxxx",
+        "should not count as eight insertions into the pattern.",
+        "We are searching for a substring, not aligning the pattern globally to the entire text.",
+        "By assigning:",
+        "D[0][j] = 0",
+        "the DP may begin an alignment at any text position."
+      ]
+    },
+    {
+      "heading": "The last row identifies approximate occurrence endpoints",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 7,
+      "word_count": 47,
+      "evidence": "After processing the complete pattern:",
+      "paragraphs": [
+        "After processing the complete pattern:",
+        "D[m][j]",
+        "represents the best edit-distance cost for an approximate occurrence ending at or around text position j under the substring-search formulation.",
+        "Positions satisfying:",
+        "D[m][j] ≤ k",
+        "are candidate approximate-match endpoints.",
+        "Traceback can recover the corresponding starting position and edit script if required."
+      ]
+    },
+    {
+      "heading": "Approximate pattern-matching pseudocode",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 7,
+      "word_count": 94,
+      "evidence": "function approximateSearch(P, T, k): m = length(P) n = length(T) previous[0..n] = 0 for i = 1..m: current[0] = i for j = 1..n: cost = 0 if P[i-1] == T[j-1] else 1 current[j] = min( previous[j] + 1, current[j-1] + 1, previous[j-1] + cost ) swap(previous, current) matches = [] for j = 1..n: if previous[j] ≤ k: matches.append(j) return matches",
+      "paragraphs": [
+        "function approximateSearch(P, T, k): m = length(P) n = length(T) previous[0..n] = 0 for i = 1..m: current[0] = i for j = 1..n: cost = 0 if P[i-1] == T[j-1] else 1 current[j] = min( previous[j] + 1, current[j-1] + 1, previous[j-1] + cost ) swap(previous, current) matches = [] for j = 1..n: if previous[j] ≤ k: matches.append(j) return matches",
+        "This simple formulation requires:",
+        "O(mn) time",
+        "and:",
+        "O(n)",
+        "or, with an alternative orientation and implementation, linear working memory in the relevant dimension.",
+        "Specialized approximate-string-matching algorithms can do much better in important regimes."
+      ]
+    },
+    {
+      "heading": "Search semantics can also be prefix-based",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 10,
+      "word_count": 49,
+      "evidence": "Autocomplete or identifier search may require:",
+      "paragraphs": [
+        "Autocomplete or identifier search may require:",
+        "query approximately matches the beginning of candidate",
+        "rather than:",
+        "any substring",
+        "or:",
+        "the complete candidate",
+        "These are different boundary conditions.",
+        "The exact definition should therefore distinguish:",
+        "global fuzzy match prefix fuzzy match substring fuzzy match suffix fuzzy match",
+        "before an implementation is chosen."
+      ]
+    },
+    {
+      "heading": "The edit-distance ball",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 8,
+      "word_count": 33,
+      "evidence": "For query:",
+      "paragraphs": [
+        "For query:",
+        "q",
+        "and integer threshold:",
+        "k ≥ 0",
+        "define the Levenshtein ball:",
+        "B_k(q) = { x : ED(q,x) ≤ k }",
+        "A simple fuzzy-search query asks:",
+        "which indexed strings belong to B_k(q)?"
+      ]
+    },
+    {
+      "heading": "The search radius controls recall and candidate volume",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 10,
+      "word_count": 26,
+      "evidence": "As:",
+      "paragraphs": [
+        "As:",
+        "k",
+        "increases:",
+        "B₀(q) ⊆ B₁(q) ⊆ B₂(q) ⊆ B₃(q) ...",
+        "Therefore increasing k cannot remove candidates.",
+        "It usually increases:",
+        "recall;",
+        "candidate count;",
+        "computation;",
+        "false-positive risk."
+      ]
+    },
+    {
+      "heading": "Why large edit radii become dangerous",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 15,
+      "word_count": 49,
+      "evidence": "For a string of length:",
+      "paragraphs": [
+        "For a string of length:",
+        "m",
+        "over alphabet:",
+        "Σ",
+        "even the number of one-substitution variants is approximately:",
+        "m(|Σ|-1)",
+        "before counting:",
+        "insertions;",
+        "deletions;",
+        "multi-edit combinations.",
+        "The size of the edit ball grows rapidly with both:",
+        "k",
+        "and:",
+        "|Σ|",
+        "so fuzzy retrieval should not generally generate every possible corrupted query explicitly."
+      ]
+    },
+    {
+      "heading": "Short strings are especially sensitive to edit radius",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 6,
+      "word_count": 12,
+      "evidence": "A distance of:",
+      "paragraphs": [
+        "A distance of:",
+        "2",
+        "has very different implications for:",
+        "\"cat\"",
+        "and:",
+        "\"internationalization\""
+      ]
+    },
+    {
+      "heading": "Relative corruption",
+      "level": 3,
+      "id": "ux-section-22",
+      "paragraph_count": 2,
+      "word_count": 38,
+      "evidence": "ED = 2 length = 3 relative difference ≈ 67% ED = 2 length = 20 relative difference = 10%",
+      "paragraphs": [
+        "ED = 2 length = 3 relative difference ≈ 67% ED = 2 length = 20 relative difference = 10%",
+        "A fixed global threshold can therefore be too permissive for short terms and too strict for long terms."
+      ]
+    },
+    {
+      "heading": "Length-adaptive thresholds",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "One practical policy is:",
+      "paragraphs": [
+        "One practical policy is:",
+        "length 1–2: k = 0 length 3–5: k = 1 length 6+: k = 2",
+        "The exact breakpoints are application dependent.",
+        "They should be tuned using:",
+        "observed error rates;",
+        "dictionary density;",
+        "cost of false positives;",
+        "language characteristics."
+      ]
+    },
+    {
+      "heading": "Normalized edit distance",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 9,
+      "word_count": 41,
+      "evidence": "Another approach transforms raw distance into a relative score such as:",
+      "paragraphs": [
+        "Another approach transforms raw distance into a relative score such as:",
+        "r(x,y) = ED(x,y) / max( |x|, |y| )",
+        "and corresponding similarity:",
+        "s(x,y) = 1 - r(x,y)",
+        "For identical nonempty strings:",
+        "s = 1",
+        "and for increasingly different strings:",
+        "s",
+        "decreases."
+      ]
+    },
+    {
+      "heading": "A normalized score is not the original Levenshtein metric",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 7,
+      "word_count": 42,
+      "evidence": "This distinction matters because:",
+      "paragraphs": [
+        "This distinction matters because:",
+        "ED(x,y)",
+        "has established metric properties under the classical model, while an application-specific normalization changes the mathematical object used for ranking or thresholding.",
+        "Use terms such as:",
+        "normalized edit similarity",
+        "rather than calling the transformed score simply:",
+        "Levenshtein distance"
+      ]
+    },
+    {
+      "heading": "Raw distance and normalized score can rank pairs differently",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 11,
+      "word_count": 54,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "Pair A: ED = 1 length = 2 Pair B: ED = 2 length = 20",
+        "Raw distance prefers:",
+        "Pair A",
+        "because:",
+        "1 < 2",
+        "Relative error prefers:",
+        "Pair B",
+        "because:",
+        "1/2 = 0.50 2/20 = 0.10",
+        "The ranking function therefore represents a product decision rather than an inevitable consequence of edit distance."
+      ]
+    },
+    {
+      "heading": "Levenshtein distance alone is usually not a complete ranking function",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 13,
+      "word_count": 35,
+      "evidence": "Suppose query:",
+      "paragraphs": [
+        "Suppose query:",
+        "\"aple\"",
+        "has candidates:",
+        "\"apple\" \"able\" \"ample\"",
+        "Several may have similar edit distance.",
+        "A useful search system may additionally consider:",
+        "exact-prefix agreement;",
+        "term frequency;",
+        "document relevance;",
+        "field importance;",
+        "query popularity;",
+        "language-model probability;",
+        "business constraints."
+      ]
+    },
+    {
+      "heading": "Separate retrieval from ranking",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 6,
+      "word_count": 48,
+      "evidence": "A clean architecture distinguishes:",
+      "paragraphs": [
+        "A clean architecture distinguishes:",
+        "CANDIDATE RETRIEVAL Which candidates are allowed? RANKING In what order should allowed candidates appear?",
+        "For example:",
+        "candidate condition: ED(q,t) ≤ 2 ranking: exact match bonus + edit-distance score + text relevance + popularity",
+        "This is often much stronger than sorting only by:",
+        "ascending ED"
+      ]
+    },
+    {
+      "heading": "Exact matches should usually retain priority",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "ED(q,t) = 0",
+        "the term is an exact match.",
+        "A fuzzy expansion should generally not cause a distant but globally popular candidate to outrank an exact textual result unless the product explicitly intends that behavior."
+      ]
+    },
+    {
+      "heading": "Candidate generation and verification",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "The simplest search architecture is:",
+      "paragraphs": [
+        "The simplest search architecture is:",
+        "for every candidate c: if ED(q,c) ≤ k: return c",
+        "For:",
+        "N candidates",
+        "this requires:",
+        "N",
+        "distance computations.",
+        "That becomes prohibitively expensive as the corpus grows."
+      ]
+    },
+    {
+      "heading": "The scalable architecture",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 4,
+      "word_count": 34,
+      "evidence": "QUERY ↓ cheap necessary conditions ↓ candidate generation ↓ candidate set C' ↓ exact ED verification ↓ ranking",
+      "paragraphs": [
+        "QUERY ↓ cheap necessary conditions ↓ candidate generation ↓ candidate set C' ↓ exact ED verification ↓ ranking",
+        "with:",
+        "|C'| ≪ |C|",
+        "The article Fuzzy Search at Scale develops this systems problem in detail."
+      ]
+    },
+    {
+      "heading": "The length filter",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 5,
+      "word_count": 34,
+      "evidence": "For unit-cost Levenshtein distance:",
+      "paragraphs": [
+        "For unit-cost Levenshtein distance:",
+        "ED(q,c) ≥ || q | - | c ||",
+        "Therefore:",
+        "if abs( length(q) - length(c) ) > k: reject candidate",
+        "This is an exact, zero-false-negative filter for a threshold search."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "q length = 10 k = 2",
+        "only candidates with lengths:",
+        "8 9 10 11 12",
+        "can satisfy:",
+        "ED(q,c) ≤ 2",
+        "Every other length can be rejected without computing full edit distance."
+      ]
+    },
+    {
+      "heading": "Prefix constraints",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "A search system may require the first:",
+      "paragraphs": [
+        "A search system may require the first:",
+        "p",
+        "characters to match exactly:",
+        "prefix_p(q) = prefix_p(c)",
+        "before allowing fuzzy edits later in the string.",
+        "This can greatly reduce candidate volume."
+      ]
+    },
+    {
+      "heading": "But an exact-prefix constraint changes the retrieval relation",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 10,
+      "word_count": 43,
+      "evidence": "Ordinary Levenshtein permits:",
+      "paragraphs": [
+        "Ordinary Levenshtein permits:",
+        "an edit at position 1",
+        "so:",
+        "\"cat\" \"bat\"",
+        "have:",
+        "ED = 1",
+        "A search requiring the first character to match would reject this pair.",
+        "Therefore:",
+        "Levenshtein threshold + exact prefix",
+        "is a stricter search predicate than the ordinary Levenshtein ball."
+      ]
+    },
+    {
+      "heading": "Prefix restrictions trade recall for speed",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "They can be excellent when:",
+      "paragraphs": [
+        "They can be excellent when:",
+        "errors rarely occur at the beginning;",
+        "prefixes are highly discriminative;",
+        "low latency matters more than complete fuzzy recall.",
+        "They can be harmful when:",
+        "initial-character OCR errors are common;",
+        "users often mistype the first character;",
+        "transliteration changes initial letters."
+      ]
+    },
+    {
+      "heading": "q-gram filtering",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 11,
+      "word_count": 82,
+      "evidence": "A string can be decomposed into overlapping substrings of length:",
+      "paragraphs": [
+        "A string can be decomposed into overlapping substrings of length:",
+        "q",
+        "called q-grams.",
+        "For:",
+        "\"hello\" q = 2",
+        "the bigrams are:",
+        "he el ll lo",
+        "A small number of edits cannot arbitrarily preserve or destroy every q-gram.",
+        "This permits necessary-overlap bounds that reject candidates whose q-gram similarity is too low to satisfy a given edit-distance threshold.",
+        "The exact bound depends on the q-gram model and matching formulation.",
+        "This belongs to the broader family described in Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Filtering must distinguish necessary conditions from heuristics",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 7,
+      "word_count": 55,
+      "evidence": "A safe filter guarantees:",
+      "paragraphs": [
+        "A safe filter guarantees:",
+        "if ED(q,c) ≤ k then candidate survives filter",
+        "It may produce false positives:",
+        "filter accepts c but ED(q,c) > k",
+        "because the exact verifier removes them later.",
+        "A heuristic filter may also produce false negatives.",
+        "That distinction determines whether the complete search system can claim exact recall under the specified threshold."
+      ]
+    },
+    {
+      "heading": "Levenshtein automata",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "A particularly elegant formulation represents the edit-distance ball as a finite-state language.",
+      "paragraphs": [
+        "A particularly elegant formulation represents the edit-distance ball as a finite-state language.",
+        "For query word:",
+        "w",
+        "and threshold:",
+        "k",
+        "a Levenshtein automaton of degree k recognizes:",
+        "L_k(w) = { v : ED(w,v) ≤ k }",
+        "Rather than comparing w independently against every term, the automaton tracks whether prefixes of candidate strings remain within the edit budget.",
+        "See Levenshtein Automata ."
+      ]
+    },
+    {
+      "heading": "Automaton × trie traversal",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 6,
+      "word_count": 60,
+      "evidence": "Suppose a dictionary is stored as a trie:",
+      "paragraphs": [
+        "Suppose a dictionary is stored as a trie:",
+        "root / \\ a b / \\ \\ p r a / ... p / l / e",
+        "A search can traverse:",
+        "TRIE STATE × LEVENSHTEIN-AUTOMATON STATE",
+        "simultaneously.",
+        "If the automaton reaches a state from which no string can remain within distance k , the entire corresponding trie branch can be pruned."
+      ]
+    },
+    {
+      "heading": "Why this is better than candidate enumeration",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "The naive approach conceptually asks:",
+      "paragraphs": [
+        "The naive approach conceptually asks:",
+        "apple? apply? ample? maple? ...",
+        "one term at a time.",
+        "Trie traversal shares work across common prefixes:",
+        "app...",
+        "and discards whole regions of the dictionary when the fuzzy state becomes impossible."
+      ]
+    },
+    {
+      "heading": "Schulz–Mihov automata",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 3,
+      "word_count": 61,
+      "evidence": "The work of Klaus U. Schulz and Stoyan Mihov established an influential construction for deterministic Levenshtein automata used in fast dictionary correction.",
+      "paragraphs": [
+        "The work of Klaus U. Schulz and Stoyan Mihov established an influential construction for deterministic Levenshtein automata used in fast dictionary correction.",
+        "For a fixed edit bound and input word, the automaton can be constructed efficiently and used to control traversal of a dictionary represented by a trie or finite-state automaton.",
+        "This idea remains highly relevant to modern fuzzy term lookup."
+      ]
+    },
+    {
+      "heading": "A real search engine may use a transposition-aware variant",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 11,
+      "word_count": 41,
+      "evidence": "Classical Levenshtein distance allows:",
+      "paragraphs": [
+        "Classical Levenshtein distance allows:",
+        "insertion deletion substitution",
+        "but not:",
+        "adjacent transposition",
+        "as one primitive edit.",
+        "Consider:",
+        "\"form\" \"from\"",
+        "A human typing model often interprets this as one adjacent transposition.",
+        "Classical Levenshtein normally needs:",
+        "2 substitutions",
+        "to transform one into the other."
+      ]
+    },
+    {
+      "heading": "Damerau-style fuzzy search",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 6,
+      "word_count": 53,
+      "evidence": "A search application can instead use a transposition-aware distance so that:",
+      "paragraphs": [
+        "A search application can instead use a transposition-aware distance so that:",
+        "\"form\" → \"from\" cost = 1",
+        "under the appropriate edit model.",
+        "This can improve typo tolerance.",
+        "However, the resulting metric is no longer classical Levenshtein distance.",
+        "See Damerau–Levenshtein Distance for the critical distinction between unrestricted Damerau–Levenshtein distance and Optimal String Alignment distance."
+      ]
+    },
+    {
+      "heading": "Do not label every transposition-aware implementation \"Levenshtein\"",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "This matters when comparing search engines.",
+      "paragraphs": [
+        "This matters when comparing search engines.",
+        "Some systems expose a setting called:",
+        "fuzzy or edit distance",
+        "while internally allowing adjacent transpositions.",
+        "The application documentation should specify the actual edit model."
+      ]
+    },
+    {
+      "heading": "Lucene as a concrete implementation example",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 8,
+      "word_count": 70,
+      "evidence": "Apache Lucene's fuzzy-query implementation provides a useful real-world example. Current Lucene documentation describes its default fuzzy similarity as based on a transposition-aware Damerau–Levenshtein/Optimal String Alignment model, while allowing classical Levenshtein behavior when transpositions are disabled.",
+      "paragraphs": [
+        "Apache Lucene's fuzzy-query implementation provides a useful real-world example. Current Lucene documentation describes its default fuzzy similarity as based on a transposition-aware Damerau–Levenshtein/Optimal String Alignment model, while allowing classical Levenshtein behavior when transpositions are disabled.",
+        "It also exposes concepts such as:",
+        "maximum edits;",
+        "exact prefix length;",
+        "maximum expansions;",
+        "automaton-based term enumeration.",
+        "These implementation controls demonstrate that production fuzzy search includes both metric semantics and search-space controls.",
+        "Lucene FuzzyQuery documentation ."
+      ]
+    },
+    {
+      "heading": "Why maximum expansions exists",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 12,
+      "word_count": 62,
+      "evidence": "Even when every candidate is mathematically valid:",
+      "paragraphs": [
+        "Even when every candidate is mathematically valid:",
+        "ED(q,c) ≤ k",
+        "there may be too many candidate terms to expand efficiently into the downstream query.",
+        "A production search engine may therefore cap:",
+        "number of fuzzy term expansions",
+        "for resource control.",
+        "This means system behavior can depend on:",
+        "term dictionary density;",
+        "rewrite strategy;",
+        "expansion limit;",
+        "ranking policy.",
+        "not merely on the mathematical edit threshold."
+      ]
+    },
+    {
+      "heading": "Elasticsearch provides another implementation example",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 7,
+      "word_count": 44,
+      "evidence": "Elasticsearch's fuzzy query documentation describes fuzzy term matching using edit distance and exposes controls such as:",
+      "paragraphs": [
+        "Elasticsearch's fuzzy query documentation describes fuzzy term matching using edit distance and exposes controls such as:",
+        "fuzziness;",
+        "prefix length;",
+        "maximum expansions;",
+        "transpositions.",
+        "This provides a useful example of how a mathematical distance is translated into a configurable search primitive.",
+        "Elasticsearch fuzzy query documentation ."
+      ]
+    },
+    {
+      "heading": "Fuzzy term expansion is not approximate substring search",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 5,
+      "word_count": 44,
+      "evidence": "This distinction is easy to miss.",
+      "paragraphs": [
+        "This distinction is easy to miss.",
+        "A term dictionary search may do:",
+        "\"levenshten\" → find indexed term \"levenshtein\"",
+        "and then retrieve documents containing that term.",
+        "That is not the same as scanning every character position in raw document text for an approximate substring occurrence."
+      ]
+    },
+    {
+      "heading": "The text-analysis pipeline changes what fuzzy search sees",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 10,
+      "word_count": 39,
+      "evidence": "Suppose raw document text is:",
+      "paragraphs": [
+        "Suppose raw document text is:",
+        "\"Levenshtein's Algorithms\"",
+        "An analyzer might produce:",
+        "[ \"levenshtein\", \"algorithm\" ]",
+        "through:",
+        "tokenization;",
+        "lowercasing;",
+        "stemming or lemmatization;",
+        "punctuation handling.",
+        "A fuzzy term query then operates on the indexed representation, not necessarily the raw source string."
+      ]
+    },
+    {
+      "heading": "Preprocessing is part of the search relation",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 7,
+      "word_count": 23,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "N(x)",
+        "represent the text-normalization pipeline.",
+        "Then the effective search distance may be:",
+        "ED( N(query), N(candidate) )",
+        "rather than:",
+        "ED( query, candidate )"
+      ]
+    },
+    {
+      "heading": "Case folding",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "N(\"Google\") = \"google\"",
+        "then:",
+        "ED( N(\"Google\"), N(\"google\") ) = 0",
+        "while raw case-sensitive distance would not be zero."
+      ]
+    },
+    {
+      "heading": "Accent normalization",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "A search system may deliberately map:",
+      "paragraphs": [
+        "A search system may deliberately map:",
+        "café → cafe",
+        "before matching.",
+        "That can improve search recall but changes the mathematical input.",
+        "The resulting zero distance means:",
+        "the normalized representations are equal",
+        "not:",
+        "the original strings were identical"
+      ]
+    },
+    {
+      "heading": "Unicode normalization",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 9,
+      "word_count": 45,
+      "evidence": "Canonically equivalent Unicode strings can have different code-point sequences.",
+      "paragraphs": [
+        "Canonically equivalent Unicode strings can have different code-point sequences.",
+        "For example:",
+        "é",
+        "may appear as:",
+        "U+00E9",
+        "or:",
+        "U+0065 U+0301",
+        "A Unicode-aware fuzzy-search system may normalize both strings to NFC or another explicitly chosen form before edit distance is computed.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "The meaning of one edit depends on the sequence unit",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "The algorithm can compare:",
+      "paragraphs": [
+        "The algorithm can compare:",
+        "bytes UTF-16 code units Unicode code points extended grapheme clusters tokens",
+        "These produce different distances."
+      ]
+    },
+    {
+      "heading": "Emoji example",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "👍 👍🏽",
+        "At code-point level, the modifier can appear as an additional sequence element.",
+        "At grapheme-cluster level, each displayed emoji may be one token:",
+        "[\"👍\"] [\"👍🏽\"]",
+        "and fuzzy comparison interprets the difference as one grapheme substitution."
+      ]
+    },
+    {
+      "heading": "Search thresholds must use the same representation as the distance",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 6,
+      "word_count": 27,
+      "evidence": "If fuzzy distance operates on grapheme clusters:",
+      "paragraphs": [
+        "If fuzzy distance operates on grapheme clusters:",
+        "|g_q - g_c| ≤ k",
+        "is the relevant length filter.",
+        "Using:",
+        "UTF-8 byte length",
+        "could incorrectly reject valid Unicode matches."
+      ]
+    },
+    {
+      "heading": "Weighted fuzzy search",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 12,
+      "word_count": 66,
+      "evidence": "Classical Levenshtein assigns:",
+      "paragraphs": [
+        "Classical Levenshtein assigns:",
+        "insert = 1 delete = 1 substitute = 1",
+        "But real user errors are not equally probable.",
+        "For keyboard input:",
+        "substitute: i → o",
+        "may be more plausible than:",
+        "i → q",
+        "depending on the keyboard layout and error model.",
+        "A weighted model can define:",
+        "sub(i,o) = 0.3 sub(i,q) = 1.0",
+        "and search according to minimum total cost.",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Weighted distance affects threshold interpretation",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 7,
+      "word_count": 40,
+      "evidence": "Under unit costs:",
+      "paragraphs": [
+        "Under unit costs:",
+        "distance ≤ 2",
+        "implies an edit script using at most two primitive unit edits.",
+        "Under fractional weights:",
+        "distance ≤ 2",
+        "could contain many low-cost edits.",
+        "Algorithms and filters derived from unit edit counts cannot automatically be reused."
+      ]
+    },
+    {
+      "heading": "Probabilistic error models",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 7,
+      "word_count": 53,
+      "evidence": "If an application estimates:",
+      "paragraphs": [
+        "If an application estimates:",
+        "P(edit operation)",
+        "from observed data, costs can conceptually be derived as:",
+        "cost(edit) = -log P(edit)",
+        "so plausible errors become cheaper.",
+        "Then the minimum-cost path corresponds to the most favorable edit sequence under a Viterbi-like interpretation of the model.",
+        "This is different from summing probabilities over all possible edit paths."
+      ]
+    },
+    {
+      "heading": "Weighted edit distance can improve ranking but also overfit",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 9,
+      "word_count": 32,
+      "evidence": "A model learned from:",
+      "paragraphs": [
+        "A model learned from:",
+        "English QWERTY typing",
+        "may perform poorly for:",
+        "mobile keyboards;",
+        "other keyboard layouts;",
+        "other languages;",
+        "OCR errors;",
+        "speech-recognition errors.",
+        "The error model should match the actual source of noise."
+      ]
+    },
+    {
+      "heading": "Fuzzy search versus spell correction",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "The problems overlap but are not identical.",
+      "paragraphs": [
+        "The problems overlap but are not identical."
+      ]
+    },
+    {
+      "heading": "Fuzzy search",
+      "level": 3,
+      "id": "ux-section-63",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "input: possibly noisy query output: documents / terms / records",
+      "paragraphs": [
+        "input: possibly noisy query output: documents / terms / records"
+      ]
+    },
+    {
+      "heading": "Spell correction",
+      "level": 3,
+      "id": "ux-section-64",
+      "paragraph_count": 8,
+      "word_count": 49,
+      "evidence": "input: possibly misspelled token output: proposed corrected token",
+      "paragraphs": [
+        "input: possibly misspelled token output: proposed corrected token",
+        "Spell correction often requires a language model or word-frequency model in addition to edit distance.",
+        "For:",
+        "\"ther\"",
+        "several low-distance dictionary words may exist:",
+        "there their her the",
+        "Edit distance alone cannot determine intended language usage.",
+        "See Spell and Query Correction ."
+      ]
+    },
+    {
+      "heading": "Fuzzy search versus entity resolution",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 13,
+      "word_count": 46,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "\"John A Smith\" \"Jon Smith\"",
+        "have small string distance.",
+        "That does not establish:",
+        "same person",
+        "Likewise:",
+        "\"John Smith\" \"John Smith\"",
+        "can have:",
+        "ED = 0",
+        "while referring to two different people.",
+        "Therefore:",
+        "small string distance ≠ entity identity",
+        "See Entity Resolution and Record Linkage ."
+      ]
+    },
+    {
+      "heading": "Fuzzy search versus semantic search",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 11,
+      "word_count": 40,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "\"car\" \"automobile\"",
+        "The words are semantically close but have substantial character-level edit distance.",
+        "Now consider:",
+        "\"cat\" \"car\"",
+        "Their edit distance is:",
+        "1",
+        "yet their meanings differ.",
+        "Therefore:",
+        "string similarity ≠ semantic similarity",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Where Levenshtein works particularly well",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 7,
+      "word_count": 28,
+      "evidence": "Edit distance is strong when differences are plausibly generated by local textual edits:",
+      "paragraphs": [
+        "Edit distance is strong when differences are plausibly generated by local textual edits:",
+        "single-character typing errors;",
+        "missing characters;",
+        "extra characters;",
+        "OCR substitutions;",
+        "short identifier corruption;",
+        "minor spelling variation."
+      ]
+    },
+    {
+      "heading": "Where it becomes weaker",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 9,
+      "word_count": 20,
+      "evidence": "Levenshtein alone is less suitable for:",
+      "paragraphs": [
+        "Levenshtein alone is less suitable for:",
+        "synonyms;",
+        "word-order changes;",
+        "abbreviations;",
+        "acronyms;",
+        "transliteration without normalization;",
+        "nicknames;",
+        "semantic paraphrases;",
+        "large block movements."
+      ]
+    },
+    {
+      "heading": "Threshold tuning is an empirical problem",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 7,
+      "word_count": 30,
+      "evidence": "A theoretically valid:",
+      "paragraphs": [
+        "A theoretically valid:",
+        "k = 3",
+        "does not imply:",
+        "k = 3",
+        "is useful for the application.",
+        "Threshold selection should evaluate:",
+        "true positive matches false positive matches false negative matches"
+      ]
+    },
+    {
+      "heading": "Precision and recall",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 7,
+      "word_count": 50,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "TP = relevant retrieved matches FP = irrelevant retrieved matches FN = relevant missed matches",
+        "Then:",
+        "precision = TP / (TP + FP)",
+        "and:",
+        "recall = TP / (TP + FN)",
+        "Increasing k often raises recall while lowering precision, though actual behavior depends on the corpus and ranking system."
+      ]
+    },
+    {
+      "heading": "Thresholds should be evaluated per length bucket",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "Rather than reporting:",
+      "paragraphs": [
+        "Rather than reporting:",
+        "precision at k=2",
+        "only once, evaluate:",
+        "length 1–3 length 4–6 length 7–10 length 11+",
+        "because the same absolute error radius has different selectivity in each region."
+      ]
+    },
+    {
+      "heading": "Evaluation should separate retrieval and ranking",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 10,
+      "word_count": 44,
+      "evidence": "For candidate generation, measure:",
+      "paragraphs": [
+        "For candidate generation, measure:",
+        "candidate recall;",
+        "candidate count;",
+        "verification cost.",
+        "For ranked search, measure metrics such as:",
+        "precision at rank;",
+        "reciprocal rank;",
+        "NDCG where relevance grades exist;",
+        "task-specific success rate.",
+        "An exact distance threshold can have perfect mathematical verification while still producing poor ranking."
+      ]
+    },
+    {
+      "heading": "Worked example: dictionary fuzzy search",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 9,
+      "word_count": 73,
+      "evidence": "Suppose the query is:",
+      "paragraphs": [
+        "Suppose the query is:",
+        "levenshten",
+        "and the dictionary contains:",
+        "levenshtein levenstein levenshten levitation levenshteins",
+        "Possible distances under classical unit-cost Levenshtein might include:",
+        "Candidate Interpretation levenshten Exact match if present levenshtein Very close spelling variant levenstein Another close textual variant levenshteins Close but length-expanded form levitation Much weaker character-level match",
+        "A threshold may first retain only nearby terms, and ranking can then use:",
+        "distance + frequency + context",
+        "to select the result actually shown."
+      ]
+    },
+    {
+      "heading": "Worked example: fuzzy product search",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 10,
+      "word_count": 61,
+      "evidence": "Suppose a product catalog contains:",
+      "paragraphs": [
+        "Suppose a product catalog contains:",
+        "\"wireless keyboard\" \"wireless mouse\" \"mechanical keyboard\" \"keyboard cover\"",
+        "and query:",
+        "\"wireles keybord\"",
+        "Computing whole-string Levenshtein against every complete product title is possible but often suboptimal.",
+        "A better architecture might tokenize:",
+        "\"wireles\" \"keybord\"",
+        "and retrieve fuzzy term candidates:",
+        "\"wireles\" → \"wireless\" \"keybord\" → \"keyboard\"",
+        "before normal document ranking determines which product title best satisfies the complete query."
+      ]
+    },
+    {
+      "heading": "Worked example: exact prefix versus edit-distance recall",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 12,
+      "word_count": 40,
+      "evidence": "Query:",
+      "paragraphs": [
+        "Query:",
+        "\"phone\"",
+        "Candidate:",
+        "\"xhone\"",
+        "has:",
+        "ED = 1",
+        "but a fuzzy implementation with:",
+        "prefix_length = 1",
+        "rejects it because:",
+        "p != x",
+        "This is not an error in the implementation.",
+        "It is the intended consequence of adding an exact-prefix constraint."
+      ]
+    },
+    {
+      "heading": "Worked example: transposition semantics",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 11,
+      "word_count": 33,
+      "evidence": "Query:",
+      "paragraphs": [
+        "Query:",
+        "\"from\"",
+        "Candidate:",
+        "\"form\"",
+        "Classical Levenshtein:",
+        "two substitutions → distance 2",
+        "A transposition-aware model:",
+        "swap adjacent 'r' and 'o' → distance 1",
+        "If:",
+        "k = 1",
+        "the two models produce different retrieval sets."
+      ]
+    },
+    {
+      "heading": "Worked example: Unicode sequence units",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 9,
+      "word_count": 29,
+      "evidence": "Query:",
+      "paragraphs": [
+        "Query:",
+        "\"café\"",
+        "Candidate uses a decomposed acute accent:",
+        "\"cafe◌́\"",
+        "Without canonical normalization, code-point sequences differ.",
+        "After appropriate NFC normalization:",
+        "NFC(query) = NFC(candidate)",
+        "so the normalized edit distance is:",
+        "0"
+      ]
+    },
+    {
+      "heading": "Search-stage architecture",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 2,
+      "word_count": 97,
+      "evidence": "A robust fuzzy retrieval pipeline can be modeled as:",
+      "paragraphs": [
+        "A robust fuzzy retrieval pipeline can be modeled as:",
+        "RAW QUERY │ ▼ ┌─────────────────────┐ │ normalization │ │ Unicode / case / │ │ domain transforms │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ tokenization / │ │ field analysis │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ candidate generation│ │ index / automaton / │ │ q-gram / trie │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ safe filtering │ │ length / bounds │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ exact edit-distance │ │ verification │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ ranking │ │ lexical + context │ └──────────┬──────────┘ │ ▼ RESULTS"
+      ]
+    },
+    {
+      "heading": "Why brute-force fuzzy search does not scale",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 12,
+      "word_count": 55,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "10,000,000 terms",
+        "each must be compared with a query of length:",
+        "20",
+        "Even a very fast pairwise distance function must still be invoked:",
+        "10,000,000 times",
+        "under brute-force retrieval.",
+        "The scalable problem is therefore:",
+        "reduce candidate count",
+        "not merely:",
+        "reduce nanoseconds per distance calculation",
+        "That deeper systems problem belongs in Fuzzy Search at Scale ."
+      ]
+    },
+    {
+      "heading": "Verification can use bounded edit distance",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 11,
+      "word_count": 57,
+      "evidence": "Once candidate generation supplies:",
+      "paragraphs": [
+        "Once candidate generation supplies:",
+        "candidate c",
+        "and the search rule is:",
+        "ED(q,c) ≤ k",
+        "there is no reason to compute unrestricted exact distance when:",
+        "ED(q,c) > k",
+        "is already sufficient to reject it.",
+        "A bounded verifier can exploit:",
+        "|i-j| ≤ k",
+        "to restrict dynamic programming to a narrow diagonal band.",
+        "See Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Bit-vector verification",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 3,
+      "word_count": 45,
+      "evidence": "For standard unit-cost distance, the Myers Bit-Vector Algorithm can update many logical edit-distance states through machine-word bit operations.",
+      "paragraphs": [
+        "For standard unit-cost distance, the Myers Bit-Vector Algorithm can update many logical edit-distance states through machine-word bit operations.",
+        "This can provide very high throughput for suitable query lengths and hardware.",
+        "It is especially useful for verification after an index has already reduced the candidate population."
+      ]
+    },
+    {
+      "heading": "Automata and bit vectors solve different engineering problems",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "A useful distinction is:",
+      "paragraphs": [
+        "A useful distinction is:",
+        "LEVENSHTEIN AUTOMATON navigate a structured candidate dictionary BIT-VECTOR ALGORITHM compute / verify distance efficiently",
+        "They can participate in the same system at different stages."
+      ]
+    },
+    {
+      "heading": "Search false positives versus distance false positives",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 10,
+      "word_count": 66,
+      "evidence": "An exact Levenshtein verifier does not make probabilistic mistakes:",
+      "paragraphs": [
+        "An exact Levenshtein verifier does not make probabilistic mistakes:",
+        "ED(q,c) ≤ k",
+        "is mathematically either true or false under the defined representation.",
+        "But an application can still return an irrelevant result.",
+        "For example:",
+        "query: \"car\" candidate: \"cat\" ED = 1",
+        "The distance condition is correct, yet the candidate may be irrelevant to the user's intent.",
+        "Thus:",
+        "distance false positive and retrieval false positive",
+        "are different notions."
+      ]
+    },
+    {
+      "heading": "Exactness of the verifier does not guarantee relevance",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 4,
+      "word_count": 23,
+      "evidence": "The verifier answers:",
+      "paragraphs": [
+        "The verifier answers:",
+        "Are these strings sufficiently close under this edit model?",
+        "It does not answer:",
+        "Is this the result the user wanted?"
+      ]
+    },
+    {
+      "heading": "Short-term ambiguity",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 12,
+      "word_count": 47,
+      "evidence": "Suppose query:",
+      "paragraphs": [
+        "Suppose query:",
+        "\"cat\"",
+        "and threshold:",
+        "k = 1",
+        "possible dictionary neighbors can include:",
+        "bat car cap cut cot can at cats",
+        "The radius may contain many valid but semantically unrelated words.",
+        "For short terms, fuzzy matching often needs:",
+        "smaller edit radii;",
+        "stronger context;",
+        "frequency priors;",
+        "field constraints."
+      ]
+    },
+    {
+      "heading": "Long-string ambiguity is different",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "For a 30-character technical term:",
+      "paragraphs": [
+        "For a 30-character technical term:",
+        "k = 2",
+        "is proportionally small and often highly discriminative.",
+        "This is another reason a single edit threshold should not be assumed optimal across all lengths."
+      ]
+    },
+    {
+      "heading": "Search fields should not all use the same fuzzy policy",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 3,
+      "word_count": 14,
+      "evidence": "A product database may contain:",
+      "paragraphs": [
+        "A product database may contain:",
+        "title brand sku description",
+        "Different fields have different semantics."
+      ]
+    },
+    {
+      "heading": "SKU",
+      "level": 3,
+      "id": "ux-section-88",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "A one-character difference may represent a completely different product.",
+      "paragraphs": [
+        "A one-character difference may represent a completely different product."
+      ]
+    },
+    {
+      "heading": "Product title",
+      "level": 3,
+      "id": "ux-section-89",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "A one-character misspelling may be harmless.",
+      "paragraphs": [
+        "A one-character misspelling may be harmless."
+      ]
+    },
+    {
+      "heading": "Description",
+      "level": 3,
+      "id": "ux-section-90",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "Full-text retrieval may be better handled by token-based information retrieval rather than whole-field Levenshtein.",
+      "paragraphs": [
+        "Full-text retrieval may be better handled by token-based information retrieval rather than whole-field Levenshtein.",
+        "Therefore fuzzy search should often be configured:",
+        "per field",
+        "rather than globally."
+      ]
+    },
+    {
+      "heading": "Numeric strings need special caution",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 10,
+      "word_count": 28,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "123456 123457",
+        "Their distance is:",
+        "1",
+        "yet they may represent completely different:",
+        "account numbers;",
+        "part numbers;",
+        "postal codes;",
+        "medical identifiers.",
+        "Low string distance does not imply interchangeability."
+      ]
+    },
+    {
+      "heading": "Exact identifiers may need fuzzy search disabled",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "For security-sensitive or unique identifier fields, a safer policy can be:",
+      "paragraphs": [
+        "For security-sensitive or unique identifier fields, a safer policy can be:",
+        "k = 0",
+        "even if surrounding descriptive fields use fuzzy matching."
+      ]
+    },
+    {
+      "heading": "Security and resource control",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "Fuzzy queries can consume substantially more resources than exact lookup because they may explore large neighborhoods of the term dictionary.",
+      "paragraphs": [
+        "Fuzzy queries can consume substantially more resources than exact lookup because they may explore large neighborhoods of the term dictionary.",
+        "Systems should consider:",
+        "maximum query length;",
+        "maximum edit radius;",
+        "maximum expansions;",
+        "prefix restrictions;",
+        "query time budgets;",
+        "rate limits."
+      ]
+    },
+    {
+      "heading": "Large edit radius can become a query-amplification mechanism",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 3,
+      "word_count": 44,
+      "evidence": "A short common term combined with a generous fuzzy radius can intersect many indexed terms.",
+      "paragraphs": [
+        "A short common term combined with a generous fuzzy radius can intersect many indexed terms.",
+        "Even when each distance check is fast, expansion and downstream scoring can create substantial load.",
+        "Resource controls should therefore be applied before the query reaches an unbounded expansion stage."
+      ]
+    },
+    {
+      "heading": "Fuzzy matching should not be used for authentication",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "Passwords, cryptographic tokens, recovery codes, API keys, and similar secrets should not be accepted merely because:",
+      "paragraphs": [
+        "Passwords, cryptographic tokens, recovery codes, API keys, and similar secrets should not be accepted merely because:",
+        "ED(input, secret) ≤ k",
+        "Authentication requires exact or protocol-defined cryptographic verification, not approximate textual similarity."
+      ]
+    },
+    {
+      "heading": "Testing fuzzy-search correctness",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Testing should be separated into several layers.",
+      "paragraphs": [
+        "Testing should be separated into several layers."
+      ]
+    },
+    {
+      "heading": "Distance kernel",
+      "level": 3,
+      "id": "ux-section-97",
+      "paragraph_count": 3,
+      "word_count": 6,
+      "evidence": "Verify:",
+      "paragraphs": [
+        "Verify:",
+        "ED(a,b)",
+        "against a trusted implementation."
+      ]
+    },
+    {
+      "heading": "Threshold logic",
+      "level": 3,
+      "id": "ux-section-98",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "For exact distance:",
+      "paragraphs": [
+        "For exact distance:",
+        "d",
+        "test:",
+        "k = d-1 → reject k = d → accept k = d+1 → accept"
+      ]
+    },
+    {
+      "heading": "Candidate generation",
+      "level": 3,
+      "id": "ux-section-99",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "If candidate generation claims exact recall under threshold k :",
+      "paragraphs": [
+        "If candidate generation claims exact recall under threshold k :",
+        "every true ED≤k candidate must survive"
+      ]
+    },
+    {
+      "heading": "Ranking",
+      "level": 3,
+      "id": "ux-section-100",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Evaluate relevance separately from distance correctness.",
+      "paragraphs": [
+        "Evaluate relevance separately from distance correctness."
+      ]
+    },
+    {
+      "heading": "Exhaustive testing on small alphabets",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "Σ = {a,b}",
+        "generate all strings up to a small length.",
+        "For each query:",
+        "brute_force_results = { x: ED(query,x) ≤ k }",
+        "and compare with:",
+        "indexed_fuzzy_results",
+        "This can expose candidate-pruning bugs that ordinary unit tests miss."
+      ]
+    },
+    {
+      "heading": "Automaton tests",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "For a query word w and bound k , verify:",
+      "paragraphs": [
+        "For a query word w and bound k , verify:",
+        "automaton accepts x if and only if ED(w,x) ≤ k",
+        "over exhaustive short-string universes."
+      ]
+    },
+    {
+      "heading": "Transposition-mode tests",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 7,
+      "word_count": 23,
+      "evidence": "Explicitly test:",
+      "paragraphs": [
+        "Explicitly test:",
+        "\"ab\" \"ba\"",
+        "under:",
+        "classic Levenshtein",
+        "and:",
+        "transposition-aware mode",
+        "to ensure search semantics do not silently change after configuration or library upgrades."
+      ]
+    },
+    {
+      "heading": "Unicode tests",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 8,
+      "word_count": 16,
+      "evidence": "Include:",
+      "paragraphs": [
+        "Include:",
+        "precomposed and decomposed accents;",
+        "emoji;",
+        "emoji modifiers;",
+        "ZWJ sequences;",
+        "non-Latin scripts;",
+        "case-fold expansions;",
+        "combining marks."
+      ]
+    },
+    {
+      "heading": "Normalization configuration is part of the test oracle",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "NFC mode",
+        "is enabled, canonically equivalent strings may intentionally have:",
+        "distance 0",
+        "after normalization.",
+        "If normalization is disabled, the raw code-point distance may be different.",
+        "Both can be correct under different contracts."
+      ]
+    },
+    {
+      "heading": "Benchmark candidate count as well as latency",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 5,
+      "word_count": 27,
+      "evidence": "For each query, record:",
+      "paragraphs": [
+        "For each query, record:",
+        "dictionary size candidates generated candidates verified results returned",
+        "A latency regression may be caused by:",
+        "worse pruning",
+        "rather than a slower edit-distance kernel."
+      ]
+    },
+    {
+      "heading": "Useful operational measurements",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 1,
+      "word_count": 37,
+      "evidence": "Metric What it reveals Query latency User-visible speed Candidate count Search-space selectivity Verification count Cost reaching exact ED Expansion count Dictionary neighborhood size Recall Relevant matches recovered Precision Retrieved-result quality MRR / ranked metric Quality of ordering",
+      "paragraphs": [
+        "Metric What it reveals Query latency User-visible speed Candidate count Search-space selectivity Verification count Cost reaching exact ED Expansion count Dictionary neighborhood size Recall Relevant matches recovered Precision Retrieved-result quality MRR / ranked metric Quality of ordering"
+      ]
+    },
+    {
+      "heading": "Benchmark by query length",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "Use separate buckets:",
+      "paragraphs": [
+        "Use separate buckets:",
+        "1–2 3–5 6–10 11–20 20+",
+        "because edit-ball selectivity changes substantially with length."
+      ]
+    },
+    {
+      "heading": "Benchmark by edit radius",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 4,
+      "word_count": 28,
+      "evidence": "At minimum:",
+      "paragraphs": [
+        "At minimum:",
+        "k = 0 k = 1 k = 2 k = 3",
+        "where supported.",
+        "The candidate population can change much faster than linearly as k increases."
+      ]
+    },
+    {
+      "heading": "Benchmark successful and unsuccessful queries",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "A query with:",
+      "paragraphs": [
+        "A query with:",
+        "one obvious close result",
+        "may behave differently from:",
+        "thousands of near neighbors",
+        "or:",
+        "no result at all",
+        "depending on pruning and early termination."
+      ]
+    },
+    {
+      "heading": "Benchmark real typo distributions",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "Uniform random edits are useful for controlled experiments but do not necessarily resemble real user mistakes.",
+      "paragraphs": [
+        "Uniform random edits are useful for controlled experiments but do not necessarily resemble real user mistakes.",
+        "Production evaluation should include observed patterns such as:",
+        "adjacent keyboard substitutions;",
+        "missing characters;",
+        "duplicate characters;",
+        "transpositions;",
+        "mobile-keyboard errors;",
+        "language-specific diacritic omissions."
+      ]
+    },
+    {
+      "heading": "The ranking surface",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 7,
+      "word_count": 52,
+      "evidence": "A sophisticated fuzzy ranker can be conceptualized as:",
+      "paragraphs": [
+        "A sophisticated fuzzy ranker can be conceptualized as:",
+        "Score(q,c) = α · edit_similarity(q,c) + β · lexical_relevance(q,c) + γ · popularity(c) + δ · field_weight(c) + ε · context_score(q,c)",
+        "The coefficients and terms are application-specific.",
+        "The important point is that:",
+        "edit distance is one feature",
+        "rather than necessarily:",
+        "the entire ranking model"
+      ]
+    },
+    {
+      "heading": "Distance-aware scoring should preserve interpretability",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "When possible, record:",
+      "paragraphs": [
+        "When possible, record:",
+        "raw ED normalized score matched field edit model normalization mode",
+        "separately.",
+        "This makes it easier to diagnose why an unexpected candidate was retrieved."
+      ]
+    },
+    {
+      "heading": "Explainability example",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "query: \"levenshten\" matched term: \"levenshtein\" raw edit distance: 1 edit operation: insert \"i\" field: title exact prefix: 8 characters",
+      "paragraphs": [
+        "query: \"levenshten\" matched term: \"levenshtein\" raw edit distance: 1 edit operation: insert \"i\" field: title exact prefix: 8 characters",
+        "This is far more actionable than:",
+        "similarity = 0.91",
+        "without knowing how the score was produced."
+      ]
+    },
+    {
+      "heading": "When to use classical Levenshtein fuzzy search",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "It is a strong starting point when:",
+      "paragraphs": [
+        "It is a strong starting point when:",
+        "errors are local character edits;",
+        "strings are relatively short;",
+        "edit costs are naturally uniform;",
+        "transposition is not required or is handled separately;",
+        "exact threshold semantics are valuable."
+      ]
+    },
+    {
+      "heading": "When to use Damerau-style matching",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 8,
+      "word_count": 34,
+      "evidence": "Consider it when:",
+      "paragraphs": [
+        "Consider it when:",
+        "adjacent transpositions are common typing errors;",
+        "ab → ba should count as one edit.",
+        "But specify whether the implementation uses:",
+        "Optimal String Alignment",
+        "or:",
+        "unrestricted Damerau–Levenshtein",
+        "because they are not identical."
+      ]
+    },
+    {
+      "heading": "When to use weighted edit distance",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 5,
+      "word_count": 26,
+      "evidence": "Consider weights when:",
+      "paragraphs": [
+        "Consider weights when:",
+        "some character confusions are much more probable than others;",
+        "keyboard geometry matters;",
+        "OCR confusion matrices are available;",
+        "language-specific substitutions should receive different costs."
+      ]
+    },
+    {
+      "heading": "When edit distance should only be a verifier",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 4,
+      "word_count": 16,
+      "evidence": "For large corpora:",
+      "paragraphs": [
+        "For large corpora:",
+        "index → filter → ED verifier",
+        "is usually preferable to:",
+        "ED against everything"
+      ]
+    },
+    {
+      "heading": "When edit distance is probably the wrong primary signal",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 7,
+      "word_count": 17,
+      "evidence": "Look beyond Levenshtein when the main variation is:",
+      "paragraphs": [
+        "Look beyond Levenshtein when the main variation is:",
+        "semantic;",
+        "phonetic;",
+        "token-order based;",
+        "abbreviation based;",
+        "transliteration based;",
+        "entity-specific."
+      ]
+    },
+    {
+      "heading": "Common misconception: fuzzy search means approximate edit-distance computation",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "A fuzzy search engine can use exact edit distance to determine approximate textual matches."
+      ]
+    },
+    {
+      "heading": "Common misconception: fuzzy search means scanning every document with Levenshtein",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Modern retrieval typically attempts to reduce the candidate search space before exact edit-distance verification."
+      ]
+    },
+    {
+      "heading": "Common misconception: edit distance 1 always means a good result",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 4,
+      "word_count": 10,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "For:",
+        "\"cat\" \"car\"",
+        "distance is small but meaning differs."
+      ]
+    },
+    {
+      "heading": "Common misconception: edit distance 3 always means a poor result",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "For a very long word or identifier, three edits may represent a small relative corruption."
+      ]
+    },
+    {
+      "heading": "Common misconception: increasing fuzziness only makes search slightly slower",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Increasing the edit radius can dramatically expand the number of terms within the search neighborhood."
+      ]
+    },
+    {
+      "heading": "Common misconception: normalized edit similarity is Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "It is a derived scoring function built from Levenshtein distance."
+      ]
+    },
+    {
+      "heading": "Common misconception: exact prefix requirements preserve the original Levenshtein result set",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "They intentionally remove valid Levenshtein neighbors whose edits occur inside the protected prefix."
+      ]
+    },
+    {
+      "heading": "Common misconception: transpositions are part of classical Levenshtein",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Classical Levenshtein has insertion, deletion, and substitution primitives."
+      ]
+    },
+    {
+      "heading": "Common misconception: every fuzzy search engine uses classical Levenshtein",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Some widely used systems use transposition-aware edit models or expose configuration controlling transpositions."
+      ]
+    },
+    {
+      "heading": "Common misconception: Unicode code points are always the right comparison units",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "User-facing text may require extended grapheme clusters."
+      ]
+    },
+    {
+      "heading": "Common misconception: lowercase conversion is merely an optimization",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Case transformation changes the representation and therefore the effective distance relation."
+      ]
+    },
+    {
+      "heading": "Common misconception: candidate generation can be approximate while final results remain exact automatically",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 4,
+      "word_count": 28,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "If candidate generation can discard a true:",
+        "ED ≤ k",
+        "neighbor, the overall search does not have exact threshold recall even if the final verifier is exact."
+      ]
+    },
+    {
+      "heading": "Common misconception: Levenshtein can determine user intent",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "It measures textual transformation cost, not intent, meaning, popularity, or entity identity."
+      ]
+    },
+    {
+      "heading": "A decision table",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 1,
+      "word_count": 90,
+      "evidence": "Problem Useful approach One short query vs one short candidate Direct Levenshtein distance Find approximate substring in text Approximate pattern matching Fixed word vs dictionary Levenshtein automaton / trie traversal Large corpus Index/filter first, exact verification second Small known threshold Bounded edit-distance verification Adjacent transposition errors Damerau/OSA-style metric if appropriate Unequal error probabilities Weighted edit distance User-visible international text Explicit Unicode normalization and sequence-unit policy Multi-token retrieval Token-aware fuzzy retrieval and ranking Synonyms or paraphrases Semantic retrieval rather than character distance alone Entity identity Entity-resolution model with multiple evidence sources",
+      "paragraphs": [
+        "Problem Useful approach One short query vs one short candidate Direct Levenshtein distance Find approximate substring in text Approximate pattern matching Fixed word vs dictionary Levenshtein automaton / trie traversal Large corpus Index/filter first, exact verification second Small known threshold Bounded edit-distance verification Adjacent transposition errors Damerau/OSA-style metric if appropriate Unequal error probabilities Weighted edit distance User-visible international text Explicit Unicode normalization and sequence-unit policy Multi-token retrieval Token-aware fuzzy retrieval and ranking Synonyms or paraphrases Semantic retrieval rather than character distance alone Entity identity Entity-resolution model with multiple evidence sources"
+      ]
+    },
+    {
+      "heading": "Recommended production pipeline",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 1,
+      "word_count": 87,
+      "evidence": "1. DEFINE SEMANTICS whole term? substring? tokens? field? 2. DEFINE REPRESENTATION case policy Unicode normalization code points / graphemes transliteration policy 3. DEFINE EDIT MODEL classic Levenshtein? transpositions? weighted costs? 4. DEFINE THRESHOLD fixed k? length-adaptive k? normalized score? 5. GENERATE CANDIDATES dictionary trie automaton q-gram index other index 6. APPLY SAFE FILTERS length prefix if intentionally required q-gram lower bounds other proven bounds 7. VERIFY exact bounded edit distance 8. RANK edit similarity lexical relevance popularity context 9. EVALUATE recall precision ranked quality latency candidate volume",
+      "paragraphs": [
+        "1. DEFINE SEMANTICS whole term? substring? tokens? field? 2. DEFINE REPRESENTATION case policy Unicode normalization code points / graphemes transliteration policy 3. DEFINE EDIT MODEL classic Levenshtein? transpositions? weighted costs? 4. DEFINE THRESHOLD fixed k? length-adaptive k? normalized score? 5. GENERATE CANDIDATES dictionary trie automaton q-gram index other index 6. APPLY SAFE FILTERS length prefix if intentionally required q-gram lower bounds other proven bounds 7. VERIFY exact bounded edit distance 8. RANK edit similarity lexical relevance popularity context 9. EVALUATE recall precision ranked quality latency candidate volume"
+      ]
+    },
+    {
+      "heading": "Key mathematical distinctions",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 1,
+      "word_count": 70,
+      "evidence": "Concept Meaning ED(x,y) Whole-sequence edit distance ED(x,y) ≤ k Membership in an edit-distance ball Approximate pattern matching Find text substrings sufficiently close to a pattern Fuzzy retrieval Application-level retrieval despite textual variation Approximate ED algorithm Algorithm that estimates the numerical edit distance Normalized edit similarity Application-derived transformation of edit distance Levenshtein automaton Automaton recognizing strings within bounded edit distance Candidate filter Method for rejecting impossible or unlikely candidates before verification",
+      "paragraphs": [
+        "Concept Meaning ED(x,y) Whole-sequence edit distance ED(x,y) ≤ k Membership in an edit-distance ball Approximate pattern matching Find text substrings sufficiently close to a pattern Fuzzy retrieval Application-level retrieval despite textual variation Approximate ED algorithm Algorithm that estimates the numerical edit distance Normalized edit similarity Application-derived transformation of edit distance Levenshtein automaton Automaton recognizing strings within bounded edit distance Candidate filter Method for rejecting impossible or unlikely candidates before verification"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 14,
+      "word_count": 620,
+      "evidence": "Fuzzy search with edit distance begins with a simple mathematical rule: retrieve strings whose Levenshtein distance from the query does not exceed a chosen threshold. That rule is powerful because insertions, deletions, and substitutions model many ordinary textual errors directly.",
+      "paragraphs": [
+        "Fuzzy search with edit distance begins with a simple mathematical rule: retrieve strings whose Levenshtein distance from the query does not exceed a chosen threshold. That rule is powerful because insertions, deletions, and substitutions model many ordinary textual errors directly.",
+        "However, fuzzy search is not synonymous with one pairwise Levenshtein calculation. Whole-string matching, approximate substring matching, dictionary lookup, token correction, and document retrieval are distinct search problems. Their dynamic-programming boundary conditions, indexes, candidate-generation strategies, and ranking systems can differ substantially.",
+        "For whole-string matching, the classical Wagner–Fischer recurrence computes the minimum edit cost between complete strings. Approximate substring matching modifies the boundary conditions so that an alignment may begin after an arbitrary text prefix without paying for that prefix. Values in the final pattern row can then identify text positions where an approximate occurrence terminates.",
+        "A threshold k defines an edit-distance ball around the query. Increasing k expands the retrieval set, generally improving tolerance while increasing candidate volume and false-positive risk. The same absolute edit count has very different meaning for short and long strings, which motivates length-aware thresholds or explicit normalized scoring functions.",
+        "Normalized edit similarity can be useful for ranking, but it is a derived measure rather than classical Levenshtein distance. Ranking by raw distance alone is also rarely sufficient. Exact matches, lexical relevance, field importance, popularity, query context, and language-model evidence can all help distinguish candidates with similar textual distance.",
+        "Large-scale fuzzy search should avoid brute-force comparison against every stored term. Exact length bounds, q-gram filters, tries, finite-state dictionaries, and specialized indexes can reduce the candidate population before an exact edit-distance verifier is invoked. A search system has exact threshold recall only when its candidate-generation and pruning stages guarantee that no true neighbor is discarded.",
+        "Levenshtein automata provide one of the most elegant bounded-search models. For a word w and threshold k , the automaton recognizes exactly the strings in the relevant edit-distance neighborhood under its defined edit model. Intersecting this automaton conceptually with a trie or finite-state dictionary lets an implementation prune entire lexical branches rather than comparing every term independently.",
+        "Production fuzzy-search implementations also demonstrate why edit semantics must be explicit. Adjacent transpositions are not part of classical Levenshtein distance, yet some widely used fuzzy-query systems support or default to transposition-aware variants. A query can therefore have different results under classical Levenshtein, Optimal String Alignment, and unrestricted Damerau–Levenshtein distance even when all three are informally described as \"fuzzy matching.\"",
+        "Unicode introduces another semantic layer. Edit distance operates over whichever sequence units are supplied to it: bytes, UTF-16 code units, code points, grapheme clusters, or tokens. Canonically equivalent Unicode strings may need normalization before matching, and user-facing text may require extended grapheme clusters rather than encoding units. All threshold and length filters must use the same representation as the actual distance computation.",
+        "Weighted edit distance can model unequal error probabilities, such as common keyboard substitutions or OCR confusions. But changing edit costs also changes threshold interpretation and may invalidate algorithms and filters derived from the unit-cost model.",
+        "Most importantly, edit distance measures textual transformation cost rather than meaning or identity. Two words can be one edit apart and semantically unrelated. Two semantically equivalent words can be edit-distant. Two personal records can contain identical names yet represent different people. Levenshtein is therefore a lexical signal, not a universal relevance or identity function.",
+        "A mature fuzzy-search architecture places edit distance in the correct layer:",
+        "representation ↓ candidate generation ↓ safe filtering ↓ edit-distance verification ↓ ranking ↓ application decision",
+        "The engineering objective is not merely to make every comparison fuzzy. It is to define exactly which textual differences should be tolerated, retrieve the corresponding candidates efficiently, and combine edit-distance evidence with the additional signals required by the search problem."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 11,
+      "word_count": 133,
+      "evidence": "Approximate String Matching — the foundational distinction between approximate pattern matching and ordinary pairwise distance.",
+      "paragraphs": [
+        "Approximate String Matching — the foundational distinction between approximate pattern matching and ordinary pairwise distance.",
+        "Spell and Query Correction — candidate correction, language priors, error models, and query rewriting.",
+        "Fuzzy Search at Scale — indexing, filtering, candidate generation, partitioning, and scalable fuzzy retrieval.",
+        "Levenshtein Automata — finite-state recognition of bounded edit-distance neighborhoods.",
+        "Indexing and Filtering for Edit Distance — safe pruning and large-scale candidate reduction.",
+        "Bounded and Parameterized Edit Distance — efficient exact verification when the fuzzy threshold is small.",
+        "Myers Bit-Vector Algorithm — high-throughput bit-parallel approximate matching.",
+        "Damerau–Levenshtein Distance — transposition-aware edit models and their differences.",
+        "Weighted Levenshtein Distance — nonuniform typo and error costs.",
+        "Unicode and Grapheme-Safe Levenshtein — correct text representation for multilingual fuzzy search.",
+        "String Similarity vs Semantic Similarity — why edit proximity does not imply similarity of meaning."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 9,
+      "word_count": 144,
+      "evidence": "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI record .",
+      "paragraphs": [
+        "Robert A. Wagner and Michael J. Fischer, “The String-to-String Correction Problem,” Journal of the ACM , 21(1), 168–173, 1974. DOI record .",
+        "Esko Ukkonen, “Algorithms for Approximate String Matching,” Information and Control , 64(1–3), 100–118, 1985. DOI record .",
+        "Esko Ukkonen, “Finding Approximate Patterns in Strings,” Journal of Algorithms , 6(1), 132–137, 1985. DOI record .",
+        "Gene Myers, “A Fast Bit-Vector Algorithm for Approximate String Matching Based on Dynamic Programming,” Journal of the ACM , 46(3), 395–415, 1999. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI record .",
+        "Klaus U. Schulz and Stoyan Mihov, “Fast String Correction with Levenshtein Automata,” International Journal on Document Analysis and Recognition , 5(1), 67–85, 2002. DOI record .",
+        "Apache Lucene, “FuzzyQuery.” Lucene documentation .",
+        "Apache Lucene, “LevenshteinAutomata.” Lucene documentation .",
+        "Elastic, “Fuzzy Query.” Elasticsearch documentation ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-edit-distance-algorithms",
+      "evidence": [
+        {
+          "section": "Approximate edit-distance algorithms",
+          "anchor_id": "ux-section-5",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "See Approximate String Matching and Approximate Edit Distance Algorithms for the distinction."
+        }
+      ]
+    },
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "Approximate string matching",
+          "anchor_id": "ux-section-4",
+          "alias": "approximate string matching",
+          "excerpt": "Approximate string matching is the algorithmic problem of locating strings or substrings that differ from a pattern by some bounded amount."
+        },
+        {
+          "section": "Approximate edit-distance algorithms",
+          "anchor_id": "ux-section-5",
+          "alias": "approximate string matching",
+          "excerpt": "See Approximate String Matching and Approximate Edit Distance Algorithms for the distinction."
+        },
+        {
+          "section": "Approximate pattern-matching pseudocode",
+          "anchor_id": "ux-section-16",
+          "alias": "approximate string matching",
+          "excerpt": "Specialized approximate-string-matching algorithms can do much better in important regimes."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Verification can use bounded edit distance",
+          "anchor_id": "ux-section-80",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-137",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — efficient exact verification when the fuzzy threshold is small."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Damerau-style fuzzy search",
+          "anchor_id": "ux-section-44",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau–Levenshtein Distance for the critical distinction between unrestricted Damerau–Levenshtein distance and Optimal String Alignment distance."
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-136",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Production fuzzy-search implementations also demonstrate why edit semantics must be explicit. Adjacent transpositions are not part of classical Levenshtein distance, yet some widely used fuzzy-query systems support or default to transposition-aware variants. A query can therefore have different results under classical Levenshtein, Optimal String Alignment, and unrestricted Damerau–Levenshtein distance even when all three are informally described as \"fuzzy matching.\""
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-137",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Damerau–Levenshtein Distance — transposition-aware edit models and their differences."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Fuzzy Search with Edit Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "where k is a maximum tolerated edit distance."
+        },
+        {
+          "section": "Fuzzy search",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "The retrieval system may use edit distance, phonetic algorithms, token similarity, language models, learned representations, or several signals together."
+        },
+        {
+          "section": "Approximate string matching",
+          "anchor_id": "ux-section-4",
+          "alias": "edit distance",
+          "excerpt": "This is one of the central historical applications of edit distance and is treated extensively in the approximate-string-matching literature."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Fuzzy Search with Edit Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "edit operations",
+          "excerpt": "What edit operations are allowed?"
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "Fuzzy search versus entity resolution",
+          "anchor_id": "ux-section-65",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "See Entity Resolution and Record Linkage ."
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-at-scale",
+      "evidence": [
+        {
+          "section": "The scalable architecture",
+          "anchor_id": "ux-section-31",
+          "alias": "fuzzy search at scale",
+          "excerpt": "The article Fuzzy Search at Scale develops this systems problem in detail."
+        },
+        {
+          "section": "Why brute-force fuzzy search does not scale",
+          "anchor_id": "ux-section-79",
+          "alias": "fuzzy search at scale",
+          "excerpt": "That deeper systems problem belongs in Fuzzy Search at Scale ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-137",
+          "alias": "fuzzy search at scale",
+          "excerpt": "Fuzzy Search at Scale — indexing, filtering, candidate generation, partitioning, and scalable fuzzy retrieval."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "q-gram filtering",
+          "anchor_id": "ux-section-37",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "This belongs to the broader family described in Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-137",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — safe pruning and large-scale candidate reduction."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "Levenshtein automata",
+          "anchor_id": "ux-section-39",
+          "alias": "levenshtein automata",
+          "excerpt": "See Levenshtein Automata ."
+        },
+        {
+          "section": "Schulz–Mihov automata",
+          "anchor_id": "ux-section-42",
+          "alias": "levenshtein automata",
+          "excerpt": "The work of Klaus U. Schulz and Stoyan Mihov established an influential construction for deterministic Levenshtein automata used in fast dictionary correction."
+        },
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-136",
+          "alias": "levenshtein automata",
+          "excerpt": "Levenshtein automata provide one of the most elegant bounded-search models. For a word w and threshold k , the automaton recognizes exactly the strings in the relevant edit-distance neighborhood under its defined edit model. Intersecting this automaton conceptually with a trie or finite-state dictionary lets an implementation prune entire lexical branches rather than comparing every term independently."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Bit-vector verification",
+          "anchor_id": "ux-section-81",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "For standard unit-cost distance, the Myers Bit-Vector Algorithm can update many logical edit-distance states through machine-word bit operations."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-137",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm — high-throughput bit-parallel approximate matching."
+        }
+      ]
+    },
+    {
+      "target": "/spell-and-query-correction",
+      "evidence": [
+        {
+          "section": "Spell correction",
+          "anchor_id": "ux-section-64",
+          "alias": "spell and query correction",
+          "excerpt": "See Spell and Query Correction ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-137",
+          "alias": "spell and query correction",
+          "excerpt": "Spell and Query Correction — candidate correction, language priors, error models, and query rewriting."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Fuzzy search versus semantic search",
+          "anchor_id": "ux-section-66",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-137",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "String Similarity vs Semantic Similarity — why edit proximity does not imply similarity of meaning."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Unicode normalization",
+          "anchor_id": "ux-section-54",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-137",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "Unicode and Grapheme-Safe Levenshtein — correct text representation for multilingual fuzzy search."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted fuzzy search",
+          "anchor_id": "ux-section-58",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-137",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — nonuniform typo and error costs."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/fuzzy-search-with-edit-distance#page",
+      "type": "WebPage",
+      "name": "Fuzzy Search with Edit Distance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/search#fuzzy-search"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "type": "TechArticle",
+      "name": "Fuzzy Search with Edit Distance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/search#fuzzy-search"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept",
+      "type": "DefinedTerm",
+      "name": "Fuzzy Search with Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/fuzzy-search-with-edit-distance#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "hasPart",
+      "https://www.levenshtein.net/applications#collection"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "hasPart",
+      "https://www.levenshtein.net/search#collection"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "about",
+      "https://www.levenshtein.net/search#fuzzy-search"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/applications#collection"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "hasPart",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/search#fuzzy-search"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#page",
+      "mainEntity",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#page",
+      "isPartOf",
+      "https://www.levenshtein.net/search#collection"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#page",
+      "hasPart",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/search#fuzzy-search"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/approximate-string-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-automata#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/spell-and-query-correction#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/fuzzy-search-at-scale#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/string-similarity-vs-semantic-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "isPartOf",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/321796.321811"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/s0019-9958(85)80046-2"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/0196-6774(85)90023-9"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/316542.316550"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1007/s10032-002-0082-8"
+    ],
+    [
+      "https://doi.org/10.1145/321796.321811",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://doi.org/10.1016/s0019-9958(85)80046-2",
+      "about",
+      "https://www.levenshtein.net/approximate-string-matching#concept"
+    ],
+    [
+      "https://doi.org/10.1016/0196-6774(85)90023-9",
+      "about",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1145/316542.316550",
+      "about",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://doi.org/10.1145/375360.375365",
+      "about",
+      "https://www.levenshtein.net/approximate-string-matching#concept"
+    ],
+    [
+      "https://doi.org/10.1145/375360.375365",
+      "about",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1007/s10032-002-0082-8",
+      "about",
+      "https://www.levenshtein.net/levenshtein-automata#algorithm"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://lucene.apache.org/core/10_0_0/core/org/apache/lucene/search/fuzzyquery.html",
+      "anchor": "Lucene documentation"
+    },
+    {
+      "url": "https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-fuzzy-query",
+      "anchor": "Elasticsearch documentation"
+    },
+    {
+      "url": "https://doi.org/10.1145/321796.321811",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/s0019-9958(85)80046-2",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/0196-6774(85)90023-9",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/316542.316550",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1007/s10032-002-0082-8",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://lucene.apache.org/core/10_3_0/core/org/apache/lucene/util/automaton/levenshteinautomata.html",
+      "anchor": "Lucene documentation"
+    }
+  ]
+}

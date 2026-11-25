@@ -1,0 +1,2676 @@
+{
+  "url": "/edit-distance-research-frontiers",
+  "title": "Edit Distance Research Frontiers: Open Problems, Bounds & New Directions",
+  "h1": [
+    "Edit Distance Research Frontiers: Open Problems, Bounds & New Directions"
+  ],
+  "group": "Theory",
+  "provisional_mission": "Hướng nghiên cứu mở",
+  "content_sha256": "7773ec0501d20cc40e236fdda7e6b26a8a10a4cb4a2dfc42427961c505bad26a",
+  "canonical": "https://www.levenshtein.net/edit-distance-research-frontiers",
+  "primary_entity_candidate": "Edit Distance Research Frontiers: Open Problems, Bounds & New Directions",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Edit Distance Research Frontiers",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 9,
+      "word_count": 310,
+      "evidence": "Edit distance is one of the oldest problems in algorithm design and still one of the most active. Its classical formulation is elementary: given two sequences, compute the minimum number or cost of insertions, deletions, and substitutions required to transform one into the other. Yet more than half a century after the fundamental dynamic-programming algorithms were developed, several of the most basic questions about its computational structure remain unresolved.",
+      "paragraphs": [
+        "Edit distance is one of the oldest problems in algorithm design and still one of the most active. Its classical formulation is elementary: given two sequences, compute the minimum number or cost of insertions, deletions, and substitutions required to transform one into the other. Yet more than half a century after the fundamental dynamic-programming algorithms were developed, several of the most basic questions about its computational structure remain unresolved.",
+        "The modern research frontier is no longer one question such as:",
+        "Can Levenshtein distance be computed faster?",
+        "Instead, the problem has separated into several interacting regimes:",
+        "EXACT WORST-CASE COMPUTATION │ ├── fine-grained lower bounds ├── polylogarithmic improvements └── unconditional complexity APPROXIMATION │ ├── constant-factor near-linear algorithms ├── near-exact (1+ε) approximation └── deterministic vs randomized algorithms PARAMETERIZED COMPUTATION │ ├── small distance k ├── weighted distance └── distance-sensitive optimality DYNAMIC / STREAMING │ ├── changing strings ├── limited memory ├── sketches └── communication complexity SEARCH │ ├── indexing ├── approximate nearest neighbor ├── metric embeddings └── learned representations STRUCTURED GENERALIZATIONS │ ├── tree edit distance ├── graph edit distance ├── biological alignment └── richer edit operations",
+        "These regimes behave very differently. General exact Levenshtein distance remains tied to a near-quadratic barrier under standard fine-grained assumptions. Exact computation becomes essentially linear when the true distance is small. Constant-factor approximation can be performed close to linear time. As of 2026, even a (1+ε) -approximation—arbitrarily close to exactness—can beat quadratic dynamic programming by a super-polylogarithmic factor. Dynamic edit distance can be maintained much faster than recomputation, and compact sketches can encode enough information to recover bounded edit distance and even an optimal edit script.",
+        "The frontier is therefore best understood as a multidimensional map:",
+        "accuracy × distance parameter × weight model × input access × randomness × memory × preprocessing × output requirements",
+        "An algorithm can be optimal in one region and irrelevant in another."
+      ]
+    },
+    {
+      "heading": "The central object",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 16,
+      "word_count": 105,
+      "evidence": "For strings:",
+      "paragraphs": [
+        "For strings:",
+        "X = x₁x₂...xₘ Y = y₁y₂...yₙ",
+        "the standard unit-cost edit distance is:",
+        "ED(X,Y) = minimum number of insertions deletions substitutions transforming X into Y",
+        "The classical recurrence is:",
+        "D[i][j] = min( D[i-1][j] + 1, D[i][j-1] + 1, D[i-1][j-1] + [xᵢ != yⱼ] )",
+        "with:",
+        "D[i][0] = i D[0][j] = j",
+        "and gives:",
+        "O(mn)",
+        "time.",
+        "For equal-length inputs:",
+        "m = n = N",
+        "this becomes:",
+        "O(N²)",
+        "The apparent simplicity of this recurrence hides the main difficulty of edit distance: an insertion or deletion changes the positional correspondence of the entire suffix, so the algorithm does not know in advance which positions should be aligned."
+      ]
+    },
+    {
+      "heading": "Why edit distance remains theoretically difficult",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 11,
+      "word_count": 96,
+      "evidence": "Hamming distance compares:",
+      "paragraphs": [
+        "Hamming distance compares:",
+        "x_i with y_i",
+        "directly.",
+        "Edit distance must choose an alignment:",
+        "X: a b c d e f g Y: a b X c d e f g",
+        "After one insertion, the correct correspondence shifts:",
+        "x₃ ↔ y₄ x₄ ↔ y₅ ...",
+        "The algorithm must discover this alignment while simultaneously determining which edits produced it.",
+        "The problem can equivalently be represented as shortest path in an edit grid:",
+        "(0,0) │ ├── deletion ├── insertion └── match/substitution │ ▼ (m,n)",
+        "Exact computation must identify the minimum-cost monotone path among an enormous family of possible paths."
+      ]
+    },
+    {
+      "heading": "Frontier I: the exact quadratic barrier",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 10,
+      "word_count": 63,
+      "evidence": "The most famous unresolved direction is the complexity of unrestricted exact edit distance.",
+      "paragraphs": [
+        "The most famous unresolved direction is the complexity of unrestricted exact edit distance.",
+        "Classical dynamic programming requires:",
+        "Θ(N²)",
+        "cell evaluations.",
+        "The Masek–Paterson Four-Russians method showed that under suitable finite-alphabet and discrete-cost assumptions, logarithmic factors can be shaved from the quadratic bound.",
+        "But no algorithm is known with running time:",
+        "O( N^(2-δ) )",
+        "for any fixed:",
+        "δ > 0",
+        "for general exact edit distance."
+      ]
+    },
+    {
+      "heading": "Conditional hardness: SETH",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 10,
+      "word_count": 71,
+      "evidence": "Backurs and Indyk established one of the landmark results of fine-grained complexity.",
+      "paragraphs": [
+        "Backurs and Indyk established one of the landmark results of fine-grained complexity.",
+        "They showed that a strongly subquadratic exact edit-distance algorithm:",
+        "O( N^(2-δ) )",
+        "for any fixed:",
+        "δ > 0",
+        "would contradict the Strong Exponential Time Hypothesis.",
+        "This does not mathematically prove:",
+        "ED requires N^(2-o(1)) time",
+        "because SETH itself is a conjecture.",
+        "But it provides strong evidence that the classical quadratic structure is not merely the result of insufficient algorithm engineering."
+      ]
+    },
+    {
+      "heading": "Conditional lower bounds are not unconditional lower bounds",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 9,
+      "word_count": 79,
+      "evidence": "This distinction is critical.",
+      "paragraphs": [
+        "This distinction is critical.",
+        "The statement:",
+        "\"There is no strongly subquadratic exact edit-distance algorithm\"",
+        "is not known unconditionally in standard general computational models.",
+        "What is known is a conditional implication:",
+        "strongly subquadratic ED ↓ faster SAT ↓ SETH false",
+        "Proving strong unconditional lower bounds for such explicit problems remains beyond current complexity-theoretic techniques.",
+        "Thus one of the deepest research frontiers lies outside edit distance itself:",
+        "Can stronger unconditional lower-bound machinery eventually explain why fundamental dynamic-programming problems require near-quadratic time?"
+      ]
+    },
+    {
+      "heading": "Even logarithmic improvements can matter",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 12,
+      "word_count": 83,
+      "evidence": "The gap between:",
+      "paragraphs": [
+        "The gap between:",
+        "N²",
+        "and:",
+        "N² / log^c N",
+        "may look minor compared with the gap between:",
+        "N²",
+        "and:",
+        "N^1.5",
+        "but for exact edit distance even sufficiently strong polylogarithmic shaving has deep complexity-theoretic implications.",
+        "Abboud, Hansen, Vassilevska Williams, and Williams connected such improvements to faster simulation of branching programs and to circuit lower bounds.",
+        "This means the exact frontier is unusually rigid:",
+        "quadratic │ ├── fixed polynomial improvement │ → conflicts with SETH │ └── sufficiently aggressive polylog shaving → major circuit-complexity consequences"
+      ]
+    },
+    {
+      "heading": "Open frontier: what is the true exact complexity?",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 3,
+      "word_count": 65,
+      "evidence": "Several logically different possibilities remain compatible with current knowledge.",
+      "paragraphs": [
+        "Several logically different possibilities remain compatible with current knowledge.",
+        "Possibility A: ED = Θ(N² / log²N) or nearby Possibility B: further subpolynomial improvements exist Possibility C: some new model-sensitive algorithm gives a much better polylog factor Possibility D: stronger lower bounds eventually show existing algorithms essentially optimal",
+        "Fine-grained complexity narrows the search space, but it does not determine the final exact exponent or logarithmic factors."
+      ]
+    },
+    {
+      "heading": "Frontier II: approximation radically changes the complexity",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 11,
+      "word_count": 42,
+      "evidence": "Approximation removes the requirement of recovering the exact integer:",
+      "paragraphs": [
+        "Approximation removes the requirement of recovering the exact integer:",
+        "ED(X,Y)",
+        "and instead permits an estimate:",
+        "D_hat",
+        "satisfying a guarantee such as:",
+        "ED(X,Y) ≤ D_hat ≤ α ED(X,Y)",
+        "for approximation factor:",
+        "α ≥ 1",
+        "or:",
+        "ED(X,Y) ≤ D_hat ≤ (1+ε)ED(X,Y)",
+        "for near-exact approximation."
+      ]
+    },
+    {
+      "heading": "The dramatic separation",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 3,
+      "word_count": 53,
+      "evidence": "The approximate complexity landscape now looks radically different from exact computation.",
+      "paragraphs": [
+        "The approximate complexity landscape now looks radically different from exact computation.",
+        "EXACT near quadratic under current fine-grained understanding CONSTANT-FACTOR APPROXIMATION near linear (1+ε)-APPROXIMATION as of 2026: quasi-strongly subquadratic",
+        "This is one of the clearest examples where a very small relaxation in numerical accuracy changes the known asymptotic complexity of a classical dynamic-programming problem."
+      ]
+    },
+    {
+      "heading": "Near-linear constant-factor approximation",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 10,
+      "word_count": 36,
+      "evidence": "Andoni and Nosatzki showed that for every fixed:",
+      "paragraphs": [
+        "Andoni and Nosatzki showed that for every fixed:",
+        "ε > 0",
+        "edit distance can be approximated within a constant factor in:",
+        "N^(1+ε)",
+        "time.",
+        "Thus:",
+        "constant-factor accuracy",
+        "is compatible with:",
+        "almost-linear input processing",
+        "in the theoretical sense."
+      ]
+    },
+    {
+      "heading": "2026: approximation arbitrarily close to exact",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 10,
+      "word_count": 65,
+      "evidence": "A major advance by Xiao Mao and Aviad Rubinstein established a randomized approximation scheme.",
+      "paragraphs": [
+        "A major advance by Xiao Mao and Aviad Rubinstein established a randomized approximation scheme.",
+        "For every constant:",
+        "ε > 0",
+        "it computes a:",
+        "(1+ε)",
+        "approximation to edit distance in:",
+        "N² / 2^(log^(Ω(1)) N)",
+        "time for two strings whose total length is at most N .",
+        "The improvement is much larger than a fixed polylogarithmic factor while remaining short of a fixed polynomial exponent improvement:",
+        "N^(2-δ)"
+      ]
+    },
+    {
+      "heading": "The new gap created by the 2026 result",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "The frontier is now approximately:",
+      "paragraphs": [
+        "The frontier is now approximately:",
+        "EXACT N^(2-o(1)) under fine-grained hardness 1+ε APPROXIMATION N² / 2^(log^(Ω(1)) N) CONSTANT FACTOR N^(1+ε)",
+        "The huge region between the last two lines is almost completely open."
+      ]
+    },
+    {
+      "heading": "Open question: truly subquadratic PTAS",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 8,
+      "word_count": 39,
+      "evidence": "A central question is whether one can compute:",
+      "paragraphs": [
+        "A central question is whether one can compute:",
+        "(1+ε)-approximate ED",
+        "in:",
+        "O( N^(2-δ) )",
+        "for constants:",
+        "ε > 0 δ > 0",
+        "on arbitrary strings.",
+        "Such an algorithm would cross from a super-polylogarithmic improvement to a genuine fixed-exponent improvement."
+      ]
+    },
+    {
+      "heading": "Open question: near-linear near-exact approximation",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "The more ambitious endpoint would be:",
+      "paragraphs": [
+        "The more ambitious endpoint would be:",
+        "(1+ε)-approximation in N^(1+o(1))",
+        "or:",
+        "N · polylog N",
+        "time.",
+        "There is currently an enormous conceptual gap between:",
+        "near-linear constant factor",
+        "and:",
+        "near-exact approximation",
+        "and determining whether that gap is algorithmic or complexity-theoretic is a major frontier."
+      ]
+    },
+    {
+      "heading": "Approximation ratio as a computational resource",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 4,
+      "word_count": 55,
+      "evidence": "The modern picture suggests treating precision almost like memory or running time.",
+      "paragraphs": [
+        "The modern picture suggests treating precision almost like memory or running time.",
+        "allow large error ↓ very fast algorithms reduce error ↓ more structure must be retained ε → 0 ↓ approach exact computation",
+        "The natural theoretical object is therefore not one best algorithm but a curve:",
+        "running time as a function of approximation factor"
+      ]
+    },
+    {
+      "heading": "Open question: the optimal time–approximation curve",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 7,
+      "word_count": 53,
+      "evidence": "For each factor:",
+      "paragraphs": [
+        "For each factor:",
+        "α(N)",
+        "one can ask:",
+        "What is the minimum possible running time for an α(N)-approximation?",
+        "Examples include:",
+        "α = 1+ε α = 2 α = constant α = log N α = polylog N α = N^o(1)",
+        "Existing results occupy scattered points on this surface rather than defining the entire frontier."
+      ]
+    },
+    {
+      "heading": "Randomization versus determinism",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 11,
+      "word_count": 67,
+      "evidence": "Many of the strongest approximation, sketching, and streaming results use randomness.",
+      "paragraphs": [
+        "Many of the strongest approximation, sketching, and streaming results use randomness.",
+        "Randomness can be used for:",
+        "sampling candidate alignments;",
+        "hashing substrings;",
+        "constructing sketches;",
+        "dimension reduction;",
+        "probabilistic decomposition.",
+        "The 2026 (1+ε) approximation scheme is randomized.",
+        "This raises a separate frontier:",
+        "Can comparable near-exact improvements be obtained deterministically?",
+        "Derandomization must be studied separately from improving the approximation ratio because removing randomness can expose deep complexity-theoretic barriers of its own."
+      ]
+    },
+    {
+      "heading": "Distance approximation versus alignment recovery",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 7,
+      "word_count": 78,
+      "evidence": "An algorithm that returns:",
+      "paragraphs": [
+        "An algorithm that returns:",
+        "D_hat ≈ ED(X,Y)",
+        "does not automatically return an edit script.",
+        "These are distinct computational tasks:",
+        "DISTANCE: \"the strings differ by about 1,000 edits\" ALIGNMENT: delete X[73] insert 'A' after 84 substitute G → C ...",
+        "A research result promising only an approximate numerical distance should not be interpreted as an equally fast method for recovering a corresponding near-optimal transformation.",
+        "Understanding the additional complexity of alignment recovery remains important, particularly for biological and diagnostic applications."
+      ]
+    },
+    {
+      "heading": "Frontier III: parameterized edit distance",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 6,
+      "word_count": 26,
+      "evidence": "Worst-case complexity assumes:",
+      "paragraphs": [
+        "Worst-case complexity assumes:",
+        "ED(X,Y) = Θ(N)",
+        "may occur.",
+        "But many practical inputs satisfy:",
+        "k = ED(X,Y) ≪ N",
+        "In this regime, exact computation behaves very differently."
+      ]
+    },
+    {
+      "heading": "The classical low-distance result",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 10,
+      "word_count": 58,
+      "evidence": "Landau–Vishkin-style methods exploit the fact that an alignment with only:",
+      "paragraphs": [
+        "Landau–Vishkin-style methods exploit the fact that an alignment with only:",
+        "k",
+        "edits cannot wander arbitrarily throughout the dynamic-programming matrix.",
+        "The resulting exact unit-cost complexity is:",
+        "O( N + k² )",
+        "in the bounded regime.",
+        "This is essentially optimal as a joint function of:",
+        "N and k",
+        "under the relevant fine-grained assumptions.",
+        "See Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "The phase transition",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "k = O(1) O(N+k²) ≈ O(N)",
+        "with:",
+        "k = Θ(N) O(N+k²) = O(N²)",
+        "The same exact problem continuously transitions from linear to quadratic complexity depending on the output distance."
+      ]
+    },
+    {
+      "heading": "Distance is therefore an algorithmic parameter",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 8,
+      "word_count": 27,
+      "evidence": "This is a profound departure from classical worst-case analysis.",
+      "paragraphs": [
+        "This is a profound departure from classical worst-case analysis.",
+        "The effective complexity is not just:",
+        "T(N)",
+        "but:",
+        "T(N,k)",
+        "where:",
+        "k = ED(X,Y)",
+        "or an externally supplied threshold."
+      ]
+    },
+    {
+      "heading": "Frontier IV: weighted edit distance",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 7,
+      "word_count": 40,
+      "evidence": "Real applications often require:",
+      "paragraphs": [
+        "Real applications often require:",
+        "insert cost ≠ delete cost ≠ substitution cost",
+        "or costs depending on the characters involved.",
+        "Weighted distance is:",
+        "ED_w(X,Y) = minimum total edit cost",
+        "rather than the minimum number of edits.",
+        "See Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Weighted bounded distance is genuinely harder",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 8,
+      "word_count": 54,
+      "evidence": "The ordinary:",
+      "paragraphs": [
+        "The ordinary:",
+        "O(N+k²)",
+        "unit-cost structure does not automatically survive arbitrary weights.",
+        "For normalized arbitrary weights, Cassis, Kociumaka, and Wellnitz obtained:",
+        "Õ( N + sqrt( N k³ ) )",
+        "time and matching conditional lower bounds over substantial parameter regimes.",
+        "This produced an important complexity separation:",
+        "UNIT-COST BOUNDED ED O(N+k²) ARBITRARY-WEIGHT BOUNDED ED different fine-grained frontier"
+      ]
+    },
+    {
+      "heading": "An unresolved weighted parameter regime",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 4,
+      "word_count": 56,
+      "evidence": "Current bounds leave an especially interesting intermediate region of the weighted bounded problem where the known upper and conditional lower bounds do not fully coincide.",
+      "paragraphs": [
+        "Current bounds leave an especially interesting intermediate region of the weighted bounded problem where the known upper and conditional lower bounds do not fully coincide.",
+        "This makes weighted edit distance one of the clearest examples where a seemingly minor modeling change:",
+        "all edits cost 1 ↓ different edits have different weights",
+        "changes the fine-grained complexity landscape."
+      ]
+    },
+    {
+      "heading": "Small integer weights",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 10,
+      "word_count": 45,
+      "evidence": "The situation improves if edit weights are small integers bounded by:",
+      "paragraphs": [
+        "The situation improves if edit weights are small integers bounded by:",
+        "W",
+        "Gorbachev and Kociumaka obtained static bounded complexity:",
+        "Õ( N + W k² )",
+        "and dynamic update time:",
+        "Õ( W² k )",
+        "in the corresponding model.",
+        "Setting:",
+        "W = 1",
+        "recovers the unit-cost behavior."
+      ]
+    },
+    {
+      "heading": "Open question: the true complexity of arbitrary weighted ED",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 4,
+      "word_count": 48,
+      "evidence": "The theory now suggests a hierarchy:",
+      "paragraphs": [
+        "The theory now suggests a hierarchy:",
+        "unit weights ↓ small integer weights ↓ arbitrary normalized weights ↓ context-dependent weights ↓ learned edit models",
+        "Each additional degree of flexibility can weaken the combinatorial structure exploited by fast algorithms.",
+        "Determining exactly where complexity jumps occur remains a major research direction."
+      ]
+    },
+    {
+      "heading": "Context-dependent edit costs",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 8,
+      "word_count": 71,
+      "evidence": "Most weighted edit-distance theory assumes:",
+      "paragraphs": [
+        "Most weighted edit-distance theory assumes:",
+        "cost of substituting a → b",
+        "depends only on:",
+        "a and b",
+        "not on their surrounding sequence.",
+        "But many realistic errors are contextual:",
+        "cost( substitute a→b after character c ) ≠ cost( substitute a→b after character d )",
+        "Extending fast exact and parameterized algorithms to richer context-dependent cost models without exploding the state space is an important boundary between classical edit distance and structured sequence modeling."
+      ]
+    },
+    {
+      "heading": "Learned costs create another frontier",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 10,
+      "word_count": 50,
+      "evidence": "Machine-learning methods can learn:",
+      "paragraphs": [
+        "Machine-learning methods can learn:",
+        "insertion costs deletion costs substitution costs contextual costs",
+        "from data.",
+        "But unrestricted learned costs may destroy:",
+        "symmetry;",
+        "triangle inequality;",
+        "bounded-integer structure;",
+        "algorithmic assumptions used by exact methods.",
+        "The frontier therefore includes learning expressive costs while preserving useful mathematical structure.",
+        "See Learned Edit Distance and Embeddings ."
+      ]
+    },
+    {
+      "heading": "Frontier V: dynamic edit distance",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "Static algorithms assume:",
+      "paragraphs": [
+        "Static algorithms assume:",
+        "X and Y",
+        "remain unchanged.",
+        "The dynamic problem allows updates such as:",
+        "insert character delete character substitute character",
+        "at arbitrary positions in either sequence.",
+        "After each update the data structure must maintain:",
+        "ED(X,Y)",
+        "or an approximation."
+      ]
+    },
+    {
+      "heading": "Why dynamic ED is subtle",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 10,
+      "word_count": 45,
+      "evidence": "For unit-cost edit distance, one edit to:",
+      "paragraphs": [
+        "For unit-cost edit distance, one edit to:",
+        "X",
+        "changes the final distance from:",
+        "d",
+        "to only:",
+        "d-1 d or d+1",
+        "because edit distance is a metric.",
+        "Yet the optimal alignment can change globally.",
+        "Thus:",
+        "small change in answer ≠ small change in proof of optimality"
+      ]
+    },
+    {
+      "heading": "General exact dynamic distance",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 7,
+      "word_count": 53,
+      "evidence": "For constant edit weights, general exact dynamic alignment can be maintained in roughly:",
+      "paragraphs": [
+        "For constant edit weights, general exact dynamic alignment can be maintained in roughly:",
+        "Õ(N)",
+        "time per update.",
+        "This represents nearly a full polynomial improvement over recomputing:",
+        "O(N²)",
+        "from scratch after every edit.",
+        "Fine-grained lower bounds indicate that substantially sublinear exact update time for unrestricted distance would imply unexpected progress on the static problem."
+      ]
+    },
+    {
+      "heading": "Bounded dynamic distance",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "If the current distance is small:",
+      "paragraphs": [
+        "If the current distance is small:",
+        "k ≪ N",
+        "the frontier changes again.",
+        "The 2025 result of Gorbachev and Kociumaka achieves:",
+        "Õ(k)",
+        "worst-case update time for bounded unit-cost edit distance after approximately:",
+        "Õ( N+k² )",
+        "preprocessing."
+      ]
+    },
+    {
+      "heading": "Why Õ(k) is structurally important",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "Earlier low-distance dynamic methods naturally suggested:",
+      "paragraphs": [
+        "Earlier low-distance dynamic methods naturally suggested:",
+        "k²",
+        "state complexity.",
+        "The new result demonstrates that this quadratic parameter dependence is not inherent to dynamic maintenance:",
+        "STATIC BOUNDED N + k² DYNAMIC UPDATE ~k",
+        "up to polylogarithmic factors."
+      ]
+    },
+    {
+      "heading": "Dynamic arbitrary weighted distance",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 6,
+      "word_count": 50,
+      "evidence": "For arbitrary normalized weights and fixed threshold k , Boneh, Gorbachev, and Kociumaka developed a preprocessing/update trade-off:",
+      "paragraphs": [
+        "For arbitrary normalized weights and fixed threshold k , Boneh, Gorbachev, and Kociumaka developed a preprocessing/update trade-off:",
+        "preprocessing: Õ( N k^γ ) update: Õ( k^(3-γ) )",
+        "for:",
+        "γ ∈ [0,1]",
+        "with matching conditional lower bounds in substantial parameter ranges.",
+        "This shows that preprocessing itself becomes part of the complexity frontier."
+      ]
+    },
+    {
+      "heading": "Dynamic approximation",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "Exactness can again be relaxed.",
+      "paragraphs": [
+        "Exactness can again be relaxed.",
+        "Kociumaka, Mukherjee, and Saha obtained a fully dynamic algorithm with:",
+        "N^o(1)",
+        "approximation factor and:",
+        "N^o(1)",
+        "amortized expected update time."
+      ]
+    },
+    {
+      "heading": "The dynamic approximation gap",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "EXACT GENERAL: ~N update APPROXIMATE GENERAL: N^o(1) update but N^o(1) approximation",
+        "This leaves a natural frontier:",
+        "constant-factor approximation with polylogarithmic or N^o(1) update time?",
+        "and, even more ambitiously:",
+        "(1+ε)-approximation with strongly sublinear dynamic update?"
+      ]
+    },
+    {
+      "heading": "Dynamic versus static complexity may fundamentally separate",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 4,
+      "word_count": 61,
+      "evidence": "Dynamic string edit distance benefits from strong update algorithms, but related structured problems do not necessarily behave similarly.",
+      "paragraphs": [
+        "Dynamic string edit distance benefits from strong update algorithms, but related structured problems do not necessarily behave similarly.",
+        "Recent hardness results for dynamic tree edit distance, Dyck edit distance, and RNA folding show that dynamic speedups can disappear when the underlying structure becomes richer.",
+        "This raises a broader theoretical question:",
+        "Which structural properties of ordinary strings make dynamic edit-distance maintenance possible?"
+      ]
+    },
+    {
+      "heading": "Frontier VI: streaming edit distance",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 6,
+      "word_count": 47,
+      "evidence": "Streaming algorithms process input sequentially using limited memory.",
+      "paragraphs": [
+        "Streaming algorithms process input sequentially using limited memory.",
+        "The central question is no longer:",
+        "How many operations are required?",
+        "but:",
+        "How much information about the past must be retained?",
+        "Streaming, online, and dynamic edit distance are treated in detail in Dynamic, Online and Streaming Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Why edit distance is difficult to stream",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 4,
+      "word_count": 49,
+      "evidence": "Hamming distance can compare corresponding coordinates.",
+      "paragraphs": [
+        "Hamming distance can compare corresponding coordinates.",
+        "Edit distance must preserve uncertainty over alignment offsets caused by insertions and deletions.",
+        "one early insertion ↓ potential shift across the entire remaining stream",
+        "A low-memory algorithm must retain enough information to distinguish such possibilities after the original characters are no longer accessible."
+      ]
+    },
+    {
+      "heading": "Bounded sketches",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 7,
+      "word_count": 22,
+      "evidence": "A sketch is a compact independently computed representation:",
+      "paragraphs": [
+        "A sketch is a compact independently computed representation:",
+        "sk(X)",
+        "such that:",
+        "sk(X) + sk(Y)",
+        "reveals information about:",
+        "ED(X,Y)",
+        "without either full string."
+      ]
+    },
+    {
+      "heading": "The STOC 2024 sketch frontier",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 8,
+      "word_count": 61,
+      "evidence": "Koucký and Saks constructed bounded edit-distance sketches of size:",
+      "paragraphs": [
+        "Koucký and Saks constructed bounded edit-distance sketches of size:",
+        "k · 2^O( sqrt( log N · log log N ) )",
+        "for strings of length at most N .",
+        "With high probability, if:",
+        "ED(X,Y) ≤ k",
+        "the recovery procedure can return:",
+        "the exact distance and an optimal edit script",
+        "while reporting that the distance is large when it exceeds the threshold."
+      ]
+    },
+    {
+      "heading": "Why this result is important",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "The dependence on:",
+      "paragraphs": [
+        "The dependence on:",
+        "k",
+        "is essentially information-theoretically optimal.",
+        "The remaining overhead lies mainly in the subpolynomial dependence on:",
+        "N",
+        "and in computational aspects of constructing and decoding the sketch."
+      ]
+    },
+    {
+      "heading": "Open sketching frontier",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "Natural goals include:",
+      "paragraphs": [
+        "Natural goals include:",
+        "smaller dependence on N faster construction faster recovery deterministic sketches private sketches robust sketches support for weighted ED",
+        "These dimensions are largely independent."
+      ]
+    },
+    {
+      "heading": "Communication complexity",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 12,
+      "word_count": 46,
+      "evidence": "Sketching is closely connected to communication.",
+      "paragraphs": [
+        "Sketching is closely connected to communication.",
+        "Suppose Alice owns:",
+        "X",
+        "and Bob owns:",
+        "Y",
+        "with:",
+        "ED(X,Y) ≤ k",
+        "How many bits must be communicated to reconstruct:",
+        "the distance;",
+        "the edit script;",
+        "or the changed document?",
+        "The answer reflects how much information a low-distance transformation fundamentally contains."
+      ]
+    },
+    {
+      "heading": "Information-theoretic intuition",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "An edit script with:",
+      "paragraphs": [
+        "An edit script with:",
+        "k",
+        "edits must encode approximately:",
+        "edit positions + edit types + inserted/substituted symbols",
+        "Positions alone suggest a scale around:",
+        "k log N",
+        "bits before accounting for structure and redundancy.",
+        "Modern sketching research attempts to approach such information-theoretic limits algorithmically."
+      ]
+    },
+    {
+      "heading": "Pattern matching communication frontier",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 5,
+      "word_count": 47,
+      "evidence": "For pattern matching with edits, 2026 work tightened communication bounds to essentially matching upper and lower bounds in natural parameter regimes, including recovery of edit sequences.",
+      "paragraphs": [
+        "For pattern matching with edits, 2026 work tightened communication bounds to essentially matching upper and lower bounds in natural parameter regimes, including recovery of edit sequences.",
+        "This is an example of a frontier transitioning from:",
+        "\"Is a compact encoding possible?\"",
+        "to:",
+        "\"What is the exact information complexity?\""
+      ]
+    },
+    {
+      "heading": "Frontier VII: approximate nearest-neighbor search",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 14,
+      "word_count": 50,
+      "evidence": "Pairwise distance computation is only part of practical similarity search.",
+      "paragraphs": [
+        "Pairwise distance computation is only part of practical similarity search.",
+        "Given database:",
+        "S = { s₁, s₂, ..., s_M }",
+        "and query:",
+        "q",
+        "nearest-neighbor search asks for:",
+        "argmin_(s∈S) ED(q,s)",
+        "A pairwise algorithm still requires:",
+        "M",
+        "comparisons under brute-force search.",
+        "Thus the research frontier shifts from:",
+        "distance computation",
+        "to:",
+        "metric indexing"
+      ]
+    },
+    {
+      "heading": "Why edit distance resists classical vector indexing",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 7,
+      "word_count": 28,
+      "evidence": "Euclidean and Hamming spaces have powerful:",
+      "paragraphs": [
+        "Euclidean and Hamming spaces have powerful:",
+        "locality-sensitive hashing;",
+        "tree indexes;",
+        "projection methods;",
+        "vector quantization;",
+        "approximate-nearest-neighbor data structures.",
+        "Edit-distance geometry is much harder to represent with globally low distortion."
+      ]
+    },
+    {
+      "heading": "Metric embeddings",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 9,
+      "word_count": 55,
+      "evidence": "A metric embedding maps:",
+      "paragraphs": [
+        "A metric embedding maps:",
+        "x → f(x)",
+        "into another metric so that:",
+        "ED(x,y)",
+        "is approximately preserved.",
+        "Historically, a major goal was embedding edit distance into:",
+        "ℓ₁",
+        "because of the powerful algorithmic toolkit available there.",
+        "But the known upper and lower distortion bounds leave significant room, and global low-distortion embedding is constrained by fundamental lower bounds."
+      ]
+    },
+    {
+      "heading": "Similarity-measure embeddings",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "Recent research has relaxed the requirement that edit distance be embedded into an ordinary normed space.",
+      "paragraphs": [
+        "Recent research has relaxed the requirement that edit distance be embedded into an ordinary normed space.",
+        "Andoni and Nosatzki introduced embeddings into similarity measures and developed corresponding nearest-neighbor machinery.",
+        "Their 2025 FOCS result gives efficient approximate-nearest-neighbor algorithms for edit distance on fixed-length strings with:",
+        "polylogarithmic approximation",
+        "representing a substantial improvement over longstanding previous ANNS guarantees in this setting."
+      ]
+    },
+    {
+      "heading": "Why this changes the research question",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "The old question was:",
+      "paragraphs": [
+        "The old question was:",
+        "Can ED be embedded faithfully into ℓ1 or ℓ2?",
+        "The broader modern question is:",
+        "What representation is sufficient to solve the downstream problem?",
+        "A representation useful for search need not preserve every pairwise distance with a classical bi-Lipschitz guarantee."
+      ]
+    },
+    {
+      "heading": "Open nearest-neighbor frontier",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "Major goals include improving the trade-off among:",
+      "paragraphs": [
+        "Major goals include improving the trade-off among:",
+        "approximation factor query time index space preprocessing string length database size",
+        "A particularly important goal would be efficient constant-factor or near-exact ANNS under general edit distance with practical space."
+      ]
+    },
+    {
+      "heading": "Exact search versus approximate search",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 8,
+      "word_count": 50,
+      "evidence": "A scalable architecture can combine both:",
+      "paragraphs": [
+        "A scalable architecture can combine both:",
+        "QUERY ↓ approximate index ↓ small candidate set ↓ exact bounded ED ↓ exact final ranking",
+        "This moves approximation from:",
+        "final answer",
+        "to:",
+        "candidate generation",
+        "and allows classical exact algorithms to remain part of large-scale systems.",
+        "See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Frontier VIII: preprocessing and repeated comparisons",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "The classical pairwise model assumes:",
+      "paragraphs": [
+        "The classical pairwise model assumes:",
+        "receive X and Y then compute ED(X,Y)",
+        "But many applications compare the same strings repeatedly:",
+        "database corpus ↓ many future queries",
+        "This motivates preprocessing each string independently."
+      ]
+    },
+    {
+      "heading": "The preprocessing model",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 8,
+      "word_count": 18,
+      "evidence": "Compute:",
+      "paragraphs": [
+        "Compute:",
+        "P(X)",
+        "once.",
+        "Later answer:",
+        "ED(X,Y)",
+        "from:",
+        "P(X) and P(Y)",
+        "faster than solving the original pair from scratch."
+      ]
+    },
+    {
+      "heading": "Preprocessing connects several fields",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 4,
+      "word_count": 49,
+      "evidence": "preprocessed edit distance │ ├── sketches ├── indexes ├── embeddings ├── document exchange └── nearest-neighbor search",
+      "paragraphs": [
+        "preprocessed edit distance │ ├── sketches ├── indexes ├── embeddings ├── document exchange └── nearest-neighbor search",
+        "The general question is:",
+        "How much reusable information can one extract from a single string before knowing what it will later be compared against?",
+        "This is strictly stronger than optimizing one pairwise computation."
+      ]
+    },
+    {
+      "heading": "Frontier IX: learned edit-distance representations",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "Machine learning adds a distribution-dependent alternative.",
+      "paragraphs": [
+        "Machine learning adds a distribution-dependent alternative.",
+        "Instead of proving:",
+        "for every possible pair of strings embedding distortion ≤ D",
+        "a learned encoder may optimize:",
+        "expected approximation error over realistic data",
+        "See Learned Edit Distance and Embeddings ."
+      ]
+    },
+    {
+      "heading": "The theoretical attraction",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 11,
+      "word_count": 45,
+      "evidence": "Worst-case edit-distance metric spaces contain pathological inputs that may never occur in a deployment corpus.",
+      "paragraphs": [
+        "Worst-case edit-distance metric spaces contain pathological inputs that may never occur in a deployment corpus.",
+        "A distribution-specific subset:",
+        "S ⊂ Σ*",
+        "may have dramatically easier geometry.",
+        "A learned representation can exploit:",
+        "alphabet statistics;",
+        "sequence length distributions;",
+        "biological ancestry;",
+        "language structure;",
+        "typographical error distributions;",
+        "domain-specific regularities."
+      ]
+    },
+    {
+      "heading": "The missing guarantee",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 6,
+      "word_count": 27,
+      "evidence": "Most learned edit-distance embeddings provide:",
+      "paragraphs": [
+        "Most learned edit-distance embeddings provide:",
+        "empirical accuracy",
+        "rather than:",
+        "worst-case distortion for all strings",
+        "This creates a major research frontier:",
+        "machine-learned data-dependent geometry + formal algorithmic guarantees"
+      ]
+    },
+    {
+      "heading": "Certified learned embeddings",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 5,
+      "word_count": 51,
+      "evidence": "A future system might provide a statement such as:",
+      "paragraphs": [
+        "A future system might provide a statement such as:",
+        "with probability ≥ 1-δ for query pairs drawn from distribution P relative ED error ≤ ε",
+        "or:",
+        "for every pair inside a certified distance region k distortion ≤ c",
+        "Such guarantees would bridge statistical learning theory with metric embedding and parameterized algorithms."
+      ]
+    },
+    {
+      "heading": "Hybrid learned–exact algorithms",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "A particularly promising design is:",
+      "paragraphs": [
+        "A particularly promising design is:",
+        "learned representation ↓ candidate prediction ↓ provable lower bounds ↓ bounded exact ED ↓ certified result",
+        "The learned component improves throughput while the final exact component preserves correctness."
+      ]
+    },
+    {
+      "heading": "Frontier X: repetitive and compressible strings",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 9,
+      "word_count": 34,
+      "evidence": "Worst-case analysis treats an input string as:",
+      "paragraphs": [
+        "Worst-case analysis treats an input string as:",
+        "N independent symbols",
+        "but many real strings are highly compressible.",
+        "Examples include:",
+        "genomes from related organisms;",
+        "version histories;",
+        "logs with repeated templates;",
+        "large text collections;",
+        "periodic sequences."
+      ]
+    },
+    {
+      "heading": "Compression creates two opposing effects",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "Repetition can make alignment harder because many locations look identical:",
+      "paragraphs": [
+        "Repetition can make alignment harder because many locations look identical:",
+        "abababababab... babababababa...",
+        "But repetition also means the information content is smaller:",
+        "pattern: \"ab\" repeat: 1,000,000 times",
+        "A central frontier is understanding when compressibility can be transformed into computational savings."
+      ]
+    },
+    {
+      "heading": "Compressed complexity",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 9,
+      "word_count": 37,
+      "evidence": "Suppose the expanded sequence length is:",
+      "paragraphs": [
+        "Suppose the expanded sequence length is:",
+        "N",
+        "but its compressed representation has size:",
+        "z ≪ N",
+        "The ideal goal is complexity closer to:",
+        "poly(z,k,log N)",
+        "than:",
+        "Θ(N²)",
+        "while still recovering meaningful edit-distance information about the uncompressed strings."
+      ]
+    },
+    {
+      "heading": "Compression measure matters",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "Possible structural parameters include:",
+      "paragraphs": [
+        "Possible structural parameters include:",
+        "run-length encoding size;",
+        "Lempel–Ziv factor count;",
+        "grammar size;",
+        "Burrows–Wheeler runs;",
+        "periodicity;",
+        "shared grammar between inputs.",
+        "An algorithm fast under one measure need not be fast under another."
+      ]
+    },
+    {
+      "heading": "Frontier XI: average-case and smoothed complexity",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "Worst-case strings may be highly artificial.",
+      "paragraphs": [
+        "Worst-case strings may be highly artificial.",
+        "Another research direction asks:",
+        "How hard is ED on realistic or randomly perturbed inputs?",
+        "Possible models include:",
+        "random strings semi-random strings planted alignment models mutation models smoothed adversarial inputs"
+      ]
+    },
+    {
+      "heading": "Why this matters",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 5,
+      "word_count": 33,
+      "evidence": "A worst-case lower bound can coexist with an extremely fast algorithm on almost every natural instance.",
+      "paragraphs": [
+        "A worst-case lower bound can coexist with an extremely fast algorithm on almost every natural instance.",
+        "The challenge is defining probability models that are:",
+        "mathematically analyzable;",
+        "not artificially easy;",
+        "representative of real data."
+      ]
+    },
+    {
+      "heading": "Average-case theory can also explain heuristics",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "Practical sequence systems often use:",
+      "paragraphs": [
+        "Practical sequence systems often use:",
+        "seed-and-extend;",
+        "q-gram filtering;",
+        "hashing;",
+        "early termination;",
+        "banded alignment.",
+        "Their worst-case behavior can be poor while their empirical behavior is excellent.",
+        "Average-case theory can identify the structural assumptions responsible for that success."
+      ]
+    },
+    {
+      "heading": "Frontier XII: output-sensitive algorithms",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "The distance value itself is an output parameter.",
+      "paragraphs": [
+        "The distance value itself is an output parameter.",
+        "But there are additional output-sensitive quantities:",
+        "number of edits number of near matches number of candidate alignments length of recovered script number of optimal alignments",
+        "Future algorithms may depend on several of these quantities simultaneously."
+      ]
+    },
+    {
+      "heading": "One distance can have many optimal alignments",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 8,
+      "word_count": 37,
+      "evidence": "Highly repetitive strings can have:",
+      "paragraphs": [
+        "Highly repetitive strings can have:",
+        "exponentially many",
+        "optimal or near-optimal alignments in terms of combinatorial count even though only one numerical distance is returned.",
+        "This distinction matters for:",
+        "uncertainty estimation;",
+        "biological interpretation;",
+        "probabilistic alignment;",
+        "learned edit models."
+      ]
+    },
+    {
+      "heading": "Counting or sampling optimal alignments",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "Instead of:",
+      "paragraphs": [
+        "Instead of:",
+        "return one edit script",
+        "one may ask:",
+        "how many optimum scripts exist?",
+        "or:",
+        "sample an alignment according to a probability model",
+        "These are fundamentally different computational problems from ordinary distance calculation."
+      ]
+    },
+    {
+      "heading": "Frontier XIII: richer edit operations",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 11,
+      "word_count": 33,
+      "evidence": "Standard Levenshtein distance permits:",
+      "paragraphs": [
+        "Standard Levenshtein distance permits:",
+        "insert delete substitute",
+        "but many domains require:",
+        "transposition;",
+        "block movement;",
+        "block insertion or deletion;",
+        "duplication;",
+        "reversal;",
+        "affine gaps;",
+        "context-sensitive edits.",
+        "Each new primitive changes the geometry of the problem."
+      ]
+    },
+    {
+      "heading": "Adding one operation can change complexity",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 4,
+      "word_count": 41,
+      "evidence": "For example, Damerau–Levenshtein Distance introduces adjacent transposition.",
+      "paragraphs": [
+        "For example, Damerau–Levenshtein Distance introduces adjacent transposition.",
+        "Biological alignment often uses gap-opening and gap-extension penalties rather than independent insertion costs.",
+        "Genome rearrangement models may permit block reversal.",
+        "An algorithm proven for ordinary Levenshtein distance cannot automatically be transferred to these variants."
+      ]
+    },
+    {
+      "heading": "The frontier is a taxonomy of edit systems",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 2,
+      "word_count": 45,
+      "evidence": "EDIT SYSTEM │ ├── unit-cost character edits ├── weighted character edits ├── adjacent transposition ├── context-dependent edits ├── affine gaps ├── block edits ├── tree edits └── graph edits",
+      "paragraphs": [
+        "EDIT SYSTEM │ ├── unit-cost character edits ├── weighted character edits ├── adjacent transposition ├── context-dependent edits ├── affine gaps ├── block edits ├── tree edits └── graph edits",
+        "The scientific challenge is identifying which algorithmic techniques survive as the edit system becomes more expressive."
+      ]
+    },
+    {
+      "heading": "Frontier XIV: beyond strings",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Edit distance generalizes naturally to structured objects.",
+      "paragraphs": [
+        "Edit distance generalizes naturally to structured objects.",
+        "See Tree and Graph Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Tree edit distance",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 3,
+      "word_count": 44,
+      "evidence": "Rooted ordered trees retain enough structural order for polynomial-time exact algorithms.",
+      "paragraphs": [
+        "Rooted ordered trees retain enough structural order for polynomial-time exact algorithms.",
+        "But their complexity is substantially greater than string edit distance.",
+        "Recent work has significantly improved the classical cubic frontier for unweighted trees while relating weighted tree edit distance tightly to All-Pairs Shortest Paths."
+      ]
+    },
+    {
+      "heading": "2025 weighted versus unweighted tree separation",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 6,
+      "word_count": 46,
+      "evidence": "For unweighted rooted ordered tree edit distance, modern algorithms reach:",
+      "paragraphs": [
+        "For unweighted rooted ordered tree edit distance, modern algorithms reach:",
+        "Õ( N^((3+ω)/2) )",
+        "which is reported at approximately:",
+        "N^2.6857",
+        "under the corresponding matrix-multiplication exponent.",
+        "Weighted tree edit distance, by contrast, is fine-grained equivalent to APSP in the studied setting and currently has a different asymptotic frontier."
+      ]
+    },
+    {
+      "heading": "Dynamic tree edit distance provides a striking separation",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 4,
+      "word_count": 59,
+      "evidence": "String edit distance admits substantial dynamic speedups.",
+      "paragraphs": [
+        "String edit distance admits substantial dynamic speedups.",
+        "But 2026 hardness results show that closely related structural problems such as weighted tree edit distance can fail to admit analogous dynamic improvements under standard fine-grained assumptions.",
+        "This suggests a deeper structural question:",
+        "What exact property of linear order makes string edit distance dynamically maintainable while richer hierarchical alignment resists dynamic speedup?"
+      ]
+    },
+    {
+      "heading": "Graph edit distance",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "General graph edit distance removes most ordering constraints and becomes NP-hard.",
+      "paragraphs": [
+        "General graph edit distance removes most ordering constraints and becomes NP-hard.",
+        "The frontier therefore shifts from:",
+        "improving polynomial exponents",
+        "to:",
+        "exact exponential algorithms parameterization approximation learning special graph classes",
+        "The progression:",
+        "string → tree → graph",
+        "provides a natural laboratory for understanding how structural freedom creates computational hardness."
+      ]
+    },
+    {
+      "heading": "Frontier XV: edit distance and biological alignment",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 3,
+      "word_count": 39,
+      "evidence": "Although edit distance is often used as a simplified model of sequence mutation, biological sequence alignment frequently requires richer scoring:",
+      "paragraphs": [
+        "Although edit distance is often used as a simplified model of sequence mutation, biological sequence alignment frequently requires richer scoring:",
+        "substitution matrix gap opening penalty gap extension penalty local alignment semi-global alignment",
+        "See Sequence Alignment and Gap Models ."
+      ]
+    },
+    {
+      "heading": "Why the distinction matters theoretically",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "Many edit-distance techniques depend on:",
+      "paragraphs": [
+        "Many edit-distance techniques depend on:",
+        "unit insertion unit deletion unit substitution",
+        "Replacing independent gap characters with:",
+        "gap_open + gap_extension × length",
+        "changes the dynamic-programming state.",
+        "The frontier includes transferring modern edit-distance advances—parameterization, sketches, dynamic methods, approximation—to biologically realistic scoring systems."
+      ]
+    },
+    {
+      "heading": "Pangenome and graph sequence alignment",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 6,
+      "word_count": 51,
+      "evidence": "Modern genomics increasingly compares a sequence not with one linear reference but with a graph representing population variation.",
+      "paragraphs": [
+        "Modern genomics increasingly compares a sequence not with one linear reference but with a graph representing population variation.",
+        "The problem changes from:",
+        "string versus string",
+        "to:",
+        "string versus graph",
+        "This sits between classical edit distance, graph algorithms, indexing, and sequence alignment and represents an important frontier for both theory and systems."
+      ]
+    },
+    {
+      "heading": "Frontier XVI: representation itself",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "Edit distance is defined over sequence elements.",
+      "paragraphs": [
+        "Edit distance is defined over sequence elements.",
+        "But what counts as one element?",
+        "byte? Unicode code point? grapheme cluster? word? phoneme? DNA base? token?",
+        "Changing the representation changes the mathematical input."
+      ]
+    },
+    {
+      "heading": "Unicode example",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "A visible character may be encoded as:",
+      "paragraphs": [
+        "A visible character may be encoded as:",
+        "one code point",
+        "or:",
+        "multiple code points",
+        "while remaining one grapheme cluster.",
+        "An algorithm can therefore be perfectly correct at the code-point level and still compute the wrong application-level distance.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Representation-aware theory",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 4,
+      "word_count": 57,
+      "evidence": "A broader research question is how algorithmic guarantees change when sequence symbols themselves have internal structure.",
+      "paragraphs": [
+        "A broader research question is how algorithmic guarantees change when sequence symbols themselves have internal structure.",
+        "Examples include:",
+        "grapheme = sequence of code points word = sequence of characters token = structured lexical object event = timestamp + type + attributes",
+        "Hierarchical representations blur the boundary between ordinary string edit distance and tree or structured edit distance."
+      ]
+    },
+    {
+      "heading": "Frontier XVII: hardware and algorithm engineering",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 9,
+      "word_count": 36,
+      "evidence": "Asymptotic theory is only one dimension of performance.",
+      "paragraphs": [
+        "Asymptotic theory is only one dimension of performance.",
+        "Edit-distance computation has unusual hardware properties:",
+        "regular dynamic-programming dependencies;",
+        "strong opportunities for SIMD;",
+        "bit-parallel algorithms;",
+        "GPU wavefront computation;",
+        "cache-sensitive memory access;",
+        "specialized accelerators.",
+        "See Levenshtein Performance Engineering ."
+      ]
+    },
+    {
+      "heading": "Bit-parallelism changes practical complexity",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "The Myers Bit-Vector Algorithm processes many dynamic-programming states simultaneously inside machine words.",
+      "paragraphs": [
+        "The Myers Bit-Vector Algorithm processes many dynamic-programming states simultaneously inside machine words.",
+        "Theoretical analysis often treats:",
+        "word operations",
+        "as constant time.",
+        "Real hardware then determines:",
+        "word width vector width instruction latency memory bandwidth",
+        "making computational-model assumptions directly relevant to implementation performance."
+      ]
+    },
+    {
+      "heading": "Hardware does not remove fine-grained hardness",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "A GPU may provide enormous parallel throughput while total work remains quadratic.",
+      "paragraphs": [
+        "A GPU may provide enormous parallel throughput while total work remains quadratic.",
+        "Thus:",
+        "wall-clock speedup",
+        "and:",
+        "asymptotic work reduction",
+        "are separate achievements."
+      ]
+    },
+    {
+      "heading": "Parallel complexity",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 6,
+      "word_count": 54,
+      "evidence": "Another theoretical question is:",
+      "paragraphs": [
+        "Another theoretical question is:",
+        "How much parallelism can edit-distance DP expose without increasing total work?",
+        "Wavefront dependencies allow antidiagonal parallelism:",
+        "D[i][j] depends on D[i-1][j] D[i][j-1] D[i-1][j-1]",
+        "so cells on the same antidiagonal can often be evaluated together once previous antidiagonals are complete.",
+        "The frontier includes communication-efficient and parallel algorithms, not only sequential running time."
+      ]
+    },
+    {
+      "heading": "Frontier XVIII: fine-grained complexity as a map, not a prohibition",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 6,
+      "word_count": 63,
+      "evidence": "Fine-grained lower bounds are sometimes interpreted too simplistically:",
+      "paragraphs": [
+        "Fine-grained lower bounds are sometimes interpreted too simplistically:",
+        "\"SETH says ED cannot be made faster.\"",
+        "That is incorrect.",
+        "The lower bound concerns a particular problem formulation and complexity regime.",
+        "Researchers have repeatedly escaped it by changing one axis:",
+        "exact → approximate general distance → small k static → preprocessing full input → distribution-specific single comparison → sketch unit weights → specialized weight structure"
+      ]
+    },
+    {
+      "heading": "The correct question after a lower bound",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "When a barrier appears, ask:",
+      "paragraphs": [
+        "When a barrier appears, ask:",
+        "Which assumption of the hard regime can be relaxed without destroying the useful problem?",
+        "This is how much of modern edit-distance research has progressed."
+      ]
+    },
+    {
+      "heading": "A frontier matrix",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 210,
+      "evidence": "Area Current structural picture Major frontier General exact ED Near quadratic; strongly subquadratic conditionally hard Precise exact complexity and stronger lower bounds Exact logarithmic improvements Only limited shaving known under specific models Determine the true polylogarithmic frontier Constant-factor approximation Near-linear time Improve constants, simplicity, determinism and practicality (1+ε) approximation N² / 2^(log^(Ω(1))N) randomized as of 2026 Truly subquadratic or near-linear PTAS Unit-cost bounded ED O(N+k²) , essentially optimal Model extensions rather than basic exponent improvement Weighted bounded ED Different complexity from unit cost Close remaining parameter-regime gaps Dynamic exact ED Roughly linear general update; Õ(k) bounded update Richer weights, models and",
+      "paragraphs": [
+        "Area Current structural picture Major frontier General exact ED Near quadratic; strongly subquadratic conditionally hard Precise exact complexity and stronger lower bounds Exact logarithmic improvements Only limited shaving known under specific models Determine the true polylogarithmic frontier Constant-factor approximation Near-linear time Improve constants, simplicity, determinism and practicality (1+ε) approximation N² / 2^(log^(Ω(1))N) randomized as of 2026 Truly subquadratic or near-linear PTAS Unit-cost bounded ED O(N+k²) , essentially optimal Model extensions rather than basic exponent improvement Weighted bounded ED Different complexity from unit cost Close remaining parameter-regime gaps Dynamic exact ED Roughly linear general update; Õ(k) bounded update Richer weights, models and output guarantees Dynamic approximate ED Subpolynomial approximation with subpolynomial update Constant or near-exact factors with very small update time Sketching Almost-linear dependence on bounded distance k Remove remaining length overhead and derandomize Streaming Poly( k , log N ) regimes possible Tighter space/time/approximation trade-offs Nearest neighbor Improving representation and ANNS guarantees Constant-factor, practical-space ED indexing Learned embeddings Strong distribution-specific empirical results Formal certification and OOD guarantees Compressed inputs Strong structure can be exploited in special regimes Complexity in compressed size rather than expanded length Tree edit distance Unweighted truly subcubic; weighted tied to APSP Understand weighted/unweighted structural separation Graph edit distance NP-hard in general Parameterized, approximate and learned algorithms"
+      ]
+    },
+    {
+      "heading": "Open problem 1: truly subquadratic near-exact ED",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 9,
+      "word_count": 31,
+      "evidence": "Can a fixed:",
+      "paragraphs": [
+        "Can a fixed:",
+        "ε > 0",
+        "permit:",
+        "(1+ε)-approximate ED",
+        "in:",
+        "N^(2-δ)",
+        "time for some fixed:",
+        "δ > 0?",
+        "The 2026 approximation scheme substantially advances this question without crossing that fixed-exponent threshold."
+      ]
+    },
+    {
+      "heading": "Open problem 2: near-linear PTAS",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 6,
+      "word_count": 26,
+      "evidence": "Could:",
+      "paragraphs": [
+        "Could:",
+        "(1+ε)-approximate ED",
+        "ever approach:",
+        "N · polylog N",
+        "for arbitrary strings?",
+        "Such a result would nearly collapse the known gap between constant-factor and near-exact approximation."
+      ]
+    },
+    {
+      "heading": "Open problem 3: deterministic near-exact approximation",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "Can the strongest randomized approximation guarantees be matched deterministically without major loss in:",
+      "paragraphs": [
+        "Can the strongest randomized approximation guarantees be matched deterministically without major loss in:",
+        "running time or approximation factor?"
+      ]
+    },
+    {
+      "heading": "Open problem 4: precise exact polylogarithmic frontier",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "Assuming no fixed polynomial speedup exists, what is the fastest exact bound of the form:",
+      "paragraphs": [
+        "Assuming no fixed polynomial speedup exists, what is the fastest exact bound of the form:",
+        "N² / f(N)",
+        "that can actually be achieved?",
+        "And at what point would improving:",
+        "f(N)",
+        "require new circuit-complexity consequences?"
+      ]
+    },
+    {
+      "heading": "Open problem 5: arbitrary weighted bounded ED",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 4,
+      "word_count": 34,
+      "evidence": "Close the remaining upper/lower-bound gaps across the full range of:",
+      "paragraphs": [
+        "Close the remaining upper/lower-bound gaps across the full range of:",
+        "N and k",
+        "for arbitrary normalized edit weights.",
+        "This is particularly interesting because the unit-cost problem is already essentially understood in the corresponding parameterization."
+      ]
+    },
+    {
+      "heading": "Open problem 6: context-dependent weighted ED",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "Can rich context-sensitive error models be supported while retaining:",
+      "paragraphs": [
+        "Can rich context-sensitive error models be supported while retaining:",
+        "N + poly(k)",
+        "or comparable output-sensitive complexity?"
+      ]
+    },
+    {
+      "heading": "Open problem 7: constant-factor fully dynamic approximation",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 7,
+      "word_count": 22,
+      "evidence": "Can general fully dynamic edit distance be maintained with:",
+      "paragraphs": [
+        "Can general fully dynamic edit distance be maintained with:",
+        "polylog N",
+        "or:",
+        "N^o(1)",
+        "update time while achieving a genuine:",
+        "O(1)",
+        "approximation factor?"
+      ]
+    },
+    {
+      "heading": "Open problem 8: near-exact dynamic approximation",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 5,
+      "word_count": 22,
+      "evidence": "How much update time is required for:",
+      "paragraphs": [
+        "How much update time is required for:",
+        "(1+ε)",
+        "dynamic approximation?",
+        "This combines two of the hardest dimensions:",
+        "dynamic maintenance + near-exact accuracy"
+      ]
+    },
+    {
+      "heading": "Open problem 9: optimal edit-distance sketches",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Can the remaining subpolynomial dependence on the full string length be reduced while retaining:",
+      "paragraphs": [
+        "Can the remaining subpolynomial dependence on the full string length be reduced while retaining:",
+        "exact bounded recovery + small sketch size + efficient decoding?"
+      ]
+    },
+    {
+      "heading": "Open problem 10: deterministic compact sketches",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Randomization is central to many modern sketch constructions.",
+      "paragraphs": [
+        "Randomization is central to many modern sketch constructions.",
+        "The deterministic sketch complexity of edit distance remains a fundamentally different question."
+      ]
+    },
+    {
+      "heading": "Open problem 11: better ANNS under edit distance",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "Can one achieve:",
+      "paragraphs": [
+        "Can one achieve:",
+        "constant-factor approximate nearest neighbor",
+        "under edit distance with:",
+        "near-linear index size sublinear query time practical preprocessing?"
+      ]
+    },
+    {
+      "heading": "Open problem 12: data-dependent but certified embeddings",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 4,
+      "word_count": 25,
+      "evidence": "Can learned representations obtain formal guarantees such as:",
+      "paragraphs": [
+        "Can learned representations obtain formal guarantees such as:",
+        "small distortion for all pairs from a specified data distribution",
+        "or:",
+        "certified recall inside ED ≤ k?"
+      ]
+    },
+    {
+      "heading": "Open problem 13: complexity parameterized by compressibility",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "Can exact or near-exact edit distance be expressed naturally in terms of:",
+      "paragraphs": [
+        "Can exact or near-exact edit distance be expressed naturally in terms of:",
+        "compressed size z rather than expanded length N?",
+        "The ideal result would exploit shared repetitive structure without first expanding the sequences."
+      ]
+    },
+    {
+      "heading": "Open problem 14: the structure behind dynamic tractability",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 2,
+      "word_count": 36,
+      "evidence": "Why is string edit distance dynamically maintainable while closely related structured edit problems can be conditionally forced to recompute almost from scratch?",
+      "paragraphs": [
+        "Why is string edit distance dynamically maintainable while closely related structured edit problems can be conditionally forced to recompute almost from scratch?",
+        "Identifying the exact structural boundary may reveal new algorithmic techniques beyond edit distance itself."
+      ]
+    },
+    {
+      "heading": "Open problem 15: stronger unconditional lower bounds",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "Most sharp barriers for edit distance depend on conjectures such as:",
+      "paragraphs": [
+        "Most sharp barriers for edit distance depend on conjectures such as:",
+        "SETH OVH APSP hypothesis",
+        "Proving strong unconditional lower bounds in realistic computational models remains a fundamental complexity-theory challenge."
+      ]
+    },
+    {
+      "heading": "Open problem 16: theory matching practice",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 5,
+      "word_count": 45,
+      "evidence": "Many theoretically sophisticated algorithms are not the fastest methods for ordinary production workloads.",
+      "paragraphs": [
+        "Many theoretically sophisticated algorithms are not the fastest methods for ordinary production workloads.",
+        "A complete theory should ideally explain when:",
+        "bit-parallel DP banded DP wavefront alignment filter-and-verify approximation learned indexing",
+        "is preferable as a function of:",
+        "N k alphabet hardware memory database size error distribution"
+      ]
+    },
+    {
+      "heading": "The frontier is not one line",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 5,
+      "word_count": 54,
+      "evidence": "A useful geometric picture is:",
+      "paragraphs": [
+        "A useful geometric picture is:",
+        "more accurate ↑ │ exact ●───────────┤ │ 1+ε ● │ │ constant ● │ │ polylog ● │ │ └──────────────→ faster",
+        "Now add additional axes:",
+        "memory randomization preprocessing distance k weight complexity dynamic updates index size",
+        "The true frontier becomes a high-dimensional surface rather than a single running-time record."
+      ]
+    },
+    {
+      "heading": "How to read a frontier result correctly",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 14,
+      "word_count": 107,
+      "evidence": "Whenever a paper claims a new edit-distance bound, identify at least the following:",
+      "paragraphs": [
+        "Whenever a paper claims a new edit-distance bound, identify at least the following:",
+        "Is the result exact or approximate?",
+        "What approximation convention is used?",
+        "Is the algorithm deterministic or randomized?",
+        "Is the stated time worst-case, expected, or amortized?",
+        "Does it assume unit edit costs?",
+        "Does it assume a bounded distance k ?",
+        "Does it require finite or constant alphabet?",
+        "What is the computational model?",
+        "Does preprocessing count?",
+        "Is the result pairwise, streaming, dynamic, or indexed?",
+        "Does it return only a number or also an edit script?",
+        "What hypothesis supports any lower bound?",
+        "Ignoring even one of these can make two incomparable algorithms appear to contradict each other."
+      ]
+    },
+    {
+      "heading": "Example: two apparently contradictory results",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 11,
+      "word_count": 45,
+      "evidence": "Statement A:",
+      "paragraphs": [
+        "Statement A:",
+        "Exact edit distance cannot be computed in N^(2-δ) under SETH.",
+        "Statement B:",
+        "Edit distance can be computed in O(N+k²).",
+        "There is no contradiction.",
+        "If:",
+        "k = Θ(N)",
+        "then:",
+        "N+k² = Θ(N²)",
+        "The parameterized algorithm only beats the worst-case barrier when:",
+        "k ≪ N"
+      ]
+    },
+    {
+      "heading": "Another apparent contradiction",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "Statement A:",
+      "paragraphs": [
+        "Statement A:",
+        "Exact ED is conditionally near quadratic.",
+        "Statement B:",
+        "Constant-factor ED is near linear.",
+        "Again there is no contradiction because the second algorithm solves a weaker problem."
+      ]
+    },
+    {
+      "heading": "And another",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 9,
+      "word_count": 33,
+      "evidence": "Statement A:",
+      "paragraphs": [
+        "Statement A:",
+        "Global low-distortion embedding into ℓ1 has strong limitations.",
+        "Statement B:",
+        "A neural embedding achieves excellent test-set recall.",
+        "No contradiction exists because:",
+        "worst-case metric guarantee",
+        "and:",
+        "distribution-specific empirical performance",
+        "are different claims."
+      ]
+    },
+    {
+      "heading": "Research methodology: separate theorem from evidence",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 2,
+      "word_count": 59,
+      "evidence": "Claim type What it means Theorem Mathematically proven under explicit assumptions Conditional lower bound Proven implication assuming a complexity conjecture Approximation guarantee Formal relationship between output and true optimum High-probability guarantee Mathematical guarantee over algorithmic randomness Empirical benchmark Observed behavior on tested instances Heuristic No general correctness or approximation theorem",
+      "paragraphs": [
+        "Claim type What it means Theorem Mathematically proven under explicit assumptions Conditional lower bound Proven implication assuming a complexity conjecture Approximation guarantee Formal relationship between output and true optimum High-probability guarantee Mathematical guarantee over algorithmic randomness Empirical benchmark Observed behavior on tested instances Heuristic No general correctness or approximation theorem",
+        "Research-frontier writing should never replace one category with another."
+      ]
+    },
+    {
+      "heading": "A modern historical trajectory",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 1,
+      "word_count": 109,
+      "evidence": "1960s │ └── Levenshtein: insertion/deletion/substitution distance framework │ 1970s │ └── classical dynamic programming │ 1980 │ Masek–Paterson logarithmic shaving │ 1980s │ low-distance / k-difference algorithms │ 1990s–2000s │ bit parallelism embeddings approximation indexing │ 2015 │ Backurs–Indyk: SETH quadratic barrier │ 2016 │ stronger implications for logarithmic shaving │ 2018 │ constant-factor truly subquadratic approximation │ 2020 │ constant-factor near-linear approximation │ 2021–2024 │ streaming, dynamic approximation, weighted bounded ED, compact sketches │ 2025 │ bounded dynamic ED: Õ(k) updates │ ├── weighted dynamic │ trade-offs │ └── new ED nearest- neighbor embeddings │ 2026 │ randomized (1+ε)-approximation in N² / 2^(log^(Ω(1))N) │ └── frontier remains open",
+      "paragraphs": [
+        "1960s │ └── Levenshtein: insertion/deletion/substitution distance framework │ 1970s │ └── classical dynamic programming │ 1980 │ Masek–Paterson logarithmic shaving │ 1980s │ low-distance / k-difference algorithms │ 1990s–2000s │ bit parallelism embeddings approximation indexing │ 2015 │ Backurs–Indyk: SETH quadratic barrier │ 2016 │ stronger implications for logarithmic shaving │ 2018 │ constant-factor truly subquadratic approximation │ 2020 │ constant-factor near-linear approximation │ 2021–2024 │ streaming, dynamic approximation, weighted bounded ED, compact sketches │ 2025 │ bounded dynamic ED: Õ(k) updates │ ├── weighted dynamic │ trade-offs │ └── new ED nearest- neighbor embeddings │ 2026 │ randomized (1+ε)-approximation in N² / 2^(log^(Ω(1))N) │ └── frontier remains open"
+      ]
+    },
+    {
+      "heading": "What is comparatively well understood?",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Several regions of the map now have unusually sharp answers.",
+      "paragraphs": [
+        "Several regions of the map now have unusually sharp answers."
+      ]
+    },
+    {
+      "heading": "General exact unit-cost ED",
+      "level": 3,
+      "id": "ux-section-119",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Strong evidence indicates that a fixed polynomial improvement over quadratic time is impossible.",
+      "paragraphs": [
+        "Strong evidence indicates that a fixed polynomial improvement over quadratic time is impossible."
+      ]
+    },
+    {
+      "heading": "Bounded unit-cost ED",
+      "level": 3,
+      "id": "ux-section-120",
+      "paragraph_count": 3,
+      "word_count": 10,
+      "evidence": "The:",
+      "paragraphs": [
+        "The:",
+        "O(N+k²)",
+        "regime is essentially optimal in its natural parameterization."
+      ]
+    },
+    {
+      "heading": "Bounded dynamic unit-cost ED",
+      "level": 3,
+      "id": "ux-section-121",
+      "paragraph_count": 3,
+      "word_count": 10,
+      "evidence": "The:",
+      "paragraphs": [
+        "The:",
+        "Õ(k)",
+        "update result closes a major parameterized dynamic question."
+      ]
+    },
+    {
+      "heading": "Constant-factor static approximation",
+      "level": 3,
+      "id": "ux-section-122",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "Near-linear time is known.",
+      "paragraphs": [
+        "Near-linear time is known."
+      ]
+    },
+    {
+      "heading": "Sketch dependence on k",
+      "level": 3,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "Modern bounded sketches approach the information-theoretic scale in their dependence on the number of edits.",
+      "paragraphs": [
+        "Modern bounded sketches approach the information-theoretic scale in their dependence on the number of edits."
+      ]
+    },
+    {
+      "heading": "What remains poorly understood?",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 2,
+      "word_count": 33,
+      "evidence": "By contrast, major uncertainty remains around:",
+      "paragraphs": [
+        "By contrast, major uncertainty remains around:",
+        "near-exact approximation deterministic approximation general weighted parameter regimes dynamic constant-factor approximation near-exact dynamic algorithms constant-factor ANNS certified learned embeddings compressed-input complexity context-sensitive edit models unconditional lower bounds"
+      ]
+    },
+    {
+      "heading": "The deepest conceptual frontier",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "Perhaps the most important question is not:",
+      "paragraphs": [
+        "Perhaps the most important question is not:",
+        "What is the next faster ED algorithm?",
+        "but:",
+        "What information about an alignment must fundamentally be retained to achieve a specified level of accuracy?",
+        "Different algorithmic paradigms answer this question differently."
+      ]
+    },
+    {
+      "heading": "Dynamic programming",
+      "level": 3,
+      "id": "ux-section-126",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "retain exact costs for many alignment states",
+      "paragraphs": [
+        "retain exact costs for many alignment states"
+      ]
+    },
+    {
+      "heading": "Bounded algorithms",
+      "level": 3,
+      "id": "ux-section-127",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "retain only states near plausible low-error alignments",
+      "paragraphs": [
+        "retain only states near plausible low-error alignments"
+      ]
+    },
+    {
+      "heading": "Approximation",
+      "level": 3,
+      "id": "ux-section-128",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "merge or sample alignment possibilities",
+      "paragraphs": [
+        "merge or sample alignment possibilities"
+      ]
+    },
+    {
+      "heading": "Sketching",
+      "level": 3,
+      "id": "ux-section-129",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "retain only information needed for later recovery",
+      "paragraphs": [
+        "retain only information needed for later recovery"
+      ]
+    },
+    {
+      "heading": "Embeddings",
+      "level": 3,
+      "id": "ux-section-130",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "compress alignment geometry into another metric space",
+      "paragraphs": [
+        "compress alignment geometry into another metric space"
+      ]
+    },
+    {
+      "heading": "Learning",
+      "level": 3,
+      "id": "ux-section-131",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "retain what is useful for the observed data distribution",
+      "paragraphs": [
+        "retain what is useful for the observed data distribution",
+        "These can be viewed as different forms of alignment information compression ."
+      ]
+    },
+    {
+      "heading": "A unifying research question",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 14,
+      "word_count": 46,
+      "evidence": "Given an error tolerance:",
+      "paragraphs": [
+        "Given an error tolerance:",
+        "ε",
+        "a distance scale:",
+        "k",
+        "and input length:",
+        "N",
+        "how many bits or computational states are necessary to preserve enough alignment information to answer the target problem?",
+        "This perspective connects:",
+        "time complexity;",
+        "space complexity;",
+        "sketch size;",
+        "communication complexity;",
+        "embedding distortion;",
+        "approximation ratio."
+      ]
+    },
+    {
+      "heading": "Research frontier versus application frontier",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 8,
+      "word_count": 67,
+      "evidence": "Not every useful engineering improvement is a new theoretical frontier.",
+      "paragraphs": [
+        "Not every useful engineering improvement is a new theoretical frontier.",
+        "For example:",
+        "better SIMD implementation better cache layout faster GPU kernel",
+        "may produce enormous real performance gains while leaving asymptotic complexity unchanged.",
+        "Conversely:",
+        "N² → N² / 2^(log^(Ω(1))N)",
+        "may be theoretically profound while initially being less useful than a heavily optimized quadratic implementation on ordinary input sizes.",
+        "Both kinds of progress matter, but they answer different questions."
+      ]
+    },
+    {
+      "heading": "The practical frontier",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 3,
+      "word_count": 62,
+      "evidence": "For a real system, the best architecture may combine multiple theoretical regimes:",
+      "paragraphs": [
+        "For a real system, the best architecture may combine multiple theoretical regimes:",
+        "DATABASE ↓ index / learned embedding ↓ candidate set ↓ cheap exact filters ↓ bounded edit distance ↓ exact edit script ↓ application-specific scoring",
+        "The most important future systems may therefore emerge not from replacing Levenshtein distance, but from placing exact edit computation inside increasingly sophisticated retrieval and filtering pipelines."
+      ]
+    },
+    {
+      "heading": "What future breakthroughs would change the field most?",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Several hypothetical results would immediately reshape the landscape.",
+      "paragraphs": [
+        "Several hypothetical results would immediately reshape the landscape."
+      ]
+    },
+    {
+      "heading": "A truly subquadratic exact algorithm",
+      "level": 3,
+      "id": "ux-section-136",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "O( N^(2-δ) )",
+      "paragraphs": [
+        "O( N^(2-δ) )",
+        "would challenge one of the flagship barriers of fine-grained complexity."
+      ]
+    },
+    {
+      "heading": "A truly subquadratic (1+ε)-approximation",
+      "level": 3,
+      "id": "ux-section-137",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "would substantially strengthen the 2026 approximation breakthrough.",
+      "paragraphs": [
+        "would substantially strengthen the 2026 approximation breakthrough."
+      ]
+    },
+    {
+      "heading": "A near-linear PTAS",
+      "level": 3,
+      "id": "ux-section-138",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "would almost collapse the gap between constant-factor and near-exact approximation.",
+      "paragraphs": [
+        "would almost collapse the gap between constant-factor and near-exact approximation."
+      ]
+    },
+    {
+      "heading": "A constant-factor polylog-update dynamic algorithm",
+      "level": 3,
+      "id": "ux-section-139",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "would dramatically sharpen fully dynamic approximation.",
+      "paragraphs": [
+        "would dramatically sharpen fully dynamic approximation."
+      ]
+    },
+    {
+      "heading": "An essentially optimal deterministic edit sketch",
+      "level": 3,
+      "id": "ux-section-140",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "would reduce dependence on randomness in communication and streaming settings.",
+      "paragraphs": [
+        "would reduce dependence on randomness in communication and streaming settings."
+      ]
+    },
+    {
+      "heading": "A constant-factor practical ANNS structure",
+      "level": 3,
+      "id": "ux-section-141",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "could transform large-scale edit-distance retrieval.",
+      "paragraphs": [
+        "could transform large-scale edit-distance retrieval."
+      ]
+    },
+    {
+      "heading": "A certified neural edit embedding",
+      "level": 3,
+      "id": "ux-section-142",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "could connect modern representation learning with classical approximation guarantees.",
+      "paragraphs": [
+        "could connect modern representation learning with classical approximation guarantees."
+      ]
+    },
+    {
+      "heading": "A strong unconditional lower bound",
+      "level": 3,
+      "id": "ux-section-143",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "would be a breakthrough extending far beyond edit distance.",
+      "paragraphs": [
+        "would be a breakthrough extending far beyond edit distance."
+      ]
+    },
+    {
+      "heading": "A researcher's decision map",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 1,
+      "word_count": 104,
+      "evidence": "If the research question is... The relevant frontier is... Can exact ED beat quadratic time? Fine-grained complexity and exact algorithms Can tiny error buy a large speedup? Near-exact approximation Strings differ by few edits Parameterized and bounded ED Edit costs differ Weighted bounded complexity Strings change repeatedly Dynamic ED Input cannot be stored Streaming and sketches Strings are stored remotely Communication complexity and document exchange Search millions of strings Indexing and approximate nearest neighbor Data follows a known distribution Learned and data-dependent embeddings Input is repetitive Compressed and periodic algorithms Objects are trees or graphs Structured edit distance Need biologically realistic gaps Sequence-alignment generalizations",
+      "paragraphs": [
+        "If the research question is... The relevant frontier is... Can exact ED beat quadratic time? Fine-grained complexity and exact algorithms Can tiny error buy a large speedup? Near-exact approximation Strings differ by few edits Parameterized and bounded ED Edit costs differ Weighted bounded complexity Strings change repeatedly Dynamic ED Input cannot be stored Streaming and sketches Strings are stored remotely Communication complexity and document exchange Search millions of strings Indexing and approximate nearest neighbor Data follows a known distribution Learned and data-dependent embeddings Input is repetitive Compressed and periodic algorithms Objects are trees or graphs Structured edit distance Need biologically realistic gaps Sequence-alignment generalizations"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 17,
+      "word_count": 859,
+      "evidence": "Edit distance remains a research frontier because its simplest formulation sits at the intersection of several fundamental themes in theoretical computer science: dynamic programming, fine-grained complexity, metric geometry, parameterized algorithms, streaming, communication, approximation, and data structures.",
+      "paragraphs": [
+        "Edit distance remains a research frontier because its simplest formulation sits at the intersection of several fundamental themes in theoretical computer science: dynamic programming, fine-grained complexity, metric geometry, parameterized algorithms, streaming, communication, approximation, and data structures.",
+        "For unrestricted exact computation, the classical quadratic dynamic-programming barrier remains remarkably resilient. Backurs and Indyk showed that a fixed polynomial improvement would violate SETH, while subsequent work connected even sufficiently aggressive logarithmic shaving to major consequences in circuit complexity. These results do not constitute unconditional quadratic lower bounds, but they make exact edit distance one of the canonical examples of a problem whose apparent computational barrier is supported by modern fine-grained complexity.",
+        "Approximation reveals a dramatically different landscape. Constant-factor approximation is possible in near-linear time. The 2026 randomized approximation scheme of Mao and Rubinstein goes much further: for every constant ε>0 , a (1+ε) -approximation can be computed in N² / 2^(log^(Ω(1))N) time. Thus even arbitrarily small multiplicative error permits an asymptotic speedup beyond the polylogarithmic improvements believed accessible to exact computation.",
+        "That result creates one of the clearest new frontiers: whether near-exact approximation can become truly subquadratic, or even near linear. The large gap between near-linear constant-factor algorithms and the new quasi-strongly-subquadratic approximation scheme leaves a vast unexplored time–accuracy landscape.",
+        "Parameterized algorithms show that worst-case quadratic complexity is not representative when the strings are already similar. For unit-cost distance k , exact computation in O(N+k²) time is essentially optimal. This creates a continuous transition from linear computation for very small k to quadratic computation when k=Θ(N) .",
+        "Weighted edit distance complicates this picture. Arbitrary normalized weights have a different bounded complexity frontier from unit-cost distance, and current upper and conditional lower bounds leave interesting parameter regimes to resolve. Small integer weights recover stronger structure: static computation can achieve Õ(N+Wk²) , while dynamic maintenance can reach Õ(W²k) update time.",
+        "Dynamic computation has undergone equally striking progress. General exact edit distance can be maintained in roughly linear time per update for constant-weight models instead of recomputing a quadratic table. In the bounded unit-cost regime, the 2025 result of Gorbachev and Kociumaka reduces dynamic update time to Õ(k) . Approximation goes further still: fully dynamic edit distance admits subpolynomial approximation with subpolynomial amortized expected update time. Obtaining constant-factor or near-exact guarantees with similarly small update time is a major unresolved direction.",
+        "Streaming and sketching ask how much information about a string must be retained rather than how many dynamic-programming cells must be evaluated. Modern bounded edit-distance sketches require only k·2^O(sqrt(log N log log N)) space and can recover both the exact bounded distance and an optimal edit script with high probability. The dependence on k is essentially information-theoretically optimal, shifting the frontier toward reducing the remaining dependence on string length, improving construction and recovery time, and understanding deterministic alternatives.",
+        "Large-scale search introduces another dimension. Computing one edit distance quickly does not solve nearest-neighbor search over millions of strings. Metric embeddings, specialized indexes, and approximate-nearest-neighbor structures therefore form a separate research program. Recent similarity-measure embeddings give polylogarithmic approximation for edit-distance ANNS on fixed-length strings, illustrating that useful search representations need not be conventional low-distortion embeddings into ℓ₁ or ℓ₂ .",
+        "Learned embeddings push this idea further by abandoning worst-case universality and specializing to a data distribution. Such models can produce extremely effective retrieval representations, but most provide empirical rather than worst-case approximation guarantees. The frontier is to combine data-dependent learning with formal certification, especially in low-distance regions where exact nearest-neighbor recall matters.",
+        "Repetitive and compressed strings provide another route around worst-case complexity. Repetition simultaneously creates ambiguous alignments and information redundancy. Understanding when compressed structure can be exploited so that complexity depends on compressed size rather than expanded sequence length remains important for genomes, version histories, and large document collections.",
+        "The boundary between strings and richer structures is equally revealing. Unweighted tree edit distance now admits truly subcubic algorithms, while weighted tree edit distance is tightly connected to APSP. Recent dynamic hardness results show an even stronger distinction: dynamic string edit distance can benefit from large update-time speedups while related tree-edit problems may not. This suggests that linear order itself provides powerful algorithmic structure whose exact role is still not fully understood.",
+        "The broadest lesson is that there is no single \"complexity of edit distance.\" The correct object is a multidimensional complexity surface indexed by exactness, approximation factor, distance parameter, weight model, preprocessing, memory, randomness, updates, representation, and output requirements.",
+        "Modern progress has repeatedly come from identifying the correct region of this surface rather than attacking the unrestricted quadratic problem directly. Parameterization exploits small distance. Approximation compresses alignment information. Sketching compresses the strings themselves. Dynamic algorithms reuse previous computation. Embeddings move the geometry into a more searchable representation. Learning specializes that representation to the data distribution.",
+        "For that reason, the most productive future question may not simply be \"How can edit distance be computed faster?\" It is more precise to ask:",
+        "What is the minimum amount of alignment information that must be retained—computationally, statistically, or informationally—to answer a particular edit-distance question at a specified accuracy?",
+        "Answering that question across exact, approximate, dynamic, streaming, indexed, compressed, learned, and structured settings is the central research frontier of edit distance."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 9,
+      "word_count": 119,
+      "evidence": "Edit Distance Complexity — exact complexity, SETH, logarithmic shaving, and computational models.",
+      "paragraphs": [
+        "Edit Distance Complexity — exact complexity, SETH, logarithmic shaving, and computational models.",
+        "Bounded and Parameterized Edit Distance — the O(N+k²) low-distance regime and parameterized optimality.",
+        "Approximate Edit Distance Algorithms — approximation factors, gap problems, constant-factor algorithms, and the 2026 near-exact frontier.",
+        "Dynamic, Online and Streaming Edit Distance — update complexity, streaming space, sketches, and dynamic approximation.",
+        "Weighted Levenshtein Distance — nonuniform edit costs and their mathematical consequences.",
+        "Indexing and Filtering for Edit Distance — scalable search beyond pairwise computation.",
+        "Learned Edit Distance and Embeddings — data-driven costs, differentiable alignment, metric embeddings, and neural representations.",
+        "Tree and Graph Edit Distance — structural generalizations and their different complexity regimes.",
+        "Levenshtein Performance Engineering — hardware, cache behavior, vectorization, parallelism, and practical throughput."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 15,
+      "word_count": 362,
+      "evidence": "William J. Masek and Michael S. Paterson, “A Faster Algorithm Computing String Edit Distances,” Journal of Computer and System Sciences , 20(1), 18–31, 1980. DOI record .",
+      "paragraphs": [
+        "William J. Masek and Michael S. Paterson, “A Faster Algorithm Computing String Edit Distances,” Journal of Computer and System Sciences , 20(1), 18–31, 1980. DOI record .",
+        "Gad M. Landau and Uzi Vishkin, “Fast String Matching with k Differences,” Journal of Computer and System Sciences , 37(1), 63–78, 1988. DOI record .",
+        "Arturs Backurs and Piotr Indyk, “Edit Distance Cannot Be Computed in Strongly Subquadratic Time (Unless SETH Is False),” SIAM Journal on Computing , 47(3), 1087–1097, 2018; preliminary version STOC 2015. DOI record .",
+        "Amir Abboud, Thomas Dueholm Hansen, Virginia Vassilevska Williams, and Ryan Williams, “Simulating Branching Programs with Edit Distance and Friends: Or: A Polylog Shaved Is a Lower Bound Made,” STOC 2016 , 375–388. DOI record .",
+        "Alexandr Andoni and Negev Shekel Nosatzki, “Edit Distance in Near-Linear Time: It's a Constant Factor,” FOCS 2020 , 990–1001. DOI record .",
+        "Tomasz Kociumaka, Anish Mukherjee, and Barna Saha, “Approximating Edit Distance in the Fully Dynamic Model,” FOCS 2023 , 1628–1638. DOI record .",
+        "Alejandro Cassis, Tomasz Kociumaka, and Philip Wellnitz, “Optimal Algorithms for Bounded Weighted Edit Distance,” FOCS 2023 . DOI record .",
+        "Michal Koucký and Michael E. Saks, “Almost Linear Size Edit Distance Sketch,” STOC 2024 , 956–967. DOI record .",
+        "Egor Gorbachev and Tomasz Kociumaka, “Bounded Edit Distance: Optimal Static and Dynamic Algorithms for Small Integer Weights,” STOC 2025 , 2157–2166. DOI record .",
+        "Itai Boneh, Egor Gorbachev, and Tomasz Kociumaka, “Bounded Weighted Edit Distance: Dynamic Algorithms and Matching Lower Bounds,” ESA 2025 . DOI record .",
+        "Alexandr Andoni and Negev Shekel Nosatzki, “Embeddings into Similarity Measures for Nearest Neighbor Search,” FOCS 2025 , 864–893. DOI record .",
+        "Jakob Nogler, Adam Polak, Barna Saha, Virginia Vassilevska Williams, Yinzhan Xu, and Christopher Ye, “Faster Weighted and Unweighted Tree Edit Distance and APSP Equivalence,” STOC 2025 , 2167–2178. DOI record .",
+        "Bingbing Hu, Jakob Nogler, and Barna Saha, “Hardness of Dynamic Tree Edit Distance and Friends,” ITCS 2026 . DOI record .",
+        "Wojciech Janczewski and Tatiana Starikovskaya, “Asymmetric Streaming Approximate Pattern Matching,” CPM 2026 . DOI record .",
+        "Xiao Mao and Aviad Rubinstein, “Approximation Schemes for Edit Distance and LCS in Quasi-Strongly Subquadratic Time,” STOC 2026 , 744–754. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-edit-distance-algorithms",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-146",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "Approximate Edit Distance Algorithms — approximation factors, gap problems, constant-factor algorithms, and the 2026 near-exact frontier."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "The classical low-distance result",
+          "anchor_id": "ux-section-21",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-146",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — the O(N+k²) low-distance regime and parameterized optimality."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Adding one operation can change complexity",
+          "anchor_id": "ux-section-75",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "For example, Damerau–Levenshtein Distance introduces adjacent transposition."
+        }
+      ]
+    },
+    {
+      "target": "/dynamic-online-and-streaming-edit-distance",
+      "evidence": [
+        {
+          "section": "Frontier VI: streaming edit distance",
+          "anchor_id": "ux-section-40",
+          "alias": "dynamic online and streaming edit distance",
+          "excerpt": "Streaming, online, and dynamic edit distance are treated in detail in Dynamic, Online and Streaming Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-146",
+          "alias": "dynamic online and streaming edit distance",
+          "excerpt": "Dynamic, Online and Streaming Edit Distance — update complexity, streaming space, sketches, and dynamic approximation."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-146",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — exact complexity, SETH, logarithmic shaving, and computational models."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Edit Distance Research Frontiers",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Edit distance is one of the oldest problems in algorithm design and still one of the most active. Its classical formulation is elementary: given two sequences, compute the minimum number or cost of insertions, deletions, and substitutions required to transform one into the other. Yet more than half a century after the fundamental dynamic-programming algorithms were developed, several of the most basic questions about its computational structure remain unresolved."
+        },
+        {
+          "section": "The central object",
+          "anchor_id": "ux-section-2",
+          "alias": "edit distance",
+          "excerpt": "the standard unit-cost edit distance is:"
+        },
+        {
+          "section": "Why edit distance remains theoretically difficult",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "Edit distance must choose an alignment:"
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Edit Distance Research Frontiers",
+          "anchor_id": "ux-section-1",
+          "alias": "edit operations",
+          "excerpt": "EXACT WORST-CASE COMPUTATION │ ├── fine-grained lower bounds ├── polylogarithmic improvements └── unconditional complexity APPROXIMATION │ ├── constant-factor near-linear algorithms ├── near-exact (1+ε) approximation └── deterministic vs randomized algorithms PARAMETERIZED COMPUTATION │ ├── small distance k ├── weighted distance └── distance-sensitive optimality DYNAMIC / STREAMING │ ├── changing strings ├── limited memory ├── sketches └── communication complexity SEARCH │ ├── indexing ├── approximate nearest neighbor ├── metric embeddings └── learned representations STRUCTURED GENERALIZATIONS │ ├── tree edit distance ├── graph edit distance ├── biological alignment └── richer edit operation"
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Exact search versus approximate search",
+          "anchor_id": "ux-section-55",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-146",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — scalable search beyond pairwise computation."
+        }
+      ]
+    },
+    {
+      "target": "/learned-edit-distance-and-embeddings",
+      "evidence": [
+        {
+          "section": "Learned costs create another frontier",
+          "anchor_id": "ux-section-30",
+          "alias": "learned edit distance and embeddings",
+          "excerpt": "See Learned Edit Distance and Embeddings ."
+        },
+        {
+          "section": "Frontier IX: learned edit-distance representations",
+          "anchor_id": "ux-section-59",
+          "alias": "learned edit distance and embeddings",
+          "excerpt": "See Learned Edit Distance and Embeddings ."
+        },
+        {
+          "section": "The missing guarantee",
+          "anchor_id": "ux-section-61",
+          "alias": "learned edit distance embeddings",
+          "excerpt": "Most learned edit-distance embeddings provide:"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-performance-engineering",
+      "evidence": [
+        {
+          "section": "Frontier XVII: hardware and algorithm engineering",
+          "anchor_id": "ux-section-88",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "See Levenshtein Performance Engineering ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-146",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "Levenshtein Performance Engineering — hardware, cache behavior, vectorization, parallelism, and practical throughput."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Bit-parallelism changes practical complexity",
+          "anchor_id": "ux-section-89",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "The Myers Bit-Vector Algorithm processes many dynamic-programming states simultaneously inside machine words."
+        }
+      ]
+    },
+    {
+      "target": "/sequence-alignment-and-gap-models",
+      "evidence": [
+        {
+          "section": "Frontier XV: edit distance and biological alignment",
+          "anchor_id": "ux-section-82",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "See Sequence Alignment and Gap Models ."
+        }
+      ]
+    },
+    {
+      "target": "/theory",
+      "evidence": [
+        {
+          "section": "Context-dependent edit costs",
+          "anchor_id": "ux-section-29",
+          "alias": "edit distance theory",
+          "excerpt": "Most weighted edit-distance theory assumes:"
+        }
+      ]
+    },
+    {
+      "target": "/tree-and-graph-edit-distance",
+      "evidence": [
+        {
+          "section": "Frontier XIV: beyond strings",
+          "anchor_id": "ux-section-77",
+          "alias": "tree and graph edit distance",
+          "excerpt": "See Tree and Graph Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-146",
+          "alias": "tree and graph edit distance",
+          "excerpt": "Tree and Graph Edit Distance — structural generalizations and their different complexity regimes."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Unicode example",
+          "anchor_id": "ux-section-86",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Frontier IV: weighted edit distance",
+          "anchor_id": "ux-section-24",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-146",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — nonuniform edit costs and their mathematical consequences."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/edit-distance-research-frontiers#page",
+      "type": "WebPage",
+      "name": "Edit Distance Research Frontiers: Open Problems, Bounds & New Directions",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/edit-distance-research-frontiers#article"
+      },
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-research-frontiers#article",
+      "type": "TechArticle",
+      "name": "Edit Distance Research Frontiers: Open Problems, Bounds & New Directions",
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/edit-distance-research-frontiers#page",
+      "mainEntity",
+      "https://www.levenshtein.net/edit-distance-research-frontiers#article"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-research-frontiers#page",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-research-frontiers#article",
+      "isPartOf",
+      "https://www.levenshtein.net/edit-distance-research-frontiers#page"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1016/0022-0000(80)90002-1",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/0022-0000(88)90045-1",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/15m1053128",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/2897518.2897653",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/focs46700.2020.00096",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/focs57990.2023.00098",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/focs57990.2023.00135",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3618260.3649783",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3717823.3718168",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/lipics.esa.2025.45",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/focs63196.2025.00045",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3717823.3718116",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/lipics.itcs.2026.78",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/lipics.cpm.2026.19",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3798129.3800789",
+      "anchor": "DOI record"
+    }
+  ]
+}

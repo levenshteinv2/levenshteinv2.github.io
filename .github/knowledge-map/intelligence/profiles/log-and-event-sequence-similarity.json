@@ -1,0 +1,2110 @@
+{
+  "url": "/log-and-event-sequence-similarity",
+  "title": "Log and Event-Sequence Similarity: Edit Distance, Trace Alignment, Anomaly Detection, and Observability",
+  "h1": [
+    "Log and Event-Sequence Similarity: Edit Distance, Trace Alignment, Anomaly Detection, and Observability"
+  ],
+  "group": "Software",
+  "provisional_mission": "Trace alignment và log",
+  "content_sha256": "1fb9448b16e98112dc84c0e12a57db3639917c19e766844f100eba4cf9562c5c",
+  "canonical": "https://www.levenshtein.net/log-and-event-sequence-similarity",
+  "primary_entity_candidate": "Log and Event-Sequence Similarity: Edit Distance, Trace Alignment, Anomaly Detection, and Observability",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Log and Event-Sequence Similarity",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 7,
+      "word_count": 176,
+      "evidence": "Logs, traces, event streams, workflow histories, and tool-call trajectories record what a system does over time. Once raw observations are converted into stable event types and grouped into meaningful executions, each execution can be represented as an ordered sequence.",
+      "paragraphs": [
+        "Logs, traces, event streams, workflow histories, and tool-call trajectories record what a system does over time. Once raw observations are converted into stable event types and grouped into meaningful executions, each execution can be represented as an ordered sequence.",
+        "LOGIN AUTH_SUCCESS QUERY QUERY LOGOUT",
+        "Comparing such sequences creates a natural application for edit distance and Levenshtein distance . An insertion can represent an extra event, a deletion a missing event, and a substitution one event type replacing another.",
+        "Operational event data, however, is more complex than an ordinary character string. Raw messages contain changing parameters, timestamps carry information, multiple executions can be interleaved, distributed systems may have only partial causal order, and one rare security-critical event can matter more than thousands of routine events.",
+        "The central distinction is therefore:",
+        "event-sequence similarity ≠ behavioral equivalence ≠ causal equivalence ≠ incident identity",
+        "Edit distance provides a precise alignment primitive. It does not by itself explain why two executions differ, whether one is correct, whether two traces represent the same incident, or whether two systems have the same semantics."
+      ]
+    },
+    {
+      "heading": "From Raw Logs to Event Sequences",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 6,
+      "word_count": 66,
+      "evidence": "A raw log stream may look like:",
+      "paragraphs": [
+        "A raw log stream may look like:",
+        "2026-08-30 09:00:01 INFO user=912 connected from 10.0.0.4 2026-08-30 09:00:01 INFO authentication successful user=912 2026-08-30 09:00:02 INFO query id=814 duration=17ms 2026-08-30 09:00:04 INFO user=912 disconnected",
+        "These are text messages, not yet a meaningful execution sequence.",
+        "A parser may instead map them to:",
+        "CONNECT AUTH_SUCCESS QUERY DISCONNECT",
+        "Only after this abstraction does sequence comparison begin to answer a useful operational question."
+      ]
+    },
+    {
+      "heading": "Parsing Defines the Event Alphabet",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 16,
+      "word_count": 48,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "Σ = {E1, E2, ..., Ek}",
+        "be a set of event types.",
+        "A parser maps a raw record r to:",
+        "event_type(r) ∈ Σ",
+        "plus optional attributes such as:",
+        "timestamp,",
+        "user or account identifier,",
+        "host,",
+        "resource,",
+        "status code,",
+        "latency,",
+        "operation arguments,",
+        "trace ID,",
+        "parent span,",
+        "or application-specific metadata."
+      ]
+    },
+    {
+      "heading": "Event Types and Event Instances Are Different",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 14,
+      "word_count": 49,
+      "evidence": "These records:",
+      "paragraphs": [
+        "These records:",
+        "login failed for user=alice login failed for user=bob",
+        "may share the same event type:",
+        "AUTH_FAILURE",
+        "while remaining different event instances.",
+        "Event-type distance asks:",
+        "Did approximately the same kinds of events occur?",
+        "Instance-level comparison additionally asks whether they involved the same:",
+        "users,",
+        "hosts,",
+        "resources,",
+        "values,",
+        "arguments,",
+        "or timing."
+      ]
+    },
+    {
+      "heading": "Log Parsing Is Part of the Similarity Model",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "raw logs ↓ parser ↓ event templates ↓ event instances ↓ execution sequence ↓ distance or similarity",
+      "paragraphs": [
+        "raw logs ↓ parser ↓ event templates ↓ event instances ↓ execution sequence ↓ distance or similarity",
+        "If parsing is wrong, the subsequent sequence comparison can be mathematically exact while still being operationally meaningless."
+      ]
+    },
+    {
+      "heading": "Stable Templates Matter",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 8,
+      "word_count": 91,
+      "evidence": "Two messages can differ only because a parameter changes:",
+      "paragraphs": [
+        "Two messages can differ only because a parameter changes:",
+        "Connection from 10.1.1.7 accepted Connection from 10.1.1.9 accepted",
+        "A useful parser may map both to:",
+        "Connection from <IP> accepted",
+        "This separates stable structure from changing parameters. Methods such as Spell use longest-common-subsequence structure for log parsing, while methods such as Drain route messages through a fixed-depth parse tree.",
+        "These techniques solve a different problem from event-sequence edit distance:",
+        "log parser: raw text → event template sequence metric: event sequence A vs event sequence B",
+        "Do not conflate log-template similarity with execution-sequence similarity."
+      ]
+    },
+    {
+      "heading": "Parsing Granularity Changes the Comparison Space",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 6,
+      "word_count": 59,
+      "evidence": "One parser may map every request to:",
+      "paragraphs": [
+        "One parser may map every request to:",
+        "HTTP_REQUEST",
+        "while another creates:",
+        "HTTP_GET HTTP_POST HTTP_DELETE HTTP_ERROR",
+        "The two systems create different event alphabets. A coarse parser can make distinct executions look artificially similar. A very fine parser can turn harmless parameter variation into fake behavioral differences.",
+        "too coarse → behavioral distinctions disappear too fine → parameter variation becomes fake behavior"
+      ]
+    },
+    {
+      "heading": "Parser Drift Can Look Like System Drift",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 7,
+      "word_count": 52,
+      "evidence": "If a parser upgrade renumbers or splits templates, sequence distance can change even when the underlying software does not.",
+      "paragraphs": [
+        "If a parser upgrade renumbers or splits templates, sequence distance can change even when the underlying software does not.",
+        "Prefer stable representations such as:",
+        "canonical template strings,",
+        "versioned event identifiers,",
+        "schema identifiers,",
+        "or explicit mappings across parser versions.",
+        "A change in observed event representation is not automatically a change in application behavior."
+      ]
+    },
+    {
+      "heading": "Instrumentation Changes Can Also Create Artificial Distance",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 9,
+      "word_count": 48,
+      "evidence": "A developer may add:",
+      "paragraphs": [
+        "A developer may add:",
+        "DEBUG cache lookup completed",
+        "to every request without changing functional behavior. Edit distance correctly observes an insertion, but the insertion describes telemetry, not necessarily a behavioral change.",
+        "The same problem appears when changing:",
+        "log level,",
+        "sampling policy,",
+        "collector configuration,",
+        "trace instrumentation,",
+        "or event schema."
+      ]
+    },
+    {
+      "heading": "Missing Telemetry Is Not Necessarily Missing Behavior",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "An execution:",
+      "paragraphs": [
+        "An execution:",
+        "A B C D",
+        "may be observed as:",
+        "A B D",
+        "because the collector dropped event C . Levenshtein alignment sees a deletion. The system itself may have executed C normally.",
+        "observed deletion ≠ necessarily missing execution step"
+      ]
+    },
+    {
+      "heading": "Constructing the Execution Case",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 10,
+      "word_count": 33,
+      "evidence": "Most production logs contain many concurrent executions. Before comparing sequences, events must be grouped into meaningful cases such as:",
+      "paragraphs": [
+        "Most production logs contain many concurrent executions. Before comparing sequences, events must be grouped into meaningful cases such as:",
+        "request,",
+        "session,",
+        "transaction,",
+        "job,",
+        "process,",
+        "workflow,",
+        "block,",
+        "trace ID,",
+        "or another domain-specific execution boundary."
+      ]
+    },
+    {
+      "heading": "Sessionization",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "session(e)",
+        "map an event to one execution case.",
+        "Then:",
+        "Trace(c) = events assigned to case c ordered by the chosen ordering rule",
+        "Correct sessionization is often more important than the choice between two closely related sequence metrics."
+      ]
+    },
+    {
+      "heading": "Trace IDs Are Stronger Than Arbitrary Windows",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 4,
+      "word_count": 48,
+      "evidence": "When a distributed tracing system supplies a valid trace identity, that identity is generally a stronger execution boundary than a fixed time window.",
+      "paragraphs": [
+        "When a distributed tracing system supplies a valid trace identity, that identity is generally a stronger execution boundary than a fixed time window.",
+        "Without a session key, a system may group observations into intervals:",
+        "[t, t + Δ]",
+        "but windows can split one execution or combine unrelated executions."
+      ]
+    },
+    {
+      "heading": "Interleaving Can Destroy Sequence Meaning",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 7,
+      "word_count": 61,
+      "evidence": "Suppose two requests execute:",
+      "paragraphs": [
+        "Suppose two requests execute:",
+        "request X: A B C request Y: D E F",
+        "A global log can appear as:",
+        "A D B E C F",
+        "Comparing this mixed stream with either request individually is conceptually invalid.",
+        "A robust pipeline is:",
+        "raw observations ↓ parse ↓ event instances ↓ sessionize / correlate ↓ order ↓ event sequence ↓ distance / similarity"
+      ]
+    },
+    {
+      "heading": "Formal Event Sequences",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 6,
+      "word_count": 42,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "X = (x1, x2, ..., xm) Y = (y1, y2, ..., yn)",
+        "where:",
+        "xi, yj ∈ Σ",
+        "are event symbols.",
+        "The symbols may represent log templates, workflow steps, API calls, tool names, state transitions, security events, or other ordered categorical observations."
+      ]
+    },
+    {
+      "heading": "Unit-Cost Levenshtein Distance for Events",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 6,
+      "word_count": 52,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "D(0,0) = 0 D(i,0) = i D(0,j) = j",
+        "and:",
+        "D(i,j) = min( D(i-1,j) + 1, D(i,j-1) + 1, D(i-1,j-1) + [xi != yj] )",
+        "The three operations have natural event interpretations:",
+        "Edit operation Event interpretation Insertion Extra observed event Deletion Missing expected event Substitution One event type replaced by another"
+      ]
+    },
+    {
+      "heading": "Worked Event-Alignment Example",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "NORMAL: START AUTH READ WRITE CLOSE OBSERVED: START AUTH READ ERROR CLOSE",
+      "paragraphs": [
+        "NORMAL: START AUTH READ WRITE CLOSE OBSERVED: START AUTH READ ERROR CLOSE",
+        "One optimal edit script contains:",
+        "WRITE → ERROR",
+        "so the unit-cost Levenshtein distance is:",
+        "dL = 1",
+        "The numerical distance is small. The operational impact may still be large."
+      ]
+    },
+    {
+      "heading": "Equal Edit Costs Are a Strong Assumption",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "Classic Levenshtein treats:",
+      "paragraphs": [
+        "Classic Levenshtein treats:",
+        "CACHE_HIT → CACHE_MISS",
+        "and:",
+        "AUTH_SUCCESS → DATABASE_CORRUPTION",
+        "as one substitution each. In operational systems these differences may have radically different importance."
+      ]
+    },
+    {
+      "heading": "Weighted Event Edit Distance",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "Define costs:",
+      "paragraphs": [
+        "Define costs:",
+        "c_del(x) c_ins(y) c_sub(x,y)",
+        "and use:",
+        "D(i,j) = min( D(i-1,j) + c_del(xi), D(i,j-1) + c_ins(yj), D(i-1,j-1) + c_sub(xi,yj) )",
+        "This is an event-oriented application of Weighted Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Event Importance Can Influence Cost",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "c_del(HEARTBEAT) = 0.1 c_del(AUTH_SUCCESS) = 1.0 c_del(PAYMENT_COMMIT) = 5.0",
+      "paragraphs": [
+        "c_del(HEARTBEAT) = 0.1 c_del(AUTH_SUCCESS) = 1.0 c_del(PAYMENT_COMMIT) = 5.0",
+        "These values are application-specific. They should be justified by the task rather than chosen merely to improve benchmark performance."
+      ]
+    },
+    {
+      "heading": "Event Hierarchies Can Define Substitution Cost",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 3,
+      "word_count": 47,
+      "evidence": "DATABASE ├── QUERY ├── COMMIT └── ROLLBACK AUTHENTICATION ├── AUTH_SUCCESS └── AUTH_FAILURE",
+      "paragraphs": [
+        "DATABASE ├── QUERY ├── COMMIT └── ROLLBACK AUTHENTICATION ├── AUTH_SUCCESS └── AUTH_FAILURE",
+        "Events sharing a close semantic parent can receive lower substitution cost than unrelated event types.",
+        "The appropriate ontology depends on the application. An event hierarchy for performance diagnosis may not be appropriate for security analysis."
+      ]
+    },
+    {
+      "heading": "Arbitrary Weights May Stop Being a Mathematical Metric",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 4,
+      "word_count": 52,
+      "evidence": "A weighted event distance is useful even if it violates symmetry or triangle inequality. For example:",
+      "paragraphs": [
+        "A weighted event distance is useful even if it violates symmetry or triangle inequality. For example:",
+        "cost(missing SECURITY_CHECK) > cost(extra SECURITY_CHECK)",
+        "may be appropriate in a security system. But an asymmetric cost model should not automatically be described as a mathematical metric.",
+        "This distinction matters when using metric indexes or triangle-inequality pruning."
+      ]
+    },
+    {
+      "heading": "Event Attributes Can Participate in Matching",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 5,
+      "word_count": 59,
+      "evidence": "An event instance may be represented as:",
+      "paragraphs": [
+        "An event instance may be represented as:",
+        "event = ( type, timestamp, attributes )",
+        "A richer substitution model can combine:",
+        "c_sub(x,y) = α × type_distance + β × attribute_distance",
+        "Attributes should not all be compared using the same string metric. A latency value, IP address, file path, HTTP status, tool argument, user ID, and error message have different semantics."
+      ]
+    },
+    {
+      "heading": "Longest Common Subsequence",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 3,
+      "word_count": 50,
+      "evidence": "The Longest Common Subsequence (LCS) identifies the longest sequence of matching events that appears in both traces while preserving relative order.",
+      "paragraphs": [
+        "The Longest Common Subsequence (LCS) identifies the longest sequence of matching events that appears in both traces while preserving relative order.",
+        "X: A B C D E Y: A X B D E one LCS: A B D E",
+        "LCS emphasizes preserved ordering while allowing unmatched events to be skipped."
+      ]
+    },
+    {
+      "heading": "Indel Distance and LCS",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 6,
+      "word_count": 68,
+      "evidence": "If substitution is not a primitive operation and a replacement requires:",
+      "paragraphs": [
+        "If substitution is not a primitive operation and a replacement requires:",
+        "delete + insert",
+        "then insertion/deletion distance satisfies:",
+        "dIndel(X,Y) = |X| + |Y| - 2 × LCS(X,Y)",
+        "This is not the same as ordinary unit-substitution Levenshtein distance. Classic Levenshtein lets a substitution cost 1. Pure insertion/deletion geometry makes the same replacement cost 2.",
+        "See String Metrics for the distinction between Levenshtein, Indel distance, LCS, and normalized ratio scores."
+      ]
+    },
+    {
+      "heading": "Bag-of-Events Representation",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 11,
+      "word_count": 59,
+      "evidence": "A simpler representation discards ordering and records only event counts:",
+      "paragraphs": [
+        "A simpler representation discards ordering and records only event counts:",
+        "count(A) count(B) count(C) ...",
+        "This can detect quantitative changes such as:",
+        "normal: QUERY × 3 abnormal: QUERY × 3000",
+        "but loses ordering information.",
+        "These traces have identical counts:",
+        "LOGIN DELETE LOGOUT",
+        "and:",
+        "DELETE LOGIN LOGOUT",
+        "even though their operational meaning may be completely different.",
+        "event-count similarity ≠ sequence similarity"
+      ]
+    },
+    {
+      "heading": "Event n-Grams",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "A B C D E",
+        "2-grams are:",
+        "AB BC CD DE",
+        "n-Gram representations preserve local order without performing full global alignment. They can be useful for:",
+        "candidate retrieval,",
+        "local-transition analysis,",
+        "anomaly features,",
+        "and filtering before exact sequence comparison."
+      ]
+    },
+    {
+      "heading": "Global Alignment and Local Transition Models Answer Different Questions",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "Edit distance asks:",
+      "paragraphs": [
+        "Edit distance asks:",
+        "How much must this complete trace change to resemble another trace?",
+        "A transition model asks:",
+        "How surprising is the next event given the recent event history?",
+        "Both can be useful. They describe different aspects of behavior."
+      ]
+    },
+    {
+      "heading": "AI-Agent and Tool-Call Trajectories",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 8,
+      "word_count": 72,
+      "evidence": "The same event-sequence framework applies naturally to AI agents, tool-using language models, workflow agents, and other systems that execute ordered actions.",
+      "paragraphs": [
+        "The same event-sequence framework applies naturally to AI agents, tool-using language models, workflow agents, and other systems that execute ordered actions.",
+        "A tool-using agent may produce a trajectory such as:",
+        "SEARCH FETCH_PAGE EXTRACT_DATA CALCULATE ANSWER",
+        "Another execution might produce:",
+        "SEARCH EXTRACT_DATA FETCH_PAGE CALCULATE ANSWER",
+        "Both executions use the same set of tools, but they do not follow the same sequence.",
+        "This creates an important distinction:",
+        "same tool set ≠ same tool trajectory"
+      ]
+    },
+    {
+      "heading": "Tool-Set Scores and Sequence Scores Measure Different Things",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 6,
+      "word_count": 86,
+      "evidence": "A set-based or matching-based evaluator can measure whether expected tool calls appeared. For example, if expected and actual executions contain the same four tool names, an unordered precision/recall/F1 measure can be perfect.",
+      "paragraphs": [
+        "A set-based or matching-based evaluator can measure whether expected tool calls appeared. For example, if expected and actual executions contain the same four tool names, an unordered precision/recall/F1 measure can be perfect.",
+        "That score does not necessarily capture ordering.",
+        "EXPECTED: SEARCH → FETCH → ANALYZE → ANSWER ACTUAL: SEARCH → ANALYZE → FETCH → ANSWER",
+        "An unordered tool-set comparison can treat these trajectories as identical. An ordered sequence comparison observes that their execution structures differ.",
+        "Therefore:",
+        "tool-set precision / recall / F1 ≠ tool-sequence edit distance"
+      ]
+    },
+    {
+      "heading": "Sequence Alignment Provides Partial Credit for Agent Trajectories",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 13,
+      "word_count": 91,
+      "evidence": "Binary exact-match evaluation can collapse many different failures into the same score. For example:",
+      "paragraphs": [
+        "Binary exact-match evaluation can collapse many different failures into the same score. For example:",
+        "EXPECTED: SEARCH FETCH ANALYZE ANSWER",
+        "Trajectory A:",
+        "SEARCH FETCH ANSWER",
+        "Trajectory B:",
+        "RANDOM_TOOL RANDOM_TOOL RANDOM_TOOL FAIL",
+        "Both may fail exact trajectory matching. They are not equally close to the expected execution.",
+        "Sequence alignment can represent:",
+        "missing expected calls as deletions,",
+        "extra calls as insertions,",
+        "wrong tool choices as substitutions,",
+        "and preserved ordered subsequences as partial structural agreement.",
+        "This provides an interpretable form of partial credit without claiming that edit distance is a complete measure of agent quality."
+      ]
+    },
+    {
+      "heading": "Example Agent Alignment",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 6,
+      "word_count": 42,
+      "evidence": "EXPECTED: SEARCH FETCH ANALYZE ANSWER ACTUAL: SEARCH FETCH SUMMARIZE ANALYZE ANSWER",
+      "paragraphs": [
+        "EXPECTED: SEARCH FETCH ANALYZE ANSWER ACTUAL: SEARCH FETCH SUMMARIZE ANALYZE ANSWER",
+        "One edit interpretation is:",
+        "insert SUMMARIZE",
+        "giving:",
+        "distance = 1",
+        "The alignment identifies where the execution diverged. Whether the extra summarization step is beneficial, harmless, or harmful remains an application-level judgment."
+      ]
+    },
+    {
+      "heading": "Tool Name Matching May Be Too Coarse",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 5,
+      "word_count": 53,
+      "evidence": "Two calls to the same tool can perform completely different operations:",
+      "paragraphs": [
+        "Two calls to the same tool can perform completely different operations:",
+        "SEARCH(query=\"Levenshtein distance\") SEARCH(query=\"weather tomorrow\")",
+        "A trajectory representation containing only tool names treats both as the same event type. A richer representation can include selected arguments:",
+        "event = ( tool_name, normalized_arguments, result_status )",
+        "The correct level of argument comparison depends on the evaluator."
+      ]
+    },
+    {
+      "heading": "Argument-Aware Tool Matching",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 4,
+      "word_count": 53,
+      "evidence": "A substitution cost between tool calls can combine:",
+      "paragraphs": [
+        "A substitution cost between tool calls can combine:",
+        "tool-name mismatch + required-argument mismatch + optional-argument mismatch + result-status mismatch",
+        "For example, using the correct tool with one wrong optional parameter may deserve a smaller penalty than calling an entirely unrelated tool.",
+        "But arbitrary argument-weighted costs can change the mathematical properties of the distance."
+      ]
+    },
+    {
+      "heading": "Exact Arguments Are Not Always the Right Criterion",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 6,
+      "word_count": 56,
+      "evidence": "Two semantically equivalent calls may use different surface forms:",
+      "paragraphs": [
+        "Two semantically equivalent calls may use different surface forms:",
+        "SEARCH(query=\"levenshtein algorithm\") SEARCH(query=\"Levenshtein distance algorithm\")",
+        "Exact string equality would treat the arguments as different. A semantic evaluator may consider them equivalent for the task.",
+        "Therefore:",
+        "trajectory structure + argument correctness + task outcome",
+        "should often be evaluated as separate dimensions rather than collapsed into one opaque score."
+      ]
+    },
+    {
+      "heading": "Agent Trajectory Similarity Is Not Agent Quality",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 3,
+      "word_count": 56,
+      "evidence": "Two agents can follow similar trajectories and still produce different answers. Two agents can also follow different valid trajectories and reach the same correct outcome.",
+      "paragraphs": [
+        "Two agents can follow similar trajectories and still produce different answers. Two agents can also follow different valid trajectories and reach the same correct outcome.",
+        "trajectory similarity ≠ answer correctness trajectory similarity ≠ reasoning quality trajectory similarity ≠ task success",
+        "Tool-call edit distance measures structural execution difference. It does not prove that one trajectory is better."
+      ]
+    },
+    {
+      "heading": "Multiple Valid Agent Trajectories",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 13,
+      "word_count": 61,
+      "evidence": "A task may legitimately permit:",
+      "paragraphs": [
+        "A task may legitimately permit:",
+        "SEARCH → FETCH → ANALYZE → ANSWER",
+        "or:",
+        "SEARCH → FETCH_A → FETCH_B → ANALYZE → ANSWER",
+        "or:",
+        "DATABASE_LOOKUP → ANALYZE → ANSWER",
+        "Using one reference trajectory as the only correct sequence can incorrectly penalize valid alternatives.",
+        "Possible solutions include:",
+        "multiple reference trajectories,",
+        "workflow constraints rather than exact sequences,",
+        "partial-order representations,",
+        "process models,",
+        "or outcome-aware evaluation."
+      ]
+    },
+    {
+      "heading": "Reference Trajectories Can Be Represented as Prototypes",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 5,
+      "word_count": 26,
+      "evidence": "Let valid prototypes be:",
+      "paragraphs": [
+        "Let valid prototypes be:",
+        "P1, P2, ..., Pk",
+        "Then define:",
+        "score(X) = min_k d(X, Pk)",
+        "This allows several legitimate execution strategies while retaining interpretable sequence alignment."
+      ]
+    },
+    {
+      "heading": "Nested Agent Execution May Not Be a Flat Sequence",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 13,
+      "word_count": 67,
+      "evidence": "Some agent runs contain:",
+      "paragraphs": [
+        "Some agent runs contain:",
+        "sub-agents,",
+        "parallel tools,",
+        "nested workflows,",
+        "retries,",
+        "branching plans,",
+        "and parent-child spans.",
+        "A flat sequence such as:",
+        "A B C D E",
+        "can discard structure such as:",
+        "ROOT ├── SEARCH ├── PARALLEL │ ├── FETCH_A │ └── FETCH_B └── ANSWER",
+        "For such executions, tree edit distance, graph comparison, trace alignment, or process-model conformance may be more appropriate.",
+        "See Tree and Graph Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Agent Evaluation Illustrates a General Sequence Principle",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "set membership ≠ order order ≠ arguments arguments ≠ semantics semantics ≠ outcome",
+      "paragraphs": [
+        "set membership ≠ order order ≠ arguments arguments ≠ semantics semantics ≠ outcome",
+        "A strong evaluation architecture keeps these layers separate."
+      ]
+    },
+    {
+      "heading": "Sequence Alignment View",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 3,
+      "word_count": 37,
+      "evidence": "Event comparison can be written explicitly as an alignment:",
+      "paragraphs": [
+        "Event comparison can be written explicitly as an alignment:",
+        "X: START AUTH READ WRITE CLOSE Y: START AUTH READ ERROR CLOSE ↑ substitution",
+        "The same representation can be used for system traces, workflow steps, or tool-call trajectories."
+      ]
+    },
+    {
+      "heading": "Alignment Gaps Have Multiple Possible Meanings",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 9,
+      "word_count": 41,
+      "evidence": "A gap can represent:",
+      "paragraphs": [
+        "A gap can represent:",
+        "an absent event,",
+        "dropped telemetry,",
+        "an optional workflow step,",
+        "an instrumentation change,",
+        "a sampling artifact,",
+        "a failed action,",
+        "or a real behavioral deviation.",
+        "The alignment identifies structural difference. It does not determine the cause of that difference."
+      ]
+    },
+    {
+      "heading": "Consecutive Missing Events",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 2,
+      "word_count": 44,
+      "evidence": "NORMAL: A B C D E F G OBSERVED: A B G",
+      "paragraphs": [
+        "NORMAL: A B C D E F G OBSERVED: A B G",
+        "Unit-cost Levenshtein represents the middle block as four deletions. In some domains, however, a contiguous missing block may be better modeled as one gap event with an affine or context-aware gap cost."
+      ]
+    },
+    {
+      "heading": "Gap Models",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 4,
+      "word_count": 47,
+      "evidence": "An affine gap cost can take the form:",
+      "paragraphs": [
+        "An affine gap cost can take the form:",
+        "gap_cost(k) = gap_open + (k - 1) × gap_extend",
+        "This distinguishes starting a missing block from extending an existing one.",
+        "Such models are common in Sequence Alignment and Gap Models and can also be useful for structured event sequences."
+      ]
+    },
+    {
+      "heading": "Local vs Global Alignment",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "Global alignment compares complete traces. Local alignment searches for similar subsequences.",
+      "paragraphs": [
+        "Global alignment compares complete traces. Local alignment searches for similar subsequences.",
+        "Local alignment can be useful when searching for:",
+        "known failure signatures,",
+        "attack patterns,",
+        "repeated workflow fragments,",
+        "or characteristic tool-call subsequences.",
+        "The intended task determines whether complete-sequence or local-pattern similarity is more meaningful."
+      ]
+    },
+    {
+      "heading": "Timing Is a Separate Dimension",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 6,
+      "word_count": 54,
+      "evidence": "These executions have identical event order:",
+      "paragraphs": [
+        "These executions have identical event order:",
+        "A → B → C → D",
+        "but may differ greatly in duration:",
+        "trace X: 0ms 10ms 20ms 30ms trace Y: 0ms 10s 20s 30s",
+        "Ordinary symbolic edit distance returns zero if the event labels are identical. Operational behavior may be dramatically different.",
+        "order similarity ≠ timing similarity"
+      ]
+    },
+    {
+      "heading": "Relative Time Is Often More Useful Than Wall-Clock Time",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "For event i :",
+      "paragraphs": [
+        "For event i :",
+        "τi = ti - t_start",
+        "Relative timing allows independent executions that occurred at different wall-clock times to be compared."
+      ]
+    },
+    {
+      "heading": "Timestamp-Aware Event Costs",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "A task-specific match cost might combine:",
+      "paragraphs": [
+        "A task-specific match cost might combine:",
+        "event-type distance + temporal difference",
+        "for example:",
+        "c_match(xi,yj) = α × event_type_distance + β × |τi - τj|",
+        "The proper time scale and normalization depend on whether latency, relative workflow position, or structural order is most important."
+      ]
+    },
+    {
+      "heading": "Time Warp Edit Distance",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 2,
+      "word_count": 42,
+      "evidence": "Time Warp Edit Distance (TWED) combines edit-style operations, sample-value differences, temporal positions, and a stiffness parameter.",
+      "paragraphs": [
+        "Time Warp Edit Distance (TWED) combines edit-style operations, sample-value differences, temporal positions, and a stiffness parameter.",
+        "It illustrates an important principle: temporal sequence similarity can incorporate both symbolic change and timing, but the resulting model must define the distance between individual observations."
+      ]
+    },
+    {
+      "heading": "Dynamic Time Warping Is Not Symbolic Edit Distance",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 3,
+      "word_count": 30,
+      "evidence": "Dynamic Time Warping is designed primarily for elastic alignment of ordered observations, especially time-series data.",
+      "paragraphs": [
+        "Dynamic Time Warping is designed primarily for elastic alignment of ordered observations, especially time-series data.",
+        "It should not be treated as interchangeable with categorical Levenshtein distance.",
+        "DTW ≠ Levenshtein distance"
+      ]
+    },
+    {
+      "heading": "Repeated Events",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "Operational traces frequently contain runs:",
+      "paragraphs": [
+        "Operational traces frequently contain runs:",
+        "RETRY RETRY RETRY RETRY RETRY",
+        "Five retries and fifty thousand retries should not automatically be treated as equivalent."
+      ]
+    },
+    {
+      "heading": "Run-Length Encoding",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "A run can be compressed:",
+      "paragraphs": [
+        "A run can be compressed:",
+        "A A A A A B",
+        "into:",
+        "(A,5) (B,1)",
+        "This can expose shared structural phases while preserving repetition count separately.",
+        "Discarding counts entirely can hide retry storms, denial-of-service behavior, infinite loops, or other frequency anomalies."
+      ]
+    },
+    {
+      "heading": "Optional Events",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "A legitimate workflow may contain:",
+      "paragraphs": [
+        "A legitimate workflow may contain:",
+        "A B [C] D E",
+        "Uniform edit distance penalizes omission of C . A weighted model can assign a low deletion cost to known optional steps."
+      ]
+    },
+    {
+      "heading": "Alternative Branches",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 10,
+      "word_count": 41,
+      "evidence": "Normal behavior may include:",
+      "paragraphs": [
+        "Normal behavior may include:",
+        "A B C E",
+        "or:",
+        "A B D E",
+        "Using only one sequence as the normal reference would make the other legitimate branch appear anomalous.",
+        "This motivates:",
+        "multiple prototypes,",
+        "process models,",
+        "branch-aware alignment,",
+        "or learned sequence models."
+      ]
+    },
+    {
+      "heading": "Distributed Systems May Have Only Partial Order",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "In distributed execution, two independent operations can occur concurrently. There may be no meaningful answer to which happened first.",
+      "paragraphs": [
+        "In distributed execution, two independent operations can occur concurrently. There may be no meaningful answer to which happened first.",
+        "For example:",
+        "START ├── FETCH_A ├── FETCH_B └── MERGE",
+        "Serializing the concurrent operations as:",
+        "FETCH_A → FETCH_B",
+        "or:",
+        "FETCH_B → FETCH_A",
+        "can create artificial sequence distance even though both executions respect the same causal structure.",
+        "timestamp order ≠ necessarily causal order"
+      ]
+    },
+    {
+      "heading": "Distributed Traces May Be Trees or DAGs",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "A distributed trace can contain parent-child spans, concurrency, fan-out, and fan-in. Flattening it into one sequence loses structural information.",
+      "paragraphs": [
+        "A distributed trace can contain parent-child spans, concurrency, fan-out, and fan-in. Flattening it into one sequence loses structural information.",
+        "When topology is important, use:",
+        "tree comparison,",
+        "graph comparison,",
+        "partial-order alignment,",
+        "or trace-specific structural methods."
+      ]
+    },
+    {
+      "heading": "Process Mining and Trace Alignment",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 8,
+      "word_count": 67,
+      "evidence": "Process mining provides a broader model of execution behavior. Instead of comparing one observed sequence only with another sequence, an observed trace can be aligned against an explicit process model.",
+      "paragraphs": [
+        "Process mining provides a broader model of execution behavior. Instead of comparing one observed sequence only with another sequence, an observed trace can be aligned against an explicit process model.",
+        "This allows the model to represent:",
+        "alternative branches,",
+        "optional transitions,",
+        "loops,",
+        "concurrency,",
+        "and expected deviations.",
+        "Process conformance alignment is conceptually related to sequence edit alignment, but it is not identical to ordinary Levenshtein distance between two strings."
+      ]
+    },
+    {
+      "heading": "Trace-to-Trace Distance vs Process Conformance",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 2,
+      "word_count": 35,
+      "evidence": "trace-to-trace edit distance → How different are these two observed executions? process-model alignment → How does this execution conform to the allowed process?",
+      "paragraphs": [
+        "trace-to-trace edit distance → How different are these two observed executions? process-model alignment → How does this execution conform to the allowed process?",
+        "The second question can be much stronger when many valid trajectories exist."
+      ]
+    },
+    {
+      "heading": "Anomaly Detection with Event Distance",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 7,
+      "word_count": 46,
+      "evidence": "Suppose historical normal executions are represented by prototypes:",
+      "paragraphs": [
+        "Suppose historical normal executions are represented by prototypes:",
+        "P1, P2, ..., Pk",
+        "An anomaly score can include:",
+        "min_k d(X,Pk)",
+        "where X is the observed trace.",
+        "Large distance indicates structural novelty relative to known prototypes. It is not automatically an anomaly probability.",
+        "normalized distance ≠ anomaly probability"
+      ]
+    },
+    {
+      "heading": "Small Distance Can Still Represent a Critical Incident",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "NORMAL: AUTH_SUCCESS ABNORMAL: AUTH_BYPASS",
+      "paragraphs": [
+        "NORMAL: AUTH_SUCCESS ABNORMAL: AUTH_BYPASS",
+        "A single substitution can represent a severe security event. Raw edit count alone does not encode operational impact."
+      ]
+    },
+    {
+      "heading": "Large Distance Can Still Represent Harmless Change",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "A software upgrade can add many telemetry events while preserving the same business outcome.",
+      "paragraphs": [
+        "A software upgrade can add many telemetry events while preserving the same business outcome.",
+        "Sequence distance therefore must be interpreted together with:",
+        "software version,",
+        "deployment state,",
+        "parser version,",
+        "instrumentation policy,",
+        "and domain context."
+      ]
+    },
+    {
+      "heading": "Security Event Correlation",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 6,
+      "word_count": 44,
+      "evidence": "Security systems can represent incident activity as ordered events such as:",
+      "paragraphs": [
+        "Security systems can represent incident activity as ordered events such as:",
+        "LOGIN_FAILURE LOGIN_FAILURE LOGIN_SUCCESS PRIVILEGE_CHANGE DATA_EXPORT",
+        "Edit alignment can compare an observed trace with known attack patterns.",
+        "But:",
+        "similar attack sequence ≠ same attacker similar attack sequence ≠ same incident",
+        "Attribution requires additional evidence."
+      ]
+    },
+    {
+      "heading": "Learned Sequence Models Answer Different Questions",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 6,
+      "word_count": 69,
+      "evidence": "Modern anomaly detection can use recurrent networks, Transformers, probabilistic models, or other learned representations.",
+      "paragraphs": [
+        "Modern anomaly detection can use recurrent networks, Transformers, probabilistic models, or other learned representations.",
+        "These methods can estimate questions such as:",
+        "How probable is this next event? How unusual is this sequence under the learned distribution?",
+        "Levenshtein alignment instead asks:",
+        "What is the minimum structured edit cost between these traces?",
+        "Learned models and edit alignment are complementary. One provides statistical generalization; the other provides an explicit, inspectable transformation path."
+      ]
+    },
+    {
+      "heading": "Preserve the Edit Script, Not Only the Scalar",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 8,
+      "word_count": 44,
+      "evidence": "A distance of:",
+      "paragraphs": [
+        "A distance of:",
+        "3",
+        "does not reveal whether the difference consists of:",
+        "three harmless extra log records,",
+        "one missing security step plus two substitutions,",
+        "three wrong tool calls,",
+        "or several telemetry artifacts.",
+        "The actual alignment can be more useful than the final numerical distance."
+      ]
+    },
+    {
+      "heading": "Large-Scale Trace Retrieval",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 4,
+      "word_count": 47,
+      "evidence": "Computing edit distance between every new trace and every historical trace does not scale.",
+      "paragraphs": [
+        "Computing edit distance between every new trace and every historical trace does not scale.",
+        "A practical architecture is:",
+        "incoming trace ↓ coarse filtering / indexing ↓ candidate traces ↓ exact or weighted edit distance ↓ alignment / ranking / decision",
+        "This follows the broader filter-and-verify architecture ."
+      ]
+    },
+    {
+      "heading": "Cheap Candidate Filters",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 10,
+      "word_count": 26,
+      "evidence": "Useful coarse features include:",
+      "paragraphs": [
+        "Useful coarse features include:",
+        "sequence length,",
+        "first and last event,",
+        "event-frequency signatures,",
+        "event n-grams,",
+        "rare-event presence,",
+        "workflow family,",
+        "service or subsystem,",
+        "tool family,",
+        "and software version."
+      ]
+    },
+    {
+      "heading": "Length Lower Bound",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "For unit-cost Levenshtein distance:",
+      "paragraphs": [
+        "For unit-cost Levenshtein distance:",
+        "d(X,Y) ≥ ||X| - |Y||",
+        "If searching only for sequences within threshold k , a candidate can be rejected whenever:",
+        "||X| - |Y|| > k"
+      ]
+    },
+    {
+      "heading": "Banded Dynamic Programming",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "When only distances up to threshold k matter, dynamic programming can often be restricted to a diagonal band.",
+      "paragraphs": [
+        "When only distances up to threshold k matter, dynamic programming can often be restricted to a diagonal band.",
+        "This can substantially reduce work while preserving exactness for the threshold question.",
+        "See Ukkonen Algorithm and Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Bit-Parallel Matching",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "The Myers Bit-Vector Algorithm can accelerate edit-distance computations using machine-word bit operations.",
+      "paragraphs": [
+        "The Myers Bit-Vector Algorithm can accelerate edit-distance computations using machine-word bit operations.",
+        "Event types can conceptually be encoded as symbols, although large event alphabets and long traces affect practical efficiency."
+      ]
+    },
+    {
+      "heading": "Event q-Gram Filtering",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "A B C D E F",
+        "3-grams are:",
+        "ABC BCD CDE DEF",
+        "Nearby sequences tend to preserve many local q-grams, making q-gram signatures useful for inexpensive candidate filtering."
+      ]
+    },
+    {
+      "heading": "Set Signatures Change the Similarity Model",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 3,
+      "word_count": 30,
+      "evidence": "MinHash or set-based signatures can scale well, but converting a sequence to a set removes ordering:",
+      "paragraphs": [
+        "MinHash or set-based signatures can scale well, but converting a sequence to a set removes ordering:",
+        "sequence → set",
+        "Use set representations as candidate filters unless order is truly irrelevant."
+      ]
+    },
+    {
+      "heading": "Prototype Indexing",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "Instead of comparing against every historical execution:",
+      "paragraphs": [
+        "Instead of comparing against every historical execution:",
+        "cluster traces ↓ choose representative traces ↓ index representatives ↓ retrieve nearest clusters ↓ perform exact alignment",
+        "This separates retrieval from expensive sequence verification."
+      ]
+    },
+    {
+      "heading": "Metric Indexes Require Metric Distance",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "BK-trees, VP-trees, and other metric-space structures rely on mathematical properties such as triangle inequality.",
+      "paragraphs": [
+        "BK-trees, VP-trees, and other metric-space structures rely on mathematical properties such as triangle inequality.",
+        "If event costs are asymmetric or context-dependent, those assumptions may no longer hold.",
+        "A useful operational distance is not automatically suitable for every metric indexing structure."
+      ]
+    },
+    {
+      "heading": "Complexity",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "For sequence lengths m and n , standard dynamic programming requires:",
+      "paragraphs": [
+        "For sequence lengths m and n , standard dynamic programming requires:",
+        "O(mn)",
+        "time.",
+        "If only the distance value is required, memory can be reduced to:",
+        "O(min(m,n))",
+        "using rolling rows. Recovering the full edit script requires additional traceback information or reconstruction techniques."
+      ]
+    },
+    {
+      "heading": "Normalizing Event-Sequence Distance",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 7,
+      "word_count": 56,
+      "evidence": "Raw edit distance grows with sequence length. A relative score may be useful for ranking traces of different sizes.",
+      "paragraphs": [
+        "Raw edit distance grows with sequence length. A relative score may be useful for ranking traces of different sizes.",
+        "A common form is:",
+        "d_norm(X,Y) = d(X,Y) / max(|X|, |Y|)",
+        "with similarity:",
+        "similarity(X,Y) = 1 - d_norm(X,Y)",
+        "This is only one normalization convention. Different denominators create different score semantics.",
+        "See Edit Distance Variants for normalized edit-distance definitions."
+      ]
+    },
+    {
+      "heading": "Normalization Does Not Create Probability",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "A normalized value such as:",
+      "paragraphs": [
+        "A normalized value such as:",
+        "0.87",
+        "is not automatically:",
+        "87% probability of same behavior",
+        "or:",
+        "87% probability of normal execution",
+        "It is a score whose meaning depends on the chosen metric and normalization rule."
+      ]
+    },
+    {
+      "heading": "Evaluation Protocol Matters",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 13,
+      "word_count": 40,
+      "evidence": "A reproducible event-sequence benchmark should report:",
+      "paragraphs": [
+        "A reproducible event-sequence benchmark should report:",
+        "event parser and version,",
+        "event alphabet definition,",
+        "sessionization rule,",
+        "ordering rule,",
+        "software or workflow version,",
+        "insertion/deletion/substitution costs,",
+        "gap model,",
+        "timing representation,",
+        "normalization formula,",
+        "candidate-generation method,",
+        "reference traces or process model,",
+        "and final evaluation metric."
+      ]
+    },
+    {
+      "heading": "For Agent Trajectory Evaluation, Also Report",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 9,
+      "word_count": 64,
+      "evidence": "whether tools are matched by name only or by arguments,",
+      "paragraphs": [
+        "whether tools are matched by name only or by arguments,",
+        "whether order matters,",
+        "whether extra calls are penalized,",
+        "whether repeated calls are matched one-to-one,",
+        "whether several reference trajectories are valid,",
+        "whether parallel calls are serialized,",
+        "how nested sub-agent traces are represented,",
+        "and whether trajectory score is combined with task outcome.",
+        "Without these definitions, two systems can report “trajectory similarity” while measuring substantially different objects."
+      ]
+    },
+    {
+      "heading": "Comparing Raw Log Text Directly",
+      "level": 3,
+      "id": "ux-section-80",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Dynamic IDs, timestamps, addresses, and durations can dominate textual edit distance. Parse or canonicalize structured events first.",
+      "paragraphs": [
+        "Dynamic IDs, timestamps, addresses, and durations can dominate textual edit distance. Parse or canonicalize structured events first."
+      ]
+    },
+    {
+      "heading": "Assuming Every Different Message Is a Different Event Type",
+      "level": 3,
+      "id": "ux-section-81",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Parameterized instances of one logging statement should usually share a stable template.",
+      "paragraphs": [
+        "Parameterized instances of one logging statement should usually share a stable template."
+      ]
+    },
+    {
+      "heading": "Ignoring Parser Version",
+      "level": 3,
+      "id": "ux-section-82",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Template renumbering or parser drift can create artificial sequence changes.",
+      "paragraphs": [
+        "Template renumbering or parser drift can create artificial sequence changes."
+      ]
+    },
+    {
+      "heading": "Ignoring Software Version",
+      "level": 3,
+      "id": "ux-section-83",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "New instrumentation can look like a behavioral anomaly.",
+      "paragraphs": [
+        "New instrumentation can look like a behavioral anomaly."
+      ]
+    },
+    {
+      "heading": "Treating Missing Telemetry as Missing Behavior",
+      "level": 3,
+      "id": "ux-section-84",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Sampling and collector loss can also produce observed deletions.",
+      "paragraphs": [
+        "Sampling and collector loss can also produce observed deletions."
+      ]
+    },
+    {
+      "heading": "Building One Global Sequence from Concurrent Requests",
+      "level": 3,
+      "id": "ux-section-85",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Independent executions become artificially interleaved.",
+      "paragraphs": [
+        "Independent executions become artificially interleaved."
+      ]
+    },
+    {
+      "heading": "Treating Fixed Windows as True Sessions",
+      "level": 3,
+      "id": "ux-section-86",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Time windows are approximations unless the task itself is defined by windows.",
+      "paragraphs": [
+        "Time windows are approximations unless the task itself is defined by windows."
+      ]
+    },
+    {
+      "heading": "Assuming Timestamp Order Equals Causal Order",
+      "level": 3,
+      "id": "ux-section-87",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Clock skew, buffering, and concurrency can invalidate this assumption.",
+      "paragraphs": [
+        "Clock skew, buffering, and concurrency can invalidate this assumption."
+      ]
+    },
+    {
+      "heading": "Assuming One Total Order Represents a Distributed Trace",
+      "level": 3,
+      "id": "ux-section-88",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Concurrent operations can admit several equivalent topological orders.",
+      "paragraphs": [
+        "Concurrent operations can admit several equivalent topological orders."
+      ]
+    },
+    {
+      "heading": "Assuming Unit Cost Represents Operational Importance",
+      "level": 3,
+      "id": "ux-section-89",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "A missing heartbeat and a missing payment commit need not have equal significance.",
+      "paragraphs": [
+        "A missing heartbeat and a missing payment commit need not have equal significance."
+      ]
+    },
+    {
+      "heading": "Assuming Arbitrary Weights Still Define a Metric",
+      "level": 3,
+      "id": "ux-section-90",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Asymmetric or context-sensitive costs can violate metric properties.",
+      "paragraphs": [
+        "Asymmetric or context-sensitive costs can violate metric properties."
+      ]
+    },
+    {
+      "heading": "Confusing LCS Distance with Classical Levenshtein",
+      "level": 3,
+      "id": "ux-section-91",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "The direct LCS identity applies to insertion/deletion distance, not ordinary unit-cost substitutions.",
+      "paragraphs": [
+        "The direct LCS identity applies to insertion/deletion distance, not ordinary unit-cost substitutions."
+      ]
+    },
+    {
+      "heading": "Assuming Bag-of-Events Preserves Order",
+      "level": 3,
+      "id": "ux-section-92",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "It explicitly discards sequence ordering.",
+      "paragraphs": [
+        "It explicitly discards sequence ordering."
+      ]
+    },
+    {
+      "heading": "Assuming Event n-Grams Represent the Complete Workflow",
+      "level": 3,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "They preserve local transitions but not necessarily long-range execution structure.",
+      "paragraphs": [
+        "They preserve local transitions but not necessarily long-range execution structure."
+      ]
+    },
+    {
+      "heading": "Assuming Same Event Order Means Same Performance",
+      "level": 3,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Timing can differ by orders of magnitude.",
+      "paragraphs": [
+        "Timing can differ by orders of magnitude."
+      ]
+    },
+    {
+      "heading": "Assuming Same Timing Means Same Workflow",
+      "level": 3,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Different event types can occur at similar times.",
+      "paragraphs": [
+        "Different event types can occur at similar times."
+      ]
+    },
+    {
+      "heading": "Compressing Repeated Events Without Preserving Counts",
+      "level": 3,
+      "id": "ux-section-96",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "This can hide retry storms, loops, and denial-of-service behavior.",
+      "paragraphs": [
+        "This can hide retry storms, loops, and denial-of-service behavior."
+      ]
+    },
+    {
+      "heading": "Using One Normal Trace as the Only Valid Behavior",
+      "level": 3,
+      "id": "ux-section-97",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Real workflows contain branches, retries, optional operations, and alternative successful paths.",
+      "paragraphs": [
+        "Real workflows contain branches, retries, optional operations, and alternative successful paths."
+      ]
+    },
+    {
+      "heading": "Using Tool-Set F1 as an Ordered-Trajectory Metric",
+      "level": 3,
+      "id": "ux-section-98",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "Precision, recall, and F1 over matched tool calls can measure call coverage without representing execution order.",
+      "paragraphs": [
+        "Precision, recall, and F1 over matched tool calls can measure call coverage without representing execution order.",
+        "same matched calls ≠ same ordered trajectory"
+      ]
+    },
+    {
+      "heading": "Using Exact Trajectory Match as the Only Agent Metric",
+      "level": 3,
+      "id": "ux-section-99",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "Several different trajectories can be valid, and nearly correct executions should not necessarily receive the same score as completely unrelated executions.",
+      "paragraphs": [
+        "Several different trajectories can be valid, and nearly correct executions should not necessarily receive the same score as completely unrelated executions."
+      ]
+    },
+    {
+      "heading": "Assuming Trajectory Similarity Means Correct Reasoning",
+      "level": 3,
+      "id": "ux-section-100",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "Edit distance observes an external action sequence. It does not expose or validate an agent's internal reasoning process.",
+      "paragraphs": [
+        "Edit distance observes an external action sequence. It does not expose or validate an agent's internal reasoning process."
+      ]
+    },
+    {
+      "heading": "Assuming Similar Tool Calls Mean the Same Outcome",
+      "level": 3,
+      "id": "ux-section-101",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Tool arguments, returned data, side effects, and final task result can differ substantially.",
+      "paragraphs": [
+        "Tool arguments, returned data, side effects, and final task result can differ substantially."
+      ]
+    },
+    {
+      "heading": "Important Boundaries",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 1,
+      "word_count": 176,
+      "evidence": "raw log line ≠ event type event type ≠ event instance event instance ≠ trace time window ≠ true session timestamp order ≠ causal order distributed trace ≠ necessarily a flat sequence log sequence ≠ complete execution missing log ≠ necessarily missing system behavior extra log ≠ necessarily extra functional behavior parser drift ≠ system drift event edit distance ≠ root-cause distance small event distance ≠ same incident small security-sequence distance ≠ same attacker distance zero ≠ identical internal state large event distance ≠ different business outcome event-count similarity ≠ order similarity order similarity ≠ timing similarity timing similarity ≠ causal similarity LCS / Indel distance ≠ classical Levenshtein distance DTW ≠ symbolic edit distance weighted edit cost ≠ automatically a",
+      "paragraphs": [
+        "raw log line ≠ event type event type ≠ event instance event instance ≠ trace time window ≠ true session timestamp order ≠ causal order distributed trace ≠ necessarily a flat sequence log sequence ≠ complete execution missing log ≠ necessarily missing system behavior extra log ≠ necessarily extra functional behavior parser drift ≠ system drift event edit distance ≠ root-cause distance small event distance ≠ same incident small security-sequence distance ≠ same attacker distance zero ≠ identical internal state large event distance ≠ different business outcome event-count similarity ≠ order similarity order similarity ≠ timing similarity timing similarity ≠ causal similarity LCS / Indel distance ≠ classical Levenshtein distance DTW ≠ symbolic edit distance weighted edit cost ≠ automatically a mathematical metric process conformance alignment ≠ trace-to-trace edit distance learned sequence similarity ≠ Levenshtein alignment normalized distance ≠ anomaly probability anomaly score ≠ confirmed incident same tool set ≠ same tool trajectory same tool trajectory ≠ same tool arguments same trajectory ≠ same task outcome trajectory similarity ≠ agent correctness trajectory similarity ≠ reasoning identity"
+      ]
+    },
+    {
+      "heading": "A Practical Architecture",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 4,
+      "word_count": 87,
+      "evidence": "raw observations ↓ parsing / canonicalization ↓ stable event instances ↓ sessionization / trace construction ↓ ordering or causal representation ↓ candidate retrieval ↓ exact / weighted sequence alignment ↓ edit script ↓ timing + frequency + attributes + context ↓ application decision",
+      "paragraphs": [
+        "raw observations ↓ parsing / canonicalization ↓ stable event instances ↓ sessionization / trace construction ↓ ordering or causal representation ↓ candidate retrieval ↓ exact / weighted sequence alignment ↓ edit script ↓ timing + frequency + attributes + context ↓ application decision",
+        "For AI-agent evaluation:",
+        "agent execution ↓ tool/action events ↓ argument normalization ↓ ordered or structured trajectory ↓ set score + sequence score + outcome score ↓ evaluation / diagnosis",
+        "The strongest design does not ask one distance value to represent every dimension of behavior."
+      ]
+    },
+    {
+      "heading": "When Levenshtein Distance Is Useful",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 6,
+      "word_count": 50,
+      "evidence": "Event-sequence Levenshtein is especially useful when:",
+      "paragraphs": [
+        "Event-sequence Levenshtein is especially useful when:",
+        "events form a meaningful ordered sequence,",
+        "insertions, deletions, and substitutions correspond to interpretable deviations,",
+        "the edit script itself is useful for diagnosis,",
+        "sequence lengths are manageable or candidate filtering is available,",
+        "and the application does not require a richer structural model for every comparison."
+      ]
+    },
+    {
+      "heading": "When Levenshtein Distance Is Not Enough",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 9,
+      "word_count": 36,
+      "evidence": "Use additional or different methods when the problem depends primarily on:",
+      "paragraphs": [
+        "Use additional or different methods when the problem depends primarily on:",
+        "concurrent or graph-shaped execution,",
+        "continuous time-series deformation,",
+        "probabilistic next-event prediction,",
+        "semantic equivalence of event arguments,",
+        "process-model conformance,",
+        "root-cause inference,",
+        "causal reasoning,",
+        "or final task correctness."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 6,
+      "word_count": 187,
+      "evidence": "Log and event-sequence similarity extends edit distance from characters to structured observations of behavior. The basic idea is simple: represent an execution as an ordered sequence and interpret insertions, deletions, and substitutions as changes between executions.",
+      "paragraphs": [
+        "Log and event-sequence similarity extends edit distance from characters to structured observations of behavior. The basic idea is simple: represent an execution as an ordered sequence and interpret insertions, deletions, and substitutions as changes between executions.",
+        "The difficult part is defining the sequence correctly. Parsing, event identity, sessionization, ordering, timing, event importance, attributes, optional branches, concurrency, software version, and telemetry policy all influence what a distance means.",
+        "AI-agent and tool-call trajectories fit the same framework. A tool call can be treated as an event, a sequence of calls can be aligned with an expected or historical trajectory, and edit operations can provide interpretable partial credit. But tool-set matching, sequence alignment, argument correctness, semantic equivalence, and final task outcome remain different evaluation dimensions.",
+        "The central operational question answered by event edit distance is:",
+        "What is the smallest structured sequence of observable event changes needed to transform one execution trace into another?",
+        "That question is narrower than behavioral equivalence, causal equivalence, incident identity, or agent correctness. Precisely because it is narrow, it can be a rigorous and interpretable component inside broader observability, process-mining, anomaly-detection, security, workflow, and AI-evaluation systems."
+      ]
+    },
+    {
+      "heading": "Related Levenshtein.net Resources",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 10,
+      "word_count": 34,
+      "evidence": "Edit Distance",
+      "paragraphs": [
+        "Edit Distance",
+        "String Metrics",
+        "Weighted Levenshtein Distance",
+        "Edit Distance Variants",
+        "Sequence Alignment and Gap Models",
+        "Tree and Graph Edit Distance",
+        "Indexing and Filtering for Edit Distance",
+        "Ukkonen Algorithm",
+        "Myers Bit-Vector Algorithm",
+        "Levenshtein Distance Limitations"
+      ]
+    },
+    {
+      "heading": "Technical References",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 6,
+      "word_count": 114,
+      "evidence": "Min Du and Feifei Li — Spell: Streaming Parsing of System Event Logs .",
+      "paragraphs": [
+        "Min Du and Feifei Li — Spell: Streaming Parsing of System Event Logs .",
+        "Pinjia He, Jieming Zhu, Zibin Zheng, and Michael R. Lyu — Drain: An Online Log Parsing Approach with Fixed Depth Tree .",
+        "Jieming Zhu et al. — Loghub: A Large Collection of System Log Datasets for AI-driven Log Analytics .",
+        "R. P. Jagadeesh Chandra Bose and Wil M. P. van der Aalst — Context Aware Trace Clustering: Towards Improving Process Mining Results .",
+        "Pierre-François Marteau — Time Warp Edit Distance with Stiffness Adjustment for Time Series Matching .",
+        "Min Du, Feifei Li, Guineng Zheng, and Vivek Srikumar — DeepLog: Anomaly Detection and Diagnosis from System Logs through Deep Learning ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Banded Dynamic Programming",
+          "anchor_id": "ux-section-68",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See Ukkonen Algorithm and Bounded and Parameterized Edit Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-variants",
+      "evidence": [
+        {
+          "section": "Normalizing Event-Sequence Distance",
+          "anchor_id": "ux-section-75",
+          "alias": "edit distance variants",
+          "excerpt": "See Edit Distance Variants for normalized edit-distance definitions."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-107",
+          "alias": "edit distance variants",
+          "excerpt": "Edit Distance Variants"
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Log and Event-Sequence Similarity",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Comparing such sequences creates a natural application for edit distance and Levenshtein distance . An insertion can represent an extra event, a deletion a missing event, and a substitution one event type replacing another."
+        },
+        {
+          "section": "Stable Templates Matter",
+          "anchor_id": "ux-section-6",
+          "alias": "edit distance",
+          "excerpt": "These techniques solve a different problem from event-sequence edit distance:"
+        },
+        {
+          "section": "Instrumentation Changes Can Also Create Artificial Distance",
+          "anchor_id": "ux-section-9",
+          "alias": "edit distance",
+          "excerpt": "to every request without changing functional behavior. Edit distance correctly observes an insertion, but the insertion describes telemetry, not necessarily a behavioral change."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-106",
+          "alias": "edit operations",
+          "excerpt": "AI-agent and tool-call trajectories fit the same framework. A tool call can be treated as an event, a sequence of calls can be aligned with an expected or historical trajectory, and edit operations can provide interpretable partial credit. But tool-set matching, sequence alignment, argument correctness, semantic equivalence, and final task outcome remain different evaluation dimensions."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-107",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-distance-limitations",
+      "evidence": [
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-107",
+          "alias": "levenshtein distance limitations",
+          "excerpt": "Levenshtein Distance Limitations"
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Bit-Parallel Matching",
+          "anchor_id": "ux-section-69",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "The Myers Bit-Vector Algorithm can accelerate edit-distance computations using machine-word bit operations."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-107",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm"
+        }
+      ]
+    },
+    {
+      "target": "/sequence-alignment-and-gap-models",
+      "evidence": [
+        {
+          "section": "Gap Models",
+          "anchor_id": "ux-section-44",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "Such models are common in Sequence Alignment and Gap Models and can also be useful for structured event sequences."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-107",
+          "alias": "sequence alignment and gap models",
+          "excerpt": "Sequence Alignment and Gap Models"
+        }
+      ]
+    },
+    {
+      "target": "/string-metrics",
+      "evidence": [
+        {
+          "section": "Indel Distance and LCS",
+          "anchor_id": "ux-section-25",
+          "alias": "string metrics",
+          "excerpt": "See String Metrics for the distinction between Levenshtein, Indel distance, LCS, and normalized ratio scores."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-107",
+          "alias": "string metrics",
+          "excerpt": "String Metrics"
+        }
+      ]
+    },
+    {
+      "target": "/tree-and-graph-edit-distance",
+      "evidence": [
+        {
+          "section": "Nested Agent Execution May Not Be a Flat Sequence",
+          "anchor_id": "ux-section-39",
+          "alias": "tree and graph edit distance",
+          "excerpt": "See Tree and Graph Edit Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-107",
+          "alias": "tree and graph edit distance",
+          "excerpt": "Tree and Graph Edit Distance"
+        }
+      ]
+    },
+    {
+      "target": "/ukkonen-algorithm",
+      "evidence": [
+        {
+          "section": "Banded Dynamic Programming",
+          "anchor_id": "ux-section-68",
+          "alias": "ukkonen algorithm",
+          "excerpt": "See Ukkonen Algorithm and Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-107",
+          "alias": "ukkonen algorithm",
+          "excerpt": "Ukkonen Algorithm"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted Event Edit Distance",
+          "anchor_id": "ux-section-19",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "This is an event-oriented application of Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Related Levenshtein.net Resources",
+          "anchor_id": "ux-section-107",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#page",
+      "type": "WebPage",
+      "name": "Log and Event-Sequence Similarity: Edit Distance, Trace Alignment, Anomaly Detection, and Observability",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/log-and-event-sequence-similarity#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/log-and-event-sequence-similarity#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/log-and-event-sequence-similarity#event-sequence-similarity"
+        },
+        {
+          "@id": "https://www.levenshtein.net/log-and-event-sequence-similarity#trace-alignment"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "type": "TechArticle",
+      "name": "Log and Event-Sequence Similarity: Edit Distance, Trace Alignment, Anomaly Detection, and Observability",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/log-and-event-sequence-similarity#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/log-and-event-sequence-similarity#event-sequence-similarity"
+        },
+        {
+          "@id": "https://www.levenshtein.net/log-and-event-sequence-similarity#trace-alignment"
+        },
+        {
+          "@id": "https://www.levenshtein.net/log-and-event-sequence-similarity#weighted-event-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/log-and-event-sequence-similarity#log-anomaly-detection"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#concept",
+      "type": "DefinedTerm",
+      "name": "Log and Event-Sequence Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#event-sequence-similarity",
+      "type": "DefinedTerm",
+      "name": "Event-Sequence Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#trace-alignment",
+      "type": "DefinedTerm",
+      "name": "Event Trace Alignment",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#weighted-event-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Weighted Event Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#log-parsing",
+      "type": "DefinedTerm",
+      "name": "Log Parsing",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#sessionization",
+      "type": "DefinedTerm",
+      "name": "Event Sessionization",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#process-trace",
+      "type": "DefinedTerm",
+      "name": "Process Trace",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#temporal-sequence-similarity",
+      "type": "DefinedTerm",
+      "name": "Temporal Event-Sequence Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#log-anomaly-detection",
+      "type": "DefinedTerm",
+      "name": "Log-Sequence Anomaly Detection",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#security-event-correlation",
+      "type": "DefinedTerm",
+      "name": "Security Event Correlation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#distributed-trace",
+      "type": "DefinedTerm",
+      "name": "Distributed Trace",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/log-and-event-sequence-similarity#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#page",
+      "about",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#page",
+      "about",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#event-sequence-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#page",
+      "about",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#trace-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#page",
+      "mainEntity",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#page",
+      "isPartOf",
+      "https://www.levenshtein.net/software-systems#collection"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "about",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "about",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#event-sequence-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "about",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#trace-alignment"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "about",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#weighted-event-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "about",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#log-anomaly-detection"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#log-parsing"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#sessionization"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#process-trace"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#temporal-sequence-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#security-event-correlation"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#distributed-trace"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "isPartOf",
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#page"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/TKDE.2018.2875442"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/ICWS.2017.13"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/ISSRE59848.2023.00071"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1145/3650212.3652123"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1137/1.9781611972795.35"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1002/widm.1045"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/TASSP.1978.1163055"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/TPAMI.2008.76"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1145/3133956.3134015"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/IJCNN52387.2021.9534113"
+    ],
+    [
+      "https://www.levenshtein.net/log-and-event-sequence-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/SP46214.2022.9833671"
+    ]
+  ],
+  "external_citations": []
+}

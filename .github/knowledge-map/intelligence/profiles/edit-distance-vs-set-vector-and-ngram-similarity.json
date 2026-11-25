@@ -1,0 +1,4831 @@
+{
+  "url": "/edit-distance-vs-set-vector-and-ngram-similarity",
+  "title": "Edit Distance vs Set, Vector, and N-Gram Similarity: Jaccard, Cosine, Q-Grams, and Retrieval Tradeoffs",
+  "h1": [
+    "Edit Distance vs Set, Vector, and N-Gram Similarity: Jaccard, Cosine, Q-Grams, and Retrieval Tradeoffs"
+  ],
+  "group": "Comparisons",
+  "provisional_mission": "So sánh tập hợp vector n-gram",
+  "content_sha256": "5a867622866be0e9d761bcaeeb7800fe4d2c869aa40269a5fb0f3388caf7d913",
+  "canonical": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity",
+  "primary_entity_candidate": "Edit Distance vs Set, Vector, and N-Gram Similarity: Jaccard, Cosine, Q-Grams, and Retrieval Tradeoffs",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Edit Distance vs Set, Vector, and N-Gram Similarity",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 15,
+      "word_count": 209,
+      "evidence": "Levenshtein distance, Jaccard similarity, cosine similarity, and n-gram or q-gram similarity are often used interchangeably in fuzzy matching systems, yet they measure fundamentally different geometric relationships.",
+      "paragraphs": [
+        "Levenshtein distance, Jaccard similarity, cosine similarity, and n-gram or q-gram similarity are often used interchangeably in fuzzy matching systems, yet they measure fundamentally different geometric relationships.",
+        "The difference begins before any formula is evaluated.",
+        "Levenshtein: string -> ordered sequence Jaccard: object -> set of features Cosine: object -> weighted vector q-gram similarity: string -> overlapping local substrings -> set, multiset, or vector.",
+        "Once a string is converted from an ordered sequence into a set or vector of features, some information is intentionally discarded. That loss can make similarity dramatically more robust to reordering, long documents, and large-scale retrieval—but it can also collapse strings whose sequence structure is crucial.",
+        "Consider:",
+        "ABCD BCDA.",
+        "Levenshtein sees a sequence shift that requires edits.",
+        "A character-set representation sees:",
+        "{A,B,C,D} = {B,C,D,A}",
+        "and therefore reports perfect set similarity.",
+        "Neither answer is universally correct.",
+        "They answer different questions.",
+        "The central principle of this comparison is:",
+        "changing the representation changes the neighborhood geometry.",
+        "This article develops that principle from first principles. It compares Levenshtein distance with Jaccard and Dice set similarity, multiset overlap, cosine similarity, term-frequency and TF-IDF vectors, character n-grams, q-gram profiles, MinHash-style sketches, and scalable filter-and-verify architectures. Particular attention is given to the mathematical relationship between q-gram distance and edit distance, including Ukkonen's q-gram bound."
+      ]
+    },
+    {
+      "heading": "1. The four major representation families",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 1,
+      "word_count": 45,
+      "evidence": "Representation Preserves global order? Preserves multiplicity? Typical comparison Sequence Yes Yes Levenshtein / alignment Set No No Jaccard / Dice Vector / bag Usually no Yes or weighted Cosine / vector distance q-gram profile Local order only Optional Jaccard / Dice / cosine / L1",
+      "paragraphs": [
+        "Representation Preserves global order? Preserves multiplicity? Typical comparison Sequence Yes Yes Levenshtein / alignment Set No No Jaccard / Dice Vector / bag Usually no Yes or weighted Cosine / vector distance q-gram profile Local order only Optional Jaccard / Dice / cosine / L1"
+      ]
+    },
+    {
+      "heading": "2. Representation comes before metric",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "S = \"banana\".",
+        "Possible representations include:",
+        "character sequence: [b,a,n,a,n,a] character set: {a,b,n} character-count vector: a:3 b:1 n:2 2-gram sequence: ba an na an na 2-gram set: {ba,an,na} 2-gram multiset: ba:1 an:2 na:2."
+      ]
+    },
+    {
+      "heading": "3. Every representation answers a different question",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 8,
+      "word_count": 39,
+      "evidence": "Character sequence asks:",
+      "paragraphs": [
+        "Character sequence asks:",
+        "How can one ordered character sequence be transformed into another?",
+        "Character set asks:",
+        "Which character types occur in both objects?",
+        "Character-count vector asks:",
+        "Are their symbol-frequency profiles similar?",
+        "q-grams ask:",
+        "Do they share local ordered fragments?"
+      ]
+    },
+    {
+      "heading": "4. More information is not always better",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 6,
+      "word_count": 27,
+      "evidence": "Preserving global order makes Levenshtein highly informative about exact sequence structure.",
+      "paragraphs": [
+        "Preserving global order makes Levenshtein highly informative about exact sequence structure.",
+        "It also makes the metric sensitive to:",
+        "block movement;",
+        "token reordering;",
+        "long inserted regions;",
+        "document rearrangement."
+      ]
+    },
+    {
+      "heading": "5. Discarding information creates invariance",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 5,
+      "word_count": 26,
+      "evidence": "A bag-of-words representation ignores word order.",
+      "paragraphs": [
+        "A bag-of-words representation ignores word order.",
+        "That is useful when:",
+        "word ordering changes but topic remains the same.",
+        "It is disastrous when:",
+        "word ordering determines meaning."
+      ]
+    },
+    {
+      "heading": "6. There is no free invariance",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "ignore a distinction -> gain robustness to that distinction but also lose ability to detect when that distinction matters.",
+      "paragraphs": [
+        "ignore a distinction -> gain robustness to that distinction but also lose ability to detect when that distinction matters."
+      ]
+    },
+    {
+      "heading": "7. Levenshtein's sequence geometry",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "Classic Levenshtein distance permits:",
+      "paragraphs": [
+        "Classic Levenshtein distance permits:",
+        "insertion deletion substitution.",
+        "For:",
+        "X = x1...xm Y = y1...yn,",
+        "the recurrence is:",
+        "D(i,j) = min( D(i-1,j) + 1, D(i,j-1) + 1, D(i-1,j-1) + [xi != yj] )."
+      ]
+    },
+    {
+      "heading": "8. Levenshtein preserves complete sequence order",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "The algorithm searches for an optimal monotone alignment between the two symbol sequences.",
+      "paragraphs": [
+        "The algorithm searches for an optimal monotone alignment between the two symbol sequences.",
+        "Characters cannot simply be rearranged for free."
+      ]
+    },
+    {
+      "heading": "9. Example: block reordering",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "X: ABCXYZ Y: XYZABC.",
+      "paragraphs": [
+        "X: ABCXYZ Y: XYZABC.",
+        "The symbol inventories are identical.",
+        "But the sequence order differs strongly."
+      ]
+    },
+    {
+      "heading": "10. Character-set similarity sees identity",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 3,
+      "word_count": 10,
+      "evidence": "set(X) = {A,B,C,X,Y,Z} set(Y) = {A,B,C,X,Y,Z}.",
+      "paragraphs": [
+        "set(X) = {A,B,C,X,Y,Z} set(Y) = {A,B,C,X,Y,Z}.",
+        "Therefore:",
+        "Jaccard = 1."
+      ]
+    },
+    {
+      "heading": "11. Levenshtein does not",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 4,
+      "word_count": 21,
+      "evidence": "Moving the block:",
+      "paragraphs": [
+        "Moving the block:",
+        "ABC",
+        "to the end is not one primitive edit.",
+        "It must be represented using deletions, insertions, or substitutions."
+      ]
+    },
+    {
+      "heading": "12. This illustrates representation mismatch, not algorithm error",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "If block order matters, Levenshtein is more informative.",
+      "paragraphs": [
+        "If block order matters, Levenshtein is more informative.",
+        "If the application only cares which symbols occur, the set model may be more appropriate."
+      ]
+    },
+    {
+      "heading": "13. Set representation",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 9,
+      "word_count": 21,
+      "evidence": "Map an object X to a finite set of features:",
+      "paragraphs": [
+        "Map an object X to a finite set of features:",
+        "F(X).",
+        "Features may be:",
+        "characters;",
+        "words;",
+        "q-grams;",
+        "tokens;",
+        "attributes;",
+        "document shingles."
+      ]
+    },
+    {
+      "heading": "14. Jaccard similarity",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "For sets:",
+      "paragraphs": [
+        "For sets:",
+        "A and B,",
+        "define:",
+        "J(A,B) = |A ∩ B| / |A ∪ B|."
+      ]
+    },
+    {
+      "heading": "15. Jaccard range",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "0 <= J <= 1.",
+      "paragraphs": [
+        "0 <= J <= 1.",
+        "With:",
+        "J = 1",
+        "for identical sets and:",
+        "J = 0",
+        "for disjoint nonempty sets."
+      ]
+    },
+    {
+      "heading": "16. Jaccard distance",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "A corresponding set distance is:",
+      "paragraphs": [
+        "A corresponding set distance is:",
+        "dJ(A,B) = 1 - J(A,B).",
+        "For finite sets, Jaccard distance is a mathematical metric."
+      ]
+    },
+    {
+      "heading": "17. Jaccard deliberately ignores duplicate features",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 6,
+      "word_count": 21,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "X: red red red blue Y: red blue.",
+        "As sets:",
+        "A = {red,blue} B = {red,blue}.",
+        "Therefore:",
+        "J = 1."
+      ]
+    },
+    {
+      "heading": "18. Frequency information disappeared",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "The first object contains:",
+      "paragraphs": [
+        "The first object contains:",
+        "red x3",
+        "while the second contains:",
+        "red x1.",
+        "Set representation intentionally discards that difference."
+      ]
+    },
+    {
+      "heading": "19. This can be useful for presence/absence data",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 3,
+      "word_count": 12,
+      "evidence": "If the question is:",
+      "paragraphs": [
+        "If the question is:",
+        "Which feature types occur?",
+        "multiplicity may be irrelevant."
+      ]
+    },
+    {
+      "heading": "20. It can be disastrous for behavioral counts",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 5,
+      "word_count": 14,
+      "evidence": "For log events:",
+      "paragraphs": [
+        "For log events:",
+        "RETRY x3",
+        "and:",
+        "RETRY x300000",
+        "should often not be considered identical."
+      ]
+    },
+    {
+      "heading": "21. Dice similarity",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "For sets:",
+      "paragraphs": [
+        "For sets:",
+        "Dice(A,B) = 2|A ∩ B| / (|A|+|B|)."
+      ]
+    },
+    {
+      "heading": "22. Historical Dice coefficient",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Lee R. Dice's 1945 ecological association paper is one of the foundational sources for this overlap form.",
+      "paragraphs": [
+        "Lee R. Dice's 1945 ecological association paper is one of the foundational sources for this overlap form.",
+        "See Dice, 1945 ."
+      ]
+    },
+    {
+      "heading": "23. Jaccard and Dice contain the same ordering information for fixed representations",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 6,
+      "word_count": 17,
+      "evidence": "Given:",
+      "paragraphs": [
+        "Given:",
+        "J = |A∩B|/|A∪B|,",
+        "Dice is:",
+        "D = 2J / (1+J).",
+        "Conversely:",
+        "J = D / (2-D)."
+      ]
+    },
+    {
+      "heading": "24. Therefore they rank pairs identically when computed from the same two sets",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "The numerical scales differ.",
+      "paragraphs": [
+        "The numerical scales differ.",
+        "The underlying intersection/union information does not."
+      ]
+    },
+    {
+      "heading": "25. Do not compare raw thresholds directly",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 4,
+      "word_count": 12,
+      "evidence": "Jaccard >= 0.8",
+      "paragraphs": [
+        "Jaccard >= 0.8",
+        "and:",
+        "Dice >= 0.8",
+        "are not equivalent acceptance rules."
+      ]
+    },
+    {
+      "heading": "26. Convert thresholds analytically if necessary",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 4,
+      "word_count": 14,
+      "evidence": "For example, if:",
+      "paragraphs": [
+        "For example, if:",
+        "J = 0.8,",
+        "then:",
+        "Dice = 1.6 / 1.8 ≈ 0.8889."
+      ]
+    },
+    {
+      "heading": "27. Containment differs from symmetric resemblance",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "A",
+        "is a short set of features and:",
+        "A ⊂ B",
+        "where B is much larger.",
+        "Jaccard can be low because the union is dominated by B ."
+      ]
+    },
+    {
+      "heading": "28. Containment coefficient",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 4,
+      "word_count": 22,
+      "evidence": "An asymmetric measure can be:",
+      "paragraphs": [
+        "An asymmetric measure can be:",
+        "C(A,B) = |A ∩ B| / |A|.",
+        "This asks:",
+        "How much of A is contained in B?"
+      ]
+    },
+    {
+      "heading": "29. Broder's document resemblance and containment",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Andrei Broder formalized resemblance and containment for near-duplicate document detection using shingle sets and sampling.",
+      "paragraphs": [
+        "Andrei Broder formalized resemblance and containment for near-duplicate document detection using shingle sets and sampling.",
+        "See On the Resemblance and Containment of Documents ."
+      ]
+    },
+    {
+      "heading": "30. Symmetry matters",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 5,
+      "word_count": 9,
+      "evidence": "J(A,B) = J(B,A).",
+      "paragraphs": [
+        "J(A,B) = J(B,A).",
+        "But:",
+        "C(A,B)",
+        "need not equal:",
+        "C(B,A)."
+      ]
+    },
+    {
+      "heading": "31. Containment is useful for plagiarism or inclusion-style questions",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "A short document can be almost completely contained in a much larger document even though their symmetric Jaccard resemblance is modest.",
+      "paragraphs": [
+        "A short document can be almost completely contained in a much larger document even though their symmetric Jaccard resemblance is modest."
+      ]
+    },
+    {
+      "heading": "32. This is analogous to full-string versus substring matching",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Full-string edit distance asks whether two entire strings are close.",
+      "paragraphs": [
+        "Full-string edit distance asks whether two entire strings are close.",
+        "Containment asks whether most of one representation occurs inside another."
+      ]
+    },
+    {
+      "heading": "33. A similarity formula must match the query direction",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Do not use symmetric resemblance when the true question is:",
+      "paragraphs": [
+        "Do not use symmetric resemblance when the true question is:",
+        "Is A contained in B?"
+      ]
+    },
+    {
+      "heading": "34. Multisets",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "A multiset retains feature multiplicity.",
+      "paragraphs": [
+        "A multiset retains feature multiplicity.",
+        "Let:",
+        "c_A(g)",
+        "be the number of occurrences of feature g in object A ."
+      ]
+    },
+    {
+      "heading": "35. Multiset intersection count",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "|A ∩ B|_multi = Σ_g min( c_A(g), c_B(g) ).",
+      "paragraphs": [
+        "|A ∩ B|_multi = Σ_g min( c_A(g), c_B(g) )."
+      ]
+    },
+    {
+      "heading": "36. Multiset union count",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "|A ∪ B|_multi = Σ_g max( c_A(g), c_B(g) ).",
+      "paragraphs": [
+        "|A ∪ B|_multi = Σ_g max( c_A(g), c_B(g) )."
+      ]
+    },
+    {
+      "heading": "37. Multiset Jaccard",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "J_multi(A,B) = Σ_g min(c_A(g),c_B(g)) / Σ_g max(c_A(g),c_B(g)).",
+      "paragraphs": [
+        "J_multi(A,B) = Σ_g min(c_A(g),c_B(g)) / Σ_g max(c_A(g),c_B(g))."
+      ]
+    },
+    {
+      "heading": "38. This distinguishes repeated features",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 8,
+      "word_count": 22,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "X: red red red blue Y: red blue,",
+        "multiset intersection has size:",
+        "2",
+        "and multiset union:",
+        "4.",
+        "Therefore:",
+        "J_multi = 0.5."
+      ]
+    },
+    {
+      "heading": "39. Same representation, different similarity objective",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Even after choosing q-grams, for example, one must decide:",
+      "paragraphs": [
+        "Even after choosing q-grams, for example, one must decide:",
+        "set? multiset? weighted vector?"
+      ]
+    },
+    {
+      "heading": "40. Vector representation",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 5,
+      "word_count": 21,
+      "evidence": "Choose a feature vocabulary:",
+      "paragraphs": [
+        "Choose a feature vocabulary:",
+        "V = {f1,f2,...,fd}.",
+        "Represent object X as:",
+        "x = (x1,x2,...,xd)",
+        "where each coordinate stores a feature weight."
+      ]
+    },
+    {
+      "heading": "41. Binary vectors",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "x_i = 1 if feature i occurs 0 otherwise.",
+      "paragraphs": [
+        "x_i = 1 if feature i occurs 0 otherwise.",
+        "This is essentially a set representation written algebraically."
+      ]
+    },
+    {
+      "heading": "42. Count vectors",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "x_i = number of times feature i occurs.",
+      "paragraphs": [
+        "x_i = number of times feature i occurs.",
+        "This preserves multiplicity."
+      ]
+    },
+    {
+      "heading": "43. Weighted vectors",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 5,
+      "word_count": 11,
+      "evidence": "Coordinates can instead store:",
+      "paragraphs": [
+        "Coordinates can instead store:",
+        "normalized frequency;",
+        "TF-IDF;",
+        "business importance;",
+        "learned weights."
+      ]
+    },
+    {
+      "heading": "44. Vector-space retrieval",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "Salton, Wong, and Yang's 1975 work is a foundational treatment of vector-space representations for automatic indexing.",
+      "paragraphs": [
+        "Salton, Wong, and Yang's 1975 work is a foundational treatment of vector-space representations for automatic indexing.",
+        "See A Vector Space Model for Automatic Indexing ."
+      ]
+    },
+    {
+      "heading": "45. Cosine similarity",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "For nonzero vectors:",
+      "paragraphs": [
+        "For nonzero vectors:",
+        "x and y,",
+        "define:",
+        "cos(x,y) = x · y / (||x||_2 ||y||_2)."
+      ]
+    },
+    {
+      "heading": "46. Cosine compares direction rather than raw magnitude",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 6,
+      "word_count": 14,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "y = c x",
+        "for any:",
+        "c > 0,",
+        "then:",
+        "cos(x,y) = 1."
+      ]
+    },
+    {
+      "heading": "47. This can be extremely useful",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "Suppose one document contains roughly the same term proportions as another but is twice as long.",
+      "paragraphs": [
+        "Suppose one document contains roughly the same term proportions as another but is twice as long.",
+        "Cosine can still regard their distributions as nearly identical."
+      ]
+    },
+    {
+      "heading": "48. It can also deliberately ignore major absolute-count differences",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "X = [1,2,3] Y = [100,200,300],",
+        "then:",
+        "cos(X,Y) = 1."
+      ]
+    },
+    {
+      "heading": "49. Levenshtein would not behave that way on repeated sequences",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "If one textual sequence is literally repeated many times, edit distance grows with the additional material.",
+      "paragraphs": [
+        "If one textual sequence is literally repeated many times, edit distance grows with the additional material."
+      ]
+    },
+    {
+      "heading": "50. Cosine therefore answers a different question",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "Are these feature distributions pointing in similar directions?",
+      "paragraphs": [
+        "Are these feature distributions pointing in similar directions?",
+        "not:",
+        "How many edits separate the underlying sequences?"
+      ]
+    },
+    {
+      "heading": "51. Binary cosine",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "For binary feature vectors corresponding to sets A and B :",
+      "paragraphs": [
+        "For binary feature vectors corresponding to sets A and B :",
+        "cos(A,B) = |A ∩ B| / sqrt( |A||B| )."
+      ]
+    },
+    {
+      "heading": "52. Binary cosine and Jaccard differ in normalization",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "Jaccard denominator:",
+      "paragraphs": [
+        "Jaccard denominator:",
+        "|A ∪ B|.",
+        "Binary cosine denominator:",
+        "sqrt( |A||B| )."
+      ]
+    },
+    {
+      "heading": "53. Therefore they can rank candidate pairs differently",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Especially when feature-set sizes differ substantially.",
+      "paragraphs": [
+        "Especially when feature-set sizes differ substantially."
+      ]
+    },
+    {
+      "heading": "54. Cosine similarity is not itself a metric distance",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "The commonly used:",
+      "paragraphs": [
+        "The commonly used:",
+        "1 - cosine",
+        "should not automatically be assumed to satisfy the triangle inequality."
+      ]
+    },
+    {
+      "heading": "55. Angular distance is a different construction",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 4,
+      "word_count": 23,
+      "evidence": "For appropriate nonzero vectors one can use the angle:",
+      "paragraphs": [
+        "For appropriate nonzero vectors one can use the angle:",
+        "θ = arccos( cosine(x,y) ).",
+        "This has different mathematical properties from:",
+        "1 - cosine."
+      ]
+    },
+    {
+      "heading": "56. Again, API words can be misleading",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "A library function named:",
+      "paragraphs": [
+        "A library function named:",
+        "cosine_distance",
+        "may simply return:",
+        "1 - cosine_similarity.",
+        "Inspect the definition before relying on metric geometry."
+      ]
+    },
+    {
+      "heading": "57. Term frequency",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "For a document d and term t :",
+      "paragraphs": [
+        "For a document d and term t :",
+        "tf(t,d)",
+        "represents how often t occurs in d , possibly after normalization or transformation."
+      ]
+    },
+    {
+      "heading": "58. Raw term counts overvalue ubiquitous words",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Words appearing in nearly every document often provide little discrimination.",
+      "paragraphs": [
+        "Words appearing in nearly every document often provide little discrimination."
+      ]
+    },
+    {
+      "heading": "59. Inverse document frequency",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "A common form is:",
+      "paragraphs": [
+        "A common form is:",
+        "idf(t) = log( N / df(t) )",
+        "where:",
+        "N = number of documents df(t) = number of documents containing t."
+      ]
+    },
+    {
+      "heading": "60. Spärck Jones and term specificity",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "Karen Spärck Jones' influential 1972 work argued for statistically interpreting term specificity using collection frequency.",
+      "paragraphs": [
+        "Karen Spärck Jones' influential 1972 work argued for statistically interpreting term specificity using collection frequency.",
+        "See A Statistical Interpretation of Term Specificity and Its Application in Retrieval ."
+      ]
+    },
+    {
+      "heading": "61. TF-IDF",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "A simple weighting scheme is:",
+      "paragraphs": [
+        "A simple weighting scheme is:",
+        "w(t,d) = tf(t,d) * idf(t)."
+      ]
+    },
+    {
+      "heading": "62. Salton and Buckley",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Salton and Buckley's 1988 study analyzed term-weighting approaches for automatic text retrieval.",
+      "paragraphs": [
+        "Salton and Buckley's 1988 study analyzed term-weighting approaches for automatic text retrieval.",
+        "See Term-weighting approaches in automatic text retrieval ."
+      ]
+    },
+    {
+      "heading": "63. TF-IDF changes what overlap means",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "Sharing:",
+      "paragraphs": [
+        "Sharing:",
+        "the",
+        "can contribute very little.",
+        "Sharing a rare technical term can contribute substantially more."
+      ]
+    },
+    {
+      "heading": "64. Levenshtein has no corpus frequency model",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "Every matching character is simply part of the alignment.",
+      "paragraphs": [
+        "Every matching character is simply part of the alignment.",
+        "It does not know whether that character or token is rare across a collection."
+      ]
+    },
+    {
+      "heading": "65. Corpus-aware weighting is especially useful for retrieval",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "The discriminative value of a feature depends partly on:",
+      "paragraphs": [
+        "The discriminative value of a feature depends partly on:",
+        "how often everyone else contains it."
+      ]
+    },
+    {
+      "heading": "66. Pairwise geometry and corpus statistics are separate layers",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "A pairwise edit score has no knowledge of the rest of the database.",
+      "paragraphs": [
+        "A pairwise edit score has no knowledge of the rest of the database.",
+        "A TF-IDF vector explicitly does."
+      ]
+    },
+    {
+      "heading": "67. Vector representation can use character n-grams too",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "TF-IDF is not restricted to words.",
+      "paragraphs": [
+        "TF-IDF is not restricted to words.",
+        "Features can be:",
+        "character 2-grams character 3-grams word n-grams tokens."
+      ]
+    },
+    {
+      "heading": "68. This creates hybrid systems",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "string -> character 3-gram TF-IDF vector -> cosine similarity.",
+        "This is very different from character-level Levenshtein."
+      ]
+    },
+    {
+      "heading": "69. N-gram definition",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "A contiguous n-gram is a sequence of n consecutive units.",
+      "paragraphs": [
+        "A contiguous n-gram is a sequence of n consecutive units.",
+        "For character string:",
+        "ABCDE",
+        "and:",
+        "q = 2,",
+        "the ordinary bigrams are:",
+        "AB BC CD DE."
+      ]
+    },
+    {
+      "heading": "70. q-gram and n-gram terminology",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "In approximate string matching literature, the length is frequently written:",
+      "paragraphs": [
+        "In approximate string matching literature, the length is frequently written:",
+        "q",
+        "and the substrings are called:",
+        "q-grams.",
+        "Conceptually this is the same contiguous fixed-length-fragment idea as character n-grams."
+      ]
+    },
+    {
+      "heading": "71. Boundary padding",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 3,
+      "word_count": 9,
+      "evidence": "Some systems add sentinel symbols:",
+      "paragraphs": [
+        "Some systems add sentinel symbols:",
+        "##JOHN$$",
+        "before extracting q-grams."
+      ]
+    },
+    {
+      "heading": "72. Padding preserves edge information",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Without padding, the first and last characters participate in fewer q-grams.",
+      "paragraphs": [
+        "Without padding, the first and last characters participate in fewer q-grams."
+      ]
+    },
+    {
+      "heading": "73. Padding changes the representation",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Therefore two implementations can produce different q-gram similarity scores even with the same:",
+      "paragraphs": [
+        "Therefore two implementations can produce different q-gram similarity scores even with the same:",
+        "q."
+      ]
+    },
+    {
+      "heading": "74. Always document boundary policy",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "Possible choices include:",
+      "paragraphs": [
+        "Possible choices include:",
+        "no padding;",
+        "one start/end marker;",
+        "q-1 boundary symbols."
+      ]
+    },
+    {
+      "heading": "75. q-gram set",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 8,
+      "word_count": 19,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "BANANA",
+        "with:",
+        "q=2,",
+        "the sequence of q-grams is:",
+        "BA AN NA AN NA.",
+        "The unique set is:",
+        "{BA,AN,NA}."
+      ]
+    },
+    {
+      "heading": "76. q-gram multiset",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 2,
+      "word_count": 5,
+      "evidence": "Multiplicity is:",
+      "paragraphs": [
+        "Multiplicity is:",
+        "BA:1 AN:2 NA:2."
+      ]
+    },
+    {
+      "heading": "77. q-gram profile vector",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "For every possible q-gram g , define:",
+      "paragraphs": [
+        "For every possible q-gram g , define:",
+        "P_q(S)[g] = number of occurrences of g in S."
+      ]
+    },
+    {
+      "heading": "78. This converts a string into a high-dimensional sparse vector",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 5,
+      "word_count": 16,
+      "evidence": "If the alphabet size is:",
+      "paragraphs": [
+        "If the alphabet size is:",
+        "|Σ| = σ,",
+        "there are up to:",
+        "σ^q",
+        "possible q-gram coordinates."
+      ]
+    },
+    {
+      "heading": "79. Actual profile is usually sparse",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 3,
+      "word_count": 14,
+      "evidence": "A string of length n contains only:",
+      "paragraphs": [
+        "A string of length n contains only:",
+        "n-q+1",
+        "ordinary q-gram positions before boundary padding."
+      ]
+    },
+    {
+      "heading": "80. q-gram representation preserves local order",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 6,
+      "word_count": 13,
+      "evidence": "The bigram:",
+      "paragraphs": [
+        "The bigram:",
+        "AB",
+        "distinguishes:",
+        "A followed by B",
+        "from:",
+        "B followed by A."
+      ]
+    },
+    {
+      "heading": "81. It does not preserve complete global order",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Different strings can have identical q-gram profiles.",
+      "paragraphs": [
+        "Different strings can have identical q-gram profiles."
+      ]
+    },
+    {
+      "heading": "82. Simple collision example",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 9,
+      "word_count": 25,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "q = 2",
+        "compare:",
+        "ABA",
+        "and:",
+        "BAB.",
+        "The 2-gram multisets are:",
+        "ABA: AB, BA BAB: BA, AB.",
+        "Therefore their 2-gram count profiles are identical."
+      ]
+    },
+    {
+      "heading": "83. q-gram profile distance can therefore be zero for different strings",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "d_q( \"ABA\", \"BAB\" ) = 0",
+      "paragraphs": [
+        "d_q( \"ABA\", \"BAB\" ) = 0",
+        "under count-profile L1 distance."
+      ]
+    },
+    {
+      "heading": "84. This is impossible for true Levenshtein metric identity",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 2,
+      "word_count": 6,
+      "evidence": "Classic Levenshtein satisfies:",
+      "paragraphs": [
+        "Classic Levenshtein satisfies:",
+        "dL(X,Y)=0 iff X=Y."
+      ]
+    },
+    {
+      "heading": "85. q-gram profile distance is therefore a pseudometric on strings",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 4,
+      "word_count": 21,
+      "evidence": "It is a true metric on the q-gram count vectors themselves.",
+      "paragraphs": [
+        "It is a true metric on the q-gram count vectors themselves.",
+        "But the mapping:",
+        "string -> q-gram profile",
+        "is not injective."
+      ]
+    },
+    {
+      "heading": "86. This distinction is mathematically important",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "A distance can be perfectly valid in feature space while losing identity in the original object space.",
+      "paragraphs": [
+        "A distance can be perfectly valid in feature space while losing identity in the original object space."
+      ]
+    },
+    {
+      "heading": "87. q-gram L1 distance",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "d_q(X,Y) = Σ_g | P_q(X)[g] - P_q(Y)[g] |."
+      ]
+    },
+    {
+      "heading": "88. This is Manhattan distance between q-gram profiles",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "It measures how much q-gram multiplicity must change.",
+      "paragraphs": [
+        "It measures how much q-gram multiplicity must change."
+      ]
+    },
+    {
+      "heading": "89. Ukkonen's q-gram work",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 2,
+      "word_count": 32,
+      "evidence": "Esko Ukkonen's 1992 paper studied approximate string matching using q-grams and showed how q-gram distances can provide lower bounds useful for edit-distance matching.",
+      "paragraphs": [
+        "Esko Ukkonen's 1992 paper studied approximate string matching using q-grams and showed how q-gram distances can provide lower bounds useful for edit-distance matching.",
+        "See Approximate String-Matching with q-Grams and Maximal Matches ."
+      ]
+    },
+    {
+      "heading": "90. q-gram lemma",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "For unit-cost edit distance:",
+      "paragraphs": [
+        "For unit-cost edit distance:",
+        "d_q(X,Y) <= 2q * d_edit(X,Y)."
+      ]
+    },
+    {
+      "heading": "91. Rearranging gives a lower bound",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "d_edit(X,Y) >= d_q(X,Y) / (2q).",
+      "paragraphs": [
+        "d_edit(X,Y) >= d_q(X,Y) / (2q)."
+      ]
+    },
+    {
+      "heading": "92. Why one edit affects only local q-grams",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 6,
+      "word_count": 26,
+      "evidence": "A substitution at one character can alter only q-grams whose windows cover that position.",
+      "paragraphs": [
+        "A substitution at one character can alter only q-grams whose windows cover that position.",
+        "At most approximately:",
+        "q",
+        "old q-grams disappear and:",
+        "q",
+        "new q-grams appear."
+      ]
+    },
+    {
+      "heading": "93. Hence at most 2q profile-count change",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "This yields the intuition behind:",
+      "paragraphs": [
+        "This yields the intuition behind:",
+        "d_q <= 2q d_edit."
+      ]
+    },
+    {
+      "heading": "94. Insertions and deletions also have local q-gram effects",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "Although they shift character positions, most q-grams far from the edit remain textually identical.",
+      "paragraphs": [
+        "Although they shift character positions, most q-grams far from the edit remain textually identical."
+      ]
+    },
+    {
+      "heading": "95. This is a deep difference from positional Hamming comparison",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "One insertion can misalign every later character position under Hamming.",
+      "paragraphs": [
+        "One insertion can misalign every later character position under Hamming.",
+        "q-gram overlap remains mostly local."
+      ]
+    },
+    {
+      "heading": "96. q-gram distance is therefore useful as an edit-distance filter",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 4,
+      "word_count": 8,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "d_q(X,Y) > 2qk,",
+        "then:",
+        "d_edit(X,Y) > k."
+      ]
+    },
+    {
+      "heading": "97. Such a candidate can be safely rejected",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "For the assumptions of the bound, this is a lossless rejection with respect to the edit-distance threshold.",
+      "paragraphs": [
+        "For the assumptions of the bound, this is a lossless rejection with respect to the edit-distance threshold."
+      ]
+    },
+    {
+      "heading": "98. This creates filter-and-verify architecture",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 1,
+      "word_count": 29,
+      "evidence": "candidate strings | v cheap q-gram filter | +---- impossible candidate | | | v | reject | v surviving candidates | v exact Levenshtein | v final answer.",
+      "paragraphs": [
+        "candidate strings | v cheap q-gram filter | +---- impossible candidate | | | v | reject | v surviving candidates | v exact Levenshtein | v final answer."
+      ]
+    },
+    {
+      "heading": "99. Here q-grams are NOT replacing edit distance",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "They accelerate it.",
+      "paragraphs": [
+        "They accelerate it.",
+        "This is one of the most important distinctions in the entire comparison."
+      ]
+    },
+    {
+      "heading": "100. Alternative use: q-grams as the final similarity representation",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "A system may instead decide:",
+      "paragraphs": [
+        "A system may instead decide:",
+        "q-gram overlap itself is the desired similarity.",
+        "Then there is no exact edit verifier."
+      ]
+    },
+    {
+      "heading": "101. These are two fundamentally different architectures",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "ARCHITECTURE A: q-grams as approximation/filter for edit distance ARCHITECTURE B: q-grams as final representation.",
+      "paragraphs": [
+        "ARCHITECTURE A: q-grams as approximation/filter for edit distance ARCHITECTURE B: q-grams as final representation."
+      ]
+    },
+    {
+      "heading": "102. The same preprocessing can therefore serve two different semantics",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "This is why implementation descriptions must state the final decision rule.",
+      "paragraphs": [
+        "This is why implementation descriptions must state the final decision rule."
+      ]
+    },
+    {
+      "heading": "103. Ukkonen's q-gram distance can be computed much more cheaply than full pairwise dynamic programming in suitable representations",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "This allows q-gram profiles to screen candidate pairs before expensive verification.",
+      "paragraphs": [
+        "This allows q-gram profiles to screen candidate pairs before expensive verification."
+      ]
+    },
+    {
+      "heading": "104. q-gram filtering is a core scalable-string technique",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "The broader algorithmic theory is developed in indexing and filtering for edit distance .",
+      "paragraphs": [
+        "The broader algorithmic theory is developed in indexing and filtering for edit distance ."
+      ]
+    },
+    {
+      "heading": "105. Approximate string joins",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 2,
+      "word_count": 29,
+      "evidence": "Gravano, Ipeirotis, Jagadish, Koudas, Muthukrishnan, and Srivastava developed database techniques based on positional q-grams for approximate string joins.",
+      "paragraphs": [
+        "Gravano, Ipeirotis, Jagadish, Koudas, Muthukrishnan, and Srivastava developed database techniques based on positional q-grams for approximate string joins.",
+        "See Approximate String Joins in a Database (Almost) for Free ."
+      ]
+    },
+    {
+      "heading": "106. Their architecture is conceptually filter-and-verify",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Cheap relational/q-gram filtering generates candidate string pairs.",
+      "paragraphs": [
+        "Cheap relational/q-gram filtering generates candidate string pairs.",
+        "An expensive edit-distance predicate verifies surviving candidates."
+      ]
+    },
+    {
+      "heading": "107. Positional q-grams contain more information than plain q-gram sets",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 4,
+      "word_count": 8,
+      "evidence": "Instead of storing only:",
+      "paragraphs": [
+        "Instead of storing only:",
+        "\"abc\"",
+        "store:",
+        "(position, qgram)."
+      ]
+    },
+    {
+      "heading": "108. Position can strengthen filtering",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "If an edit threshold is small, corresponding q-grams cannot drift arbitrarily far in position.",
+      "paragraphs": [
+        "If an edit threshold is small, corresponding q-grams cannot drift arbitrarily far in position."
+      ]
+    },
+    {
+      "heading": "109. But positional representation becomes more order-sensitive",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "Once again:",
+      "paragraphs": [
+        "Once again:",
+        "more information = more discrimination + less invariance."
+      ]
+    },
+    {
+      "heading": "110. Choice of q is critical",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Small q and large q behave differently.",
+      "paragraphs": [
+        "Small q and large q behave differently."
+      ]
+    },
+    {
+      "heading": "111. q = 1",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "Features are single symbols.",
+      "paragraphs": [
+        "Features are single symbols.",
+        "Almost all sequence order is lost."
+      ]
+    },
+    {
+      "heading": "112. Larger q preserves more local structure",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 3,
+      "word_count": 12,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "q = 4,",
+        "a match requires four consecutive symbols to agree."
+      ]
+    },
+    {
+      "heading": "113. Larger q improves feature discrimination",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Long grams occur less frequently by chance.",
+      "paragraphs": [
+        "Long grams occur less frequently by chance."
+      ]
+    },
+    {
+      "heading": "114. Larger q is also more brittle to edits",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "One character substitution can destroy several overlapping grams.",
+      "paragraphs": [
+        "One character substitution can destroy several overlapping grams."
+      ]
+    },
+    {
+      "heading": "115. Example",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 3,
+      "word_count": 8,
+      "evidence": "X: ABCDEF Y: ABCXDEF.",
+      "paragraphs": [
+        "X: ABCDEF Y: ABCXDEF.",
+        "Levenshtein:",
+        "dL = 1."
+      ]
+    },
+    {
+      "heading": "116. 3-grams of X",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "ABC BCD CDE DEF.",
+      "paragraphs": [
+        "ABC BCD CDE DEF."
+      ]
+    },
+    {
+      "heading": "117. 3-grams of Y",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "ABC BCX CXD XDE DEF.",
+      "paragraphs": [
+        "ABC BCX CXD XDE DEF."
+      ]
+    },
+    {
+      "heading": "118. Only two ordinary 3-gram types overlap",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 1,
+      "word_count": 2,
+      "evidence": "ABC DEF.",
+      "paragraphs": [
+        "ABC DEF."
+      ]
+    },
+    {
+      "heading": "119. Set Jaccard is therefore",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "2 / (4 + 5 - 2) = 2/7 ≈ 0.286.",
+      "paragraphs": [
+        "2 / (4 + 5 - 2) = 2/7 ≈ 0.286."
+      ]
+    },
+    {
+      "heading": "120. One edit can therefore create surprisingly low q-gram Jaccard on short strings",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "This is not a contradiction.",
+      "paragraphs": [
+        "This is not a contradiction.",
+        "The q-gram representation amplified the local disruption because several overlapping windows were affected."
+      ]
+    },
+    {
+      "heading": "121. Smaller q would be less brittle",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 4,
+      "word_count": 11,
+      "evidence": "But would produce:",
+      "paragraphs": [
+        "But would produce:",
+        "more common features;",
+        "larger candidate sets;",
+        "more collisions."
+      ]
+    },
+    {
+      "heading": "122. q is a bias-discrimination parameter",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "small q -> high tolerance + weak discrimination large q -> strong discrimination + high edit sensitivity.",
+      "paragraphs": [
+        "small q -> high tolerance + weak discrimination large q -> strong discrimination + high edit sensitivity."
+      ]
+    },
+    {
+      "heading": "123. There is no universal optimal q",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 7,
+      "word_count": 14,
+      "evidence": "It depends on:",
+      "paragraphs": [
+        "It depends on:",
+        "string length;",
+        "alphabet;",
+        "expected edit rate;",
+        "corpus size;",
+        "language;",
+        "memory budget."
+      ]
+    },
+    {
+      "heading": "124. Short strings constrain q severely",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 6,
+      "word_count": 21,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "|S| = 5",
+        "and:",
+        "q = 5,",
+        "there is only one ordinary q-gram.",
+        "One edit can destroy the only feature."
+      ]
+    },
+    {
+      "heading": "125. Long strings support larger grams",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "But retrieval-scale vocabulary can become huge.",
+      "paragraphs": [
+        "But retrieval-scale vocabulary can become huge."
+      ]
+    },
+    {
+      "heading": "126. Feature vocabulary grows exponentially with q",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 3,
+      "word_count": 8,
+      "evidence": "In principle:",
+      "paragraphs": [
+        "In principle:",
+        "|Σ|^q.",
+        "Sparse storage is therefore essential."
+      ]
+    },
+    {
+      "heading": "127. Character alphabet size matters",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 4,
+      "word_count": 18,
+      "evidence": "For DNA:",
+      "paragraphs": [
+        "For DNA:",
+        "|Σ| ≈ 4",
+        "for canonical nucleotides.",
+        "For Unicode text, the conceptual symbol space is dramatically larger."
+      ]
+    },
+    {
+      "heading": "128. Normalization matters before q-gram generation",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Case differences, Unicode normalization, punctuation, and tokenization alter every downstream gram.",
+      "paragraphs": [
+        "Case differences, Unicode normalization, punctuation, and tokenization alter every downstream gram."
+      ]
+    },
+    {
+      "heading": "129. q-gram representation inherits representation mistakes",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "If UTF-8 bytes are accidentally treated as characters, n-grams can split multi-byte characters.",
+      "paragraphs": [
+        "If UTF-8 bytes are accidentally treated as characters, n-grams can split multi-byte characters."
+      ]
+    },
+    {
+      "heading": "130. Grapheme-safe n-grams",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 4,
+      "word_count": 24,
+      "evidence": "One can generate grams over:",
+      "paragraphs": [
+        "One can generate grams over:",
+        "extended grapheme clusters",
+        "rather than code points or bytes.",
+        "See Unicode and grapheme-safe Levenshtein for the underlying segmentation distinction."
+      ]
+    },
+    {
+      "heading": "131. Word n-grams",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "N-grams need not be characters.",
+      "paragraphs": [
+        "N-grams need not be characters.",
+        "For:",
+        "the quick brown fox",
+        "word bigrams are:",
+        "the quick quick brown brown fox."
+      ]
+    },
+    {
+      "heading": "132. Word n-grams preserve local phrase order",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "They are often useful for:",
+      "paragraphs": [
+        "They are often useful for:",
+        "near-duplicate documents;",
+        "plagiarism detection;",
+        "phrase retrieval;",
+        "text classification."
+      ]
+    },
+    {
+      "heading": "133. Character and word n-grams respond differently to spelling errors",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "One typo destroys several character grams but can also convert an entire word token into a different word, destroying word-level n-grams around it.",
+      "paragraphs": [
+        "One typo destroys several character grams but can also convert an entire word token into a different word, destroying word-level n-grams around it."
+      ]
+    },
+    {
+      "heading": "134. Tokenization therefore determines robustness",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 2,
+      "word_count": 5,
+      "evidence": "Again:",
+      "paragraphs": [
+        "Again:",
+        "representation first, metric second."
+      ]
+    },
+    {
+      "heading": "135. Set q-grams versus multiset q-grams",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 6,
+      "word_count": 8,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "AAAAAA.",
+        "For:",
+        "q=2,",
+        "every gram is:",
+        "AA."
+      ]
+    },
+    {
+      "heading": "136. Set representation contains one feature",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 1,
+      "word_count": 1,
+      "evidence": "{AA}.",
+      "paragraphs": [
+        "{AA}."
+      ]
+    },
+    {
+      "heading": "137. Multiset representation preserves five occurrences",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 1,
+      "word_count": 1,
+      "evidence": "AA:5.",
+      "paragraphs": [
+        "AA:5."
+      ]
+    },
+    {
+      "heading": "138. This difference matters for repetitive strings",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "Set Jaccard may consider:",
+      "paragraphs": [
+        "Set Jaccard may consider:",
+        "AAAA",
+        "and:",
+        "AAAAAAAAAAAAAAAA",
+        "identical at the unique 2-gram level."
+      ]
+    },
+    {
+      "heading": "139. Count-vector cosine gives another behavior",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "If both vectors contain only coordinate:",
+      "paragraphs": [
+        "If both vectors contain only coordinate:",
+        "AA",
+        "with positive counts, the vectors are scalar multiples.",
+        "Therefore:",
+        "cosine = 1."
+      ]
+    },
+    {
+      "heading": "140. Multiset Jaccard preserves the magnitude difference",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "It compares minimum counts with maximum counts.",
+      "paragraphs": [
+        "It compares minimum counts with maximum counts."
+      ]
+    },
+    {
+      "heading": "141. Thus three q-gram systems can disagree while using identical q",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "unique q-gram Jaccard q-gram count cosine multiset Jaccard.",
+      "paragraphs": [
+        "unique q-gram Jaccard q-gram count cosine multiset Jaccard."
+      ]
+    },
+    {
+      "heading": "142. “n-gram similarity” is therefore not a complete specification",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "You must state:",
+      "paragraphs": [
+        "You must state:",
+        "unit? q? padding? set/multiset/vector? weighting? similarity formula?"
+      ]
+    },
+    {
+      "heading": "143. Cosine over q-gram counts",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 4,
+      "word_count": 30,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "x_g = count of q-gram g in X y_g = count of q-gram g in Y.",
+        "Then:",
+        "cos_q(X,Y) = Σ_g x_g y_g / sqrt( Σ_g x_g^2 Σ_g y_g^2 )."
+      ]
+    },
+    {
+      "heading": "144. This emphasizes proportional q-gram distributions",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "It does not require exact count equality.",
+      "paragraphs": [
+        "It does not require exact count equality."
+      ]
+    },
+    {
+      "heading": "145. q-gram TF-IDF cosine",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "Weight each gram by how rare it is across the corpus:",
+      "paragraphs": [
+        "Weight each gram by how rare it is across the corpus:",
+        "w_g(X) = tf_g(X) * idf_g."
+      ]
+    },
+    {
+      "heading": "146. Rare grams become more informative",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 4,
+      "word_count": 18,
+      "evidence": "Common fragments such as:",
+      "paragraphs": [
+        "Common fragments such as:",
+        "\"th\"",
+        "in English may receive relatively low weight.",
+        "Rare technical fragments can receive more."
+      ]
+    },
+    {
+      "heading": "147. This can improve retrieval discrimination",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "But it changes similarity from pure pairwise string structure to a corpus-dependent model.",
+      "paragraphs": [
+        "But it changes similarity from pure pairwise string structure to a corpus-dependent model."
+      ]
+    },
+    {
+      "heading": "148. The same pair can receive different scores in different corpora",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 3,
+      "word_count": 6,
+      "evidence": "Because:",
+      "paragraphs": [
+        "Because:",
+        "idf_g",
+        "depends on document frequency."
+      ]
+    },
+    {
+      "heading": "149. Levenshtein is corpus-independent",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 5,
+      "word_count": 17,
+      "evidence": "Given:",
+      "paragraphs": [
+        "Given:",
+        "same two strings;",
+        "same representation;",
+        "same costs,",
+        "the result is independent of what other strings exist."
+      ]
+    },
+    {
+      "heading": "150. This is both strength and limitation",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "It makes Levenshtein:",
+      "paragraphs": [
+        "It makes Levenshtein:",
+        "stable;",
+        "interpretable;",
+        "reproducible.",
+        "But it cannot exploit feature rarity automatically."
+      ]
+    },
+    {
+      "heading": "151. Local versus global structure",
+      "level": 2,
+      "id": "ux-section-152",
+      "paragraph_count": 2,
+      "word_count": 42,
+      "evidence": "We can place common representations on an approximate order-sensitivity spectrum:",
+      "paragraphs": [
+        "We can place common representations on an approximate order-sensitivity spectrum:",
+        "NO GLOBAL ORDER | | character set | token set | bag/vector | | q=1 profile | | small q-grams | | larger q-grams | | full sequence | FULL GLOBAL ORDER."
+      ]
+    },
+    {
+      "heading": "152. This spectrum is not strictly one-dimensional",
+      "level": 2,
+      "id": "ux-section-153",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Multiplicity, weighting, and position metadata add independent dimensions.",
+      "paragraphs": [
+        "Multiplicity, weighting, and position metadata add independent dimensions."
+      ]
+    },
+    {
+      "heading": "153. q-grams are a compromise representation",
+      "level": 2,
+      "id": "ux-section-154",
+      "paragraph_count": 4,
+      "word_count": 9,
+      "evidence": "They preserve:",
+      "paragraphs": [
+        "They preserve:",
+        "local order",
+        "while discarding:",
+        "complete long-range order."
+      ]
+    },
+    {
+      "heading": "154. This is why they work well for fuzzy retrieval",
+      "level": 2,
+      "id": "ux-section-155",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Nearby strings tend to preserve many local fragments.",
+      "paragraphs": [
+        "Nearby strings tend to preserve many local fragments.",
+        "Large databases can index those fragments efficiently."
+      ]
+    },
+    {
+      "heading": "155. But q-gram similarity can miss structural rearrangement meaning",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "A document with several blocks reordered may retain most q-grams.",
+      "paragraphs": [
+        "A document with several blocks reordered may retain most q-grams.",
+        "If block order is semantically critical, local-overlap similarity overestimates closeness."
+      ]
+    },
+    {
+      "heading": "156. Example: word-order reversal",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "dog bites man man bites dog.",
+      "paragraphs": [
+        "dog bites man man bites dog.",
+        "Token sets are identical."
+      ]
+    },
+    {
+      "heading": "157. Set Jaccard",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "J = 1.",
+      "paragraphs": [
+        "J = 1."
+      ]
+    },
+    {
+      "heading": "158. Bag-of-words cosine",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 2,
+      "word_count": 6,
+      "evidence": "With equal counts:",
+      "paragraphs": [
+        "With equal counts:",
+        "cosine = 1."
+      ]
+    },
+    {
+      "heading": "159. Semantic meaning differs",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Global or syntactic structure is necessary to distinguish them.",
+      "paragraphs": [
+        "Global or syntactic structure is necessary to distinguish them."
+      ]
+    },
+    {
+      "heading": "160. This exposes a deeper limit",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "set similarity != semantic similarity vector similarity != semantic similarity.",
+      "paragraphs": [
+        "set similarity != semantic similarity vector similarity != semantic similarity.",
+        "See string similarity vs semantic similarity ."
+      ]
+    },
+    {
+      "heading": "161. Character q-grams preserve some ordering",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "Word-order reversal changes many character and word n-grams.",
+      "paragraphs": [
+        "Word-order reversal changes many character and word n-grams.",
+        "Therefore q-gram similarity often falls between:",
+        "bag-of-words",
+        "and:",
+        "full edit alignment."
+      ]
+    },
+    {
+      "heading": "162. Long-distance block movement",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "A B C D E F G H becomes E F G H A B C D.",
+        "Most internal local fragments remain intact."
+      ]
+    },
+    {
+      "heading": "163. q-gram overlap can stay high",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Only grams crossing the old/new block boundaries are destroyed or created.",
+      "paragraphs": [
+        "Only grams crossing the old/new block boundaries are destroyed or created."
+      ]
+    },
+    {
+      "heading": "164. Levenshtein can remain large",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Because moving a long block is not one primitive operation.",
+      "paragraphs": [
+        "Because moving a long block is not one primitive operation."
+      ]
+    },
+    {
+      "heading": "165. Which model is right depends on what “change” means",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "If a user moved one paragraph:",
+      "paragraphs": [
+        "If a user moved one paragraph:",
+        "q-gram resemblance",
+        "may correspond better to perceived document similarity.",
+        "If order is fundamental:",
+        "edit distance",
+        "may be preferable."
+      ]
+    },
+    {
+      "heading": "166. This is one reason near-duplicate document detection often favors shingles",
+      "level": 2,
+      "id": "ux-section-167",
+      "paragraph_count": 1,
+      "word_count": 25,
+      "evidence": "Broder explicitly motivated shingle-set resemblance partly because full string distances are awkward at web-document scale and can fail to capture “roughly the same” documents efficiently.",
+      "paragraphs": [
+        "Broder explicitly motivated shingle-set resemblance partly because full string distances are awkward at web-document scale and can fail to capture “roughly the same” documents efficiently."
+      ]
+    },
+    {
+      "heading": "167. MinHash",
+      "level": 2,
+      "id": "ux-section-168",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "For sets, min-wise hashing can estimate Jaccard similarity from compact signatures.",
+      "paragraphs": [
+        "For sets, min-wise hashing can estimate Jaccard similarity from compact signatures."
+      ]
+    },
+    {
+      "heading": "168. Fundamental MinHash property",
+      "level": 2,
+      "id": "ux-section-169",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Under ideal random min-wise permutation behavior:",
+      "paragraphs": [
+        "Under ideal random min-wise permutation behavior:",
+        "P( minhash(A) = minhash(B) ) = J(A,B)."
+      ]
+    },
+    {
+      "heading": "169. This converts set similarity into collision probability",
+      "level": 2,
+      "id": "ux-section-170",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Repeated independent hashes estimate Jaccard without storing or comparing full feature sets.",
+      "paragraphs": [
+        "Repeated independent hashes estimate Jaccard without storing or comparing full feature sets."
+      ]
+    },
+    {
+      "heading": "170. Broder and near-duplicate detection",
+      "level": 2,
+      "id": "ux-section-171",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Broder's resemblance work used random sampling/fingerprinting ideas to compare large document collections efficiently.",
+      "paragraphs": [
+        "Broder's resemblance work used random sampling/fingerprinting ideas to compare large document collections efficiently."
+      ]
+    },
+    {
+      "heading": "171. Min-wise independent permutations",
+      "level": 2,
+      "id": "ux-section-172",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "Broder, Charikar, Frieze, and Mitzenmacher developed the theory of min-wise independent permutation families.",
+      "paragraphs": [
+        "Broder, Charikar, Frieze, and Mitzenmacher developed the theory of min-wise independent permutation families.",
+        "See Min-Wise Independent Permutations ."
+      ]
+    },
+    {
+      "heading": "172. MinHash is representation-specific",
+      "level": 2,
+      "id": "ux-section-173",
+      "paragraph_count": 3,
+      "word_count": 11,
+      "evidence": "It estimates:",
+      "paragraphs": [
+        "It estimates:",
+        "set Jaccard.",
+        "It does not estimate Levenshtein distance directly."
+      ]
+    },
+    {
+      "heading": "173. You can MinHash q-gram sets",
+      "level": 2,
+      "id": "ux-section-174",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "Architecture:",
+      "paragraphs": [
+        "Architecture:",
+        "string -> q-gram set -> MinHash signature -> estimated q-gram Jaccard."
+      ]
+    },
+    {
+      "heading": "174. This is two layers of approximation/representation",
+      "level": 2,
+      "id": "ux-section-175",
+      "paragraph_count": 6,
+      "word_count": 17,
+      "evidence": "First:",
+      "paragraphs": [
+        "First:",
+        "string -> q-gram set",
+        "loses global sequence information.",
+        "Second:",
+        "set -> MinHash sketch",
+        "approximates set overlap."
+      ]
+    },
+    {
+      "heading": "175. Do not describe the result as approximate Levenshtein unless a proven relationship is actually used",
+      "level": 2,
+      "id": "ux-section-176",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "It is better described as:",
+      "paragraphs": [
+        "It is better described as:",
+        "approximate q-gram Jaccard."
+      ]
+    },
+    {
+      "heading": "176. MinHash can still be part of an edit-distance pipeline",
+      "level": 2,
+      "id": "ux-section-177",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Use estimated overlap to retrieve candidates, then compute exact edit distance.",
+      "paragraphs": [
+        "Use estimated overlap to retrieve candidates, then compute exact edit distance."
+      ]
+    },
+    {
+      "heading": "177. But candidate recall must be measured",
+      "level": 2,
+      "id": "ux-section-178",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "A heuristic sketch filter can miss true edit-distance neighbors unless designed with a lossless guarantee.",
+      "paragraphs": [
+        "A heuristic sketch filter can miss true edit-distance neighbors unless designed with a lossless guarantee."
+      ]
+    },
+    {
+      "heading": "178. Lossless and heuristic filters must be distinguished",
+      "level": 2,
+      "id": "ux-section-179",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "lossless filter: guarantees true threshold matches survive heuristic filter: reduces work but may lose true matches.",
+      "paragraphs": [
+        "lossless filter: guarantees true threshold matches survive heuristic filter: reduces work but may lose true matches."
+      ]
+    },
+    {
+      "heading": "179. Ukkonen-style q-gram bounds can support lossless reasoning",
+      "level": 2,
+      "id": "ux-section-180",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "MinHash thresholding by itself generally provides probabilistic/approximate behavior.",
+      "paragraphs": [
+        "MinHash thresholding by itself generally provides probabilistic/approximate behavior."
+      ]
+    },
+    {
+      "heading": "180. Locality-sensitive hashing",
+      "level": 2,
+      "id": "ux-section-181",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "Charikar's 2002 work formulates locality-sensitive hashing as hash collision probabilities corresponding to similarity measures and discusses compact similarity estimation.",
+      "paragraphs": [
+        "Charikar's 2002 work formulates locality-sensitive hashing as hash collision probabilities corresponding to similarity measures and discusses compact similarity estimation.",
+        "See Similarity Estimation Techniques from Rounding Algorithms ."
+      ]
+    },
+    {
+      "heading": "181. Similarity geometry determines the hash family",
+      "level": 2,
+      "id": "ux-section-182",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "A hash family useful for Jaccard need not be appropriate for cosine or edit distance.",
+      "paragraphs": [
+        "A hash family useful for Jaccard need not be appropriate for cosine or edit distance."
+      ]
+    },
+    {
+      "heading": "182. Approximate nearest-neighbor machinery is not metric-agnostic",
+      "level": 2,
+      "id": "ux-section-183",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "The indexing structure must correspond to the geometry actually being queried.",
+      "paragraphs": [
+        "The indexing structure must correspond to the geometry actually being queried."
+      ]
+    },
+    {
+      "heading": "183. SimHash-style random hyperplanes",
+      "level": 2,
+      "id": "ux-section-184",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "Random-hyperplane hashing can estimate angular/cosine relationships between vectors.",
+      "paragraphs": [
+        "Random-hyperplane hashing can estimate angular/cosine relationships between vectors.",
+        "This belongs to vector geometry, not set-Jaccard geometry."
+      ]
+    },
+    {
+      "heading": "184. MinHash and SimHash solve different sketching problems",
+      "level": 2,
+      "id": "ux-section-185",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "MinHash -> Jaccard-like set similarity random-hyperplane hashing -> angular/cosine similarity.",
+      "paragraphs": [
+        "MinHash -> Jaccard-like set similarity random-hyperplane hashing -> angular/cosine similarity."
+      ]
+    },
+    {
+      "heading": "185. Neither directly gives exact edit distance",
+      "level": 2,
+      "id": "ux-section-186",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "They can nevertheless serve as candidate-generation layers.",
+      "paragraphs": [
+        "They can nevertheless serve as candidate-generation layers."
+      ]
+    },
+    {
+      "heading": "186. Inverted indexes",
+      "level": 2,
+      "id": "ux-section-187",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "Feature-based representations support inverted indexes:",
+      "paragraphs": [
+        "Feature-based representations support inverted indexes:",
+        "feature -> documents/strings containing feature."
+      ]
+    },
+    {
+      "heading": "187. q-gram inverted index",
+      "level": 2,
+      "id": "ux-section-188",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Example:",
+      "paragraphs": [
+        "Example:",
+        "\"abc\" -> IDs 2, 7, 19, 81 \"bcd\" -> IDs 2, 19, 55."
+      ]
+    },
+    {
+      "heading": "188. Query grams retrieve only candidates sharing features",
+      "level": 2,
+      "id": "ux-section-189",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "This avoids evaluating every corpus object.",
+      "paragraphs": [
+        "This avoids evaluating every corpus object."
+      ]
+    },
+    {
+      "heading": "189. This is a major scalability advantage over naïve all-pairs edit distance",
+      "level": 2,
+      "id": "ux-section-190",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "But it comes from the indexing architecture, not because q-gram similarity is intrinsically more semantically correct.",
+      "paragraphs": [
+        "But it comes from the indexing architecture, not because q-gram similarity is intrinsically more semantically correct."
+      ]
+    },
+    {
+      "heading": "190. Filter-and-verify is often the strongest hybrid",
+      "level": 2,
+      "id": "ux-section-191",
+      "paragraph_count": 1,
+      "word_count": 33,
+      "evidence": "query | v q-grams | v inverted index | v candidate counts | v length / position / overlap filters | v small candidate set | v exact Levenshtein | v final ranking.",
+      "paragraphs": [
+        "query | v q-grams | v inverted index | v candidate counts | v length / position / overlap filters | v small candidate set | v exact Levenshtein | v final ranking."
+      ]
+    },
+    {
+      "heading": "191. This preserves Levenshtein semantics",
+      "level": 2,
+      "id": "ux-section-192",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "If all filters are lossless with respect to the target threshold, the final answer remains exact.",
+      "paragraphs": [
+        "If all filters are lossless with respect to the target threshold, the final answer remains exact."
+      ]
+    },
+    {
+      "heading": "192. A faster first stage does not change the final distance definition",
+      "level": 2,
+      "id": "ux-section-193",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "This distinction is central to fuzzy search at scale .",
+      "paragraphs": [
+        "This distinction is central to fuzzy search at scale ."
+      ]
+    },
+    {
+      "heading": "193. Similarity join problem",
+      "level": 2,
+      "id": "ux-section-194",
+      "paragraph_count": 5,
+      "word_count": 14,
+      "evidence": "Given two collections:",
+      "paragraphs": [
+        "Given two collections:",
+        "R and S,",
+        "find all pairs:",
+        "(r,s)",
+        "satisfying a similarity condition."
+      ]
+    },
+    {
+      "heading": "194. Naïve edit-distance join",
+      "level": 2,
+      "id": "ux-section-195",
+      "paragraph_count": 4,
+      "word_count": 13,
+      "evidence": "Compute distance for every pair:",
+      "paragraphs": [
+        "Compute distance for every pair:",
+        "|R| * |S|",
+        "comparisons.",
+        "This is often prohibitive."
+      ]
+    },
+    {
+      "heading": "195. q-gram indexes transform join execution",
+      "level": 2,
+      "id": "ux-section-196",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Candidate pairs arise only from shared local features.",
+      "paragraphs": [
+        "Candidate pairs arise only from shared local features."
+      ]
+    },
+    {
+      "heading": "196. Candidate generation can still explode on common grams",
+      "level": 2,
+      "id": "ux-section-197",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "Features such as common whitespace patterns or common prefixes can create very long posting lists.",
+      "paragraphs": [
+        "Features such as common whitespace patterns or common prefixes can create very long posting lists."
+      ]
+    },
+    {
+      "heading": "197. Feature frequency becomes an optimization problem",
+      "level": 2,
+      "id": "ux-section-198",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "Rare grams are more discriminative.",
+      "paragraphs": [
+        "Rare grams are more discriminative.",
+        "This is analogous to IDF weighting in information retrieval."
+      ]
+    },
+    {
+      "heading": "198. Rare-feature filtering",
+      "level": 2,
+      "id": "ux-section-199",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "A practical system may prioritize rare grams for candidate retrieval while preserving enough signatures for recall.",
+      "paragraphs": [
+        "A practical system may prioritize rare grams for candidate retrieval while preserving enough signatures for recall."
+      ]
+    },
+    {
+      "heading": "199. But heuristic rare-gram selection can cause false negatives",
+      "level": 2,
+      "id": "ux-section-200",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Unless a formal guarantee is maintained.",
+      "paragraphs": [
+        "Unless a formal guarantee is maintained."
+      ]
+    },
+    {
+      "heading": "200. Exactness must be stated end-to-end",
+      "level": 2,
+      "id": "ux-section-201",
+      "paragraph_count": 4,
+      "word_count": 19,
+      "evidence": "A system can contain:",
+      "paragraphs": [
+        "A system can contain:",
+        "exact Levenshtein verifier",
+        "but still have incomplete final recall because:",
+        "candidate generation missed the pair."
+      ]
+    },
+    {
+      "heading": "201. This is why pairwise exactness and retrieval exactness are different",
+      "level": 2,
+      "id": "ux-section-202",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "exact distance computation != exact search result.",
+      "paragraphs": [
+        "exact distance computation != exact search result."
+      ]
+    },
+    {
+      "heading": "202. Jaccard nearest neighbors",
+      "level": 2,
+      "id": "ux-section-203",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "If Jaccard itself is the target similarity, there is no reason to verify with Levenshtein.",
+      "paragraphs": [
+        "If Jaccard itself is the target similarity, there is no reason to verify with Levenshtein.",
+        "The set geometry is the final definition."
+      ]
+    },
+    {
+      "heading": "203. Document deduplication",
+      "level": 2,
+      "id": "ux-section-204",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "For long documents, word or character shingles often model near-duplicate content more naturally than full character edit distance.",
+      "paragraphs": [
+        "For long documents, word or character shingles often model near-duplicate content more naturally than full character edit distance."
+      ]
+    },
+    {
+      "heading": "204. Why",
+      "level": 2,
+      "id": "ux-section-205",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "A copied paragraph moved to another location preserves most shingles.",
+      "paragraphs": [
+        "A copied paragraph moved to another location preserves most shingles.",
+        "Global edit alignment penalizes movement heavily."
+      ]
+    },
+    {
+      "heading": "205. But near-duplicate detection is not plagiarism semantics",
+      "level": 2,
+      "id": "ux-section-206",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "Two documents can share many shingles because they quote the same standard text.",
+      "paragraphs": [
+        "Two documents can share many shingles because they quote the same standard text.",
+        "Context and provenance still matter."
+      ]
+    },
+    {
+      "heading": "206. Fuzzy name matching",
+      "level": 2,
+      "id": "ux-section-207",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "For short names, q-gram similarity can be unstable because there are very few grams.",
+      "paragraphs": [
+        "For short names, q-gram similarity can be unstable because there are very few grams.",
+        "Character-level edit distance or Jaro-Winkler can often be more natural."
+      ]
+    },
+    {
+      "heading": "207. Name-address-place matching",
+      "level": 2,
+      "id": "ux-section-208",
+      "paragraph_count": 6,
+      "word_count": 23,
+      "evidence": "Longer structured fields can benefit from a hybrid of:",
+      "paragraphs": [
+        "Longer structured fields can benefit from a hybrid of:",
+        "token overlap;",
+        "q-grams;",
+        "edit distance;",
+        "field-specific normalization.",
+        "See name, address, and place matching ."
+      ]
+    },
+    {
+      "heading": "208. Entity resolution",
+      "level": 2,
+      "id": "ux-section-209",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "No set, vector, q-gram, or edit score establishes entity identity by itself.",
+      "paragraphs": [
+        "No set, vector, q-gram, or edit score establishes entity identity by itself.",
+        "See entity resolution and record linkage ."
+      ]
+    },
+    {
+      "heading": "209. Identical token sets can represent different entities",
+      "level": 2,
+      "id": "ux-section-210",
+      "paragraph_count": 3,
+      "word_count": 15,
+      "evidence": "Two people named:",
+      "paragraphs": [
+        "Two people named:",
+        "John Smith",
+        "remain different people despite every lexical similarity measure being maximal."
+      ]
+    },
+    {
+      "heading": "210. Source-code similarity",
+      "level": 2,
+      "id": "ux-section-211",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "Token vectors or n-gram features can detect textual reuse despite formatting changes.",
+      "paragraphs": [
+        "Token vectors or n-gram features can detect textual reuse despite formatting changes.",
+        "But they do not prove:",
+        "semantic program equivalence.",
+        "See source-code and AST similarity ."
+      ]
+    },
+    {
+      "heading": "211. Bag-of-token source comparison ignores statement order",
+      "level": 2,
+      "id": "ux-section-212",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "This can make heavily reordered code appear overly similar.",
+      "paragraphs": [
+        "This can make heavily reordered code appear overly similar."
+      ]
+    },
+    {
+      "heading": "212. Token n-grams preserve local syntax better",
+      "level": 2,
+      "id": "ux-section-213",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "But still miss larger structural relationships captured by ASTs or graphs.",
+      "paragraphs": [
+        "But still miss larger structural relationships captured by ASTs or graphs."
+      ]
+    },
+    {
+      "heading": "213. Approximate string matching",
+      "level": 2,
+      "id": "ux-section-214",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "The general search problem is broader than computing one pairwise distance.",
+      "paragraphs": [
+        "The general search problem is broader than computing one pairwise distance.",
+        "See approximate string matching ."
+      ]
+    },
+    {
+      "heading": "214. Sequence metric and retrieval representation can coexist",
+      "level": 2,
+      "id": "ux-section-215",
+      "paragraph_count": 4,
+      "word_count": 10,
+      "evidence": "One can search by:",
+      "paragraphs": [
+        "One can search by:",
+        "q-gram candidates",
+        "while ranking by:",
+        "Levenshtein."
+      ]
+    },
+    {
+      "heading": "215. Or retrieve by vectors and rerank by edit distance",
+      "level": 2,
+      "id": "ux-section-216",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Architecture:",
+      "paragraphs": [
+        "Architecture:",
+        "fast approximate representation | v top-N candidates | v exact sequence comparison."
+      ]
+    },
+    {
+      "heading": "216. Reranking does not recover missed candidates",
+      "level": 2,
+      "id": "ux-section-217",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "If the true edit nearest neighbor is absent from the first-stage top-N set, exact reranking cannot find it.",
+      "paragraphs": [
+        "If the true edit nearest neighbor is absent from the first-stage top-N set, exact reranking cannot find it."
+      ]
+    },
+    {
+      "heading": "217. Measure retrieval recall at N",
+      "level": 2,
+      "id": "ux-section-218",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Recall@N = true desired neighbors present in candidate set / all desired neighbors.",
+      "paragraphs": [
+        "Recall@N = true desired neighbors present in candidate set / all desired neighbors."
+      ]
+    },
+    {
+      "heading": "218. Representation quality and verifier quality must be evaluated separately",
+      "level": 2,
+      "id": "ux-section-219",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "This prevents blaming Levenshtein for retrieval failures caused by an aggressive filter.",
+      "paragraphs": [
+        "This prevents blaming Levenshtein for retrieval failures caused by an aggressive filter."
+      ]
+    },
+    {
+      "heading": "219. Pairwise example: one insertion",
+      "level": 2,
+      "id": "ux-section-220",
+      "paragraph_count": 3,
+      "word_count": 6,
+      "evidence": "X: algorithm Y: algxorithm.",
+      "paragraphs": [
+        "X: algorithm Y: algxorithm.",
+        "Levenshtein:",
+        "1."
+      ]
+    },
+    {
+      "heading": "220. Character-set Jaccard may barely notice the position",
+      "level": 2,
+      "id": "ux-section-221",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Because most character types remain present.",
+      "paragraphs": [
+        "Because most character types remain present."
+      ]
+    },
+    {
+      "heading": "221. Character q-grams localize the damage",
+      "level": 2,
+      "id": "ux-section-222",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Only grams crossing the insertion point are replaced.",
+      "paragraphs": [
+        "Only grams crossing the insertion point are replaced."
+      ]
+    },
+    {
+      "heading": "222. This explains why q-grams approximate edit locality",
+      "level": 2,
+      "id": "ux-section-223",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "They transform a global sequence into overlapping local evidence.",
+      "paragraphs": [
+        "They transform a global sequence into overlapping local evidence."
+      ]
+    },
+    {
+      "heading": "223. Pairwise example: repeated character",
+      "level": 2,
+      "id": "ux-section-224",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "X: aaaaab Y: ab.",
+      "paragraphs": [
+        "X: aaaaab Y: ab."
+      ]
+    },
+    {
+      "heading": "224. Character sets",
+      "level": 2,
+      "id": "ux-section-225",
+      "paragraph_count": 3,
+      "word_count": 7,
+      "evidence": "{a,b} and {a,b}.",
+      "paragraphs": [
+        "{a,b} and {a,b}.",
+        "Therefore:",
+        "Jaccard = 1."
+      ]
+    },
+    {
+      "heading": "225. Character-count vectors preserve repetition",
+      "level": 2,
+      "id": "ux-section-226",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "X: a=5,b=1 Y: a=1,b=1.",
+      "paragraphs": [
+        "X: a=5,b=1 Y: a=1,b=1."
+      ]
+    },
+    {
+      "heading": "226. Cosine still downplays magnitude",
+      "level": 2,
+      "id": "ux-section-227",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "The vectors remain directionally related but not identical.",
+      "paragraphs": [
+        "The vectors remain directionally related but not identical."
+      ]
+    },
+    {
+      "heading": "228. Levenshtein sees four deletions",
+      "level": 2,
+      "id": "ux-section-229",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "dL = 4.",
+      "paragraphs": [
+        "dL = 4."
+      ]
+    },
+    {
+      "heading": "229. Every result can be correct simultaneously",
+      "level": 2,
+      "id": "ux-section-230",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "They answer:",
+      "paragraphs": [
+        "They answer:",
+        "same symbol inventory? similar frequency direction? similar multiplicities? minimum edit count?"
+      ]
+    },
+    {
+      "heading": "230. Pairwise example: reordered words",
+      "level": 2,
+      "id": "ux-section-231",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "X: red large car Y: large red car.",
+      "paragraphs": [
+        "X: red large car Y: large red car."
+      ]
+    },
+    {
+      "heading": "231. Token-set Jaccard",
+      "level": 2,
+      "id": "ux-section-232",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "J = 1.",
+      "paragraphs": [
+        "J = 1."
+      ]
+    },
+    {
+      "heading": "232. Token-count cosine",
+      "level": 2,
+      "id": "ux-section-233",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "cosine = 1.",
+      "paragraphs": [
+        "cosine = 1."
+      ]
+    },
+    {
+      "heading": "233. Word bigrams differ",
+      "level": 2,
+      "id": "ux-section-234",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "X: red large large car Y: large red red car.",
+      "paragraphs": [
+        "X: red large large car Y: large red red car.",
+        "No ordinary word bigram is shared."
+      ]
+    },
+    {
+      "heading": "234. Character edit distance is also nonzero",
+      "level": 2,
+      "id": "ux-section-235",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Because the block order changed.",
+      "paragraphs": [
+        "Because the block order changed."
+      ]
+    },
+    {
+      "heading": "235. This example shows the hierarchy of ordering information",
+      "level": 2,
+      "id": "ux-section-236",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "token set: none token vector: none word bigrams: local order Levenshtein: full sequence order.",
+      "paragraphs": [
+        "token set: none token vector: none word bigrams: local order Levenshtein: full sequence order."
+      ]
+    },
+    {
+      "heading": "236. Pairwise example: one document duplicated twice",
+      "level": 2,
+      "id": "ux-section-237",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "Y = X concatenated with X."
+      ]
+    },
+    {
+      "heading": "237. Word-frequency vector",
+      "level": 2,
+      "id": "ux-section-238",
+      "paragraph_count": 2,
+      "word_count": 7,
+      "evidence": "Ignoring boundary artifacts:",
+      "paragraphs": [
+        "Ignoring boundary artifacts:",
+        "vector(Y) = 2 vector(X)."
+      ]
+    },
+    {
+      "heading": "238. Cosine similarity",
+      "level": 2,
+      "id": "ux-section-239",
+      "paragraph_count": 1,
+      "word_count": 1,
+      "evidence": "1.",
+      "paragraphs": [
+        "1."
+      ]
+    },
+    {
+      "heading": "239. Edit distance",
+      "level": 2,
+      "id": "ux-section-240",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "Approximately the length of one copy must be inserted.",
+      "paragraphs": [
+        "Approximately the length of one copy must be inserted.",
+        "Distance is therefore large."
+      ]
+    },
+    {
+      "heading": "240. Which result is appropriate?",
+      "level": 2,
+      "id": "ux-section-241",
+      "paragraph_count": 6,
+      "word_count": 17,
+      "evidence": "For topic distribution:",
+      "paragraphs": [
+        "For topic distribution:",
+        "cosine = 1",
+        "can be sensible.",
+        "For textual equality:",
+        "large edit distance",
+        "is sensible."
+      ]
+    },
+    {
+      "heading": "241. Pairwise example: short string contained in long string",
+      "level": 2,
+      "id": "ux-section-242",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "A: machine learning B: an introduction to machine learning algorithms for large-scale applications.",
+      "paragraphs": [
+        "A: machine learning B: an introduction to machine learning algorithms for large-scale applications."
+      ]
+    },
+    {
+      "heading": "242. Full-string edit distance is large",
+      "level": 2,
+      "id": "ux-section-243",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Most of B is extra material.",
+      "paragraphs": [
+        "Most of B is extra material."
+      ]
+    },
+    {
+      "heading": "243. Set Jaccard can also be modest",
+      "level": 2,
+      "id": "ux-section-244",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "The union contains many additional terms.",
+      "paragraphs": [
+        "The union contains many additional terms."
+      ]
+    },
+    {
+      "heading": "244. Containment can be high",
+      "level": 2,
+      "id": "ux-section-245",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "If all features from A appear in B :",
+      "paragraphs": [
+        "If all features from A appear in B :",
+        "C(A,B) = 1."
+      ]
+    },
+    {
+      "heading": "245. This illustrates query-object asymmetry",
+      "level": 2,
+      "id": "ux-section-246",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Choose containment when inclusion is the question.",
+      "paragraphs": [
+        "Choose containment when inclusion is the question."
+      ]
+    },
+    {
+      "heading": "246. Pairwise example: semantic paraphrase",
+      "level": 2,
+      "id": "ux-section-247",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "X: The server stopped responding. Y: The server became unresponsive.",
+      "paragraphs": [
+        "X: The server stopped responding. Y: The server became unresponsive."
+      ]
+    },
+    {
+      "heading": "249. Bag-of-word cosine can improve if related lexical items overlap",
+      "level": 2,
+      "id": "ux-section-250",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "But traditional lexical vectors still do not understand paraphrase in a strong semantic sense.",
+      "paragraphs": [
+        "But traditional lexical vectors still do not understand paraphrase in a strong semantic sense."
+      ]
+    },
+    {
+      "heading": "250. None of these is a semantic guarantee",
+      "level": 2,
+      "id": "ux-section-251",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "The correct boundary remains:",
+      "paragraphs": [
+        "The correct boundary remains:",
+        "lexical feature similarity != semantic equivalence."
+      ]
+    },
+    {
+      "heading": "251. Representation comparison matrix",
+      "level": 2,
+      "id": "ux-section-252",
+      "paragraph_count": 1,
+      "word_count": 51,
+      "evidence": "Representation Order Frequency Local context Corpus weighting Raw sequence Full Implicit Full sequence No Character set None No No Optional Token set None No No Optional Count vector None Yes No Optional q-gram set Local No q-symbol Optional q-gram count vector Local Yes q-symbol Optional TF-IDF q-grams Local Weighted q-symbol Yes",
+      "paragraphs": [
+        "Representation Order Frequency Local context Corpus weighting Raw sequence Full Implicit Full sequence No Character set None No No Optional Token set None No No Optional Count vector None Yes No Optional q-gram set Local No q-symbol Optional q-gram count vector Local Yes q-symbol Optional TF-IDF q-grams Local Weighted q-symbol Yes"
+      ]
+    },
+    {
+      "heading": "252. Similarity comparison matrix",
+      "level": 2,
+      "id": "ux-section-253",
+      "paragraph_count": 1,
+      "word_count": 50,
+      "evidence": "Measure Object Primary normalization Typical output Levenshtein Sequence None in original definition Integer distance Jaccard Set Union 0–1 similarity Dice Set Sum of set sizes 0–1 similarity Multiset Jaccard Count multiset Sum max counts 0–1 similarity Cosine Vector L2 norms Angular similarity q-gram L1 q-gram count vector None Count-profile distance",
+      "paragraphs": [
+        "Measure Object Primary normalization Typical output Levenshtein Sequence None in original definition Integer distance Jaccard Set Union 0–1 similarity Dice Set Sum of set sizes 0–1 similarity Multiset Jaccard Count multiset Sum max counts 0–1 similarity Cosine Vector L2 norms Angular similarity q-gram L1 q-gram count vector None Count-profile distance"
+      ]
+    },
+    {
+      "heading": "253. Metric-property matrix",
+      "level": 2,
+      "id": "ux-section-254",
+      "paragraph_count": 1,
+      "word_count": 50,
+      "evidence": "Quantity Metric? Important qualification Classic unit-cost Levenshtein Yes On sequences Jaccard distance 1-J Yes On sets Cosine similarity No; it is a similarity 1-cos is not automatically a metric q-gram L1 on profiles Yes Metric on profile vectors q-gram L1 induced on strings Pseudometric Distinct strings can share a profile",
+      "paragraphs": [
+        "Quantity Metric? Important qualification Classic unit-cost Levenshtein Yes On sequences Jaccard distance 1-J Yes On sets Cosine similarity No; it is a similarity 1-cos is not automatically a metric q-gram L1 on profiles Yes Metric on profile vectors q-gram L1 induced on strings Pseudometric Distinct strings can share a profile"
+      ]
+    },
+    {
+      "heading": "254. Common failure mode: Jaccard compares strings directly",
+      "level": 2,
+      "id": "ux-section-255",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Not until the strings are transformed into sets.",
+      "paragraphs": [
+        "Not until the strings are transformed into sets."
+      ]
+    },
+    {
+      "heading": "255. Common failure mode: cosine compares strings directly",
+      "level": 2,
+      "id": "ux-section-256",
+      "paragraph_count": 2,
+      "word_count": 8,
+      "evidence": "It compares vectors.",
+      "paragraphs": [
+        "It compares vectors.",
+        "The vectorization determines the meaning."
+      ]
+    },
+    {
+      "heading": "256. Common failure mode: “n-gram similarity” names one algorithm",
+      "level": 2,
+      "id": "ux-section-257",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "It does not.",
+      "paragraphs": [
+        "It does not."
+      ]
+    },
+    {
+      "heading": "257. Common failure mode: q-gram set and q-gram multiset are equivalent",
+      "level": 2,
+      "id": "ux-section-258",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "They differ whenever grams repeat.",
+      "paragraphs": [
+        "They differ whenever grams repeat."
+      ]
+    },
+    {
+      "heading": "258. Common failure mode: Jaccard preserves frequency",
+      "level": 2,
+      "id": "ux-section-259",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Ordinary set Jaccard does not.",
+      "paragraphs": [
+        "Ordinary set Jaccard does not."
+      ]
+    },
+    {
+      "heading": "259. Common failure mode: cosine preserves absolute magnitude",
+      "level": 2,
+      "id": "ux-section-260",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "It normalizes by vector length and is invariant to positive scalar multiplication.",
+      "paragraphs": [
+        "It normalizes by vector length and is invariant to positive scalar multiplication."
+      ]
+    },
+    {
+      "heading": "260. Common failure mode: TF-IDF is a similarity metric",
+      "level": 2,
+      "id": "ux-section-261",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "TF-IDF is primarily a weighting representation.",
+      "paragraphs": [
+        "TF-IDF is primarily a weighting representation.",
+        "It is commonly paired with cosine or another vector comparator."
+      ]
+    },
+    {
+      "heading": "261. Common failure mode: high cosine means the texts are nearly identical",
+      "level": 2,
+      "id": "ux-section-262",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "It can mean their weighted feature proportions are similar.",
+      "paragraphs": [
+        "It can mean their weighted feature proportions are similar."
+      ]
+    },
+    {
+      "heading": "262. Common failure mode: Jaccard 1 means the source strings are identical",
+      "level": 2,
+      "id": "ux-section-263",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Only the chosen sets are identical.",
+      "paragraphs": [
+        "Only the chosen sets are identical."
+      ]
+    },
+    {
+      "heading": "263. Common failure mode: q-gram distance zero means identical strings",
+      "level": 2,
+      "id": "ux-section-264",
+      "paragraph_count": 5,
+      "word_count": 9,
+      "evidence": "False.",
+      "paragraphs": [
+        "False.",
+        "ABA",
+        "and:",
+        "BAB",
+        "share the same 2-gram multiset."
+      ]
+    },
+    {
+      "heading": "264. Common failure mode: larger q is always better",
+      "level": 2,
+      "id": "ux-section-265",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Larger q improves discrimination but increases brittleness.",
+      "paragraphs": [
+        "Larger q improves discrimination but increases brittleness."
+      ]
+    },
+    {
+      "heading": "265. Common failure mode: smaller q is always better for recall",
+      "level": 2,
+      "id": "ux-section-266",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Extremely small q can generate enormous candidate sets and weak rankings.",
+      "paragraphs": [
+        "Extremely small q can generate enormous candidate sets and weak rankings."
+      ]
+    },
+    {
+      "heading": "266. Common failure mode: q should be fixed for every string length",
+      "level": 2,
+      "id": "ux-section-267",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "The same q can behave very differently on 5-character and 500-character strings.",
+      "paragraphs": [
+        "The same q can behave very differently on 5-character and 500-character strings."
+      ]
+    },
+    {
+      "heading": "267. Common failure mode: one edit changes one q-gram",
+      "level": 2,
+      "id": "ux-section-268",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "One symbol edit can affect up to multiple overlapping q-grams.",
+      "paragraphs": [
+        "One symbol edit can affect up to multiple overlapping q-grams."
+      ]
+    },
+    {
+      "heading": "268. Common failure mode: q-gram similarity is always an approximation of Levenshtein",
+      "level": 2,
+      "id": "ux-section-269",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Sometimes q-gram overlap is the final desired similarity.",
+      "paragraphs": [
+        "Sometimes q-gram overlap is the final desired similarity."
+      ]
+    },
+    {
+      "heading": "269. Common failure mode: q-gram filtering necessarily loses recall",
+      "level": 2,
+      "id": "ux-section-270",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Lossless filters can be constructed from valid lower bounds.",
+      "paragraphs": [
+        "Lossless filters can be constructed from valid lower bounds."
+      ]
+    },
+    {
+      "heading": "270. Common failure mode: every q-gram filter is lossless",
+      "level": 2,
+      "id": "ux-section-271",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Heuristic overlap thresholds may produce false negatives.",
+      "paragraphs": [
+        "Heuristic overlap thresholds may produce false negatives."
+      ]
+    },
+    {
+      "heading": "271. Common failure mode: exact verifier makes the entire pipeline exact",
+      "level": 2,
+      "id": "ux-section-272",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Not if candidate generation discarded true neighbors.",
+      "paragraphs": [
+        "Not if candidate generation discarded true neighbors."
+      ]
+    },
+    {
+      "heading": "272. Common failure mode: MinHash estimates edit distance",
+      "level": 2,
+      "id": "ux-section-273",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "MinHash estimates Jaccard-like set resemblance for the features supplied to it.",
+      "paragraphs": [
+        "MinHash estimates Jaccard-like set resemblance for the features supplied to it."
+      ]
+    },
+    {
+      "heading": "273. Common failure mode: MinHash over q-grams is identical to q-gram L1 distance",
+      "level": 2,
+      "id": "ux-section-274",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "They compare different statistics.",
+      "paragraphs": [
+        "They compare different statistics."
+      ]
+    },
+    {
+      "heading": "274. Common failure mode: SimHash and MinHash are interchangeable",
+      "level": 2,
+      "id": "ux-section-275",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "They correspond to different similarity geometries.",
+      "paragraphs": [
+        "They correspond to different similarity geometries."
+      ]
+    },
+    {
+      "heading": "275. Common failure mode: set similarity preserves word order",
+      "level": 2,
+      "id": "ux-section-276",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "It does not.",
+      "paragraphs": [
+        "It does not."
+      ]
+    },
+    {
+      "heading": "276. Common failure mode: vector similarity preserves word order",
+      "level": 2,
+      "id": "ux-section-277",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "Ordinary bag-of-features vectors do not.",
+      "paragraphs": [
+        "Ordinary bag-of-features vectors do not."
+      ]
+    },
+    {
+      "heading": "277. Common failure mode: n-grams preserve complete order",
+      "level": 2,
+      "id": "ux-section-278",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "They preserve local adjacency only.",
+      "paragraphs": [
+        "They preserve local adjacency only."
+      ]
+    },
+    {
+      "heading": "278. Common failure mode: q-gram overlap is semantic similarity",
+      "level": 2,
+      "id": "ux-section-279",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "It remains surface-feature similarity.",
+      "paragraphs": [
+        "It remains surface-feature similarity."
+      ]
+    },
+    {
+      "heading": "279. Common failure mode: cosine on embeddings and cosine on TF-IDF mean the same thing",
+      "level": 2,
+      "id": "ux-section-280",
+      "paragraph_count": 1,
+      "word_count": 15,
+      "evidence": "The formula can be identical while the vector representation and therefore the semantics differ completely.",
+      "paragraphs": [
+        "The formula can be identical while the vector representation and therefore the semantics differ completely."
+      ]
+    },
+    {
+      "heading": "280. Common failure mode: high token overlap proves same entity",
+      "level": 2,
+      "id": "ux-section-281",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "It does not.",
+      "paragraphs": [
+        "It does not."
+      ]
+    },
+    {
+      "heading": "281. Common failure mode: high document resemblance proves plagiarism",
+      "level": 2,
+      "id": "ux-section-282",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Shared templates, legal text, boilerplate, and quotations can create overlap.",
+      "paragraphs": [
+        "Shared templates, legal text, boilerplate, and quotations can create overlap."
+      ]
+    },
+    {
+      "heading": "282. Common failure mode: edit distance is always better for short strings",
+      "level": 2,
+      "id": "ux-section-283",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "Task-specific prefix, phonetic, or structured comparators can outperform it.",
+      "paragraphs": [
+        "Task-specific prefix, phonetic, or structured comparators can outperform it."
+      ]
+    },
+    {
+      "heading": "283. Common failure mode: q-grams are always better for long strings",
+      "level": 2,
+      "id": "ux-section-284",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "If exact global order is essential, q-gram similarity can hide important rearrangements.",
+      "paragraphs": [
+        "If exact global order is essential, q-gram similarity can hide important rearrangements."
+      ]
+    },
+    {
+      "heading": "284. Common failure mode: Jaccard distance and Dice distance rank differently",
+      "level": 2,
+      "id": "ux-section-285",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "For the same ordinary set representation, their similarity transformations are monotonic and produce the same ranking.",
+      "paragraphs": [
+        "For the same ordinary set representation, their similarity transformations are monotonic and produce the same ranking."
+      ]
+    },
+    {
+      "heading": "285. Common failure mode: set size has no effect on Jaccard",
+      "level": 2,
+      "id": "ux-section-286",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "The denominator is the union size, so asymmetric set sizes matter strongly.",
+      "paragraphs": [
+        "The denominator is the union size, so asymmetric set sizes matter strongly."
+      ]
+    },
+    {
+      "heading": "286. Common failure mode: cosine has no length normalization",
+      "level": 2,
+      "id": "ux-section-287",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "L2 normalization is fundamental to cosine.",
+      "paragraphs": [
+        "L2 normalization is fundamental to cosine."
+      ]
+    },
+    {
+      "heading": "287. Common failure mode: vector normalization and string-length normalization are the same thing",
+      "level": 2,
+      "id": "ux-section-288",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "They normalize different mathematical objects.",
+      "paragraphs": [
+        "They normalize different mathematical objects."
+      ]
+    },
+    {
+      "heading": "288. Common failure mode: corpus-weighted similarity is stable across corpora",
+      "level": 2,
+      "id": "ux-section-289",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "IDF values can change when the corpus changes.",
+      "paragraphs": [
+        "IDF values can change when the corpus changes."
+      ]
+    },
+    {
+      "heading": "289. Common failure mode: rare features are always trustworthy",
+      "level": 2,
+      "id": "ux-section-290",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Rare features can also be typos, parser artifacts, or noise.",
+      "paragraphs": [
+        "Rare features can also be typos, parser artifacts, or noise."
+      ]
+    },
+    {
+      "heading": "290. Common failure mode: brute-force Levenshtein is the only exact architecture",
+      "level": 2,
+      "id": "ux-section-291",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Filter-and-verify can remain exact while avoiding most comparisons.",
+      "paragraphs": [
+        "Filter-and-verify can remain exact while avoiding most comparisons."
+      ]
+    },
+    {
+      "heading": "291. Common failure mode: bounded edit filtering is approximation",
+      "level": 2,
+      "id": "ux-section-292",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "An algorithm can reject impossible candidates exactly under a proven bound.",
+      "paragraphs": [
+        "An algorithm can reject impossible candidates exactly under a proven bound."
+      ]
+    },
+    {
+      "heading": "292. Common failure mode: candidate filtering and final ranking must use the same similarity",
+      "level": 2,
+      "id": "ux-section-293",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Different stages can use different representations if the recall/guarantees are understood.",
+      "paragraphs": [
+        "Different stages can use different representations if the recall/guarantees are understood."
+      ]
+    },
+    {
+      "heading": "293. Reference pseudocode: Jaccard",
+      "level": 2,
+      "id": "ux-section-294",
+      "paragraph_count": 1,
+      "word_count": 25,
+      "evidence": "function jaccard(A, B): if A and B are empty: return 1 intersection = size(A intersect B) union = size(A union B) return intersection / union",
+      "paragraphs": [
+        "function jaccard(A, B): if A and B are empty: return 1 intersection = size(A intersect B) union = size(A union B) return intersection / union"
+      ]
+    },
+    {
+      "heading": "294. Reference pseudocode: Dice",
+      "level": 2,
+      "id": "ux-section-295",
+      "paragraph_count": 1,
+      "word_count": 24,
+      "evidence": "function dice(A, B): if A and B are empty: return 1 common = size(A intersect B) return 2 * common / (size(A) + size(B))",
+      "paragraphs": [
+        "function dice(A, B): if A and B are empty: return 1 common = size(A intersect B) return 2 * common / (size(A) + size(B))"
+      ]
+    },
+    {
+      "heading": "295. Reference pseudocode: multiset Jaccard",
+      "level": 2,
+      "id": "ux-section-296",
+      "paragraph_count": 1,
+      "word_count": 39,
+      "evidence": "function multiset_jaccard(countA, countB): intersection = 0 union = 0 for each feature g in keys(A) union keys(B): intersection += min( countA[g], countB[g] ) union += max( countA[g], countB[g] ) if union == 0: return 1 return intersection / union",
+      "paragraphs": [
+        "function multiset_jaccard(countA, countB): intersection = 0 union = 0 for each feature g in keys(A) union keys(B): intersection += min( countA[g], countB[g] ) union += max( countA[g], countB[g] ) if union == 0: return 1 return intersection / union"
+      ]
+    },
+    {
+      "heading": "296. Reference pseudocode: cosine",
+      "level": 2,
+      "id": "ux-section-297",
+      "paragraph_count": 1,
+      "word_count": 45,
+      "evidence": "function cosine(x, y): dot = 0 norm_x = 0 norm_y = 0 for feature g: dot += x[g] * y[g] norm_x += x[g]^2 norm_y += y[g]^2 if norm_x == 0 or norm_y == 0: handle zero-vector policy return dot / ( sqrt(norm_x) * sqrt(norm_y) )",
+      "paragraphs": [
+        "function cosine(x, y): dot = 0 norm_x = 0 norm_y = 0 for feature g: dot += x[g] * y[g] norm_x += x[g]^2 norm_y += y[g]^2 if norm_x == 0 or norm_y == 0: handle zero-vector policy return dot / ( sqrt(norm_x) * sqrt(norm_y) )"
+      ]
+    },
+    {
+      "heading": "297. Zero-vector policy must be explicit",
+      "level": 2,
+      "id": "ux-section-298",
+      "paragraph_count": 5,
+      "word_count": 21,
+      "evidence": "If preprocessing removes every feature from a document, cosine denominator becomes zero.",
+      "paragraphs": [
+        "If preprocessing removes every feature from a document, cosine denominator becomes zero.",
+        "Libraries may:",
+        "return zero;",
+        "return undefined;",
+        "raise an error."
+      ]
+    },
+    {
+      "heading": "298. Reference pseudocode: q-gram extraction",
+      "level": 2,
+      "id": "ux-section-299",
+      "paragraph_count": 1,
+      "word_count": 28,
+      "evidence": "function qgrams(S, q): grams = [] if q <= 0: error if len(S) < q: return grams for i in 0..len(S)-q: grams.append( S[i : i+q] ) return grams",
+      "paragraphs": [
+        "function qgrams(S, q): grams = [] if q <= 0: error if len(S) < q: return grams for i in 0..len(S)-q: grams.append( S[i : i+q] ) return grams"
+      ]
+    },
+    {
+      "heading": "299. Reference pseudocode: q-gram profile",
+      "level": 2,
+      "id": "ux-section-300",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "function qgram_profile(S, q): profile = empty frequency map for g in qgrams(S, q): profile[g] += 1 return profile",
+      "paragraphs": [
+        "function qgram_profile(S, q): profile = empty frequency map for g in qgrams(S, q): profile[g] += 1 return profile"
+      ]
+    },
+    {
+      "heading": "300. Reference pseudocode: q-gram L1 distance",
+      "level": 2,
+      "id": "ux-section-301",
+      "paragraph_count": 1,
+      "word_count": 28,
+      "evidence": "function qgram_distance(X, Y, q): px = qgram_profile(X,q) py = qgram_profile(Y,q) distance = 0 for g in keys(px) union keys(py): distance += abs( px[g] - py[g] ) return distance",
+      "paragraphs": [
+        "function qgram_distance(X, Y, q): px = qgram_profile(X,q) py = qgram_profile(Y,q) distance = 0 for g in keys(px) union keys(py): distance += abs( px[g] - py[g] ) return distance"
+      ]
+    },
+    {
+      "heading": "301. Reference pseudocode: q-gram lower-bound filter",
+      "level": 2,
+      "id": "ux-section-302",
+      "paragraph_count": 1,
+      "word_count": 22,
+      "evidence": "function may_be_within_edit_distance( X, Y, q, k ): dq = qgram_distance( X, Y, q ) if dq > 2*q*k: return false return true",
+      "paragraphs": [
+        "function may_be_within_edit_distance( X, Y, q, k ): dq = qgram_distance( X, Y, q ) if dq > 2*q*k: return false return true"
+      ]
+    },
+    {
+      "heading": "302. Surviving does not imply edit distance <= k",
+      "level": 2,
+      "id": "ux-section-303",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "The q-gram condition is a necessary filter condition, not sufficient proof.",
+      "paragraphs": [
+        "The q-gram condition is a necessary filter condition, not sufficient proof."
+      ]
+    },
+    {
+      "heading": "303. Exact verification remains necessary",
+      "level": 2,
+      "id": "ux-section-304",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "if may_be_within_edit_distance(...): compute exact Levenshtein(X,Y) else: reject.",
+      "paragraphs": [
+        "if may_be_within_edit_distance(...): compute exact Levenshtein(X,Y) else: reject."
+      ]
+    },
+    {
+      "heading": "304. Reference scalable fuzzy retrieval",
+      "level": 2,
+      "id": "ux-section-305",
+      "paragraph_count": 1,
+      "word_count": 41,
+      "evidence": "function fuzzy_query(Q, k): grams = qgrams(Q, q) candidates = retrieve_from_inverted_index( grams ) candidates = apply_length_filter( Q, candidates, k ) candidates = apply_qgram_filters( Q, candidates, q, k ) answers = [] for C in candidates: if levenshtein(Q,C) <= k: answers.append(C) return answers",
+      "paragraphs": [
+        "function fuzzy_query(Q, k): grams = qgrams(Q, q) candidates = retrieve_from_inverted_index( grams ) candidates = apply_length_filter( Q, candidates, k ) candidates = apply_qgram_filters( Q, candidates, q, k ) answers = [] for C in candidates: if levenshtein(Q,C) <= k: answers.append(C) return answers"
+      ]
+    },
+    {
+      "heading": "305. This architecture can retain exact final semantics",
+      "level": 2,
+      "id": "ux-section-306",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Provided every pruning stage is proven safe for the specified edit threshold.",
+      "paragraphs": [
+        "Provided every pruning stage is proven safe for the specified edit threshold."
+      ]
+    },
+    {
+      "heading": "306. Reference MinHash concept",
+      "level": 2,
+      "id": "ux-section-307",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "for each random permutation/hash h: signature_h(A) = minimum hashed feature value in A estimate Jaccard from fraction of matching signature components.",
+      "paragraphs": [
+        "for each random permutation/hash h: signature_h(A) = minimum hashed feature value in A estimate Jaccard from fraction of matching signature components."
+      ]
+    },
+    {
+      "heading": "307. MinHash sketches the set, not the source sequence",
+      "level": 2,
+      "id": "ux-section-308",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "If order is already lost in feature extraction, the sketch cannot recover it.",
+      "paragraphs": [
+        "If order is already lost in feature extraction, the sketch cannot recover it."
+      ]
+    },
+    {
+      "heading": "308. Reference hybrid document deduplication",
+      "level": 2,
+      "id": "ux-section-309",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "document | v normalize | v word shingles | v MinHash | v near-duplicate candidates | v optional detailed comparison.",
+      "paragraphs": [
+        "document | v normalize | v word shingles | v MinHash | v near-duplicate candidates | v optional detailed comparison."
+      ]
+    },
+    {
+      "heading": "309. Reference hybrid record matching",
+      "level": 2,
+      "id": "ux-section-310",
+      "paragraph_count": 1,
+      "word_count": 36,
+      "evidence": "record field | v normalize | +----------------+ | | v v q-grams tokens | | v v overlap cosine/Jaccard | | +--------+-------+ | v candidate retrieval | v Levenshtein / field comparator | v entity-resolution model.",
+      "paragraphs": [
+        "record field | v normalize | +----------------+ | | v v q-grams tokens | | v v overlap cosine/Jaccard | | +--------+-------+ | v candidate retrieval | v Levenshtein / field comparator | v entity-resolution model."
+      ]
+    },
+    {
+      "heading": "310. Benchmark methodology: isolate representation from metric",
+      "level": 2,
+      "id": "ux-section-311",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "same q-gram representation + Jaccard same q-gram representation + Dice same q-gram representation + cosine same q-gram representation + L1."
+      ]
+    },
+    {
+      "heading": "311. Then isolate representation",
+      "level": 2,
+      "id": "ux-section-312",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "Levenshtein over characters Jaccard over characters Jaccard over 2-grams Jaccard over 3-grams cosine over 3-gram counts TF-IDF cosine over 3-grams."
+      ]
+    },
+    {
+      "heading": "312. Otherwise metric and representation effects are confounded",
+      "level": 2,
+      "id": "ux-section-313",
+      "paragraph_count": 5,
+      "word_count": 20,
+      "evidence": "If 3-gram cosine wins over character Levenshtein, the improvement could come from:",
+      "paragraphs": [
+        "If 3-gram cosine wins over character Levenshtein, the improvement could come from:",
+        "local-fragment representation;",
+        "frequency preservation;",
+        "cosine normalization;",
+        "corpus weighting."
+      ]
+    },
+    {
+      "heading": "313. Error-type benchmark",
+      "level": 2,
+      "id": "ux-section-314",
+      "paragraph_count": 1,
+      "word_count": 34,
+      "evidence": "Transformation Why test it Insertion Edit locality Deletion Edit locality Substitution Gram destruction Adjacent swap Order sensitivity Token reorder Global-order invariance Block move Local versus global structure Duplication Magnitude/multiplicity Containment Symmetric versus asymmetric score",
+      "paragraphs": [
+        "Transformation Why test it Insertion Edit locality Deletion Edit locality Substitution Gram destruction Adjacent swap Order sensitivity Token reorder Global-order invariance Block move Local versus global structure Duplication Magnitude/multiplicity Containment Symmetric versus asymmetric score"
+      ]
+    },
+    {
+      "heading": "314. Benchmark by string length",
+      "level": 2,
+      "id": "ux-section-315",
+      "paragraph_count": 3,
+      "word_count": 13,
+      "evidence": "Measure separately:",
+      "paragraphs": [
+        "Measure separately:",
+        "very short short medium long.",
+        "q-gram behavior changes dramatically with length."
+      ]
+    },
+    {
+      "heading": "315. Benchmark by repetition",
+      "level": 2,
+      "id": "ux-section-316",
+      "paragraph_count": 5,
+      "word_count": 11,
+      "evidence": "Highly repetitive strings expose differences between:",
+      "paragraphs": [
+        "Highly repetitive strings expose differences between:",
+        "set;",
+        "multiset;",
+        "cosine;",
+        "edit distance."
+      ]
+    },
+    {
+      "heading": "316. Benchmark by vocabulary frequency",
+      "level": 2,
+      "id": "ux-section-317",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "TF-IDF gains can depend strongly on whether the corpus contains highly common and highly rare features.",
+      "paragraphs": [
+        "TF-IDF gains can depend strongly on whether the corpus contains highly common and highly rare features."
+      ]
+    },
+    {
+      "heading": "317. Measure ranking, not only threshold classification",
+      "level": 2,
+      "id": "ux-section-318",
+      "paragraph_count": 6,
+      "word_count": 7,
+      "evidence": "Report:",
+      "paragraphs": [
+        "Report:",
+        "Recall@k;",
+        "MRR;",
+        "nDCG;",
+        "precision;",
+        "candidate-set size."
+      ]
+    },
+    {
+      "heading": "318. Measure candidate-generation recall separately",
+      "level": 2,
+      "id": "ux-section-319",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "A fast filter that achieves:",
+      "paragraphs": [
+        "A fast filter that achieves:",
+        "99.9% candidate reduction",
+        "is not useful if it loses too many true matches."
+      ]
+    },
+    {
+      "heading": "319. Report filter selectivity",
+      "level": 2,
+      "id": "ux-section-320",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "selectivity = surviving candidates / original candidates.",
+      "paragraphs": [
+        "selectivity = surviving candidates / original candidates."
+      ]
+    },
+    {
+      "heading": "320. Report verification workload",
+      "level": 2,
+      "id": "ux-section-321",
+      "paragraph_count": 2,
+      "word_count": 9,
+      "evidence": "For each query:",
+      "paragraphs": [
+        "For each query:",
+        "how many exact Levenshtein computations remain?"
+      ]
+    },
+    {
+      "heading": "321. Report end-to-end latency",
+      "level": 2,
+      "id": "ux-section-322",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "A theoretically cheaper similarity can lose operationally if it produces enormous candidate sets.",
+      "paragraphs": [
+        "A theoretically cheaper similarity can lose operationally if it produces enormous candidate sets."
+      ]
+    },
+    {
+      "heading": "322. Report index size",
+      "level": 2,
+      "id": "ux-section-323",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "q-gram indexes can consume substantial storage because one string generates many features.",
+      "paragraphs": [
+        "q-gram indexes can consume substantial storage because one string generates many features."
+      ]
+    },
+    {
+      "heading": "323. Report posting-list distribution",
+      "level": 2,
+      "id": "ux-section-324",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "A few extremely common grams can dominate index size and query cost.",
+      "paragraphs": [
+        "A few extremely common grams can dominate index size and query cost."
+      ]
+    },
+    {
+      "heading": "324. Report q explicitly",
+      "level": 2,
+      "id": "ux-section-325",
+      "paragraph_count": 3,
+      "word_count": 8,
+      "evidence": "Never publish:",
+      "paragraphs": [
+        "Never publish:",
+        "n-gram similarity",
+        "without the gram length."
+      ]
+    },
+    {
+      "heading": "325. Report set/multiset/vector semantics",
+      "level": 2,
+      "id": "ux-section-326",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "These are not implementation trivia.",
+      "paragraphs": [
+        "These are not implementation trivia.",
+        "They define the similarity space."
+      ]
+    },
+    {
+      "heading": "326. Report boundary padding",
+      "level": 2,
+      "id": "ux-section-327",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "Especially for short strings.",
+      "paragraphs": [
+        "Especially for short strings."
+      ]
+    },
+    {
+      "heading": "327. Report tokenizer/version",
+      "level": 2,
+      "id": "ux-section-328",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "For word or Unicode-aware grams, tokenizer changes can alter every feature.",
+      "paragraphs": [
+        "For word or Unicode-aware grams, tokenizer changes can alter every feature."
+      ]
+    },
+    {
+      "heading": "328. Report corpus used for IDF",
+      "level": 2,
+      "id": "ux-section-329",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Without it, TF-IDF results may not be reproducible.",
+      "paragraphs": [
+        "Without it, TF-IDF results may not be reproducible."
+      ]
+    },
+    {
+      "heading": "329. Decision tree: sequence versus feature representation",
+      "level": 2,
+      "id": "ux-section-330",
+      "paragraph_count": 1,
+      "word_count": 41,
+      "evidence": "Does global order matter? | +---+---+ | | YES NO | | v v sequence set/vector metric | v Are small local edits the intended differences? | +--+--+ | | YES NO | | v v Leven- structural/ shtein domain model",
+      "paragraphs": [
+        "Does global order matter? | +---+---+ | | YES NO | | v v sequence set/vector metric | v Are small local edits the intended differences? | +--+--+ | | YES NO | | v v Leven- structural/ shtein domain model"
+      ]
+    },
+    {
+      "heading": "330. Decision tree: set versus vector",
+      "level": 2,
+      "id": "ux-section-331",
+      "paragraph_count": 1,
+      "word_count": 45,
+      "evidence": "Do repeated features matter? | +---+---+ | | NO YES | | v v SET VECTOR/ MULTISET | | v v Jaccard/ Do relative Dice proportions matter more than absolute counts? | +---+---+ | | YES NO | | v v cosine multiset/ count distance.",
+      "paragraphs": [
+        "Do repeated features matter? | +---+---+ | | NO YES | | v v SET VECTOR/ MULTISET | | v v Jaccard/ Do relative Dice proportions matter more than absolute counts? | +---+---+ | | YES NO | | v v cosine multiset/ count distance."
+      ]
+    },
+    {
+      "heading": "331. Decision tree: q-grams",
+      "level": 2,
+      "id": "ux-section-332",
+      "paragraph_count": 1,
+      "word_count": 42,
+      "evidence": "Need local order but not full global alignment? | YES | v q-grams | v Do multiplicities matter? | +---+---+ | | NO YES | | v v q-gram q-gram set profile | | v v Jaccard cosine / L1 / weighted.",
+      "paragraphs": [
+        "Need local order but not full global alignment? | YES | v q-grams | v Do multiplicities matter? | +---+---+ | | NO YES | | v v q-gram q-gram set profile | | v v Jaccard cosine / L1 / weighted."
+      ]
+    },
+    {
+      "heading": "332. Decision tree: scalability",
+      "level": 2,
+      "id": "ux-section-333",
+      "paragraph_count": 1,
+      "word_count": 31,
+      "evidence": "Need exact edit-distance semantics? | YES | v Large corpus? | +---+---+ | | NO YES | | v v direct filter edit DP + verify | v q-gram/index candidate layer.",
+      "paragraphs": [
+        "Need exact edit-distance semantics? | YES | v Large corpus? | +---+---+ | | NO YES | | v v direct filter edit DP + verify | v q-gram/index candidate layer."
+      ]
+    },
+    {
+      "heading": "333. Practical recommendation table",
+      "level": 2,
+      "id": "ux-section-334",
+      "paragraph_count": 1,
+      "word_count": 65,
+      "evidence": "Problem Good starting point Typographical insert/delete/substitute errors Levenshtein Presence/absence feature overlap Jaccard Same feature set with frequency importance Multiset/vector comparison Document term-distribution similarity TF-IDF cosine Near-duplicate document resemblance Shingle/q-gram Jaccard + MinHash Local character overlap at scale q-gram index Exact fuzzy search over large corpus q-gram filter + exact edit verify Substring containment Containment/local retrieval measure Semantic equivalence Semantic representation, not these lexical measures alone",
+      "paragraphs": [
+        "Problem Good starting point Typographical insert/delete/substitute errors Levenshtein Presence/absence feature overlap Jaccard Same feature set with frequency importance Multiset/vector comparison Document term-distribution similarity TF-IDF cosine Near-duplicate document resemblance Shingle/q-gram Jaccard + MinHash Local character overlap at scale q-gram index Exact fuzzy search over large corpus q-gram filter + exact edit verify Substring containment Containment/local retrieval measure Semantic equivalence Semantic representation, not these lexical measures alone"
+      ]
+    },
+    {
+      "heading": "334. The important hybrid insight",
+      "level": 2,
+      "id": "ux-section-335",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "These methods should not always be treated as mutually exclusive competitors.",
+      "paragraphs": [
+        "These methods should not always be treated as mutually exclusive competitors.",
+        "A strong system often uses:",
+        "SET/VECTOR METHODS for retrieval + EDIT DISTANCE for verification."
+      ]
+    },
+    {
+      "heading": "335. Example hybrid",
+      "level": 2,
+      "id": "ux-section-336",
+      "paragraph_count": 1,
+      "word_count": 28,
+      "evidence": "10 million strings | v q-gram inverted index | v 2,000 candidates | v q-gram bound | v 120 candidates | v exact Levenshtein | v 7 answers.",
+      "paragraphs": [
+        "10 million strings | v q-gram inverted index | v 2,000 candidates | v q-gram bound | v 120 candidates | v exact Levenshtein | v 7 answers."
+      ]
+    },
+    {
+      "heading": "336. This architecture exploits two different geometries",
+      "level": 2,
+      "id": "ux-section-337",
+      "paragraph_count": 2,
+      "word_count": 10,
+      "evidence": "Feature geometry provides speed.",
+      "paragraphs": [
+        "Feature geometry provides speed.",
+        "Sequence geometry defines the final answer."
+      ]
+    },
+    {
+      "heading": "337. This is often preferable to forcing one measure to do everything",
+      "level": 2,
+      "id": "ux-section-338",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Retrieval and verification have different optimization requirements.",
+      "paragraphs": [
+        "Retrieval and verification have different optimization requirements."
+      ]
+    },
+    {
+      "heading": "338. The inverse hybrid also exists",
+      "level": 2,
+      "id": "ux-section-339",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "A system can retrieve with edit distance and then rank with corpus-aware vectors.",
+      "paragraphs": [
+        "A system can retrieve with edit distance and then rank with corpus-aware vectors.",
+        "For example:",
+        "edit tolerance -> candidate lexical variants then TF-IDF/context -> ranking."
+      ]
+    },
+    {
+      "heading": "339. No universal ordering exists among the measures",
+      "level": 2,
+      "id": "ux-section-340",
+      "paragraph_count": 2,
+      "word_count": 22,
+      "evidence": "Unlike the relationship between some nested edit models, there is no general theorem saying:",
+      "paragraphs": [
+        "Unlike the relationship between some nested edit models, there is no general theorem saying:",
+        "Jaccard similarity must rise whenever Levenshtein distance falls."
+      ]
+    },
+    {
+      "heading": "340. Ranking reversals are expected",
+      "level": 2,
+      "id": "ux-section-341",
+      "paragraph_count": 5,
+      "word_count": 14,
+      "evidence": "Pair A can have:",
+      "paragraphs": [
+        "Pair A can have:",
+        "smaller edit distance",
+        "but:",
+        "lower q-gram Jaccard",
+        "than pair B."
+      ]
+    },
+    {
+      "heading": "341. This happens because neighborhoods have different shapes",
+      "level": 2,
+      "id": "ux-section-342",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "Levenshtein balls contain strings reachable by bounded edit operations.",
+      "paragraphs": [
+        "Levenshtein balls contain strings reachable by bounded edit operations.",
+        "Jaccard neighborhoods contain sets with sufficient intersection relative to union.",
+        "Cosine neighborhoods contain vectors with similar direction."
+      ]
+    },
+    {
+      "heading": "342. Geometric language is useful",
+      "level": 2,
+      "id": "ux-section-343",
+      "paragraph_count": 6,
+      "word_count": 12,
+      "evidence": "Each measure induces a different notion of:",
+      "paragraphs": [
+        "Each measure induces a different notion of:",
+        "near;",
+        "far;",
+        "neighbor;",
+        "cluster;",
+        "outlier."
+      ]
+    },
+    {
+      "heading": "343. Cluster results therefore depend strongly on metric",
+      "level": 2,
+      "id": "ux-section-344",
+      "paragraph_count": 5,
+      "word_count": 15,
+      "evidence": "Clustering the same documents with:",
+      "paragraphs": [
+        "Clustering the same documents with:",
+        "edit distance",
+        "versus:",
+        "cosine TF-IDF",
+        "can produce entirely different groupings."
+      ]
+    },
+    {
+      "heading": "344. Neither clustering is intrinsically “correct”",
+      "level": 2,
+      "id": "ux-section-345",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "One may cluster by textual form.",
+      "paragraphs": [
+        "One may cluster by textual form.",
+        "The other may cluster by vocabulary distribution."
+      ]
+    },
+    {
+      "heading": "345. A similarity measure encodes the task's invariances",
+      "level": 2,
+      "id": "ux-section-346",
+      "paragraph_count": 2,
+      "word_count": 33,
+      "evidence": "Before implementation, explicitly answer:",
+      "paragraphs": [
+        "Before implementation, explicitly answer:",
+        "Should word order matter? Should repetition matter? Should document length matter? Should block movement matter? Should rare terms matter more? Should one insertion be local? Should containment be asymmetric?"
+      ]
+    },
+    {
+      "heading": "346. Only then choose representation and metric",
+      "level": 2,
+      "id": "ux-section-347",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "This avoids one of the most common engineering mistakes:",
+      "paragraphs": [
+        "This avoids one of the most common engineering mistakes:",
+        "choosing a familiar formula before defining similarity."
+      ]
+    },
+    {
+      "heading": "347. Final conceptual model",
+      "level": 2,
+      "id": "ux-section-348",
+      "paragraph_count": 1,
+      "word_count": 64,
+      "evidence": "ORIGINAL OBJECT | +---------------+---------------+ | | | v v v SEQUENCE SET VECTOR | | | v v v Levenshtein Jaccard/Dice Cosine | | +-------------------+ | v Q-GRAM TRANSFORM | +---------------+---------------+ | | | v v v SET MULTISET VECTOR | | | v v v Jaccard multiset overlap cosine/L1 | v MinHash | v scalable candidate retrieval | v optional exact edit verification.",
+      "paragraphs": [
+        "ORIGINAL OBJECT | +---------------+---------------+ | | | v v v SEQUENCE SET VECTOR | | | v v v Levenshtein Jaccard/Dice Cosine | | +-------------------+ | v Q-GRAM TRANSFORM | +---------------+---------------+ | | | v v v SET MULTISET VECTOR | | | v v v Jaccard multiset overlap cosine/L1 | v MinHash | v scalable candidate retrieval | v optional exact edit verification."
+      ]
+    },
+    {
+      "heading": "348. Final interpretation",
+      "level": 2,
+      "id": "ux-section-349",
+      "paragraph_count": 26,
+      "word_count": 655,
+      "evidence": "The most important distinction between edit distance and set, vector, and n-gram similarity is not the mathematical formula used at the final step. It is the representation of the object before that formula is applied.",
+      "paragraphs": [
+        "The most important distinction between edit distance and set, vector, and n-gram similarity is not the mathematical formula used at the final step. It is the representation of the object before that formula is applied.",
+        "Levenshtein distance operates directly on an ordered sequence. Every insertion, deletion, and substitution participates in a global alignment, so long-range order remains part of the geometry. This is ideal when those edits genuinely define the differences the application cares about.",
+        "Jaccard and Dice instead compare sets of features. They intentionally forget feature multiplicity and order. This makes them robust to rearrangement and useful for overlap-oriented problems, but two distinct strings can become identical after set conversion. Their score means:",
+        "shared feature types relative to feature inventory,",
+        "not:",
+        "minimum sequence transformation.",
+        "Vectors retain more information. Count vectors preserve multiplicity, TF-IDF vectors incorporate corpus-level rarity, and cosine similarity compares the direction of weighted feature profiles rather than absolute sequence length. This makes vector-space methods particularly powerful for information retrieval, where a long document and a short document can discuss the same subject with similar feature proportions.",
+        "Character and token n-grams occupy an important middle ground. They discard global order while preserving local adjacency. This allows strings and documents to survive local edits, movement, and partial rearrangement more gracefully than full sequence alignment, while still retaining substantially more structure than unordered sets of individual characters or words.",
+        "But “n-gram similarity” is not one metric. A q-gram representation can be converted into:",
+        "unique set -> Jaccard multiset -> multiset Jaccard count vector -> cosine count vector -> L1 q-gram distance weighted vector -> TF-IDF cosine.",
+        "These systems can rank the same candidate pairs differently because they preserve different information.",
+        "Ukkonen's q-gram result reveals an especially important relationship with edit distance. If d_q is the L1 distance between q-gram count profiles and d_edit is unit-cost edit distance, then:",
+        "d_q(X,Y) <= 2q d_edit(X,Y).",
+        "Therefore:",
+        "d_edit(X,Y) >= d_q(X,Y)/(2q).",
+        "This allows q-grams to serve not merely as an alternative similarity representation but as a computational filter for exact edit-distance search. A candidate whose q-gram lower bound already exceeds the target threshold can be rejected before dynamic programming is run.",
+        "That leads to one of the most important architectures in large-scale fuzzy retrieval:",
+        "feature index -> cheap candidate filtering -> exact sequence verification.",
+        "In such a pipeline, q-grams provide scalability while Levenshtein retains final semantics. The two techniques are collaborators rather than competitors.",
+        "The critical distinctions are:",
+        "sequence != set set != multiset multiset != vector feature overlap != edit distance Jaccard != cosine Jaccard != Dice numerically set Jaccard != multiset Jaccard cosine similarity != absolute-count similarity 1 - cosine != automatically a metric TF-IDF != a similarity metric by itself q-gram set != q-gram profile q-gram similarity != one algorithm q-gram distance zero != identical original strings local q-gram order != global sequence order same token set != same sentence meaning same vector direction != same document length high lexical overlap != semantic equivalence high lexical overlap != entity identity MinHash != Levenshtein approximation by definition MinHash = Jaccard-oriented sketching for the supplied set representation q-gram filtering != necessarily approximate final search lossless filtering != heuristic filtering exact pairwise verifier != exact end-to-end retrieval pairwise distance != large-scale search architecture.",
+        "The practical rule is therefore:",
+        "Use Levenshtein when exact ordered edit structure is the desired geometry. Use Jaccard or Dice when feature presence matters more than order or frequency. Use multiset/vector methods when repetition matters. Use cosine and TF-IDF when relative weighted feature distribution is central. Use q-grams when local sequence structure is useful but complete global alignment is too brittle or too expensive. Use q-gram filtering plus Levenshtein when exact edit-distance semantics must scale to large collections.",
+        "The deeper rule is even more general:",
+        "do not ask which similarity formula is best until you have decided which information you are willing to discard.",
+        "That decision determines the geometry long before the final similarity score is calculated."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-350",
+      "paragraph_count": 10,
+      "word_count": 204,
+      "evidence": "Dice, L. R. Measures of the Amount of Ecologic Association Between Species. Ecology 26(3), 297-302, 1945. https://doi.org/10.2307/1932409 .",
+      "paragraphs": [
+        "Dice, L. R. Measures of the Amount of Ecologic Association Between Species. Ecology 26(3), 297-302, 1945. https://doi.org/10.2307/1932409 .",
+        "Salton, G., Wong, A., and Yang, C. S. A Vector Space Model for Automatic Indexing. Communications of the ACM 18(11), 613-620, 1975. https://doi.org/10.1145/361219.361220 .",
+        "Spärck Jones, K. A Statistical Interpretation of Term Specificity and Its Application in Retrieval. Journal of Documentation 28(1), 11-21, 1972. https://doi.org/10.1108/eb026526 .",
+        "Salton, G., and Buckley, C. Term-weighting approaches in automatic text retrieval. Information Processing & Management 24(5), 513-523, 1988. https://doi.org/10.1016/0306-4573(88)90021-0 .",
+        "Ukkonen, E. Approximate string-matching with q-grams and maximal matches. Theoretical Computer Science 92(1), 191-211, 1992. https://doi.org/10.1016/0304-3975(92)90143-4 .",
+        "Broder, A. Z. On the Resemblance and Containment of Documents. Compression and Complexity of Sequences, 21-29, 1997. https://doi.org/10.1109/SEQUEN.1997.666900 .",
+        "Broder, A. Z., Charikar, M., Frieze, A. M., and Mitzenmacher, M. Min-Wise Independent Permutations. Journal of Computer and System Sciences 60(3), 630-659, 2000. https://doi.org/10.1006/jcss.1999.1690 .",
+        "Charikar, M. S. Similarity Estimation Techniques from Rounding Algorithms. STOC, 380-388, 2002. https://doi.org/10.1145/509907.509965 .",
+        "Gravano, L., Ipeirotis, P. G., Jagadish, H. V., Koudas, N., Muthukrishnan, S., and Srivastava, D. Approximate String Joins in a Database (Almost) for Free. VLDB, 2001. paper .",
+        "Navarro, G. A Guided Tour to Approximate String Matching. ACM Computing Surveys 33(1), 31-88, 2001. https://doi.org/10.1145/375360.375365 ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "70. q-gram and n-gram terminology",
+          "anchor_id": "ux-section-71",
+          "alias": "approximate string matching",
+          "excerpt": "In approximate string matching literature, the length is frequently written:"
+        },
+        {
+          "section": "89. Ukkonen's q-gram work",
+          "anchor_id": "ux-section-90",
+          "alias": "approximate string matching",
+          "excerpt": "Esko Ukkonen's 1992 paper studied approximate string matching using q-grams and showed how q-gram distances can provide lower bounds useful for edit-distance matching."
+        },
+        {
+          "section": "213. Approximate string matching",
+          "anchor_id": "ux-section-214",
+          "alias": "approximate string matching",
+          "excerpt": "See approximate string matching ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Edit Distance vs Set, Vector, and N-Gram Similarity",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "This article develops that principle from first principles. It compares Levenshtein distance with Jaccard and Dice set similarity, multiset overlap, cosine similarity, term-frequency and TF-IDF vectors, character n-grams, q-gram profiles, MinHash-style sketches, and scalable filter-and-verify architectures. Particular attention is given to the mathematical relationship between q-gram distance and edit distance, including Ukkonen's q-gram bound."
+        },
+        {
+          "section": "32. This is analogous to full-string versus substring matching",
+          "anchor_id": "ux-section-33",
+          "alias": "edit distance",
+          "excerpt": "Full-string edit distance asks whether two entire strings are close."
+        },
+        {
+          "section": "49. Levenshtein would not behave that way on repeated sequences",
+          "anchor_id": "ux-section-50",
+          "alias": "edit distance",
+          "excerpt": "If one textual sequence is literally repeated many times, edit distance grows with the additional material."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "341. This happens because neighborhoods have different shapes",
+          "anchor_id": "ux-section-342",
+          "alias": "edit operations",
+          "excerpt": "Levenshtein balls contain strings reachable by bounded edit operations."
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "208. Entity resolution",
+          "anchor_id": "ux-section-209",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "See entity resolution and record linkage ."
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-at-scale",
+      "evidence": [
+        {
+          "section": "192. A faster first stage does not change the final distance definition",
+          "anchor_id": "ux-section-193",
+          "alias": "fuzzy search at scale",
+          "excerpt": "This distinction is central to fuzzy search at scale ."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "104. q-gram filtering is a core scalable-string technique",
+          "anchor_id": "ux-section-105",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "The broader algorithmic theory is developed in indexing and filtering for edit distance ."
+        }
+      ]
+    },
+    {
+      "target": "/name-address-and-place-matching",
+      "evidence": [
+        {
+          "section": "207. Name-address-place matching",
+          "anchor_id": "ux-section-208",
+          "alias": "name address and place matching",
+          "excerpt": "See name, address, and place matching ."
+        }
+      ]
+    },
+    {
+      "target": "/source-code-and-ast-similarity",
+      "evidence": [
+        {
+          "section": "210. Source-code similarity",
+          "anchor_id": "ux-section-211",
+          "alias": "source code and ast similarity",
+          "excerpt": "See source-code and AST similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "160. This exposes a deeper limit",
+          "anchor_id": "ux-section-161",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See string similarity vs semantic similarity ."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "130. Grapheme-safe n-grams",
+          "anchor_id": "ux-section-131",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and grapheme-safe Levenshtein for the underlying segmentation distinction."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#page",
+      "type": "WebPage",
+      "name": "Edit Distance vs Set, Vector, and N-Gram Similarity: Jaccard, Cosine, Q-Grams, and Retrieval Tradeoffs",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#jaccard"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#cosine"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-similarity"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "type": "TechArticle",
+      "name": "Edit Distance vs Set, Vector, and N-Gram Similarity: Jaccard, Cosine, Q-Grams, and Retrieval Tradeoffs",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#jaccard"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#dice"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#multiset-jaccard"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#cosine"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#tfidf"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-similarity"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#concept",
+      "type": "DefinedTerm",
+      "name": "Edit Distance versus Set, Vector, and N-Gram Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#representation-geometry",
+      "type": "DefinedTerm",
+      "name": "Similarity Representation Geometry",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#jaccard",
+      "type": "DefinedTerm",
+      "name": "Jaccard Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#dice",
+      "type": "DefinedTerm",
+      "name": "Dice Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#multiset-jaccard",
+      "type": "DefinedTerm",
+      "name": "Multiset Jaccard Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#cosine",
+      "type": "DefinedTerm",
+      "name": "Cosine Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#tfidf",
+      "type": "DefinedTerm",
+      "name": "TF-IDF",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-similarity",
+      "type": "DefinedTerm",
+      "name": "Q-Gram Similarity",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-distance",
+      "type": "DefinedTerm",
+      "name": "Q-Gram Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-lemma",
+      "type": "DefinedTerm",
+      "name": "Q-Gram Lemma",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#minhash",
+      "type": "DefinedTerm",
+      "name": "MinHash",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#containment",
+      "type": "DefinedTerm",
+      "name": "Feature-Set Containment",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#filter-and-verify",
+      "type": "DefinedTerm",
+      "name": "Filter-and-Verify Edit-Distance Retrieval",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#jaccard"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#cosine"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#page",
+      "mainEntity",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#page",
+      "isPartOf",
+      "https://www.levenshtein.net/comparisons#collection"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#jaccard"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#dice"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#multiset-jaccard"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#cosine"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#tfidf"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-similarity"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-distance"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#qgram-lemma"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#minhash"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#containment"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#filter-and-verify"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#representation-geometry"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "isPartOf",
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#page"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://doi.org/10.2307/1932409"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://doi.org/10.1145/361219.361220"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://doi.org/10.1108/eb026526"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://doi.org/10.1016/0306-4573(88)90021-0"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://doi.org/10.1016/0304-3975(92)90143-4"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://doi.org/10.1109/SEQUEN.1997.666900"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://doi.org/10.1006/jcss.1999.1690"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://doi.org/10.1145/509907.509965"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://www.cs.columbia.edu/~gravano/Papers/2001/vldb01.pdf"
+    ],
+    [
+      "https://www.levenshtein.net/edit-distance-vs-set-vector-and-ngram-similarity#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.2307/1932409",
+      "anchor": "https://doi.org/10.2307/1932409"
+    },
+    {
+      "url": "https://doi.org/10.1109/SEQUEN.1997.666900",
+      "anchor": "https://doi.org/10.1109/SEQUEN.1997.666900"
+    },
+    {
+      "url": "https://doi.org/10.1145/361219.361220",
+      "anchor": "https://doi.org/10.1145/361219.361220"
+    },
+    {
+      "url": "https://doi.org/10.1108/eb026526",
+      "anchor": "https://doi.org/10.1108/eb026526"
+    },
+    {
+      "url": "https://doi.org/10.1016/0306-4573(88)90021-0",
+      "anchor": "https://doi.org/10.1016/0306-4573(88)90021-0"
+    },
+    {
+      "url": "https://doi.org/10.1016/0304-3975(92)90143-4",
+      "anchor": "https://doi.org/10.1016/0304-3975(92)90143-4"
+    },
+    {
+      "url": "https://www.cs.columbia.edu/~gravano/Papers/2001/vldb01.pdf",
+      "anchor": "paper"
+    },
+    {
+      "url": "https://doi.org/10.1006/jcss.1999.1690",
+      "anchor": "https://doi.org/10.1006/jcss.1999.1690"
+    },
+    {
+      "url": "https://doi.org/10.1145/509907.509965",
+      "anchor": "https://doi.org/10.1145/509907.509965"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "https://doi.org/10.1145/375360.375365"
+    }
+  ]
+}

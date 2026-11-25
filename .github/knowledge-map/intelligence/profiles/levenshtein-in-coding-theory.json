@@ -1,0 +1,3440 @@
+{
+  "url": "/levenshtein-in-coding-theory",
+  "title": "Levenshtein Distance in Coding Theory: Indel Channels, Synchronization Errors, and Error-Correcting Codes",
+  "h1": [
+    "Levenshtein Distance in Coding Theory: Indel Channels, Synchronization Errors, and Error-Correcting Codes"
+  ],
+  "group": "Coding",
+  "provisional_mission": "Ứng dụng kênh indel",
+  "content_sha256": "ed0b0a53eff420629deee682aa8de09baccabf143643321dbd5d7a9e14b39eaa",
+  "canonical": "https://www.levenshtein.net/levenshtein-in-coding-theory",
+  "primary_entity_candidate": "Levenshtein Distance in Coding Theory: Indel Channels, Synchronization Errors, and Error-Correcting Codes",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Levenshtein Distance in Coding Theory",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 8,
+      "word_count": 248,
+      "evidence": "Levenshtein distance has a deeper relationship with coding theory than its familiar modern uses in spelling correction, fuzzy search, or record matching suggest. Vladimir Levenshtein's foundational work studied communication channels in which symbols could be deleted, inserted, or changed. In such channels, the central difficulty is not merely that a symbol can be wrong: insertions and deletions destroy the positional synchronization between transmitted and received sequences.",
+      "paragraphs": [
+        "Levenshtein distance has a deeper relationship with coding theory than its familiar modern uses in spelling correction, fuzzy search, or record matching suggest. Vladimir Levenshtein's foundational work studied communication channels in which symbols could be deleted, inserted, or changed. In such channels, the central difficulty is not merely that a symbol can be wrong: insertions and deletions destroy the positional synchronization between transmitted and received sequences.",
+        "This makes coding theory one of the natural mathematical homes of Levenshtein distance .",
+        "Classical Hamming-space coding theory assumes that transmitted and received words retain the same length and coordinate system. If bit 17 is corrupted, the receiver still knows that the observed symbol occupies coordinate 17. An insertion/deletion channel is fundamentally different. Delete one symbol near the beginning of a word and every later received symbol shifts position.",
+        "The coding problem therefore becomes:",
+        "choose a set of valid codewords that remain distinguishable after synchronization errors.",
+        "The resulting theory connects:",
+        "edit distance | v minimum code distance | v disjoint error neighborhoods | v unique decoding | v redundancy / rate trade-offs | v insertion-deletion codes | v modern synchronization codes.",
+        "But several distinctions are essential. In particular, the term Levenshtein distance is used somewhat differently across computer science and coding-theory literature. Modern string algorithms usually allow substitutions as primitive cost-one edits. Some insertion-deletion coding literature instead works with an insdel distance containing only insertions and deletions, in which a substitution effectively costs two operations. Those geometries must not be silently conflated."
+      ]
+    },
+    {
+      "heading": "1. Coding theory begins with a codebook",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 12,
+      "word_count": 45,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "Σ",
+        "be a finite alphabet of size:",
+        "q = |Σ|.",
+        "A block code of length n is a subset:",
+        "C ⊆ Σ^n.",
+        "Only strings in C are valid transmitted codewords.",
+        "If:",
+        "|C| = M,",
+        "the code represents:",
+        "log2 M",
+        "bits of information per codeword."
+      ]
+    },
+    {
+      "heading": "2. Code rate",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 9,
+      "word_count": 58,
+      "evidence": "The q-ary rate is commonly defined as:",
+      "paragraphs": [
+        "The q-ary rate is commonly defined as:",
+        "R_q(C) = log_q |C| / n.",
+        "Equivalently, in bits per transmitted symbol:",
+        "R_bits(C) = log2 |C| / n.",
+        "For a binary alphabet:",
+        "R(C) = log2 |C| / n.",
+        "A code containing every possible binary word has:",
+        "|C| = 2^n R = 1.",
+        "But it contains no redundancy for correcting arbitrary errors."
+      ]
+    },
+    {
+      "heading": "3. Redundancy",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 9,
+      "word_count": 41,
+      "evidence": "For a binary length- n code:",
+      "paragraphs": [
+        "For a binary length- n code:",
+        "r(C) = n - log2 |C|",
+        "is a useful information-theoretic redundancy measure.",
+        "More separation between codewords generally requires:",
+        "fewer valid codewords",
+        "and therefore:",
+        "more redundancy.",
+        "This produces the fundamental coding trade-off:",
+        "rate versus error protection."
+      ]
+    },
+    {
+      "heading": "4. The Hamming channel",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 9,
+      "word_count": 57,
+      "evidence": "Suppose the transmitted word is:",
+      "paragraphs": [
+        "Suppose the transmitted word is:",
+        "x = x1 x2 ... xn",
+        "and the receiver observes another length- n word:",
+        "y = y1 y2 ... yn.",
+        "If the channel only substitutes symbols, the natural distance is Hamming distance:",
+        "dH(x,y) = |{i : xi != yi}|.",
+        "Every coordinate survives.",
+        "The receiver knows:",
+        "which received symbol belongs to which coordinate."
+      ]
+    },
+    {
+      "heading": "5. The deletion channel",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 9,
+      "word_count": 59,
+      "evidence": "A deletion removes a transmitted symbol without necessarily leaving a marker.",
+      "paragraphs": [
+        "A deletion removes a transmitted symbol without necessarily leaving a marker.",
+        "For example:",
+        "TRANSMITTED: 0 1 1 0 1 0 DELETE POSITION 2 RECEIVED: 0 1 0 1 0.",
+        "The receiver observes a shorter word but does not directly know which coordinate disappeared.",
+        "After the deletion:",
+        "transmitted coordinate 3",
+        "appears at:",
+        "received coordinate 2.",
+        "The channel has lost synchronization."
+      ]
+    },
+    {
+      "heading": "6. A deletion is not an erasure",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "DELETION: 0 1 1 0 | removed received: 0 1 0",
+        "with:",
+        "ERASURE: 0 1 ? 0",
+        "In an erasure channel, the receiver knows:",
+        "which coordinate is missing.",
+        "In a deletion channel, the position itself is hidden.",
+        "Therefore:",
+        "deletion channel != erasure channel."
+      ]
+    },
+    {
+      "heading": "7. The insertion channel",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "An insertion introduces a new symbol:",
+      "paragraphs": [
+        "An insertion introduces a new symbol:",
+        "TRANSMITTED: 0 1 1 0 RECEIVED: 0 1 0 1 0 ^ inserted symbol.",
+        "The receiver does not automatically know:",
+        "which received position has no transmitted antecedent.",
+        "Again, synchronization is disturbed."
+      ]
+    },
+    {
+      "heading": "8. Synchronization errors",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 5,
+      "word_count": 44,
+      "evidence": "Insertions and deletions are therefore commonly called:",
+      "paragraphs": [
+        "Insertions and deletions are therefore commonly called:",
+        "synchronization errors.",
+        "Mercier, Bhargava, and Tarokh survey this distinction in A Survey of Error-Correcting Codes for Channels With Symbol Synchronization Errors .",
+        "The central difficulty is:",
+        "substitution: symbol value is uncertain insertion/deletion: symbol coordinate system is uncertain."
+      ]
+    },
+    {
+      "heading": "9. One deletion can imitate many substitutions",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 9,
+      "word_count": 76,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "x = A B C D E F G y = A C D E F G.",
+        "The actual error is:",
+        "delete B.",
+        "Under edit distance:",
+        "distance = 1.",
+        "But naïvely comparing positions after the deletion creates a sequence of apparent mismatches:",
+        "x: A B C D E F G y: A C D E F G ? ^ ^ ^ ^ ^ ^",
+        "This is why substitution-oriented codes do not automatically solve deletion channels."
+      ]
+    },
+    {
+      "heading": "10. Classical Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 6,
+      "word_count": 42,
+      "evidence": "For strings:",
+      "paragraphs": [
+        "For strings:",
+        "x and y,",
+        "classic Levenshtein distance uses primitive operations:",
+        "substitution cost 1 insertion cost 1 deletion cost 1.",
+        "It is the minimum total edit cost transforming x into y .",
+        "The underlying edit operations are developed in edit operations ."
+      ]
+    },
+    {
+      "heading": "11. Full Levenshtein distance versus pure insertion-deletion distance",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 18,
+      "word_count": 53,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "dL(x,y)",
+        "as ordinary Levenshtein distance with substitutions costing one.",
+        "Now define:",
+        "dID(x,y)",
+        "as the minimum number of:",
+        "insertions + deletions",
+        "only.",
+        "No primitive substitution is available in dID .",
+        "Therefore replacing:",
+        "A",
+        "with:",
+        "G",
+        "costs:",
+        "1",
+        "under dL , but can require:",
+        "delete A + insert G = 2",
+        "under dID ."
+      ]
+    },
+    {
+      "heading": "12. Terminology must be declared explicitly",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "Some coding-theory literature uses expressions such as:",
+      "paragraphs": [
+        "Some coding-theory literature uses expressions such as:",
+        "Levenshtein metric",
+        "for insertion/deletion-oriented metrics.",
+        "Modern software literature often understands Levenshtein distance as:",
+        "insertion + deletion + substitution.",
+        "Therefore a technical paper should state:",
+        "which operations exist and what each operation costs.",
+        "Otherwise the phrase “minimum Levenshtein distance” can be ambiguous."
+      ]
+    },
+    {
+      "heading": "13. Longest common subsequence",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "Pure insertion-deletion distance has a direct relationship with longest common subsequence.",
+      "paragraphs": [
+        "Pure insertion-deletion distance has a direct relationship with longest common subsequence.",
+        "Let:",
+        "LCS(x,y)",
+        "denote the length of a longest sequence that occurs as a subsequence of both x and y .",
+        "Then:",
+        "dID(x,y) = |x| + |y| - 2 LCS(x,y)."
+      ]
+    },
+    {
+      "heading": "14. Why the LCS formula holds",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 11,
+      "word_count": 53,
+      "evidence": "Suppose the two strings share a common subsequence of length:",
+      "paragraphs": [
+        "Suppose the two strings share a common subsequence of length:",
+        "L.",
+        "Delete from x every symbol not belonging to that subsequence:",
+        "|x| - L",
+        "deletions.",
+        "Then insert the symbols required to construct y :",
+        "|y| - L",
+        "insertions.",
+        "Total:",
+        "|x| + |y| - 2L.",
+        "Choosing the longest possible common subsequence minimizes this quantity."
+      ]
+    },
+    {
+      "heading": "15. Equal-length codewords",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "|x| = |y| = n,",
+        "then:",
+        "dID(x,y) = 2( n - LCS(x,y) ).",
+        "Therefore pure insertion-deletion distance between equal-length words is always even.",
+        "This is not true of ordinary Levenshtein distance because one substitution has cost one."
+      ]
+    },
+    {
+      "heading": "16. Worked comparison",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "x = ABC y = ADC.",
+        "Ordinary Levenshtein:",
+        "B -> D dL(x,y) = 1.",
+        "Pure insdel distance:",
+        "delete B insert D dID(x,y) = 2.",
+        "The code geometry depends on which channel is being modeled."
+      ]
+    },
+    {
+      "heading": "17. Code minimum distance",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "For a code:",
+      "paragraphs": [
+        "For a code:",
+        "C,",
+        "define its minimum distance under metric d as:",
+        "dmin(C) = min d(x,y)",
+        "over all:",
+        "x != y in C.",
+        "This is the basic geometric quantity connecting distance to error correction."
+      ]
+    },
+    {
+      "heading": "18. Error balls",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 6,
+      "word_count": 50,
+      "evidence": "The radius- t ball around codeword x is:",
+      "paragraphs": [
+        "The radius- t ball around codeword x is:",
+        "B_t(x) = { y : d(x,y) <= t }.",
+        "If two codewords have overlapping radius- t balls:",
+        "B_t(x) ∩ B_t(y) != empty,",
+        "then at least one received word is consistent with either transmitted codeword.",
+        "Unique decoding becomes impossible for that error pattern."
+      ]
+    },
+    {
+      "heading": "19. Minimum-distance correction theorem",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "For any genuine metric, a code with:",
+      "paragraphs": [
+        "For any genuine metric, a code with:",
+        "dmin(C) >= 2t + 1",
+        "can uniquely correct every pattern of at most:",
+        "t",
+        "metric edits.",
+        "The proof is the same geometric argument familiar from Hamming coding theory."
+      ]
+    },
+    {
+      "heading": "20. Proof by triangle inequality",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Suppose received word r were within distance t of two codewords:",
+      "paragraphs": [
+        "Suppose received word r were within distance t of two codewords:",
+        "d(x,r) <= t d(y,r) <= t.",
+        "Then:",
+        "d(x,y) <= d(x,r) + d(r,y) <= 2t.",
+        "This contradicts:",
+        "dmin >= 2t+1.",
+        "Therefore the radius- t decoding regions are disjoint."
+      ]
+    },
+    {
+      "heading": "21. Correction and detection are different",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 10,
+      "word_count": 45,
+      "evidence": "A minimum distance:",
+      "paragraphs": [
+        "A minimum distance:",
+        "dmin",
+        "provides different guarantees for:",
+        "detecting errors",
+        "and:",
+        "correcting errors.",
+        "Roughly:",
+        "detect up to dmin - 1 metric edits uniquely correct floor((dmin - 1)/2) metric edits.",
+        "This is a metric-space statement.",
+        "Channel-specific deletion-only guarantees can be described more sharply using descendant sets."
+      ]
+    },
+    {
+      "heading": "22. Deletion descendants",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 5,
+      "word_count": 31,
+      "evidence": "For a length- n word x , define:",
+      "paragraphs": [
+        "For a length- n word x , define:",
+        "D_t(x)",
+        "as the set of distinct sequences obtainable by deleting exactly t symbols from x .",
+        "Every member has length:",
+        "n - t."
+      ]
+    },
+    {
+      "heading": "23. Single-deletion correction condition",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 5,
+      "word_count": 44,
+      "evidence": "A code corrects one deletion exactly when:",
+      "paragraphs": [
+        "A code corrects one deletion exactly when:",
+        "D_1(x) ∩ D_1(y) = empty",
+        "for every two distinct codewords:",
+        "x,y in C.",
+        "If the same length- n-1 word can be produced by deleting one symbol from two codewords, the receiver cannot know which codeword was transmitted."
+      ]
+    },
+    {
+      "heading": "24. General t-deletion condition",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 5,
+      "word_count": 40,
+      "evidence": "Similarly, a code corrects every pattern of exactly t deletions when:",
+      "paragraphs": [
+        "Similarly, a code corrects every pattern of exactly t deletions when:",
+        "D_t(x) ∩ D_t(y) = empty",
+        "for all distinct:",
+        "x,y in C.",
+        "Allowing up to t deletions requires the corresponding descendant sets for the admissible error counts to remain distinguishable."
+      ]
+    },
+    {
+      "heading": "25. LCS characterization of deletion correction",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 7,
+      "word_count": 54,
+      "evidence": "Two length- n words share a common descendant after t deletions precisely when they share a common subsequence of length:",
+      "paragraphs": [
+        "Two length- n words share a common descendant after t deletions precisely when they share a common subsequence of length:",
+        "n - t.",
+        "Therefore a sufficient and exact separation criterion for correcting t deletions is:",
+        "LCS(x,y) < n - t",
+        "for every pair of distinct codewords.",
+        "Equivalently:",
+        "LCS(x,y) <= n - t - 1."
+      ]
+    },
+    {
+      "heading": "26. Equivalent pure-insdel condition",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 7,
+      "word_count": 49,
+      "evidence": "Since:",
+      "paragraphs": [
+        "Since:",
+        "dID(x,y) = 2( n - LCS(x,y) ),",
+        "the previous condition becomes:",
+        "dID(x,y) > 2t.",
+        "For equal-length codewords, dID is even, so this means:",
+        "dID(x,y) >= 2t + 2.",
+        "This is an important example of why the pure insdel metric and ordinary cost-one-substitution Levenshtein metric should not be mixed."
+      ]
+    },
+    {
+      "heading": "27. Insertions and deletions are deeply related",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 3,
+      "word_count": 65,
+      "evidence": "Levenshtein's 1966 analysis established strong equivalences between deletion and insertion correction for fixed-length codes. Intuitively, if two transmitted words can generate an ambiguous supersequence by insertions, then deleting the inserted symbols exposes a common subsequence relation between the original words.",
+      "paragraphs": [
+        "Levenshtein's 1966 analysis established strong equivalences between deletion and insertion correction for fixed-length codes. Intuitively, if two transmitted words can generate an ambiguous supersequence by insertions, then deleting the inserted symbols exposes a common subsequence relation between the original words.",
+        "This is why many classical constructions that correct deletions also correct insertions.",
+        "The original paper is discussed in detail at Levenshtein's 1966 coding paper ."
+      ]
+    },
+    {
+      "heading": "28. A substitution is not a synchronization error",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 10,
+      "word_count": 39,
+      "evidence": "A substitution:",
+      "paragraphs": [
+        "A substitution:",
+        "0 -> 1",
+        "changes symbol identity but leaves:",
+        "word length",
+        "and:",
+        "all later coordinates",
+        "unchanged.",
+        "An insertion or deletion instead changes sequence length and shifts later positions.",
+        "Therefore:",
+        "substitution noise and synchronization noise require different code geometry."
+      ]
+    },
+    {
+      "heading": "29. Levenshtein's historical term “reversal”",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 6,
+      "word_count": 60,
+      "evidence": "The English title of Levenshtein's foundational paper is:",
+      "paragraphs": [
+        "The English title of Levenshtein's foundational paper is:",
+        "Binary Codes Capable of Correcting Deletions, Insertions, and Reversals.",
+        "In that historical terminology, reversal refers to reversal of a binary symbol:",
+        "0 -> 1 or 1 -> 0,",
+        "rather than reversing the order of an arbitrary substring.",
+        "The verified bibliographic record is available through Soviet Physics Doklady, volume 10, pages 707-710 ."
+      ]
+    },
+    {
+      "heading": "30. Why this history matters",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 5,
+      "word_count": 44,
+      "evidence": "Levenshtein distance is often presented today as a general string-similarity metric.",
+      "paragraphs": [
+        "Levenshtein distance is often presented today as a general string-similarity metric.",
+        "Historically, its coding-theoretic meaning is more direct:",
+        "distance = minimum channel corruption needed to confuse two words.",
+        "This is not merely a convenient similarity heuristic.",
+        "It is the geometry of a communication channel."
+      ]
+    },
+    {
+      "heading": "31. Hamming balls are highly symmetric",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "For a q-ary length- n Hamming space, every codeword has the same number of words at Hamming distance:",
+      "paragraphs": [
+        "For a q-ary length- n Hamming space, every codeword has the same number of words at Hamming distance:",
+        "0,1,2,...",
+        "because coordinates and alphabet symbols are symmetric.",
+        "This makes Hamming sphere-packing calculations comparatively clean."
+      ]
+    },
+    {
+      "heading": "32. Deletion balls are not uniform",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 7,
+      "word_count": 52,
+      "evidence": "Deletion neighborhoods behave differently.",
+      "paragraphs": [
+        "Deletion neighborhoods behave differently.",
+        "The number of distinct one-deletion descendants depends on the internal run structure of the word.",
+        "For example:",
+        "x = 00001111",
+        "has only two runs:",
+        "0000 1111.",
+        "Deleting any zero from the first run produces the same descendant, and deleting any one from the second run produces another descendant."
+      ]
+    },
+    {
+      "heading": "33. Number of one-deletion descendants",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 14,
+      "word_count": 34,
+      "evidence": "If a word x contains:",
+      "paragraphs": [
+        "If a word x contains:",
+        "r(x)",
+        "runs of identical symbols, then:",
+        "|D_1(x)| = r(x).",
+        "For:",
+        "00001111,",
+        "there are:",
+        "2",
+        "distinct one-deletion descendants.",
+        "For:",
+        "01010101,",
+        "there are:",
+        "8",
+        "runs and therefore eight distinct one-deletion descendants."
+      ]
+    },
+    {
+      "heading": "34. Same block length, different error-ball sizes",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 5,
+      "word_count": 27,
+      "evidence": "Both previous words have length:",
+      "paragraphs": [
+        "Both previous words have length:",
+        "8.",
+        "Yet their single-deletion neighborhoods differ by a factor of four.",
+        "This creates a major geometric distinction:",
+        "edit-channel balls are sequence dependent."
+      ]
+    },
+    {
+      "heading": "35. Sphere packing is therefore more subtle",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "A naïve Hamming-style argument:",
+      "paragraphs": [
+        "A naïve Hamming-style argument:",
+        "number of codewords * one universal ball volume <= total space",
+        "does not directly transfer to deletion channels because different codewords can have different descendant-set sizes.",
+        "Sharp bounds require more careful combinatorial analysis."
+      ]
+    },
+    {
+      "heading": "36. Runs influence deletion ambiguity internally",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "x = 00000.",
+        "If one zero is deleted, the receiver observes:",
+        "0000.",
+        "There is no information about which physical coordinate was deleted.",
+        "Yet for codeword recovery this may not matter: every possible deletion produces the same transmitted-word hypothesis.",
+        "This distinction is important:",
+        "error-event localization != codeword recovery."
+      ]
+    },
+    {
+      "heading": "37. Edit path ambiguity does not necessarily prevent decoding",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 5,
+      "word_count": 34,
+      "evidence": "A receiver may be unable to determine:",
+      "paragraphs": [
+        "A receiver may be unable to determine:",
+        "the exact deleted coordinate",
+        "while still knowing uniquely:",
+        "which codeword was sent.",
+        "Coding theory usually prioritizes message recovery rather than reconstruction of the exact physical error history."
+      ]
+    },
+    {
+      "heading": "38. Adversarial error models",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 5,
+      "word_count": 36,
+      "evidence": "A worst-case code may promise:",
+      "paragraphs": [
+        "A worst-case code may promise:",
+        "correct any pattern of at most t edits.",
+        "The locations and values of the edits can be adversarial.",
+        "This is a combinatorial guarantee.",
+        "Minimum-distance reasoning is particularly natural in this model."
+      ]
+    },
+    {
+      "heading": "39. Stochastic channel models",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 5,
+      "word_count": 36,
+      "evidence": "A stochastic channel instead specifies probabilities.",
+      "paragraphs": [
+        "A stochastic channel instead specifies probabilities.",
+        "For example, in an iid binary deletion channel:",
+        "each transmitted bit is independently deleted with probability p.",
+        "Surviving bits remain in order.",
+        "The receiver is not told the deleted positions."
+      ]
+    },
+    {
+      "heading": "40. Worst-case correction and Shannon capacity are different questions",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 5,
+      "word_count": 46,
+      "evidence": "Worst-case coding asks:",
+      "paragraphs": [
+        "Worst-case coding asks:",
+        "Can every pattern with <= t deletions be corrected?",
+        "Shannon theory asks:",
+        "At what asymptotic rate can information be transmitted with error probability tending to zero under a stochastic channel?",
+        "A code optimal for one problem need not be optimal for the other."
+      ]
+    },
+    {
+      "heading": "41. The binary deletion-channel capacity remains difficult",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 3,
+      "word_count": 58,
+      "evidence": "Even the iid binary deletion channel has resisted the kind of complete characterization known for the binary symmetric or binary erasure channel.",
+      "paragraphs": [
+        "Even the iid binary deletion channel has resisted the kind of complete characterization known for the binary symmetric or binary erasure channel.",
+        "Recent information-theoretic work continues to describe its exact capacity as unresolved; for example see Simple Converse Bounds on the Deletion Channel Capacity with Finite Block Lengths .",
+        "This illustrates the fundamental difficulty created by hidden synchronization."
+      ]
+    },
+    {
+      "heading": "42. Why deletion-channel capacity is hard",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 10,
+      "word_count": 37,
+      "evidence": "After transmitting:",
+      "paragraphs": [
+        "After transmitting:",
+        "X1 X2 ... Xn,",
+        "the receiver observes a subsequence:",
+        "Xi1 Xi2 ... Xim",
+        "but does not know the index sequence:",
+        "i1, i2, ..., im.",
+        "The missing information is therefore both:",
+        "symbol information",
+        "and:",
+        "alignment information."
+      ]
+    },
+    {
+      "heading": "43. Minimum edit distance compresses channel behavior into geometry",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "For deterministic error correction, distance gives a clean criterion:",
+      "paragraphs": [
+        "For deterministic error correction, distance gives a clean criterion:",
+        "far-apart codewords cannot be confused by a small number of edits.",
+        "But a stochastic channel contains additional information:",
+        "which errors are likely;",
+        "how error probability depends on length;",
+        "whether errors are independent;",
+        "whether insertions and deletions have different probabilities.",
+        "Minimum distance does not encode those probabilities."
+      ]
+    },
+    {
+      "heading": "44. Nearest-neighbor decoding",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 4,
+      "word_count": 39,
+      "evidence": "A generic decoder is:",
+      "paragraphs": [
+        "A generic decoder is:",
+        "decode(r) = argmin d(c,r) over c in C.",
+        "If the received word lies within the guaranteed unique-decoding radius of one codeword, this decoder is correct.",
+        "But exhaustive evaluation over every codeword can be computationally impossible."
+      ]
+    },
+    {
+      "heading": "45. Code structure matters computationally",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "A code is useful only if the receiver can decode it efficiently enough for the application.",
+      "paragraphs": [
+        "A code is useful only if the receiver can decode it efficiently enough for the application.",
+        "Important code properties include:",
+        "rate minimum distance encoding complexity decoding complexity alphabet size block length.",
+        "Maximizing distance alone is not sufficient."
+      ]
+    },
+    {
+      "heading": "46. Algebraic Hamming codes versus synchronization codes",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 4,
+      "word_count": 50,
+      "evidence": "Many classical substitution-error codes use linear algebra over finite fields:",
+      "paragraphs": [
+        "Many classical substitution-error codes use linear algebra over finite fields:",
+        "Hx^T = 0.",
+        "A deletion changes the length and coordinate positions of the word, so the received sequence is no longer a vector in the same coordinate space.",
+        "This disrupts the straightforward syndrome calculations used by conventional linear block codes."
+      ]
+    },
+    {
+      "heading": "47. Synchronization must be recovered before coordinate-based parity becomes fully useful",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "Suppose an outer code expects symbols:",
+      "paragraphs": [
+        "Suppose an outer code expects symbols:",
+        "c1 c2 c3 c4 c5.",
+        "After deleting c2 , the receiver sees:",
+        "c1 c3 c4 c5.",
+        "A parity-check system that assumes:",
+        "received coordinate 2 = transmitted coordinate 2",
+        "now applies constraints to the wrong symbols.",
+        "This motivates explicit synchronization coding or indexing."
+      ]
+    },
+    {
+      "heading": "48. The Varshamov-Tenengolts construction",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 3,
+      "word_count": 60,
+      "evidence": "The most famous classical single-deletion construction is the Varshamov-Tenengolts family.",
+      "paragraphs": [
+        "The most famous classical single-deletion construction is the Varshamov-Tenengolts family.",
+        "Historically, Varshamov and Tenengolts introduced the construction in 1965 for a single asymmetric-error problem. Levenshtein subsequently observed that the same congruence classes correct a single deletion—and consequently a single insertion under the relevant fixed-length coding model.",
+        "A detailed survey is available in N. J. A. Sloane's On Single-Deletion-Correcting Codes ."
+      ]
+    },
+    {
+      "heading": "49. Binary VT code definition",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "a in {0,1,...,n},",
+        "define:",
+        "VT_a(n) = { x in {0,1}^n : sum_{i=1}^{n} i x_i ≡ a (mod n+1) }.",
+        "The quantity:",
+        "S(x) = sum i x_i",
+        "is often called the VT syndrome before reduction modulo n+1 ."
+      ]
+    },
+    {
+      "heading": "50. The VT congruence partitions binary space",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "Every binary word has exactly one syndrome:",
+      "paragraphs": [
+        "Every binary word has exactly one syndrome:",
+        "a mod (n+1).",
+        "Therefore:",
+        "{0,1}^n = VT_0(n) ∪ VT_1(n) ∪ ... ∪ VT_n(n),",
+        "with the classes mutually disjoint."
+      ]
+    },
+    {
+      "heading": "51. A simple size lower bound",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 7,
+      "word_count": 24,
+      "evidence": "There are:",
+      "paragraphs": [
+        "There are:",
+        "2^n",
+        "binary words distributed among:",
+        "n+1",
+        "VT classes.",
+        "By the pigeonhole principle, at least one class satisfies:",
+        "|VT_a(n)| >= 2^n / (n+1)."
+      ]
+    },
+    {
+      "heading": "52. VT redundancy",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 6,
+      "word_count": 28,
+      "evidence": "For such a class:",
+      "paragraphs": [
+        "For such a class:",
+        "redundancy = n - log2 |VT_a(n)|",
+        "is at most:",
+        "log2(n+1)",
+        "bits.",
+        "Thus the redundancy required for single-deletion correction grows only logarithmically with block length."
+      ]
+    },
+    {
+      "heading": "53. Why logarithmic redundancy is significant",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "A crude strategy could repeat every transmitted bit:",
+      "paragraphs": [
+        "A crude strategy could repeat every transmitted bit:",
+        "0 -> 000 1 -> 111.",
+        "This incurs redundancy proportional to the entire message length.",
+        "VT coding instead needs only about:",
+        "log2 n",
+        "check information for a single deletion."
+      ]
+    },
+    {
+      "heading": "54. VT codes are asymptotically efficient for one deletion",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 3,
+      "word_count": 58,
+      "evidence": "Single-deletion correction itself requires redundancy on the logarithmic scale.",
+      "paragraphs": [
+        "Single-deletion correction itself requires redundancy on the logarithmic scale.",
+        "The largest VT classes therefore achieve the correct asymptotic order and are classically described as asymptotically optimal for the single-deletion problem.",
+        "Exact finite-length optimality is a subtler combinatorial question and should not be replaced by the blanket statement that every VT class is globally maximum for every n ."
+      ]
+    },
+    {
+      "heading": "55. Small VT example",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "Take:",
+      "paragraphs": [
+        "Take:",
+        "n = 4 a = 0.",
+        "Then:",
+        "VT_0(4) = { 0000, 1001, 0110, 1111 }.",
+        "For example:",
+        "x = 0110.",
+        "Its weighted checksum is:",
+        "1*0 + 2*1 + 3*1 + 4*0 = 5 ≡ 0 (mod 5)."
+      ]
+    },
+    {
+      "heading": "56. One deletion from a VT codeword",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 9,
+      "word_count": 28,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "x = 0110",
+        "and the symbol at position 2 is deleted.",
+        "The receiver sees:",
+        "y = 010.",
+        "The receiver knows:",
+        "n = 4",
+        "and:",
+        "a = 0."
+      ]
+    },
+    {
+      "heading": "57. Received weighted checksum",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 6,
+      "word_count": 33,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "y = 010,",
+        "compute:",
+        "S(y) = 1*0 + 2*1 + 3*0 = 2.",
+        "The syndrome deficit is:",
+        "delta = a - S(y) mod (n+1) = 0 - 2 mod 5 = 3."
+      ]
+    },
+    {
+      "heading": "58. Recovering whether the deleted bit was 0 or 1",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 10,
+      "word_count": 44,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "w = number of 1s in y.",
+        "Here:",
+        "w = 1.",
+        "For the standard binary VT deletion decoder:",
+        "if delta <= w: deleted bit = 0 if delta > w: deleted bit = 1.",
+        "Since:",
+        "3 > 1,",
+        "the missing symbol was:",
+        "1."
+      ]
+    },
+    {
+      "heading": "59. Why this criterion works",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 16,
+      "word_count": 66,
+      "evidence": "Suppose bit b is deleted at original position p .",
+      "paragraphs": [
+        "Suppose bit b is deleted at original position p .",
+        "Let:",
+        "R",
+        "be the number of ones originally to the right of the deleted position.",
+        "The checksum deficit is:",
+        "delta = p b + R.",
+        "If:",
+        "b = 0,",
+        "then:",
+        "delta = R",
+        "and therefore:",
+        "delta <= w.",
+        "If:",
+        "b = 1,",
+        "the deleted one is absent from the received Hamming weight and:",
+        "delta > w."
+      ]
+    },
+    {
+      "heading": "60. Recovering the deleted position",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 8,
+      "word_count": 72,
+      "evidence": "When the deleted bit is zero, the decoder can insert a zero so that the required number of ones occurs to its right.",
+      "paragraphs": [
+        "When the deleted bit is zero, the decoder can insert a zero so that the required number of ones occurs to its right.",
+        "When the deleted bit is one, the syndrome identifies the appropriate number of zeros to its left.",
+        "In our example:",
+        "delta = 3 w = 1 zeros to left = delta - w - 1 = 1.",
+        "Insert a 1 after one zero:",
+        "0 [1] 1 0",
+        "recovering:",
+        "0110."
+      ]
+    },
+    {
+      "heading": "61. The checksum is not merely detecting an error",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "An ordinary checksum may only answer:",
+      "paragraphs": [
+        "An ordinary checksum may only answer:",
+        "something changed.",
+        "The VT syndrome contains enough positional information to reconstruct:",
+        "which symbol value disappeared",
+        "and enough information about:",
+        "where it belongs.",
+        "This is what makes the construction remarkable."
+      ]
+    },
+    {
+      "heading": "62. VT codes are generally nonlinear",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "The congruence:",
+      "paragraphs": [
+        "The congruence:",
+        "sum i x_i ≡ a (mod n+1)",
+        "is not generally a parity-check equation over:",
+        "GF(2).",
+        "Therefore VT codes should not automatically be described as ordinary binary linear block codes.",
+        "Synchronization-code structure can differ substantially from conventional Hamming-space linear algebra."
+      ]
+    },
+    {
+      "heading": "63. Nonlinearity does not imply inefficient coding",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "A code can be nonlinear yet have:",
+      "paragraphs": [
+        "A code can be nonlinear yet have:",
+        "efficient encoders;",
+        "efficient decoders;",
+        "strong distance guarantees;",
+        "systematic representations.",
+        "Linearity is one useful structural property, not a requirement for an effective error-correcting code."
+      ]
+    },
+    {
+      "heading": "64. Single insertion correction",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 3,
+      "word_count": 52,
+      "evidence": "VT codes also correct a single insertion.",
+      "paragraphs": [
+        "VT codes also correct a single insertion.",
+        "At a conceptual level, insertion and deletion correction are dual through subsequence/supersequence relations: if two codewords could become the same received sequence after a permitted insertion event, their structure would create the corresponding forbidden deletion ambiguity.",
+        "This deletion/insertion relation is central to Levenshtein's original analysis."
+      ]
+    },
+    {
+      "heading": "65. A single insertion changes the syndrome differently",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 6,
+      "word_count": 43,
+      "evidence": "For an insertion, the receiver obtains length:",
+      "paragraphs": [
+        "For an insertion, the receiver obtains length:",
+        "n+1",
+        "rather than:",
+        "n-1.",
+        "The decoder can use the known code length and VT congruence to identify and remove the extraneous symbol.",
+        "The exact algorithmic details are treated more deeply in Varshamov-Tenengolts and Levenshtein codes ."
+      ]
+    },
+    {
+      "heading": "66. Single substitution correction needs a different guarantee",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 3,
+      "word_count": 51,
+      "evidence": "A standard VT syndrome optimized for one deletion is not automatically a complete one-substitution correcting code under every formulation.",
+      "paragraphs": [
+        "A standard VT syndrome optimized for one deletion is not automatically a complete one-substitution correcting code under every formulation.",
+        "Substitution errors preserve sequence length and are naturally measured by Hamming distance or a full edit metric in which substitution costs one.",
+        "Combined deletion/insertion/substitution correction may require additional constraints or modified constructions."
+      ]
+    },
+    {
+      "heading": "67. Historical nuance: the original VT problem was asymmetric error correction",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 4,
+      "word_count": 34,
+      "evidence": "Varshamov and Tenengolts introduced their congruence construction for a single asymmetric-error channel in 1965.",
+      "paragraphs": [
+        "Varshamov and Tenengolts introduced their congruence construction for a single asymmetric-error channel in 1965.",
+        "Levenshtein recognized its single deletion/insertion correction capability.",
+        "The distinction matters historically:",
+        "VT construction origin: asymmetric channel Levenshtein insight: synchronization-error correction."
+      ]
+    },
+    {
+      "heading": "68. q-ary synchronization codes",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 9,
+      "word_count": 40,
+      "evidence": "Real communication systems often use alphabets larger than:",
+      "paragraphs": [
+        "Real communication systems often use alphabets larger than:",
+        "{0,1}.",
+        "Let:",
+        "Σ_q = {0,1,...,q-1}.",
+        "A q-ary deletion removes one complete symbol regardless of its numerical value.",
+        "Generalizing binary VT structure therefore requires preserving both:",
+        "positional synchronization information",
+        "and:",
+        "deleted-symbol value information."
+      ]
+    },
+    {
+      "heading": "69. Tenengolts' nonbinary construction",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 2,
+      "word_count": 48,
+      "evidence": "G. Tenengolts developed a nonbinary single-deletion/insertion correcting code in 1984. See Nonbinary codes, correcting single deletion or insertion .",
+      "paragraphs": [
+        "G. Tenengolts developed a nonbinary single-deletion/insertion correcting code in 1984. See Nonbinary codes, correcting single deletion or insertion .",
+        "A key idea is to derive a binary signature describing relative changes between neighboring q-ary symbols and protect that synchronization structure together with a modular constraint on symbol values."
+      ]
+    },
+    {
+      "heading": "70. Why q-ary coding is not simply four independent binary VT codes",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "A q-ary deletion removes:",
+      "paragraphs": [
+        "A q-ary deletion removes:",
+        "one q-ary coordinate.",
+        "If the symbol is represented internally by multiple bits, deleting the entire symbol is not equivalent to deleting one arbitrary bit from each binary substream.",
+        "The channel should be modeled at the physical symbol level."
+      ]
+    },
+    {
+      "heading": "71. This matters directly for DNA storage",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 5,
+      "word_count": 31,
+      "evidence": "DNA naturally has alphabet:",
+      "paragraphs": [
+        "DNA naturally has alphabet:",
+        "{A,C,G,T},",
+        "so:",
+        "q = 4.",
+        "Insertion/deletion coding therefore has an important modern application in synthetic DNA data storage, explored separately in edit distance in DNA storage ."
+      ]
+    },
+    {
+      "heading": "72. One deletion is only the beginning",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "Correcting:",
+      "paragraphs": [
+        "Correcting:",
+        "one deletion",
+        "admits elegant checksum constructions.",
+        "Correcting:",
+        "multiple arbitrary deletions",
+        "is substantially harder.",
+        "The decoder must recover multiple missing symbols while simultaneously determining multiple missing coordinates."
+      ]
+    },
+    {
+      "heading": "73. Multiple deletions create combinatorial uncertainty",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 7,
+      "word_count": 45,
+      "evidence": "For a length- n sequence suffering t deletions, the receiver must infer which:",
+      "paragraphs": [
+        "For a length- n sequence suffering t deletions, the receiver must infer which:",
+        "t",
+        "coordinates disappeared among:",
+        "n.",
+        "Even before accounting for symbol values, the number of possible deletion-position sets is:",
+        "C(n,t).",
+        "Repeated symbols can collapse some possibilities, but the alignment uncertainty remains combinatorially rich."
+      ]
+    },
+    {
+      "heading": "74. Redundancy lower bounds grow with the synchronization uncertainty",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 3,
+      "word_count": 51,
+      "evidence": "Informally, identifying a small number of unknown deletion locations requires logarithmic positional information.",
+      "paragraphs": [
+        "Informally, identifying a small number of unknown deletion locations requires logarithmic positional information.",
+        "For fixed t , optimal-order deletion-correcting codes therefore have redundancy growing roughly logarithmically with block length, with the constant depending on the number and type of synchronization errors.",
+        "Exact finite-length and asymptotic bounds are a substantial research topic."
+      ]
+    },
+    {
+      "heading": "75. Relative edit distance",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 7,
+      "word_count": 45,
+      "evidence": "For a length- n code, define normalized minimum distance:",
+      "paragraphs": [
+        "For a length- n code, define normalized minimum distance:",
+        "delta(C) = dmin(C) / n.",
+        "A family of codes with:",
+        "rate >= R0 > 0",
+        "and:",
+        "relative edit distance >= delta0 > 0",
+        "for growing block length is called asymptotically good under the relevant edit metric."
+      ]
+    },
+    {
+      "heading": "76. Why constant relative edit distance matters",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 8,
+      "word_count": 28,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "dmin(C) = constant",
+        "while:",
+        "n -> infinity,",
+        "the correctable fraction of errors tends to zero.",
+        "A positive relative minimum distance instead allows protection against:",
+        "Theta(n)",
+        "worst-case edits."
+      ]
+    },
+    {
+      "heading": "77. Asymptotically good insdel codes were historically difficult",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "For substitution errors, classical coding theory developed many explicit families with:",
+      "paragraphs": [
+        "For substitution errors, classical coding theory developed many explicit families with:",
+        "constant rate + constant relative Hamming distance + efficient decoding.",
+        "The analogous synchronization problem resisted comparable constructions for much longer."
+      ]
+    },
+    {
+      "heading": "78. Schulman-Zuckerman construction",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 4,
+      "word_count": 46,
+      "evidence": "Schulman and Zuckerman gave polynomial-time encodable and decodable asymptotically good codes for channels with insertions, deletions, and transpositions. See Asymptotically good codes correcting insertions, deletions, and transpositions .",
+      "paragraphs": [
+        "Schulman and Zuckerman gave polynomial-time encodable and decodable asymptotically good codes for channels with insertions, deletions, and transpositions. See Asymptotically good codes correcting insertions, deletions, and transpositions .",
+        "This established that:",
+        "positive rate + positive edit-distance protection",
+        "is achievable with efficient explicit coding over constant-size alphabets."
+      ]
+    },
+    {
+      "heading": "79. Asymptotic goodness does not imply optimal rate",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 7,
+      "word_count": 32,
+      "evidence": "A code can have:",
+      "paragraphs": [
+        "A code can have:",
+        "R > 0",
+        "and:",
+        "delta > 0",
+        "while still being far from the best possible trade-off between:",
+        "rate and correctable edit fraction.",
+        "Closing that gap motivated later work."
+      ]
+    },
+    {
+      "heading": "80. Synchronization strings",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "Haeupler and Shahrasbi introduced synchronization strings as an explicit mechanism for attaching recoverable positional information to a sequence.",
+      "paragraphs": [
+        "Haeupler and Shahrasbi introduced synchronization strings as an explicit mechanism for attaching recoverable positional information to a sequence.",
+        "The journal treatment is Synchronization Strings: Codes for Insertions and Deletions Approaching the Singleton Bound ."
+      ]
+    },
+    {
+      "heading": "81. The synchronization-string idea",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 7,
+      "word_count": 42,
+      "evidence": "Suppose data symbols are:",
+      "paragraphs": [
+        "Suppose data symbols are:",
+        "x1 x2 x3 ... xn.",
+        "Add a carefully constructed synchronization sequence:",
+        "s1 s2 s3 ... sn.",
+        "Transmit paired symbols:",
+        "(x1,s1) (x2,s2) ... (xn,sn).",
+        "The synchronization component provides information about where received symbols belong even after insertions and deletions."
+      ]
+    },
+    {
+      "heading": "82. Turning synchronization errors into Hamming-type errors",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 5,
+      "word_count": 63,
+      "evidence": "The key conceptual achievement is a reduction:",
+      "paragraphs": [
+        "The key conceptual achievement is a reduction:",
+        "insertions / deletions | v recover approximate indices | v misdecodings / missing coordinates | v Hamming-type corruption and erasure problem.",
+        "For every fixed epsilon > 0 , synchronization strings permit constructions where k synchronization errors can be transformed efficiently into roughly:",
+        "(1 + epsilon) k",
+        "Hamming-type errors under the framework developed by Haeupler and Shahrasbi."
+      ]
+    },
+    {
+      "heading": "83. Why this reduction is powerful",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "Hamming-error coding theory is much more mature.",
+      "paragraphs": [
+        "Hamming-error coding theory is much more mature.",
+        "If synchronization can be converted into:",
+        "substitutions + erasures at approximately known coordinates,",
+        "then conventional error-correcting codes can handle the remaining problem.",
+        "The architecture becomes:",
+        "ordinary ECC + synchronization indexing."
+      ]
+    },
+    {
+      "heading": "84. Synchronization strings are not ordinary marker insertion",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "A simple system could periodically transmit a marker:",
+      "paragraphs": [
+        "A simple system could periodically transmit a marker:",
+        "DATA DATA MARKER DATA DATA MARKER ...",
+        "But markers themselves can be deleted or spuriously inserted.",
+        "Synchronization strings distribute indexing information throughout the word using stronger combinatorial properties rather than relying on one fragile delimiter."
+      ]
+    },
+    {
+      "heading": "85. Synchronization strings require resources",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "The technique does not make synchronization free.",
+      "paragraphs": [
+        "The technique does not make synchronization free.",
+        "It can require:",
+        "additional alphabet symbols;",
+        "index information;",
+        "construction algorithms;",
+        "decoding machinery.",
+        "The correct comparison is therefore a rate-distance-complexity trade-off."
+      ]
+    },
+    {
+      "heading": "86. Near-Singleton trade-offs",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "Synchronization-string constructions made it possible to obtain insertion/deletion codes approaching the relevant Singleton-type rate-distance limits over suitable alphabets.",
+      "paragraphs": [
+        "Synchronization-string constructions made it possible to obtain insertion/deletion codes approaching the relevant Singleton-type rate-distance limits over suitable alphabets.",
+        "This represents a major conceptual shift from:",
+        "special-purpose synchronization codes",
+        "toward:",
+        "systematic reductions from synchronization errors to ordinary coding problems."
+      ]
+    },
+    {
+      "heading": "87. Modern survey",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 2,
+      "word_count": 42,
+      "evidence": "A comprehensive modern overview is Haeupler and Shahrasbi's Synchronization Strings and Codes for Insertions and Deletions—A Survey .",
+      "paragraphs": [
+        "A comprehensive modern overview is Haeupler and Shahrasbi's Synchronization Strings and Codes for Insertions and Deletions—A Survey .",
+        "The survey emphasizes how comparatively slowly synchronization-code theory developed relative to ordinary substitution/erasure codes and how synchronization strings changed the state of the field."
+      ]
+    },
+    {
+      "heading": "88. Unique decoding",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "Unique decoding demands:",
+      "paragraphs": [
+        "Unique decoding demands:",
+        "at most one codeword is compatible with the allowed corruption radius.",
+        "Geometrically:",
+        "error balls must not overlap.",
+        "This creates the familiar half-minimum-distance limit for general metric decoding."
+      ]
+    },
+    {
+      "heading": "89. List decoding",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "List decoding relaxes the requirement.",
+      "paragraphs": [
+        "List decoding relaxes the requirement.",
+        "Instead of demanding one candidate, the decoder may output:",
+        "{ c1, c2, ..., cL }.",
+        "The guarantee becomes:",
+        "the transmitted codeword is somewhere in a small list."
+      ]
+    },
+    {
+      "heading": "90. Why list decoding can tolerate more errors",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "Beyond half the minimum distance, decoding balls may overlap.",
+      "paragraphs": [
+        "Beyond half the minimum distance, decoding balls may overlap.",
+        "Unique recovery becomes impossible from the received word alone.",
+        "But if only a bounded number of codewords occupy the neighborhood, list recovery can still be meaningful."
+      ]
+    },
+    {
+      "heading": "91. List decoding needs another disambiguation layer",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 8,
+      "word_count": 32,
+      "evidence": "After list decoding, the correct candidate may be selected using:",
+      "paragraphs": [
+        "After list decoding, the correct candidate may be selected using:",
+        "a checksum;",
+        "an outer code;",
+        "side information;",
+        "probabilistic likelihood;",
+        "application constraints.",
+        "Therefore:",
+        "list decoding != final unique message recovery without additional information."
+      ]
+    },
+    {
+      "heading": "92. Modern insdel list decoding",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 1,
+      "word_count": 27,
+      "evidence": "Synchronization-string methods also support strong list-decoding results for insertion/deletion channels. For example see Haeupler, Shahrasbi, and Guruswami, Optimally Resilient Codes for List-Decoding from Insertions and Deletions .",
+      "paragraphs": [
+        "Synchronization-string methods also support strong list-decoding results for insertion/deletion channels. For example see Haeupler, Shahrasbi, and Guruswami, Optimally Resilient Codes for List-Decoding from Insertions and Deletions ."
+      ]
+    },
+    {
+      "heading": "93. Erasures and deletions should not be conflated",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "An erasure tells the receiver:",
+      "paragraphs": [
+        "An erasure tells the receiver:",
+        "coordinate 17 exists but its value is unknown.",
+        "A deletion tells the receiver only:",
+        "one symbol disappeared somewhere.",
+        "Synchronization strings are powerful partly because they reconstruct enough positional information to turn the second problem closer to the first."
+      ]
+    },
+    {
+      "heading": "94. Insertions create spurious coordinates",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 7,
+      "word_count": 28,
+      "evidence": "A deletion hides one transmitted coordinate.",
+      "paragraphs": [
+        "A deletion hides one transmitted coordinate.",
+        "An insertion creates a received symbol with:",
+        "no transmitted coordinate.",
+        "A synchronization decoder must therefore solve both:",
+        "missing positions",
+        "and:",
+        "spurious positions."
+      ]
+    },
+    {
+      "heading": "95. Mixed channels",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "Real channels can contain:",
+      "paragraphs": [
+        "Real channels can contain:",
+        "insertions + deletions + substitutions.",
+        "A coding architecture may handle them jointly or in layers:",
+        "synchronization recovery | v coordinate reconstruction | v substitution / erasure ECC."
+      ]
+    },
+    {
+      "heading": "96. Full Levenshtein geometry is natural for mixed single-symbol edits",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "If the channel assigns one unit to each:",
+      "paragraphs": [
+        "If the channel assigns one unit to each:",
+        "insertion deletion substitution,",
+        "then the ordinary edit distance is the natural shortest-path metric.",
+        "A code with sufficiently large minimum Levenshtein distance receives the standard metric unique-decoding guarantee."
+      ]
+    },
+    {
+      "heading": "97. Channel probabilities may call for weighted edits",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "P(deletion) >> P(substitution).",
+        "Equal edit costs may be statistically inappropriate.",
+        "A maximum-likelihood decoder can instead use costs related to:",
+        "-log P(event).",
+        "This leads toward weighted edit distance ."
+      ]
+    },
+    {
+      "heading": "98. Minimum distance and maximum likelihood are not the same objective",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Minimum unit edit distance assumes every edit carries the same cost.",
+      "paragraphs": [
+        "Minimum unit edit distance assumes every edit carries the same cost.",
+        "Maximum likelihood asks:",
+        "which valid codeword most probably generated this observation?",
+        "If event probabilities differ:",
+        "nearest in unit edit distance",
+        "need not equal:",
+        "most likely transmitted codeword."
+      ]
+    },
+    {
+      "heading": "99. Worst-case distance remains useful even for probabilistic channels",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "A minimum-distance guarantee provides:",
+      "paragraphs": [
+        "A minimum-distance guarantee provides:",
+        "deterministic protection inside a known radius.",
+        "This is useful even when the actual channel is stochastic because it supplies a hard failure boundary independent of probability estimation."
+      ]
+    },
+    {
+      "heading": "100. Coding gain is not simply large distance",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "Suppose Code A has:",
+      "paragraphs": [
+        "Suppose Code A has:",
+        "larger dmin",
+        "but:",
+        "very low rate and exponential-time decoding.",
+        "Code B may have slightly smaller distance but:",
+        "high rate linear-time encoding efficient decoding.",
+        "The useful code depends on the system objective."
+      ]
+    },
+    {
+      "heading": "101. Encoding complexity",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 8,
+      "word_count": 30,
+      "evidence": "A code definition may be mathematically elegant but impractical if mapping:",
+      "paragraphs": [
+        "A code definition may be mathematically elegant but impractical if mapping:",
+        "message -> codeword",
+        "requires exhaustive search over:",
+        "C.",
+        "Practical coding theory therefore distinguishes:",
+        "code existence",
+        "from:",
+        "efficient explicit encoder."
+      ]
+    },
+    {
+      "heading": "102. Decoding complexity",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 7,
+      "word_count": 25,
+      "evidence": "A brute-force nearest-neighbor decoder costs approximately:",
+      "paragraphs": [
+        "A brute-force nearest-neighbor decoder costs approximately:",
+        "|C| * cost(distance computation).",
+        "For positive-rate codes:",
+        "|C|",
+        "is exponential in:",
+        "n.",
+        "Efficient decoding therefore requires exploitable code structure."
+      ]
+    },
+    {
+      "heading": "103. Systematic encoding",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 3,
+      "word_count": 38,
+      "evidence": "A systematic code exposes message symbols directly in known codeword positions while adding redundancy elsewhere.",
+      "paragraphs": [
+        "A systematic code exposes message symbols directly in known codeword positions while adding redundancy elsewhere.",
+        "This can simplify interfaces and encoding.",
+        "But deletion correction makes systematic construction nontrivial because synchronization redundancy must protect positions across the complete sequence."
+      ]
+    },
+    {
+      "heading": "104. Code rate alone does not measure implementation overhead",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "A code with theoretical rate:",
+      "paragraphs": [
+        "A code with theoretical rate:",
+        "R",
+        "can still require:",
+        "large lookup tables;",
+        "large working memory;",
+        "slow list decoding;",
+        "large auxiliary alphabet.",
+        "Algorithmic complexity belongs beside information rate in any practical evaluation."
+      ]
+    },
+    {
+      "heading": "105. Alphabet size is part of the trade-off",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 4,
+      "word_count": 44,
+      "evidence": "A code over a very large alphabet can encode substantial synchronization information per symbol.",
+      "paragraphs": [
+        "A code over a very large alphabet can encode substantial synchronization information per symbol.",
+        "But many physical channels provide only small alphabets:",
+        "binary communication: q = 2 DNA storage: q = 4.",
+        "A theoretically attractive large-alphabet code may therefore require alphabet reduction or concatenation."
+      ]
+    },
+    {
+      "heading": "106. Concatenated coding",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "A common strategy is:",
+      "paragraphs": [
+        "A common strategy is:",
+        "outer code over large logical symbols | v inner code maps each symbol to small-alphabet sequence.",
+        "The inner code deals with local channel structure; the outer code restores high-level symbols.",
+        "This architecture appears throughout synchronization coding."
+      ]
+    },
+    {
+      "heading": "107. Concatenation can localize synchronization failures",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "If inner blocks contain synchronization structure, a local insertion or deletion need not shift the interpretation of the entire remaining message.",
+      "paragraphs": [
+        "If inner blocks contain synchronization structure, a local insertion or deletion need not shift the interpretation of the entire remaining message.",
+        "The coding system can periodically recover block boundaries.",
+        "This converts:",
+        "global catastrophic drift",
+        "into:",
+        "localized corruption."
+      ]
+    },
+    {
+      "heading": "108. Markers are a simple synchronization code",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "An elementary strategy inserts recognizable markers:",
+      "paragraphs": [
+        "An elementary strategy inserts recognizable markers:",
+        "DATA MARKER DATA MARKER DATA.",
+        "If synchronization is lost, the next marker can re-establish alignment.",
+        "The cost is:",
+        "marker overhead + marker corruption risk."
+      ]
+    },
+    {
+      "heading": "109. Marker spacing creates a burst-length trade-off",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 5,
+      "word_count": 31,
+      "evidence": "Frequent markers:",
+      "paragraphs": [
+        "Frequent markers:",
+        "high overhead but short synchronization drift.",
+        "Sparse markers:",
+        "low overhead but larger possible desynchronization.",
+        "Modern synchronization constructions can be viewed as much more sophisticated ways to distribute positional information."
+      ]
+    },
+    {
+      "heading": "110. Synchronization codes are not only about channel errors",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 8,
+      "word_count": 35,
+      "evidence": "The same mathematics arises when two copies of a document become misaligned through:",
+      "paragraphs": [
+        "The same mathematics arises when two copies of a document become misaligned through:",
+        "inserted records;",
+        "deleted records;",
+        "packet loss;",
+        "timing slips;",
+        "sequence dropout.",
+        "The relevant question is always:",
+        "How can positional correspondence be recovered efficiently?"
+      ]
+    },
+    {
+      "heading": "111. Trace reconstruction is a related but different problem",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 5,
+      "word_count": 55,
+      "evidence": "Suppose the same unknown source word is passed through a deletion channel many times:",
+      "paragraphs": [
+        "Suppose the same unknown source word is passed through a deletion channel many times:",
+        "x | +--> trace 1 +--> trace 2 +--> trace 3 +--> ...",
+        "The decoder receives multiple subsequences and attempts to reconstruct x .",
+        "This differs from conventional coding because:",
+        "the source word may not belong to a specially designed codebook."
+      ]
+    },
+    {
+      "heading": "112. Coding and trace reconstruction use different redundancy",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 4,
+      "word_count": 25,
+      "evidence": "Error-correcting coding adds structured redundancy before transmission.",
+      "paragraphs": [
+        "Error-correcting coding adds structured redundancy before transmission.",
+        "Trace reconstruction instead obtains redundancy from:",
+        "multiple independent observations.",
+        "Both address deletion uncertainty, but their information sources differ."
+      ]
+    },
+    {
+      "heading": "113. Multiple traces can compensate for weak code distance",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "A codeword ambiguous under one trace may become identifiable after several independent traces.",
+      "paragraphs": [
+        "A codeword ambiguous under one trace may become identifiable after several independent traces.",
+        "Therefore the fundamental limits depend strongly on whether the decoder receives:",
+        "one observation",
+        "or:",
+        "many observations."
+      ]
+    },
+    {
+      "heading": "114. Variable-length codes introduce another dimension",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 7,
+      "word_count": 37,
+      "evidence": "Most classical block-code discussion assumes:",
+      "paragraphs": [
+        "Most classical block-code discussion assumes:",
+        "all codewords have length n.",
+        "Allowing variable-length codewords creates additional ambiguity because received length contains information about both:",
+        "original codeword length",
+        "and:",
+        "number of insertions/deletions.",
+        "Code design must then separate these factors."
+      ]
+    },
+    {
+      "heading": "115. Minimum edit distance across variable-length codewords",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "Levenshtein distance itself naturally compares different lengths.",
+      "paragraphs": [
+        "Levenshtein distance itself naturally compares different lengths.",
+        "A variable-length code can therefore still impose:",
+        "dmin(C) >= D.",
+        "But rate and block-length normalization must be defined carefully."
+      ]
+    },
+    {
+      "heading": "116. Deletion correction does not require recovering deletion locations",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 12,
+      "word_count": 43,
+      "evidence": "This deserves emphasis.",
+      "paragraphs": [
+        "This deserves emphasis.",
+        "Suppose:",
+        "x = 000000",
+        "loses one zero.",
+        "The received word:",
+        "00000",
+        "does not reveal which coordinate disappeared.",
+        "But if no other codeword has this descendant, the original message is uniquely known.",
+        "Coding theory protects:",
+        "message identity,",
+        "not necessarily:",
+        "error-history identity."
+      ]
+    },
+    {
+      "heading": "117. Levenshtein distance also does not recover the physical channel history",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "The minimum edit script is:",
+      "paragraphs": [
+        "The minimum edit script is:",
+        "one cheapest explanation.",
+        "There may be multiple optimal edit scripts.",
+        "The actual channel could also have performed more edits that canceled each other.",
+        "Therefore:",
+        "edit distance != actual number of physical events."
+      ]
+    },
+    {
+      "heading": "118. Hidden substitutions can cancel historically",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 6,
+      "word_count": 29,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "0 -> 1 -> 0",
+        "contains two physical flips but produces:",
+        "distance 0",
+        "between initial and final words.",
+        "Distance measures observable endpoint separation, not complete channel history."
+      ]
+    },
+    {
+      "heading": "119. Deletion followed by insertion can also hide events",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "A symbol can be deleted and an identical symbol inserted later, potentially leaving the endpoint unchanged or nearly unchanged.",
+      "paragraphs": [
+        "A symbol can be deleted and an identical symbol inserted later, potentially leaving the endpoint unchanged or nearly unchanged.",
+        "Thus:",
+        "observed edit distance <= actual number of channel events",
+        "is entirely possible."
+      ]
+    },
+    {
+      "heading": "120. Minimum distance is a worst-case separation property",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "The code guarantees that two valid transmitted words require at least:",
+      "paragraphs": [
+        "The code guarantees that two valid transmitted words require at least:",
+        "dmin",
+        "endpoint edits to transform one into the other.",
+        "It does not claim the physical channel always uses minimum-edit paths."
+      ]
+    },
+    {
+      "heading": "121. Coding bounds ask how many separated words can fit",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 5,
+      "word_count": 45,
+      "evidence": "The central combinatorial optimization is:",
+      "paragraphs": [
+        "The central combinatorial optimization is:",
+        "A_q(n,d) = maximum size of a length-n q-ary code with minimum distance at least d",
+        "under the chosen distance.",
+        "In Hamming space this function is classical.",
+        "Under deletion/insertion metrics it is considerably more complicated because the geometry is less homogeneous."
+      ]
+    },
+    {
+      "heading": "122. Packing and covering",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 4,
+      "word_count": 44,
+      "evidence": "Two fundamental geometric questions are:",
+      "paragraphs": [
+        "Two fundamental geometric questions are:",
+        "PACKING: How many non-overlapping error neighborhoods fit in the ambient space? COVERING: How many codeword neighborhoods are needed to cover the ambient space?",
+        "Perfect codes meet packing/covering conditions exactly.",
+        "Levenshtein studied perfect-code questions in insertion/deletion metrics in later work."
+      ]
+    },
+    {
+      "heading": "123. Perfect deletion codes are unusual",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 2,
+      "word_count": 31,
+      "evidence": "Because deletion balls vary with codeword run structure, perfect tilings of the received-word space have highly nonuniform combinatorial constraints.",
+      "paragraphs": [
+        "Because deletion balls vary with codeword run structure, perfect tilings of the received-word space have highly nonuniform combinatorial constraints.",
+        "This is another reason edit-metric coding behaves differently from classical Hamming geometry."
+      ]
+    },
+    {
+      "heading": "124. Rate-distance diagrams",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "For asymptotic code families, one studies the achievable region:",
+      "paragraphs": [
+        "For asymptotic code families, one studies the achievable region:",
+        "(relative edit distance, rate).",
+        "Conceptually:",
+        "high rate ^ | ******** | **** | *** | ** | * +------------------> distance",
+        "Increasing correctable edit fraction usually forces lower rate."
+      ]
+    },
+    {
+      "heading": "125. Relative distance must match the operation model",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 7,
+      "word_count": 24,
+      "evidence": "Reporting:",
+      "paragraphs": [
+        "Reporting:",
+        "relative edit distance = 0.2",
+        "is incomplete unless one specifies whether distance means:",
+        "insertions/deletions only;",
+        "insertions/deletions/substitutions;",
+        "weighted edits;",
+        "transpositions as additional primitive operations."
+      ]
+    },
+    {
+      "heading": "126. Transpositions are not part of classic Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 5,
+      "word_count": 45,
+      "evidence": "Classic Levenshtein operations are:",
+      "paragraphs": [
+        "Classic Levenshtein operations are:",
+        "insert delete substitute.",
+        "An adjacent transposition is not a primitive operation.",
+        "Therefore codes designed for channels with transpositions solve a richer channel than ordinary Levenshtein distance alone describes.",
+        "The metric distinction is examined in Levenshtein vs Damerau and Hamming distance ."
+      ]
+    },
+    {
+      "heading": "127. Burst synchronization errors",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 5,
+      "word_count": 41,
+      "evidence": "An insertion/deletion channel can produce errors independently or in bursts.",
+      "paragraphs": [
+        "An insertion/deletion channel can produce errors independently or in bursts.",
+        "For example:",
+        "delete 20 consecutive symbols",
+        "may arise from one synchronization event.",
+        "A code optimized for arbitrary isolated deletions can use more redundancy than a code designed specifically for bounded bursts."
+      ]
+    },
+    {
+      "heading": "128. Channel structure should drive code structure",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Compare:",
+      "paragraphs": [
+        "Compare:",
+        "Channel A: one arbitrary deletion Channel B: up to ten adjacent deletions Channel C: ten arbitrary deletions.",
+        "These are different adversarial models and can require different optimal codes.",
+        "Counting only total deleted symbols loses structural information."
+      ]
+    },
+    {
+      "heading": "129. Duplication errors",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 6,
+      "word_count": 43,
+      "evidence": "Some synchronization channels create copies of existing symbols or substrings:",
+      "paragraphs": [
+        "Some synchronization channels create copies of existing symbols or substrings:",
+        "ABCDEF -> ABCDCDEF.",
+        "A generic insertion model can represent this as inserted symbols.",
+        "But a duplication-specific channel contains additional structure:",
+        "inserted material must copy nearby source material.",
+        "Dedicated codes can exploit this constraint."
+      ]
+    },
+    {
+      "heading": "130. General edit distance can be too pessimistic",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "If the physical channel only performs:",
+      "paragraphs": [
+        "If the physical channel only performs:",
+        "single-symbol deletions,",
+        "a code designed against arbitrary:",
+        "deletions + insertions + substitutions",
+        "may consume unnecessary redundancy.",
+        "Robust code design should model the real error set as tightly as possible."
+      ]
+    },
+    {
+      "heading": "131. But an overly narrow model can be dangerous",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "If a system assumes:",
+      "paragraphs": [
+        "If a system assumes:",
+        "deletions only",
+        "but hardware occasionally produces insertions, the decoder may fail catastrophically.",
+        "Engineering therefore balances:",
+        "model fidelity",
+        "against:",
+        "robustness to unexpected errors."
+      ]
+    },
+    {
+      "heading": "132. Code design as a graph problem",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 7,
+      "word_count": 30,
+      "evidence": "Construct a graph whose vertices are candidate codewords.",
+      "paragraphs": [
+        "Construct a graph whose vertices are candidate codewords.",
+        "Connect:",
+        "x and y",
+        "if their error neighborhoods overlap.",
+        "Then a valid unique-error-correcting code is an:",
+        "independent set",
+        "in this confusability graph."
+      ]
+    },
+    {
+      "heading": "133. The confusability graph perspective",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "This formulation separates:",
+      "paragraphs": [
+        "This formulation separates:",
+        "channel model -> graph edges",
+        "from:",
+        "code design -> large independent set.",
+        "Different edit channels generate different confusability graphs even on the same alphabet and block length."
+      ]
+    },
+    {
+      "heading": "134. Hypergraph formulations",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 4,
+      "word_count": 41,
+      "evidence": "Deletion descendants also lead naturally to hypergraphs:",
+      "paragraphs": [
+        "Deletion descendants also lead naturally to hypergraphs:",
+        "each received descendant connects all codewords that could generate it.",
+        "A deletion-correcting code chooses codewords so that no received descendant belongs to two selected codewords.",
+        "This viewpoint is useful for finite-length bounds and optimization."
+      ]
+    },
+    {
+      "heading": "135. Why exact optimal code size is difficult",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 7,
+      "word_count": 32,
+      "evidence": "Finding:",
+      "paragraphs": [
+        "Finding:",
+        "largest deletion-correcting code for length n",
+        "can become a difficult combinatorial packing problem because:",
+        "ball sizes vary;",
+        "confusability is nonlinear;",
+        "repeated symbols alter descendants;",
+        "ordinary linear-code tools may not apply directly."
+      ]
+    },
+    {
+      "heading": "136. Asymptotic and finite-block analyses answer different questions",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 5,
+      "word_count": 36,
+      "evidence": "Asymptotic coding asks:",
+      "paragraphs": [
+        "Asymptotic coding asks:",
+        "What happens as n -> infinity?",
+        "Finite-block coding asks:",
+        "What is achievable for the actual n used by the system?",
+        "A construction can be asymptotically optimal yet suboptimal at small practical block lengths."
+      ]
+    },
+    {
+      "heading": "137. Short blocks magnify integer effects",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "If a length-20 code needs five check bits, the overhead is:",
+      "paragraphs": [
+        "If a length-20 code needs five check bits, the overhead is:",
+        "25%.",
+        "If a length-10,000 code needs approximately fourteen positional check bits for a comparable single-deletion mechanism, the relative overhead is tiny.",
+        "Asymptotic rate can therefore hide practical short-block costs."
+      ]
+    },
+    {
+      "heading": "138. Long blocks increase decoding complexity and latency",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 6,
+      "word_count": 22,
+      "evidence": "Large n reduces relative redundancy but can increase:",
+      "paragraphs": [
+        "Large n reduces relative redundancy but can increase:",
+        "memory;",
+        "decoding latency;",
+        "error multiplicity;",
+        "implementation complexity.",
+        "Block length itself is an engineering parameter."
+      ]
+    },
+    {
+      "heading": "139. Code concatenation manages scales",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "A practical system can use:",
+      "paragraphs": [
+        "A practical system can use:",
+        "short inner synchronization blocks + long outer error-correcting code.",
+        "This provides frequent resynchronization while preserving high overall rate."
+      ]
+    },
+    {
+      "heading": "140. Inner and outer errors have different semantics",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "The inner decoder may transform:",
+      "paragraphs": [
+        "The inner decoder may transform:",
+        "insertions/deletions",
+        "into:",
+        "known erasures + occasional substitutions.",
+        "The outer code then operates in a conventional coordinate system.",
+        "This modularity is one of the strongest practical principles in synchronization coding."
+      ]
+    },
+    {
+      "heading": "141. Error-to-erasure conversion can be beneficial",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "If a decoder is uncertain, declaring:",
+      "paragraphs": [
+        "If a decoder is uncertain, declaring:",
+        "symbol missing",
+        "can be safer than returning:",
+        "a confident but wrong symbol.",
+        "Outer error-correcting codes often handle known erasures more efficiently than unknown substitutions."
+      ]
+    },
+    {
+      "heading": "142. Soft information can improve decoding",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "A synchronization decoder need not output only:",
+      "paragraphs": [
+        "A synchronization decoder need not output only:",
+        "symbol or failure.",
+        "It can provide:",
+        "candidate positions + candidate symbols + probabilities.",
+        "An outer probabilistic decoder can exploit this uncertainty."
+      ]
+    },
+    {
+      "heading": "143. Hard edit distance discards likelihood information",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 8,
+      "word_count": 36,
+      "evidence": "Classic edit distance returns:",
+      "paragraphs": [
+        "Classic edit distance returns:",
+        "one scalar minimum cost.",
+        "It does not retain:",
+        "number of optimal paths;",
+        "near-optimal paths;",
+        "event probabilities;",
+        "confidence in recovered coordinates.",
+        "Probabilistic synchronization models can therefore contain more information than minimum distance alone."
+      ]
+    },
+    {
+      "heading": "144. Distance can nevertheless define code separation cleanly",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "Even when a probabilistic decoder is ultimately used, minimum distance remains valuable because it gives a model-independent combinatorial statement:",
+      "paragraphs": [
+        "Even when a probabilistic decoder is ultimately used, minimum distance remains valuable because it gives a model-independent combinatorial statement:",
+        "no two valid codewords are closer than dmin."
+      ]
+    },
+    {
+      "heading": "145. Coding-theoretic interpretation of a low edit distance",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 5,
+      "word_count": 50,
+      "evidence": "Outside coding theory, a low edit distance often means:",
+      "paragraphs": [
+        "Outside coding theory, a low edit distance often means:",
+        "strings look similar.",
+        "Inside coding theory, if two codewords have low edit distance, it means something stronger:",
+        "a small number of permitted channel operations can transform one legal message representation into another.",
+        "That is dangerous because their error neighborhoods can overlap."
+      ]
+    },
+    {
+      "heading": "146. Coding wants codewords to be dissimilar",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 5,
+      "word_count": 23,
+      "evidence": "Fuzzy search usually seeks:",
+      "paragraphs": [
+        "Fuzzy search usually seeks:",
+        "nearby strings.",
+        "Error-correcting code design seeks:",
+        "valid strings that are deliberately far apart.",
+        "The same metric serves opposite goals."
+      ]
+    },
+    {
+      "heading": "147. Decoder acceptance regions",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 5,
+      "word_count": 26,
+      "evidence": "Each codeword can be assigned a decoding region:",
+      "paragraphs": [
+        "Each codeword can be assigned a decoding region:",
+        "R(c).",
+        "For guaranteed unique decoding:",
+        "R(c1) ∩ R(c2) = empty.",
+        "Nearest-neighbor decoding chooses Voronoi-like regions under the distance."
+      ]
+    },
+    {
+      "heading": "148. Edit-distance Voronoi regions are irregular",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "Because strings can have different lengths and edit neighborhoods depend on repeated-symbol structure, the geometry is less regular than Euclidean or Hamming space.",
+      "paragraphs": [
+        "Because strings can have different lengths and edit neighborhoods depend on repeated-symbol structure, the geometry is less regular than Euclidean or Hamming space.",
+        "This irregularity influences both:",
+        "code packing;",
+        "decoder complexity."
+      ]
+    },
+    {
+      "heading": "149. Common failure mode: treating deletion as erasure",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "An erasure reveals the coordinate.",
+      "paragraphs": [
+        "An erasure reveals the coordinate.",
+        "A deletion removes the coordinate.",
+        "These channels have fundamentally different information structures."
+      ]
+    },
+    {
+      "heading": "150. Common failure mode: using Hamming distance after indels",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "One insertion or deletion shifts the remaining coordinate system.",
+      "paragraphs": [
+        "One insertion or deletion shifts the remaining coordinate system.",
+        "Hamming distance is no longer the appropriate direct comparison unless synchronization has first been restored."
+      ]
+    },
+    {
+      "heading": "151. Common failure mode: confusing full Levenshtein with pure insdel distance",
+      "level": 2,
+      "id": "ux-section-152",
+      "paragraph_count": 5,
+      "word_count": 21,
+      "evidence": "Under classic Levenshtein:",
+      "paragraphs": [
+        "Under classic Levenshtein:",
+        "substitution cost = 1.",
+        "Under insertion-deletion distance:",
+        "substitution = delete + insert = 2.",
+        "Minimum-distance thresholds differ accordingly."
+      ]
+    },
+    {
+      "heading": "152. Common failure mode: using dmin >= 2t+1 without specifying the metric",
+      "level": 2,
+      "id": "ux-section-153",
+      "paragraph_count": 4,
+      "word_count": 21,
+      "evidence": "The theorem is correct for metric correction radius t .",
+      "paragraphs": [
+        "The theorem is correct for metric correction radius t .",
+        "But:",
+        "what counts as one unit of distance?",
+        "must be explicit."
+      ]
+    },
+    {
+      "heading": "153. Common failure mode: assuming deletion balls have constant volume",
+      "level": 2,
+      "id": "ux-section-154",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "The number of distinct descendants depends on codeword structure, especially runs.",
+      "paragraphs": [
+        "The number of distinct descendants depends on codeword structure, especially runs."
+      ]
+    },
+    {
+      "heading": "154. Common failure mode: calling every synchronization code linear",
+      "level": 2,
+      "id": "ux-section-155",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Many important constructions, including VT families in their usual formulation, are not ordinary linear vector-space codes.",
+      "paragraphs": [
+        "Many important constructions, including VT families in their usual formulation, are not ordinary linear vector-space codes."
+      ]
+    },
+    {
+      "heading": "155. Common failure mode: claiming VT codes were originally invented specifically for deletions",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "The construction originated in Varshamov and Tenengolts' work on a single asymmetric error.",
+      "paragraphs": [
+        "The construction originated in Varshamov and Tenengolts' work on a single asymmetric error.",
+        "Levenshtein established its deletion/insertion significance."
+      ]
+    },
+    {
+      "heading": "156. Common failure mode: claiming VT codes are universally exact-optimal at every block length",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 1,
+      "word_count": 27,
+      "evidence": "The safe statement is that they are classical and asymptotically optimal for the single-deletion problem; exact maximum code sizes at finite lengths involve more delicate combinatorial questions.",
+      "paragraphs": [
+        "The safe statement is that they are classical and asymptotically optimal for the single-deletion problem; exact maximum code sizes at finite lengths involve more delicate combinatorial questions."
+      ]
+    },
+    {
+      "heading": "157. Common failure mode: assuming one deletion means one unknown bit",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "The receiver must recover:",
+      "paragraphs": [
+        "The receiver must recover:",
+        "bit value + missing position.",
+        "That hidden position is what makes deletion correction fundamentally different from one erased bit."
+      ]
+    },
+    {
+      "heading": "158. Common failure mode: equating minimum edit distance with channel capacity",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 2,
+      "word_count": 17,
+      "evidence": "Minimum distance is a combinatorial code property.",
+      "paragraphs": [
+        "Minimum distance is a combinatorial code property.",
+        "Capacity is an asymptotic information-theoretic property of a stochastic channel."
+      ]
+    },
+    {
+      "heading": "159. Common failure mode: assuming exact deletion-channel capacity is known",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 1,
+      "word_count": 20,
+      "evidence": "The iid binary deletion channel remains a major open information-theory problem despite decades of progress on upper and lower bounds.",
+      "paragraphs": [
+        "The iid binary deletion channel remains a major open information-theory problem despite decades of progress on upper and lower bounds."
+      ]
+    },
+    {
+      "heading": "160. Common failure mode: assuming asymptotically good means capacity achieving",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 3,
+      "word_count": 13,
+      "evidence": "Positive:",
+      "paragraphs": [
+        "Positive:",
+        "rate + relative distance",
+        "does not mean the rate-distance trade-off is optimal."
+      ]
+    },
+    {
+      "heading": "161. Common failure mode: treating synchronization strings as zero-overhead metadata",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "They provide positional structure by consuming alphabet or coding resources.",
+      "paragraphs": [
+        "They provide positional structure by consuming alphabet or coding resources."
+      ]
+    },
+    {
+      "heading": "162. Common failure mode: assuming a unique nearest codeword always exists",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "Outside the guaranteed decoding radius, several codewords may have equal or near-equal distance.",
+      "paragraphs": [
+        "Outside the guaranteed decoding radius, several codewords may have equal or near-equal distance."
+      ]
+    },
+    {
+      "heading": "163. Common failure mode: forcing unique decoding beyond its geometric limit",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 2,
+      "word_count": 25,
+      "evidence": "A decoder may silently choose one candidate when the received word is actually compatible with several.",
+      "paragraphs": [
+        "A decoder may silently choose one candidate when the received word is actually compatible with several.",
+        "List decoding or declared failure can be more principled."
+      ]
+    },
+    {
+      "heading": "164. Common failure mode: measuring redundancy but ignoring decoding complexity",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "A theoretically excellent code can be unusable if decoding is computationally prohibitive.",
+      "paragraphs": [
+        "A theoretically excellent code can be unusable if decoding is computationally prohibitive."
+      ]
+    },
+    {
+      "heading": "165. Common failure mode: ignoring alphabet size",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "A rate claim over a large auxiliary alphabet may not transfer directly to a binary or quaternary physical channel.",
+      "paragraphs": [
+        "A rate claim over a large auxiliary alphabet may not transfer directly to a binary or quaternary physical channel."
+      ]
+    },
+    {
+      "heading": "166. Common failure mode: confusing error count with physical-event count",
+      "level": 2,
+      "id": "ux-section-167",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Edit distance reports a minimum endpoint transformation, not necessarily the true number or chronology of channel events.",
+      "paragraphs": [
+        "Edit distance reports a minimum endpoint transformation, not necessarily the true number or chronology of channel events."
+      ]
+    },
+    {
+      "heading": "167. Common failure mode: treating substitutions as synchronization errors",
+      "level": 2,
+      "id": "ux-section-168",
+      "paragraph_count": 2,
+      "word_count": 12,
+      "evidence": "Substitutions alter values but preserve coordinates.",
+      "paragraphs": [
+        "Substitutions alter values but preserve coordinates.",
+        "Insertions/deletions alter the coordinate correspondence itself."
+      ]
+    },
+    {
+      "heading": "168. Common failure mode: ignoring burst structure",
+      "level": 2,
+      "id": "ux-section-169",
+      "paragraph_count": 1,
+      "word_count": 19,
+      "evidence": "Ten adjacent deletions and ten arbitrary deletions have the same raw deletion count but can require different code designs.",
+      "paragraphs": [
+        "Ten adjacent deletions and ten arbitrary deletions have the same raw deletion count but can require different code designs."
+      ]
+    },
+    {
+      "heading": "169. Common failure mode: designing for more general errors than necessary",
+      "level": 2,
+      "id": "ux-section-170",
+      "paragraph_count": 1,
+      "word_count": 18,
+      "evidence": "Protecting against every possible edit type can waste rate when the actual physical channel is much more restricted.",
+      "paragraphs": [
+        "Protecting against every possible edit type can waste rate when the actual physical channel is much more restricted."
+      ]
+    },
+    {
+      "heading": "170. Common failure mode: designing for a channel that is too narrow",
+      "level": 2,
+      "id": "ux-section-171",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "Unexpected insertion or substitution modes can invalidate a deletion-only guarantee.",
+      "paragraphs": [
+        "Unexpected insertion or substitution modes can invalidate a deletion-only guarantee."
+      ]
+    },
+    {
+      "heading": "171. Decision table: which distance or channel model?",
+      "level": 2,
+      "id": "ux-section-172",
+      "paragraph_count": 1,
+      "word_count": 87,
+      "evidence": "Channel/problem Natural starting model Main issue Fixed-length substitutions Hamming distance Values change, coordinates survive Known-coordinate missing symbols Erasure channel Locations known Deletions only Deletion descendants / LCS / insdel distance Unknown missing coordinates Insertions + deletions Insdel metric Synchronization drift Insertions + deletions + substitutions Full Levenshtein metric or channel-specific weighted model Mixed synchronization and value errors Probabilistic deletion channel Information-theoretic channel model Capacity and average error probability Large worst-case edit fraction Modern insdel codes / synchronization strings Rate-distance efficiency Single deletion/insertion VT/Levenshtein-type construction Efficient positional checksum",
+      "paragraphs": [
+        "Channel/problem Natural starting model Main issue Fixed-length substitutions Hamming distance Values change, coordinates survive Known-coordinate missing symbols Erasure channel Locations known Deletions only Deletion descendants / LCS / insdel distance Unknown missing coordinates Insertions + deletions Insdel metric Synchronization drift Insertions + deletions + substitutions Full Levenshtein metric or channel-specific weighted model Mixed synchronization and value errors Probabilistic deletion channel Information-theoretic channel model Capacity and average error probability Large worst-case edit fraction Modern insdel codes / synchronization strings Rate-distance efficiency Single deletion/insertion VT/Levenshtein-type construction Efficient positional checksum"
+      ]
+    },
+    {
+      "heading": "172. Decision table: code families and roles",
+      "level": 2,
+      "id": "ux-section-173",
+      "paragraph_count": 1,
+      "word_count": 68,
+      "evidence": "Approach Primary role Key limitation Repetition Simple redundancy Poor rate Hamming/BCH/RS-type outer ECC Coordinate-preserving errors/erasures Does not inherently restore unknown synchronization VT codes Single insertion/deletion Specialized low-error regime q-ary Tenengolts codes Single q-ary insertion/deletion Still single-error construction Concatenated synchronization codes Localize and correct synchronization errors Multiple layers/overhead Synchronization strings Convert insdel errors toward Hamming-type errors Auxiliary synchronization resources List-decodable insdel codes Recover beyond unique radius Outputs multiple candidates",
+      "paragraphs": [
+        "Approach Primary role Key limitation Repetition Simple redundancy Poor rate Hamming/BCH/RS-type outer ECC Coordinate-preserving errors/erasures Does not inherently restore unknown synchronization VT codes Single insertion/deletion Specialized low-error regime q-ary Tenengolts codes Single q-ary insertion/deletion Still single-error construction Concatenated synchronization codes Localize and correct synchronization errors Multiple layers/overhead Synchronization strings Convert insdel errors toward Hamming-type errors Auxiliary synchronization resources List-decodable insdel codes Recover beyond unique radius Outputs multiple candidates"
+      ]
+    },
+    {
+      "heading": "173. A rigorous code-design workflow",
+      "level": 2,
+      "id": "ux-section-174",
+      "paragraph_count": 1,
+      "word_count": 60,
+      "evidence": "define physical channel | v choose allowed error operations | v define distance / probabilistic model | v choose correction objective unique / list / stochastic | v derive required separation | v construct codebook | v design efficient encoder | v design decoder | v prove correction guarantee | v measure rate / redundancy | v benchmark finite-block performance",
+      "paragraphs": [
+        "define physical channel | v choose allowed error operations | v define distance / probabilistic model | v choose correction objective unique / list / stochastic | v derive required separation | v construct codebook | v design efficient encoder | v design decoder | v prove correction guarantee | v measure rate / redundancy | v benchmark finite-block performance"
+      ]
+    },
+    {
+      "heading": "174. A rigorous synchronization-code architecture",
+      "level": 2,
+      "id": "ux-section-175",
+      "paragraph_count": 1,
+      "word_count": 39,
+      "evidence": "MESSAGE | v outer ECC | v synchronization structure | v TRANSMITTED SEQUENCE | v insertion/deletion channel | v DESYNCHRONIZED SEQUENCE | v position recovery | v erasures + symbol corruptions | v outer ECC decoder | v MESSAGE",
+      "paragraphs": [
+        "MESSAGE | v outer ECC | v synchronization structure | v TRANSMITTED SEQUENCE | v insertion/deletion channel | v DESYNCHRONIZED SEQUENCE | v position recovery | v erasures + symbol corruptions | v outer ECC decoder | v MESSAGE"
+      ]
+    },
+    {
+      "heading": "175. Reference pseudocode: generic minimum-distance decoding",
+      "level": 2,
+      "id": "ux-section-176",
+      "paragraph_count": 2,
+      "word_count": 67,
+      "evidence": "function decode(received, codebook, distance, t): best_codeword = NONE best_distance = infinity tie = false for c in codebook: d = distance(c, received) if d < best_distance: best_distance = d best_codeword = c tie = false else if d == best_distance: tie = true if best_distance > t: return FAILURE if tie: return AMBIGUOUS return best_codeword",
+      "paragraphs": [
+        "function decode(received, codebook, distance, t): best_codeword = NONE best_distance = infinity tie = false for c in codebook: d = distance(c, received) if d < best_distance: best_distance = d best_codeword = c tie = false else if d == best_distance: tie = true if best_distance > t: return FAILURE if tie: return AMBIGUOUS return best_codeword",
+        "This is conceptually correct but computationally infeasible for exponentially large unstructured codebooks."
+      ]
+    },
+    {
+      "heading": "176. Reference pseudocode: deletion-descendant validation",
+      "level": 2,
+      "id": "ux-section-177",
+      "paragraph_count": 2,
+      "word_count": 55,
+      "evidence": "function is_t_deletion_correcting(codebook, t): seen = empty map for codeword in codebook: descendants = all_distinct_t_deletion_descendants( codeword, t ) for y in descendants: if y in seen and seen[y] != codeword: return false seen[y] = codeword return true",
+      "paragraphs": [
+        "function is_t_deletion_correcting(codebook, t): seen = empty map for codeword in codebook: descendants = all_distinct_t_deletion_descendants( codeword, t ) for y in descendants: if y in seen and seen[y] != codeword: return false seen[y] = codeword return true",
+        "This directly implements the mathematical definition but is practical only for small block lengths because descendant enumeration grows combinatorially."
+      ]
+    },
+    {
+      "heading": "177. Reference pseudocode: VT syndrome",
+      "level": 2,
+      "id": "ux-section-178",
+      "paragraph_count": 5,
+      "word_count": 28,
+      "evidence": "function vt_syndrome(x): total = 0 for i = 1..length(x): total += i * x[i] return total mod (length(x) + 1)",
+      "paragraphs": [
+        "function vt_syndrome(x): total = 0 for i = 1..length(x): total += i * x[i] return total mod (length(x) + 1)",
+        "All codewords in:",
+        "VT_a(n)",
+        "share:",
+        "vt_syndrome(x) = a."
+      ]
+    },
+    {
+      "heading": "178. Reference pseudocode: binary VT single-deletion decoder",
+      "level": 2,
+      "id": "ux-section-179",
+      "paragraph_count": 2,
+      "word_count": 79,
+      "evidence": "function decode_vt_deletion(y, n, a): # y has length n-1 weighted = sum( i * y[i] for i = 1..n-1 ) delta = (a - weighted) mod (n + 1) w = number_of_ones(y) if delta <= w: deleted_bit = 0 insert 0 so that exactly delta ones remain to its right else: deleted_bit = 1 zeros_left = delta - w - 1 insert 1 after exactly zeros_left zeros return reconstructed_word",
+      "paragraphs": [
+        "function decode_vt_deletion(y, n, a): # y has length n-1 weighted = sum( i * y[i] for i = 1..n-1 ) delta = (a - weighted) mod (n + 1) w = number_of_ones(y) if delta <= w: deleted_bit = 0 insert 0 so that exactly delta ones remain to its right else: deleted_bit = 1 zeros_left = delta - w - 1 insert 1 after exactly zeros_left zeros return reconstructed_word",
+        "This captures the central positional-checksum intuition of binary VT decoding."
+      ]
+    },
+    {
+      "heading": "179. Testing a synchronization code",
+      "level": 2,
+      "id": "ux-section-180",
+      "paragraph_count": 2,
+      "word_count": 60,
+      "evidence": "A correctness test suite should enumerate or sample:",
+      "paragraphs": [
+        "A correctness test suite should enumerate or sample:",
+        "Test Requirement No corruption Decode original codeword Deletion at first position Recover exactly Deletion at last position Recover exactly Deletion inside long run Recover codeword despite positional ambiguity Insertion of each alphabet symbol Recover exactly if guaranteed Maximum guaranteed error count Always decode correctly Beyond guaranteed radius Measure miscorrection versus declared failure"
+      ]
+    },
+    {
+      "heading": "180. Exhaustive finite-length verification",
+      "level": 2,
+      "id": "ux-section-181",
+      "paragraph_count": 5,
+      "word_count": 24,
+      "evidence": "For small:",
+      "paragraphs": [
+        "For small:",
+        "n,",
+        "one can enumerate:",
+        "every codeword * every allowed error pattern.",
+        "This provides a valuable independent check of a theoretical decoder implementation."
+      ]
+    },
+    {
+      "heading": "181. Do not test only random errors",
+      "level": 2,
+      "id": "ux-section-182",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "A code that guarantees correction of:",
+      "paragraphs": [
+        "A code that guarantees correction of:",
+        "every t-edit pattern",
+        "should be tested against adversarial edge cases such as:",
+        "all edits near one boundary;",
+        "edits inside repetitive runs;",
+        "insertions identical to neighbors;",
+        "multiple equally plausible alignments."
+      ]
+    },
+    {
+      "heading": "182. Benchmark unique-decoding failure separately from miscorrection",
+      "level": 2,
+      "id": "ux-section-183",
+      "paragraph_count": 3,
+      "word_count": 29,
+      "evidence": "Two failures are qualitatively different:",
+      "paragraphs": [
+        "Two failures are qualitatively different:",
+        "DECLARED FAILURE: decoder knows it is uncertain MISCORRECTION: decoder confidently returns wrong codeword.",
+        "For many storage and communication systems, miscorrection is much more dangerous."
+      ]
+    },
+    {
+      "heading": "183. Report the channel precisely",
+      "level": 2,
+      "id": "ux-section-184",
+      "paragraph_count": 9,
+      "word_count": 32,
+      "evidence": "A reproducible coding experiment should state:",
+      "paragraphs": [
+        "A reproducible coding experiment should state:",
+        "alphabet;",
+        "block length;",
+        "insertion model;",
+        "deletion model;",
+        "substitution model;",
+        "maximum or stochastic error count;",
+        "whether errors occur in bursts;",
+        "whether edit locations are adversarial or random."
+      ]
+    },
+    {
+      "heading": "184. Report the code precisely",
+      "level": 2,
+      "id": "ux-section-185",
+      "paragraph_count": 10,
+      "word_count": 25,
+      "evidence": "Also report:",
+      "paragraphs": [
+        "Also report:",
+        "codebook construction;",
+        "number of codewords;",
+        "rate;",
+        "redundancy;",
+        "minimum distance and its definition;",
+        "encoder;",
+        "decoder;",
+        "list size if list decoding;",
+        "alphabet expansion if used."
+      ]
+    },
+    {
+      "heading": "185. Report computational complexity",
+      "level": 2,
+      "id": "ux-section-186",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "At minimum:",
+      "paragraphs": [
+        "At minimum:",
+        "encoding time decoding time working memory precomputation block length dependence.",
+        "An information-theoretically strong construction can be impractical if its decoder does not scale."
+      ]
+    },
+    {
+      "heading": "186. Historical progression",
+      "level": 2,
+      "id": "ux-section-187",
+      "paragraph_count": 1,
+      "word_count": 49,
+      "evidence": "1965 Varshamov-Tenengolts asymmetric-error construction | v 1965/1966 Levenshtein deletion / insertion / reversal coding | v single-deletion VT theory | v q-ary generalizations | v multiple synchronization-error codes | v 1999 asymptotically good explicit insdel codes | v 2017+ synchronization strings | v modern near-optimal rate-distance and list-decoding theory.",
+      "paragraphs": [
+        "1965 Varshamov-Tenengolts asymmetric-error construction | v 1965/1966 Levenshtein deletion / insertion / reversal coding | v single-deletion VT theory | v q-ary generalizations | v multiple synchronization-error codes | v 1999 asymptotically good explicit insdel codes | v 2017+ synchronization strings | v modern near-optimal rate-distance and list-decoding theory."
+      ]
+    },
+    {
+      "heading": "187. Levenshtein's contribution was broader than a distance formula",
+      "level": 2,
+      "id": "ux-section-188",
+      "paragraph_count": 8,
+      "word_count": 39,
+      "evidence": "The historical significance of Vladimir Levenshtein is sometimes reduced to:",
+      "paragraphs": [
+        "The historical significance of Vladimir Levenshtein is sometimes reduced to:",
+        "the inventor of a string distance.",
+        "His work was fundamentally part of:",
+        "coding theory;",
+        "combinatorics;",
+        "information transmission;",
+        "sequence reconstruction.",
+        "The distance acquired its importance because of these deeper problems."
+      ]
+    },
+    {
+      "heading": "188. Coding theory explains why the metric is called a distance",
+      "level": 2,
+      "id": "ux-section-189",
+      "paragraph_count": 6,
+      "word_count": 44,
+      "evidence": "The purpose is not merely to score resemblance.",
+      "paragraphs": [
+        "The purpose is not merely to score resemblance.",
+        "The metric determines:",
+        "how much channel corruption is required to move between valid messages.",
+        "A distance of:",
+        "7",
+        "means no sequence of fewer than seven permitted unit edits can transform one codeword directly into the other."
+      ]
+    },
+    {
+      "heading": "189. The coding interpretation makes triangle inequality operational",
+      "level": 2,
+      "id": "ux-section-190",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "Triangle inequality:",
+      "paragraphs": [
+        "Triangle inequality:",
+        "d(x,z) <= d(x,y) + d(y,z)",
+        "is not only an abstract metric property.",
+        "It is what proves that two codewords separated by more than:",
+        "2t",
+        "cannot share a received word within t errors of both."
+      ]
+    },
+    {
+      "heading": "190. This is the geometry behind error correction",
+      "level": 2,
+      "id": "ux-section-191",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "codeword A \\ t edits \\ received word / / t edits codeword B",
+      "paragraphs": [
+        "codeword A \\ t edits \\ received word / / t edits codeword B",
+        "If such a configuration exists:",
+        "d(A,B) <= 2t.",
+        "A code requiring:",
+        "d(A,B) >= 2t+1",
+        "forbids it."
+      ]
+    },
+    {
+      "heading": "191. Why synchronization coding remains active research",
+      "level": 2,
+      "id": "ux-section-192",
+      "paragraph_count": 9,
+      "word_count": 30,
+      "evidence": "The problem combines several difficult dimensions:",
+      "paragraphs": [
+        "The problem combines several difficult dimensions:",
+        "nonuniform edit geometry;",
+        "unknown coordinate correspondence;",
+        "finite-alphabet constraints;",
+        "rate-distance optimization;",
+        "efficient decoding;",
+        "stochastic-channel capacity;",
+        "finite-block performance.",
+        "Even apparently simple deletion channels remain mathematically rich."
+      ]
+    },
+    {
+      "heading": "192. Final conceptual map",
+      "level": 2,
+      "id": "ux-section-193",
+      "paragraph_count": 1,
+      "word_count": 107,
+      "evidence": "CODING THEORY | v choose codebook C | v define channel geometry | +-----------------+-----------------+ | | v v Hamming-type errors synchronization errors | | substitution / erasure insertion / deletion | | v v Hamming distance edit / insdel geometry | +-------------------+-------------------+ | | v v minimum distance descendant sets | | v v unique correction LCS structure | | +-------------------+-------------------+ | v code construction | +--------------------------+-----------------------+ | | | v v v VT codes general insdel codes synchronization strings | | | v v v single-edit regime constant-fraction reduction toward synchronization Hamming-type ECC | v encoder / decoder | v rate / redundancy / complexity trade-off",
+      "paragraphs": [
+        "CODING THEORY | v choose codebook C | v define channel geometry | +-----------------+-----------------+ | | v v Hamming-type errors synchronization errors | | substitution / erasure insertion / deletion | | v v Hamming distance edit / insdel geometry | +-------------------+-------------------+ | | v v minimum distance descendant sets | | v v unique correction LCS structure | | +-------------------+-------------------+ | v code construction | +--------------------------+-----------------------+ | | | v v v VT codes general insdel codes synchronization strings | | | v v v single-edit regime constant-fraction reduction toward synchronization Hamming-type ECC | v encoder / decoder | v rate / redundancy / complexity trade-off"
+      ]
+    },
+    {
+      "heading": "193. Final interpretation",
+      "level": 2,
+      "id": "ux-section-194",
+      "paragraph_count": 17,
+      "word_count": 452,
+      "evidence": "Levenshtein distance is not merely an application of coding theory. Coding theory is one of the settings from which its mathematical significance emerged.",
+      "paragraphs": [
+        "Levenshtein distance is not merely an application of coding theory. Coding theory is one of the settings from which its mathematical significance emerged.",
+        "The essential problem is synchronization.",
+        "With substitution errors, the receiver still knows:",
+        "where every received symbol belongs.",
+        "With insertions and deletions, that coordinate system itself becomes uncertain. A single deletion can shift an entire suffix, and a single insertion creates a received symbol with no transmitted position.",
+        "This changes code geometry from Hamming space to edit space.",
+        "The central coding principle becomes:",
+        "valid codewords must be separated far enough under the relevant edit model that their possible corrupted outputs do not overlap.",
+        "For a genuine metric, minimum distance at least:",
+        "2t + 1",
+        "provides the standard guarantee for unique correction of t metric errors. For deletion-only channels, descendant sets and longest common subsequences provide an even more direct description: distinct codewords must not share a sufficiently long subsequence that could become the same received word after deletions.",
+        "The classical Varshamov-Tenengolts construction shows how surprisingly little redundancy can solve the single-deletion problem. A weighted modular checksum encodes enough positional information to restore both a deleted bit and its synchronization, with redundancy only logarithmic in block length. Levenshtein's recognition that the construction corrects deletions and insertions turned it into one of the foundational synchronization codes.",
+        "Multiple synchronization errors are substantially harder. They led from specialized checksum codes toward asymptotically good constructions and, more recently, synchronization strings that systematically attach positional structure and reduce insertion/deletion corruption toward the much better understood world of Hamming-type errors and erasures.",
+        "The most important distinctions are:",
+        "Hamming distance != Levenshtein distance erasure != deletion substitution != synchronization error full Levenshtein distance != pure insertion-deletion distance substitution cost 1 != delete + insert cost 2 minimum distance != channel capacity worst-case edit correction != stochastic deletion-channel coding edit count != physical number of channel events error-event location != codeword recoverability VT construction origin != Levenshtein's later deletion/insertion interpretation asymptotically good != rate-distance optimal unique decoding != list decoding synchronization strings != zero-overhead markers exact decoding guarantee != efficient practical decoder low redundancy != low implementation complexity.",
+        "The correct role of Levenshtein distance in coding theory is therefore geometric and operational. It defines when two possible transmitted messages are dangerously close under a channel that can destroy synchronization. Code design then asks how many messages can be placed into that geometry, how much redundancy is required to keep them distinguishable, and how efficiently the original message can be reconstructed after the channel changes both symbol values and symbol positions.",
+        "The next level of this theory is developed in insertion-deletion codes and synchronization errors , while the classical checksum constructions are examined separately in Varshamov-Tenengolts and Levenshtein codes ."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-195",
+      "paragraph_count": 10,
+      "word_count": 242,
+      "evidence": "Levenshtein, V. I. Binary Codes Capable of Correcting Deletions, Insertions, and Reversals. Soviet Physics Doklady 10(8), 707-710, 1966; translated from Doklady Akademii Nauk SSSR 163(4), 845-848, 1965. Bibliographic record .",
+      "paragraphs": [
+        "Levenshtein, V. I. Binary Codes Capable of Correcting Deletions, Insertions, and Reversals. Soviet Physics Doklady 10(8), 707-710, 1966; translated from Doklady Akademii Nauk SSSR 163(4), 845-848, 1965. Bibliographic record .",
+        "Varshamov, R. R., and Tenengolts, G. M. Codes Which Correct Single Asymmetric Errors. Automation and Remote Control 26(2), 286-290, 1965. Bibliographic discussion and references are reproduced in Sloane's survey of single-deletion-correcting codes .",
+        "Tenengolts, G. Nonbinary codes, correcting single deletion or insertion. IEEE Transactions on Information Theory 30(5), 766-769, 1984. https://doi.org/10.1109/TIT.1984.1056962 .",
+        "Schulman, L. J., and Zuckerman, D. Asymptotically good codes correcting insertions, deletions, and transpositions. IEEE Transactions on Information Theory 45(7), 2552-2557, 1999. https://doi.org/10.1109/18.796406 .",
+        "Sloane, N. J. A. On Single-Deletion-Correcting Codes. Codes and Designs, 2002. Author-hosted survey .",
+        "Mercier, H., Bhargava, V. K., and Tarokh, V. A Survey of Error-Correcting Codes for Channels With Symbol Synchronization Errors. IEEE Communications Surveys & Tutorials 12(1), 87-96, 2010. https://doi.org/10.1109/SURV.2010.020110.00079 .",
+        "Haeupler, B., and Shahrasbi, A. Synchronization Strings: Codes for Insertions and Deletions Approaching the Singleton Bound. Journal of the ACM 68(5), 2021. https://doi.org/10.1145/3468265 .",
+        "Haeupler, B., and Shahrasbi, A. Synchronization Strings and Codes for Insertions and Deletions—A Survey. IEEE Transactions on Information Theory 67(6), 3190-3206, 2021. https://doi.org/10.1109/TIT.2021.3056317 .",
+        "Haeupler, B., Shahrasbi, A., and Guruswami, V. Optimally Resilient Codes for List-Decoding from Insertions and Deletions. IEEE Transactions on Information Theory, 2021. https://doi.org/10.1109/TIT.2021.3120910 .",
+        "Simple Converse Bounds on the Deletion Channel Capacity with Finite Block Lengths. IEEE International Symposium on Information Theory, 2025. https://doi.org/10.1109/ISIT63088.2025.11195267 ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/coding-theory",
+      "evidence": [
+        {
+          "section": "Levenshtein Distance in Coding Theory",
+          "anchor_id": "ux-section-1",
+          "alias": "coding theory",
+          "excerpt": "Levenshtein distance has a deeper relationship with coding theory than its familiar modern uses in spelling correction, fuzzy search, or record matching suggest. Vladimir Levenshtein's foundational work studied communication channels in which symbols could be deleted, inserted, or changed. In such channels, the central difficulty is not merely that a symbol can be wrong: insertions and deletions destroy the positional synchronization between transmitted and received sequences."
+        },
+        {
+          "section": "12. Terminology must be declared explicitly",
+          "anchor_id": "ux-section-13",
+          "alias": "coding theory",
+          "excerpt": "Some coding-theory literature uses expressions such as:"
+        },
+        {
+          "section": "19. Minimum-distance correction theorem",
+          "anchor_id": "ux-section-20",
+          "alias": "coding theory",
+          "excerpt": "The proof is the same geometric argument familiar from Hamming coding theory."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-in-dna-storage",
+      "evidence": [
+        {
+          "section": "71. This matters directly for DNA storage",
+          "anchor_id": "ux-section-72",
+          "alias": "edit distance in dna storage",
+          "excerpt": "Insertion/deletion coding therefore has an important modern application in synthetic DNA data storage, explored separately in edit distance in DNA storage ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Levenshtein Distance in Coding Theory",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "edit distance | v minimum code distance | v disjoint error neighborhoods | v unique decoding | v redundancy / rate trade-offs | v insertion-deletion codes | v modern synchronization codes."
+        },
+        {
+          "section": "9. One deletion can imitate many substitutions",
+          "anchor_id": "ux-section-10",
+          "alias": "edit distance",
+          "excerpt": "Under edit distance:"
+        },
+        {
+          "section": "71. This matters directly for DNA storage",
+          "anchor_id": "ux-section-72",
+          "alias": "edit distance",
+          "excerpt": "Insertion/deletion coding therefore has an important modern application in synthetic DNA data storage, explored separately in edit distance in DNA storage ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "10. Classical Levenshtein distance",
+          "anchor_id": "ux-section-11",
+          "alias": "edit operations",
+          "excerpt": "The underlying edit operations are developed in edit operations ."
+        }
+      ]
+    },
+    {
+      "target": "/insertion-deletion-codes-and-synchronization-errors",
+      "evidence": [
+        {
+          "section": "193. Final interpretation",
+          "anchor_id": "ux-section-194",
+          "alias": "insertion deletion codes and synchronization errors",
+          "excerpt": "The next level of this theory is developed in insertion-deletion codes and synchronization errors , while the classical checksum constructions are examined separately in Varshamov-Tenengolts and Levenshtein codes ."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-damerau-and-hamming",
+      "evidence": [
+        {
+          "section": "126. Transpositions are not part of classic Levenshtein distance",
+          "anchor_id": "ux-section-127",
+          "alias": "levenshtein vs damerau and hamming",
+          "excerpt": "The metric distinction is examined in Levenshtein vs Damerau and Hamming distance ."
+        }
+      ]
+    },
+    {
+      "target": "/varshamov-tenengolts-and-levenshtein-codes",
+      "evidence": [
+        {
+          "section": "65. A single insertion changes the syndrome differently",
+          "anchor_id": "ux-section-66",
+          "alias": "varshamov tenengolts and levenshtein codes",
+          "excerpt": "The exact algorithmic details are treated more deeply in Varshamov-Tenengolts and Levenshtein codes ."
+        },
+        {
+          "section": "193. Final interpretation",
+          "anchor_id": "ux-section-194",
+          "alias": "varshamov tenengolts and levenshtein codes",
+          "excerpt": "The next level of this theory is developed in insertion-deletion codes and synchronization errors , while the classical checksum constructions are examined separately in Varshamov-Tenengolts and Levenshtein codes ."
+        }
+      ]
+    },
+    {
+      "target": "/vladimir-levenshtein",
+      "evidence": [
+        {
+          "section": "Levenshtein Distance in Coding Theory",
+          "anchor_id": "ux-section-1",
+          "alias": "vladimir levenshtein",
+          "excerpt": "Levenshtein distance has a deeper relationship with coding theory than its familiar modern uses in spelling correction, fuzzy search, or record matching suggest. Vladimir Levenshtein's foundational work studied communication channels in which symbols could be deleted, inserted, or changed. In such channels, the central difficulty is not merely that a symbol can be wrong: insertions and deletions destroy the positional synchronization between transmitted and received sequences."
+        },
+        {
+          "section": "187. Levenshtein's contribution was broader than a distance formula",
+          "anchor_id": "ux-section-188",
+          "alias": "vladimir levenshtein",
+          "excerpt": "The historical significance of Vladimir Levenshtein is sometimes reduced to:"
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#page",
+      "type": "WebPage",
+      "name": "Levenshtein Distance in Coding Theory: Indel Channels, Synchronization Errors, and Error-Correcting Codes",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/levenshtein-in-coding-theory#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-in-coding-theory#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-in-coding-theory#error-correcting-code"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-in-coding-theory#synchronization-error"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "type": "TechArticle",
+      "name": "Levenshtein Distance in Coding Theory: Indel Channels, Synchronization Errors, and Error-Correcting Codes",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-in-coding-theory#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-in-coding-theory#error-correcting-code"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-in-coding-theory#insdel-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/levenshtein-in-coding-theory#synchronization-error"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#concept",
+      "type": "DefinedTerm",
+      "name": "Levenshtein Distance in Coding Theory",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#error-correcting-code",
+      "type": "DefinedTerm",
+      "name": "Error-Correcting Code",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#synchronization-error",
+      "type": "DefinedTerm",
+      "name": "Synchronization Error",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#insdel-distance",
+      "type": "DefinedTerm",
+      "name": "Insertion-Deletion Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#minimum-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Minimum Edit Distance of a Code",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#deletion-channel",
+      "type": "DefinedTerm",
+      "name": "Deletion Channel",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#vt-code",
+      "type": "DefinedTerm",
+      "name": "Varshamov-Tenengolts Code",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#synchronization-string",
+      "type": "DefinedTerm",
+      "name": "Synchronization String",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#list-decoding",
+      "type": "DefinedTerm",
+      "name": "List Decoding",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/levenshtein-in-coding-theory#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#error-correcting-code"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#page",
+      "about",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#synchronization-error"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#page",
+      "mainEntity",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#page",
+      "isPartOf",
+      "https://www.levenshtein.net/coding-theory#collection"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#concept"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#error-correcting-code"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#insdel-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "about",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#synchronization-error"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#deletion-channel"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#minimum-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#vt-code"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#synchronization-string"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#list-decoding"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "isPartOf",
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#page"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "citation",
+      "https://ui.adsabs.harvard.edu/abs/1966SPhD...10..707L/abstract"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "citation",
+      "https://neilsloane.com/doc/dijen.pdf"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "citation",
+      "https://doi.org/10.1109/TIT.1984.1056962"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "citation",
+      "https://doi.org/10.1109/18.796406"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "citation",
+      "https://doi.org/10.1109/SURV.2010.020110.00079"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "citation",
+      "https://doi.org/10.1145/3468265"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "citation",
+      "https://doi.org/10.1109/TIT.2021.3056317"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "citation",
+      "https://doi.org/10.1109/TIT.2021.3120910"
+    ],
+    [
+      "https://www.levenshtein.net/levenshtein-in-coding-theory#article",
+      "citation",
+      "https://doi.org/10.1109/ISIT63088.2025.11195267"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1109/SURV.2010.020110.00079",
+      "anchor": "https://doi.org/10.1109/SURV.2010.020110.00079"
+    },
+    {
+      "url": "https://ui.adsabs.harvard.edu/abs/1966SPhD...10..707L/abstract",
+      "anchor": "Bibliographic record"
+    },
+    {
+      "url": "https://doi.org/10.1109/ISIT63088.2025.11195267",
+      "anchor": "https://doi.org/10.1109/ISIT63088.2025.11195267"
+    },
+    {
+      "url": "https://neilsloane.com/doc/dijen.pdf",
+      "anchor": "Author-hosted survey"
+    },
+    {
+      "url": "https://doi.org/10.1109/TIT.1984.1056962",
+      "anchor": "https://doi.org/10.1109/TIT.1984.1056962"
+    },
+    {
+      "url": "https://doi.org/10.1109/18.796406",
+      "anchor": "https://doi.org/10.1109/18.796406"
+    },
+    {
+      "url": "https://doi.org/10.1145/3468265",
+      "anchor": "https://doi.org/10.1145/3468265"
+    },
+    {
+      "url": "https://doi.org/10.1109/TIT.2021.3056317",
+      "anchor": "https://doi.org/10.1109/TIT.2021.3056317"
+    },
+    {
+      "url": "https://doi.org/10.1109/TIT.2021.3120910",
+      "anchor": "https://doi.org/10.1109/TIT.2021.3120910"
+    }
+  ]
+}

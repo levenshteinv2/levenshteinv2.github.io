@@ -1,0 +1,3621 @@
+{
+  "url": "/tree-and-graph-edit-distance",
+  "title": "Tree & Graph Edit Distance: Models, Algorithms, Complexity & GED",
+  "h1": [
+    "Tree & Graph Edit Distance: Models, Algorithms, Complexity & GED"
+  ],
+  "group": "Theory",
+  "provisional_mission": "Phép sửa cấu trúc cây và đồ thị",
+  "content_sha256": "13a40bd3d0a6f880eaf9caf426f05cd1e4788cc9ae109ce6a4f807a7bf82b44f",
+  "canonical": "https://www.levenshtein.net/tree-and-graph-edit-distance",
+  "primary_entity_candidate": "Tree & Graph Edit Distance: Models, Algorithms, Complexity & GED",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Tree and Graph Edit Distance",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 15,
+      "word_count": 250,
+      "evidence": "Edit distance is not limited to strings. The same fundamental idea—measuring dissimilarity by the minimum cost of transforming one object into another—extends to hierarchical structures such as trees and to relational structures such as graphs. The resulting measures are known as tree edit distance (TED) and graph edit distance (GED).",
+      "paragraphs": [
+        "Edit distance is not limited to strings. The same fundamental idea—measuring dissimilarity by the minimum cost of transforming one object into another—extends to hierarchical structures such as trees and to relational structures such as graphs. The resulting measures are known as tree edit distance (TED) and graph edit distance (GED).",
+        "These measures preserve the central philosophy of Levenshtein distance :",
+        "distance = minimum cost of a valid transformation",
+        "but the geometry of the objects changes completely.",
+        "A string has one linear order:",
+        "a → b → c → d",
+        "A tree has hierarchical ancestry and, in many formulations, sibling order:",
+        "root / \\ A B / \\ C D",
+        "A graph may contain arbitrary connectivity:",
+        "A ─── B │ ╱ │ │ ╱ │ C ─── D",
+        "As a consequence, replacing one-dimensional sequence alignment with structural alignment changes both the mathematical definition of an edit and the complexity of finding an optimal edit script.",
+        "Classical string edit distance can be solved by dynamic programming in quadratic time. Classical ordered tree edit distance historically required cubic or higher polynomial time in the worst case, although important recent results have broken that barrier for unweighted trees. General graph edit distance is harder still: exact computation is NP-hard even under simple uniform edit-cost models.",
+        "The central lesson is therefore:",
+        "string edit distance ≠ tree edit distance ≠ graph edit distance",
+        "They belong to the same family of transformation-based similarity measures, but their state spaces, admissible mappings, algorithms, and complexity regimes are fundamentally different."
+      ]
+    },
+    {
+      "heading": "From sequences to structured objects",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 11,
+      "word_count": 107,
+      "evidence": "For strings:",
+      "paragraphs": [
+        "For strings:",
+        "x = x₁x₂...xₘ y = y₁y₂...yₙ",
+        "an alignment must preserve the natural left-to-right order of positions.",
+        "For trees, a valid correspondence typically must preserve:",
+        "one-to-one node matching;",
+        "ancestor relationships;",
+        "and, for ordered trees, left-to-right sibling order.",
+        "For general graphs, even ancestry disappears. A candidate correspondence between vertices must instead be evaluated according to the connectivity induced between matched vertices.",
+        "This progression can be viewed as a loss of structural constraints:",
+        "STRING │ │ fixed total order ▼ TREE │ │ partial hierarchical order ▼ GRAPH │ │ arbitrary relational structure ▼ GENERAL STRUCTURAL MATCHING",
+        "The fewer constraints available, the larger the correspondence space usually becomes."
+      ]
+    },
+    {
+      "heading": "Why flattening structure into a string can be wrong",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 3,
+      "word_count": 14,
+      "evidence": "Suppose two rooted trees have identical preorder traversals:",
+      "paragraphs": [
+        "Suppose two rooted trees have identical preorder traversals:",
+        "root A B",
+        "but different topology."
+      ]
+    },
+    {
+      "heading": "Tree 1",
+      "level": 3,
+      "id": "ux-section-4",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "root / \\ A B",
+      "paragraphs": [
+        "root / \\ A B"
+      ]
+    },
+    {
+      "heading": "Tree 2",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 10,
+      "word_count": 91,
+      "evidence": "root | A | B",
+      "paragraphs": [
+        "root | A | B",
+        "Their preorder sequences are identical:",
+        "root, A, B",
+        "so ordinary string edit distance between the traversals is:",
+        "0",
+        "Yet the trees are structurally different.",
+        "Tree edit distance captures this difference because the parent-child relationship of B has changed.",
+        "This illustrates a fundamental principle:",
+        "A serialization preserves structure only if the structural information itself is encoded into the serialization.",
+        "Flattening XML, JSON, abstract syntax trees, biological structures, or scene graphs into label sequences can therefore destroy precisely the information that a structural distance is intended to measure."
+      ]
+    },
+    {
+      "heading": "Tree edit distance",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 11,
+      "word_count": 74,
+      "evidence": "The classical tree edit distance problem is defined on rooted, ordered, labeled trees.",
+      "paragraphs": [
+        "The classical tree edit distance problem is defined on rooted, ordered, labeled trees.",
+        "Let:",
+        "T₁ = (V₁,E₁,r₁,λ₁) T₂ = (V₂,E₂,r₂,λ₂)",
+        "where:",
+        "V is the node set;",
+        "E is the parent-child edge set;",
+        "r is the root;",
+        "λ(v) is the label of node v ;",
+        "children of every node have a fixed left-to-right order.",
+        "The tree edit distance is the minimum total cost of a valid sequence of tree-edit operations that transforms:",
+        "T₁ into T₂"
+      ]
+    },
+    {
+      "heading": "Node relabeling",
+      "level": 3,
+      "id": "ux-section-8",
+      "paragraph_count": 5,
+      "word_count": 12,
+      "evidence": "Change:",
+      "paragraphs": [
+        "Change:",
+        "label(u) = a",
+        "to:",
+        "label(u) = b",
+        "without changing tree topology."
+      ]
+    },
+    {
+      "heading": "Node deletion",
+      "level": 3,
+      "id": "ux-section-9",
+      "paragraph_count": 9,
+      "word_count": 72,
+      "evidence": "Deleting a node in classical TED does not necessarily delete its entire subtree .",
+      "paragraphs": [
+        "Deleting a node in classical TED does not necessarily delete its entire subtree .",
+        "Suppose:",
+        "P | X / | \\ A B C",
+        "Deleting:",
+        "X",
+        "produces:",
+        "P / | \\ A B C",
+        "The children of the deleted node are reattached to its parent while preserving their relative order.",
+        "This is one of the most important differences between classical tree edit distance and many application-specific notions of \"delete a tree node.\""
+      ]
+    },
+    {
+      "heading": "Node insertion",
+      "level": 3,
+      "id": "ux-section-10",
+      "paragraph_count": 10,
+      "word_count": 56,
+      "evidence": "Insertion is the inverse operation.",
+      "paragraphs": [
+        "Insertion is the inverse operation.",
+        "Starting with:",
+        "P / | \\ A B C",
+        "one may insert:",
+        "X",
+        "between:",
+        "P",
+        "and a consecutive sequence of its children:",
+        "P | X / | \\ A B C",
+        "More generally, the inserted node becomes the parent of an appropriate consecutive subsequence of existing children in an ordered-tree formulation."
+      ]
+    },
+    {
+      "heading": "Tree-node deletion is not subtree deletion",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "The distinction is worth making explicit:",
+      "paragraphs": [
+        "The distinction is worth making explicit:",
+        "classical TED node deletion: A | B / \\ C D delete B A / \\ C D",
+        "versus:",
+        "subtree deletion: A | B / \\ C D delete subtree at B A",
+        "These define different edit systems and therefore different distances.",
+        "A software library implementing one should never be assumed to implement the other."
+      ]
+    },
+    {
+      "heading": "Weighted tree edit distance",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "c_del(a) c_ins(b) c_ren(a,b)",
+        "be the costs of deleting, inserting, and relabeling nodes.",
+        "Then:",
+        "TED(T₁,T₂) = minimum total cost over all valid edit scripts",
+        "Unit-cost tree edit distance uses:",
+        "c_del = 1 c_ins = 1 c_ren(a,b) = 0 if a=b 1 otherwise",
+        "Weighted TED allows the cost model to encode domain knowledge."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-13",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "For syntax trees one might define:",
+      "paragraphs": [
+        "For syntax trees one might define:",
+        "identifier → identifier: 0.2 integer_literal → float_literal: 0.4 if_statement → while_statement: 2.0",
+        "if those transformations have different semantic significance.",
+        "However, once weights are introduced, algorithms and complexity results derived specifically for unit-cost TED may no longer apply."
+      ]
+    },
+    {
+      "heading": "Tree mappings: another definition of TED",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 5,
+      "word_count": 32,
+      "evidence": "Tree edit distance can equivalently be described through a structural node mapping.",
+      "paragraphs": [
+        "Tree edit distance can equivalently be described through a structural node mapping.",
+        "Let:",
+        "M ⊆ V₁ × V₂",
+        "be a set of matched node pairs.",
+        "A classical ordered-tree mapping satisfies several constraints."
+      ]
+    },
+    {
+      "heading": "One-to-one correspondence",
+      "level": 3,
+      "id": "ux-section-15",
+      "paragraph_count": 5,
+      "word_count": 22,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "(u,v) and (u',v') in M",
+        "we require:",
+        "u = u' iff v = v'",
+        "so one node cannot match multiple nodes."
+      ]
+    },
+    {
+      "heading": "Ancestor preservation",
+      "level": 3,
+      "id": "ux-section-16",
+      "paragraph_count": 5,
+      "word_count": 26,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "u₁ is an ancestor of u₂",
+        "then their matched nodes must satisfy:",
+        "v₁ is an ancestor of v₂",
+        "and conversely under the standard mapping formulation."
+      ]
+    },
+    {
+      "heading": "Left-to-right order preservation",
+      "level": 3,
+      "id": "ux-section-17",
+      "paragraph_count": 3,
+      "word_count": 20,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "u₁ lies to the left of u₂",
+        "in the ordered tree, their images must preserve the same relative order."
+      ]
+    },
+    {
+      "heading": "Cost of a tree mapping",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 11,
+      "word_count": 67,
+      "evidence": "For a valid mapping:",
+      "paragraphs": [
+        "For a valid mapping:",
+        "M",
+        "the cost can be written schematically as:",
+        "cost(M) = Σ matched nodes relabel_cost + Σ unmatched nodes in T₁ deletion_cost + Σ unmatched nodes in T₂ insertion_cost",
+        "and:",
+        "TED(T₁,T₂) = min_M cost(M)",
+        "This formulation is useful because it turns the problem from:",
+        "search over edit scripts",
+        "into:",
+        "search over valid structural correspondences",
+        "while preserving the same optimum under the classical edit model."
+      ]
+    },
+    {
+      "heading": "Why ancestor preservation matters",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 11,
+      "word_count": 63,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "T₁: A | B | C",
+        "and:",
+        "T₂: A | C | B",
+        "A label-only assignment could pair:",
+        "A ↔ A B ↔ B C ↔ C",
+        "at zero relabeling cost.",
+        "But the ancestry relations are reversed for:",
+        "B and C",
+        "so this is not a valid classical tree mapping.",
+        "Tree edit distance therefore measures structural compatibility, not merely optimal label assignment."
+      ]
+    },
+    {
+      "heading": "Why sibling order matters",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 10,
+      "word_count": 42,
+      "evidence": "For ordered trees:",
+      "paragraphs": [
+        "For ordered trees:",
+        "root ├── A └── B",
+        "and:",
+        "root ├── B └── A",
+        "are structurally different because:",
+        "A before B",
+        "has become:",
+        "B before A",
+        "Classical insert/delete/relabel TED does not contain a primitive sibling-swap operation.",
+        "Consequently reordering may require multiple edits."
+      ]
+    },
+    {
+      "heading": "Ordered versus unordered trees",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "An ordered tree assigns significance to sibling order.",
+      "paragraphs": [
+        "An ordered tree assigns significance to sibling order.",
+        "An unordered tree does not."
+      ]
+    },
+    {
+      "heading": "Ordered",
+      "level": 3,
+      "id": "ux-section-22",
+      "paragraph_count": 3,
+      "word_count": 12,
+      "evidence": "root ├── A └── B",
+      "paragraphs": [
+        "root ├── A └── B",
+        "differs from:",
+        "root ├── B └── A"
+      ]
+    },
+    {
+      "heading": "Unordered",
+      "level": 3,
+      "id": "ux-section-23",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "Those two trees represent the same topology and labeling modulo sibling permutation.",
+      "paragraphs": [
+        "Those two trees represent the same topology and labeling modulo sibling permutation."
+      ]
+    },
+    {
+      "heading": "Removing order makes the problem harder, not easier",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 10,
+      "word_count": 86,
+      "evidence": "This can initially seem counterintuitive.",
+      "paragraphs": [
+        "This can initially seem counterintuitive.",
+        "One might expect:",
+        "fewer constraints = easier matching",
+        "but fewer constraints also mean more possible correspondences must be considered.",
+        "For ordered trees, sibling order eliminates enormous numbers of mappings automatically.",
+        "For unordered trees, permutations among sibling sets must be considered.",
+        "Zhang, Statman, and Shasha showed that computing edit distance between unordered labeled trees is NP-complete even for binary trees over an alphabet of size two.",
+        "Thus:",
+        "ordered rooted TED: polynomial-time solvable unordered TED: NP-complete in general",
+        "under the corresponding classical formulations."
+      ]
+    },
+    {
+      "heading": "Rooted versus unrooted trees",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "A rooted tree has a distinguished node:",
+      "paragraphs": [
+        "A rooted tree has a distinguished node:",
+        "r",
+        "which determines:",
+        "parent-child direction;",
+        "ancestor relations;",
+        "subtree boundaries.",
+        "An unrooted tree has no distinguished root.",
+        "Comparing unrooted trees may therefore involve considering alternative root placements or using algorithms specifically designed to avoid explicitly enumerating every rooting.",
+        "This produces another distinct algorithmic problem."
+      ]
+    },
+    {
+      "heading": "Node-labeled versus edge-labeled trees",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 10,
+      "word_count": 59,
+      "evidence": "Classical TED is commonly stated for node-labeled trees.",
+      "paragraphs": [
+        "Classical TED is commonly stated for node-labeled trees.",
+        "Other formulations label edges instead:",
+        "parent | \"contains\" | child",
+        "or attach attributes to both.",
+        "The edit operations must then specify whether costs apply to:",
+        "nodes;",
+        "edges;",
+        "both;",
+        "or transformations induced by edge contraction and splitting.",
+        "Results for one formulation should not automatically be transferred to another without verifying their equivalence."
+      ]
+    },
+    {
+      "heading": "Tree edit distance as dynamic programming",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "The central reason ordered TED remains tractable is that subtrees and forests have reusable optimal substructure.",
+      "paragraphs": [
+        "The central reason ordered TED remains tractable is that subtrees and forests have reusable optimal substructure.",
+        "A tree can be decomposed into ordered forests:",
+        "F = T₁ T₂ ... T_r",
+        "where each:",
+        "T_i",
+        "is a subtree.",
+        "The algorithm recursively evaluates distances between subforests rather than enumerating all possible node mappings directly."
+      ]
+    },
+    {
+      "heading": "The tree analogue of string-prefix DP",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 9,
+      "word_count": 49,
+      "evidence": "String edit distance works over:",
+      "paragraphs": [
+        "String edit distance works over:",
+        "prefix x[1..i] versus prefix y[1..j]",
+        "Tree edit distance generalizes this idea to:",
+        "forest prefix versus forest prefix",
+        "The recurrence again considers:",
+        "delete;",
+        "insert;",
+        "match/relabel.",
+        "But removing a tree node can expose several children, so the state boundaries are structurally more complicated than string prefixes."
+      ]
+    },
+    {
+      "heading": "Postorder numbering",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 7,
+      "word_count": 47,
+      "evidence": "Many classical algorithms number tree nodes by postorder.",
+      "paragraphs": [
+        "Many classical algorithms number tree nodes by postorder.",
+        "For:",
+        "A / \\ B C / \\ D E",
+        "a postorder is:",
+        "D E B C A",
+        "and the nodes may be numbered:",
+        "D = 1 E = 2 B = 3 C = 4 A = 5"
+      ]
+    },
+    {
+      "heading": "Leftmost-leaf descendants",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 8,
+      "word_count": 42,
+      "evidence": "For each node:",
+      "paragraphs": [
+        "For each node:",
+        "i",
+        "define:",
+        "l(i)",
+        "as the postorder index of its leftmost leaf descendant.",
+        "For the example:",
+        "l(D) = 1 l(E) = 2 l(B) = 1 l(C) = 4 l(A) = 1",
+        "These values identify contiguous postorder intervals corresponding to subtrees."
+      ]
+    },
+    {
+      "heading": "Keyroots",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 6,
+      "word_count": 70,
+      "evidence": "The Zhang–Shasha algorithm exploits a set of nodes called keyroots .",
+      "paragraphs": [
+        "The Zhang–Shasha algorithm exploits a set of nodes called keyroots .",
+        "Informally, a node is a keyroot when it is:",
+        "the root;",
+        "or has a leftmost-leaf descendant not already represented by a later node in the relevant decomposition.",
+        "Equivalent descriptions use nodes with a left sibling together with the tree root.",
+        "Rather than solving a forest-distance problem independently for every node pair, the algorithm computes only the necessary keyroot combinations."
+      ]
+    },
+    {
+      "heading": "Zhang–Shasha forest recurrence",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 15,
+      "word_count": 96,
+      "evidence": "For a pair of keyroot-defined forests, define:",
+      "paragraphs": [
+        "For a pair of keyroot-defined forests, define:",
+        "FD[i][j]",
+        "as the minimum cost of transforming the relevant forest prefix ending at:",
+        "i",
+        "into the forest prefix ending at:",
+        "j",
+        "A simplified recurrence has the familiar edit-distance shape:",
+        "FD[i][j] = min( FD[i-1][j] + delete(i), FD[i][j-1] + insert(j), structural_match_case )",
+        "When:",
+        "i and j",
+        "are roots of the currently considered subtrees, the match case is:",
+        "FD[i-1][j-1] + relabel(i,j)",
+        "Otherwise the algorithm combines:",
+        "distance between preceding forests + previously computed distance between subtrees rooted at i and j",
+        "This reuse of subtree distances is what makes tree dynamic programming feasible."
+      ]
+    },
+    {
+      "heading": "Why tree DP has an extra complexity dimension",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 6,
+      "word_count": 64,
+      "evidence": "For strings there is essentially one meaningful way to reduce a prefix:",
+      "paragraphs": [
+        "For strings there is essentially one meaningful way to reduce a prefix:",
+        "remove the last character",
+        "For trees there are many possible structural decomposition paths:",
+        "leftmost path rightmost path heavy path subtree decomposition ...",
+        "The choice of decomposition affects how many subproblems are generated.",
+        "This is why much of the history of exact TED algorithms is really a history of better decomposition strategies ."
+      ]
+    },
+    {
+      "heading": "Tai's tree-to-tree correction algorithm",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 4,
+      "word_count": 74,
+      "evidence": "Kuo-Chung Tai's 1979 work established one of the foundational algorithms for tree-to-tree correction.",
+      "paragraphs": [
+        "Kuo-Chung Tai's 1979 work established one of the foundational algorithms for tree-to-tree correction.",
+        "It demonstrated that ordered tree edit distance could be solved through dynamic programming, but its worst-case running time was high.",
+        "For equal-size trees, the classical complexity progression is often summarized approximately as:",
+        "Tai: O(n⁶) ↓ Zhang–Shasha: shape-sensitive, O(n⁴) worst case ↓ Klein: around O(n³ log n) ↓ Demaine–Mozes– Rossman–Weimann: O(n³) ↓ modern matrix-based methods: subcubic for important unweighted and weighted regimes"
+      ]
+    },
+    {
+      "heading": "Zhang–Shasha complexity",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 11,
+      "word_count": 52,
+      "evidence": "For trees:",
+      "paragraphs": [
+        "For trees:",
+        "T₁ and T₂",
+        "their algorithm has a refined complexity of the form:",
+        "O( |T₁||T₂| · min( depth(T₁), leaves(T₁) ) · min( depth(T₂), leaves(T₂) ) )",
+        "with:",
+        "O( |T₁||T₂| )",
+        "space in the classical formulation.",
+        "This is important because performance depends not only on:",
+        "number of nodes",
+        "but on:",
+        "tree shape"
+      ]
+    },
+    {
+      "heading": "Path-shaped trees",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "A | B | C | D | E",
+        "This is essentially a string-like structure.",
+        "Its number of leaves is small even though its depth is large.",
+        "The:",
+        "min(depth, leaves)",
+        "term can therefore be favorable."
+      ]
+    },
+    {
+      "heading": "Bushy trees",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 7,
+      "word_count": 44,
+      "evidence": "Now consider:",
+      "paragraphs": [
+        "Now consider:",
+        "root / / / | \\ \\ \\ a b c d e f g",
+        "Depth is small even though the number of leaves is large.",
+        "Again:",
+        "min(depth, leaves)",
+        "helps.",
+        "Worst cases arise from tree shapes where both structural parameters become large."
+      ]
+    },
+    {
+      "heading": "Decomposition strategies",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 5,
+      "word_count": 51,
+      "evidence": "A decomposition strategy determines which path of a subtree is used to split the problem into smaller forest-distance computations.",
+      "paragraphs": [
+        "A decomposition strategy determines which path of a subtree is used to split the problem into smaller forest-distance computations.",
+        "Common choices include:",
+        "left path right path heavy path",
+        "A heavy path follows a child whose subtree contains the largest number of nodes.",
+        "By choosing paths carefully, algorithms can reduce repeated work."
+      ]
+    },
+    {
+      "heading": "Demaine–Mozes–Rossman–Weimann",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 9,
+      "word_count": 62,
+      "evidence": "Demaine, Mozes, Rossman, and Weimann developed an optimal decomposition-strategy algorithm for classical ordered tree edit distance.",
+      "paragraphs": [
+        "Demaine, Mozes, Rossman, and Weimann developed an optimal decomposition-strategy algorithm for classical ordered tree edit distance.",
+        "For two equal-size trees, the resulting worst-case bound is:",
+        "O(n³)",
+        "within the decomposition framework studied there.",
+        "For unequal sizes:",
+        "m ≤ n",
+        "their analysis gives a more refined bound involving:",
+        "Θ( n m² ( 1 + log(n/m) ) )",
+        "for decomposition-strategy algorithms in the corresponding formulation."
+      ]
+    },
+    {
+      "heading": "Why O(n³) became a long-standing barrier",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "The decomposition framework covers essentially all classical fast TED algorithms of that family.",
+      "paragraphs": [
+        "The decomposition framework covers essentially all classical fast TED algorithms of that family.",
+        "Demaine and colleagues established matching upper and lower bounds inside that framework.",
+        "Therefore breaking cubic time required something fundamentally different from merely selecting a better left, right, or heavy path."
+      ]
+    },
+    {
+      "heading": "RTED: robust tree edit distance",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 9,
+      "word_count": 71,
+      "evidence": "Different classical decomposition strategies can perform very differently depending on tree shape.",
+      "paragraphs": [
+        "Different classical decomposition strategies can perform very differently depending on tree shape.",
+        "A strategy that is excellent for:",
+        "deep path-like trees",
+        "may perform poorly for:",
+        "bushy balanced trees",
+        "and vice versa.",
+        "RTED, developed by Mateusz Pawlik and Nikolaus Augsten, chooses its decomposition strategy dynamically based on the actual input trees.",
+        "The objective is:",
+        "do not require the caller to predict the tree shape for which one classical strategy will be best"
+      ]
+    },
+    {
+      "heading": "LRH strategies",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 6,
+      "word_count": 40,
+      "evidence": "RTED formalized a family of:",
+      "paragraphs": [
+        "RTED formalized a family of:",
+        "Left Right Heavy",
+        "or:",
+        "LRH",
+        "decomposition strategies.",
+        "It computes an input-dependent strategy that is optimal within that family and is no worse asymptotically on an instance than the competing LRH choices analyzed in the framework."
+      ]
+    },
+    {
+      "heading": "APTED",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 7,
+      "word_count": 56,
+      "evidence": "Later work by Pawlik and Augsten generalized the strategy framework and addressed memory consumption.",
+      "paragraphs": [
+        "Later work by Pawlik and Augsten generalized the strategy framework and addressed memory consumption.",
+        "APTED—All Path Tree Edit Distance—uses an optimal strategy in a broader all-path class and improves practical memory behavior relative to RTED.",
+        "This matters because:",
+        "theoretically acceptable time complexity",
+        "does not guarantee:",
+        "acceptable memory behavior",
+        "for large XML, JSON, syntax, or biological trees."
+      ]
+    },
+    {
+      "heading": "Practical TED and theoretical TED are different optimization targets",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 10,
+      "word_count": 49,
+      "evidence": "Classical algorithms optimize:",
+      "paragraphs": [
+        "Classical algorithms optimize:",
+        "number of subproblems",
+        "while implementations must also optimize:",
+        "cache locality;",
+        "memory allocation;",
+        "matrix reuse;",
+        "tree traversal representation;",
+        "label-comparison cost;",
+        "parallelism.",
+        "For typical small and medium trees, APTED-style algorithms may be much more relevant than algorithms based on asymptotically fast matrix multiplication despite having weaker asymptotic exponents."
+      ]
+    },
+    {
+      "heading": "The modern complexity frontier for tree edit distance",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "The complexity picture changed substantially after the classical cubic era.",
+      "paragraphs": [
+        "The complexity picture changed substantially after the classical cubic era.",
+        "Crucially, one must distinguish:",
+        "weighted TED from unweighted TED",
+        "because they now have different best-known complexity regimes."
+      ]
+    },
+    {
+      "heading": "Fine-grained hardness for weighted TED",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 6,
+      "word_count": 68,
+      "evidence": "Bringmann, Gawrychowski, Mozes, and Weimann showed that a truly subcubic algorithm for weighted tree edit distance would imply major improvements for other central problems such as All-Pairs Shortest Paths under the relevant alphabet and cost regimes.",
+      "paragraphs": [
+        "Bringmann, Gawrychowski, Mozes, and Weimann showed that a truly subcubic algorithm for weighted tree edit distance would imply major improvements for other central problems such as All-Pairs Shortest Paths under the relevant alphabet and cost regimes.",
+        "Thus the classical statement:",
+        "TED appears cubic",
+        "was strengthened into a conditional fine-grained statement:",
+        "general weighted TED is unlikely to admit O(n^(3-ε)) for fixed ε > 0",
+        "under the APSP-style hardness framework."
+      ]
+    },
+    {
+      "heading": "This lower bound does not apply unchanged to unweighted TED",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 8,
+      "word_count": 49,
+      "evidence": "This distinction became decisive.",
+      "paragraphs": [
+        "This distinction became decisive.",
+        "If every:",
+        "insertion deletion relabeling",
+        "has unit cost, additional combinatorial structure becomes available.",
+        "Xiao Mao broke the classical cubic barrier for unweighted rooted tree edit distance.",
+        "The original result achieved:",
+        "O( n^2.9546 )",
+        "time by reducing parts of TED computation to structured bounded-difference min-plus products."
+      ]
+    },
+    {
+      "heading": "2025: a much faster unweighted TED bound",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 9,
+      "word_count": 64,
+      "evidence": "More recent work by Nogler, Polak, Saha, Vassilevska Williams, Xu, and Ye substantially improved the unweighted complexity.",
+      "paragraphs": [
+        "More recent work by Nogler, Polak, Saha, Vassilevska Williams, Xu, and Ye substantially improved the unweighted complexity.",
+        "For rooted ordered unweighted TED, their 2025 result gives:",
+        "Õ( n^((3+ω)/2) )",
+        "where:",
+        "ω",
+        "is the exponent of matrix multiplication.",
+        "With the matrix-multiplication bounds used in the analysis, this is reported as at most approximately:",
+        "O( n^2.6857 )",
+        "up to the suppressed factors and exact exponent assumptions."
+      ]
+    },
+    {
+      "heading": "Weighted TED and APSP equivalence",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 11,
+      "word_count": 73,
+      "evidence": "The same 2025 work established a much tighter connection between weighted tree edit distance and All-Pairs Shortest Paths.",
+      "paragraphs": [
+        "The same 2025 work established a much tighter connection between weighted tree edit distance and All-Pairs Shortest Paths.",
+        "Weighted TED was shown fine-grained equivalent to APSP in the studied setting.",
+        "Combining the reduction with the fastest relevant APSP algorithms gives a weighted TED running time of the form:",
+        "n³ / 2^Ω(sqrt(log n))",
+        "This is asymptotically faster than:",
+        "n³",
+        "but it is still:",
+        "n^(3-o(1))",
+        "rather than:",
+        "n^(3-ε)",
+        "for a fixed positive constant ε ."
+      ]
+    },
+    {
+      "heading": "Mildly subcubic versus truly subcubic",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "The distinction mirrors the one seen for string edit distance.",
+      "paragraphs": [
+        "The distinction mirrors the one seen for string edit distance."
+      ]
+    },
+    {
+      "heading": "Mild or subpolynomial improvement",
+      "level": 3,
+      "id": "ux-section-51",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "n³ / 2^sqrt(log n)",
+      "paragraphs": [
+        "n³ / 2^sqrt(log n)"
+      ]
+    },
+    {
+      "heading": "Truly subcubic",
+      "level": 3,
+      "id": "ux-section-52",
+      "paragraph_count": 5,
+      "word_count": 23,
+      "evidence": "n^(3-ε)",
+      "paragraphs": [
+        "n^(3-ε)",
+        "for some fixed:",
+        "ε > 0",
+        "Unweighted TED now has truly subcubic algorithms.",
+        "General weighted TED remains tied to the APSP frontier."
+      ]
+    },
+    {
+      "heading": "Current high-level TED complexity picture",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 1,
+      "word_count": 63,
+      "evidence": "TED variant Representative modern complexity Important qualification Classical decomposition TED O(n³) Rooted ordered trees, general weighted formulation Modern weighted TED n³ / 2^Ω(sqrt(log n)) Via 2025 APSP equivalence and APSP algorithms Unweighted rooted TED Õ(n^((3+ω)/2)) Reported at most approximately n^2.6857 Unweighted unrooted TED Truly subcubic algorithms known Separate unrooted formulation Unordered labeled TED NP-complete in general Even binary trees over alphabet size two",
+      "paragraphs": [
+        "TED variant Representative modern complexity Important qualification Classical decomposition TED O(n³) Rooted ordered trees, general weighted formulation Modern weighted TED n³ / 2^Ω(sqrt(log n)) Via 2025 APSP equivalence and APSP algorithms Unweighted rooted TED Õ(n^((3+ω)/2)) Reported at most approximately n^2.6857 Unweighted unrooted TED Truly subcubic algorithms known Separate unrooted formulation Unordered labeled TED NP-complete in general Even binary trees over alphabet size two"
+      ]
+    },
+    {
+      "heading": "Bounded tree edit distance",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "As with string edit distance, a small distance parameter:",
+      "paragraphs": [
+        "As with string edit distance, a small distance parameter:",
+        "k",
+        "can radically change TED complexity.",
+        "The bounded problem asks:",
+        "TED(T₁,T₂) ≤ k ?",
+        "or computes the exact value under the promise:",
+        "TED(T₁,T₂) ≤ k"
+      ]
+    },
+    {
+      "heading": "Why bounded TED is harder than bounded string ED",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 14,
+      "word_count": 45,
+      "evidence": "For strings, an alignment with at most:",
+      "paragraphs": [
+        "For strings, an alignment with at most:",
+        "k",
+        "edits remains inside:",
+        "O(k)",
+        "matrix diagonals.",
+        "Trees do not have one global sequence diagonal.",
+        "An edit can affect:",
+        "hierarchical depth;",
+        "forest boundaries;",
+        "subtree correspondences;",
+        "multiple sibling ranges.",
+        "Consequently the elegant:",
+        "O(n+k²)",
+        "string-edit structure does not transfer directly."
+      ]
+    },
+    {
+      "heading": "Akmal–Jin bounded TED",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 8,
+      "word_count": 40,
+      "evidence": "For unweighted bounded TED, Akmal and Jin developed an:",
+      "paragraphs": [
+        "For unweighted bounded TED, Akmal and Jin developed an:",
+        "O( n k² log n )",
+        "algorithm.",
+        "This makes the algorithm nearly linear in:",
+        "n",
+        "for constant:",
+        "k",
+        "but still multiplies the input-size term by a polynomial in the distance parameter."
+      ]
+    },
+    {
+      "heading": "From nk² to n + poly(k)",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "A major theoretical objective was to separate:",
+      "paragraphs": [
+        "A major theoretical objective was to separate:",
+        "input-reading work",
+        "from:",
+        "distance-dependent work",
+        "and obtain:",
+        "Õ( n + poly(k) )",
+        "rather than:",
+        "n · poly(k)",
+        "Das, Gilbert, Hajiaghayi, Kociumaka, Saha, and Saleh achieved such a result through tree kernelization techniques."
+      ]
+    },
+    {
+      "heading": "Tree-edit kernelization",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 9,
+      "word_count": 56,
+      "evidence": "The high-level goal is to transform:",
+      "paragraphs": [
+        "The high-level goal is to transform:",
+        "T₁,T₂",
+        "into much smaller trees:",
+        "T₁',T₂'",
+        "such that, when the original distance is at most:",
+        "k",
+        "the relevant edit distance is preserved.",
+        "Schematically:",
+        "large trees │ ├── identify repeated / │ irrelevant structure │ ▼ small kernel depending mainly on k │ ▼ expensive exact algorithm only on the kernel"
+      ]
+    },
+    {
+      "heading": "2025 low-distance TED",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 9,
+      "word_count": 52,
+      "evidence": "Kociumaka and Shahali further improved the bounded regime.",
+      "paragraphs": [
+        "Kociumaka and Shahali further improved the bounded regime.",
+        "Their 2025 algorithm computes bounded tree edit distance in:",
+        "O( n + k⁶ log k )",
+        "for both the weighted and unweighted settings covered by their formulation.",
+        "The result combines:",
+        "linear-time preprocessing;",
+        "kernelization;",
+        "analysis of periodic tree structures;",
+        "efficient computation on the resulting kernel."
+      ]
+    },
+    {
+      "heading": "Why n + k⁶ log k matters",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "n = 10,000,000",
+        "but:",
+        "k = 3",
+        "Then:",
+        "k⁶ log k",
+        "is independent of the enormous input size apart from the initial linear scan.",
+        "This gives the same conceptual pattern seen throughout parameterized edit-distance theory:",
+        "read the object + pay heavily only for the small region where changes occur"
+      ]
+    },
+    {
+      "heading": "Approximate tree edit distance",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 10,
+      "word_count": 55,
+      "evidence": "Exact TED is not always necessary.",
+      "paragraphs": [
+        "Exact TED is not always necessary.",
+        "Approximation permits a value:",
+        "D",
+        "satisfying, for example:",
+        "TED ≤ D ≤ (1+ε)TED",
+        "or another specified guarantee.",
+        "Boroujeni, Ghodsi, Hajiaghayi, and Seddighin developed a:",
+        "(1+ε)",
+        "approximation for tree edit distance in quadratic time.",
+        "Thus the same exact-versus-approximate distinction seen in Approximate Edit Distance Algorithms also appears for structured objects."
+      ]
+    },
+    {
+      "heading": "Graph edit distance",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 17,
+      "word_count": 82,
+      "evidence": "Tree edit distance still benefits from hierarchical constraints.",
+      "paragraphs": [
+        "Tree edit distance still benefits from hierarchical constraints.",
+        "Graph edit distance removes most of them.",
+        "Let a labeled graph be:",
+        "G = ( V, E, μ, ν )",
+        "where:",
+        "V is a vertex set;",
+        "E is an edge set;",
+        "μ assigns vertex labels or attributes;",
+        "ν assigns edge labels or attributes.",
+        "Graphs may be:",
+        "directed or undirected;",
+        "simple or multi-edge;",
+        "labeled or unlabeled;",
+        "attributed;",
+        "weighted;",
+        "connected or disconnected.",
+        "A GED definition is incomplete unless the graph model and edit operations are stated."
+      ]
+    },
+    {
+      "heading": "Classical graph edit operations",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "A common graph edit model contains:",
+      "paragraphs": [
+        "A common graph edit model contains:"
+      ]
+    },
+    {
+      "heading": "Vertex insertion",
+      "level": 3,
+      "id": "ux-section-64",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "add a vertex",
+      "paragraphs": [
+        "add a vertex"
+      ]
+    },
+    {
+      "heading": "Vertex deletion",
+      "level": 3,
+      "id": "ux-section-65",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "remove a vertex",
+      "paragraphs": [
+        "remove a vertex"
+      ]
+    },
+    {
+      "heading": "Vertex substitution",
+      "level": 3,
+      "id": "ux-section-66",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "change vertex label / attributes",
+      "paragraphs": [
+        "change vertex label / attributes"
+      ]
+    },
+    {
+      "heading": "Edge insertion",
+      "level": 3,
+      "id": "ux-section-67",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "add an edge",
+      "paragraphs": [
+        "add an edge"
+      ]
+    },
+    {
+      "heading": "Edge deletion",
+      "level": 3,
+      "id": "ux-section-68",
+      "paragraph_count": 1,
+      "word_count": 3,
+      "evidence": "remove an edge",
+      "paragraphs": [
+        "remove an edge"
+      ]
+    },
+    {
+      "heading": "Edge substitution",
+      "level": 3,
+      "id": "ux-section-69",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "change edge label / attributes",
+      "paragraphs": [
+        "change edge label / attributes",
+        "Each operation has an associated cost."
+      ]
+    },
+    {
+      "heading": "Graph edit path",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 12,
+      "word_count": 51,
+      "evidence": "An edit path is a sequence:",
+      "paragraphs": [
+        "An edit path is a sequence:",
+        "G₀ → G₁ → G₂ → ... → G_r",
+        "such that:",
+        "G₀ = G",
+        "and:",
+        "G_r is isomorphic to H",
+        "with each step applying a valid edit operation.",
+        "The graph edit distance is:",
+        "GED(G,H) = min_P Σ_(o∈P) c(o)",
+        "where:",
+        "P",
+        "ranges over valid graph-edit paths."
+      ]
+    },
+    {
+      "heading": "Why the endpoint is usually \"isomorphic to H\"",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 7,
+      "word_count": 44,
+      "evidence": "Vertex identifiers are implementation artifacts.",
+      "paragraphs": [
+        "Vertex identifiers are implementation artifacts.",
+        "Consider:",
+        "G: vertex IDs: 1,2,3 H: vertex IDs: A,B,C",
+        "If their labeled connectivity is identical, their structural distance should normally be:",
+        "0",
+        "despite different internal IDs.",
+        "Therefore GED operates over graph structure modulo isomorphism rather than literal vertex-array identity."
+      ]
+    },
+    {
+      "heading": "Graph G",
+      "level": 3,
+      "id": "ux-section-73",
+      "paragraph_count": 3,
+      "word_count": 17,
+      "evidence": "A ─── B \\ / C",
+      "paragraphs": [
+        "A ─── B \\ / C",
+        "This is a triangle:",
+        "E_G = { AB, AC, BC }"
+      ]
+    },
+    {
+      "heading": "Graph H",
+      "level": 3,
+      "id": "ux-section-74",
+      "paragraph_count": 18,
+      "word_count": 46,
+      "evidence": "A ─── B ─── C",
+      "paragraphs": [
+        "A ─── B ─── C",
+        "with:",
+        "E_H = { AB, BC }",
+        "If:",
+        "the vertices already have compatible labels;",
+        "edge deletion costs one;",
+        "no cheaper alternative exists;",
+        "then deleting:",
+        "AC",
+        "transforms:",
+        "G",
+        "into:",
+        "H",
+        "at cost:",
+        "1",
+        "so:",
+        "GED(G,H) = 1",
+        "under that particular edit-cost model."
+      ]
+    },
+    {
+      "heading": "GED is defined by both structure and costs",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 12,
+      "word_count": 58,
+      "evidence": "Suppose a vertex substitution costs:",
+      "paragraphs": [
+        "Suppose a vertex substitution costs:",
+        "10",
+        "while:",
+        "vertex deletion = 1 vertex insertion = 1",
+        "Then changing:",
+        "A → B",
+        "through substitution costs:",
+        "10",
+        "but deleting and reinserting costs:",
+        "2",
+        "An optimal edit path will therefore avoid the direct substitution.",
+        "The effective transformation geometry depends on the entire cost system rather than individual edit costs viewed in isolation."
+      ]
+    },
+    {
+      "heading": "Metric-compatible edit costs",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 11,
+      "word_count": 68,
+      "evidence": "Graph edit distance is not automatically a metric for arbitrary costs.",
+      "paragraphs": [
+        "Graph edit distance is not automatically a metric for arbitrary costs.",
+        "To obtain metric behavior on the appropriate graph-isomorphism classes, the edit-cost system normally needs compatible properties such as:",
+        "nonnegative costs;",
+        "zero cost only for identity-preserving transformations;",
+        "symmetry between inverse transformations when symmetry is required;",
+        "triangle-compatible substitution costs.",
+        "If:",
+        "delete(v) ≠ insert(v)",
+        "then generally:",
+        "GED(G,H) ≠ GED(H,G)",
+        "so the result is a directed dissimilarity rather than a metric."
+      ]
+    },
+    {
+      "heading": "Attributed graph edit distance",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 9,
+      "word_count": 72,
+      "evidence": "Suppose vertices represent spatial objects:",
+      "paragraphs": [
+        "Suppose vertices represent spatial objects:",
+        "v.label = ( class, x, y )",
+        "A vertex substitution may use:",
+        "c_sub(v,u) = α · class_mismatch(v,u) + β · EuclideanDistance( position(v), position(u) )",
+        "Edges might encode:",
+        "distance direction bond type relationship type",
+        "with separate edge substitution costs.",
+        "This flexibility is one of GED's greatest strengths.",
+        "It is also one of its greatest dangers: poorly designed costs can make the numerical distance mathematically inconsistent or semantically meaningless."
+      ]
+    },
+    {
+      "heading": "Graph edit distance as node correspondence",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 13,
+      "word_count": 62,
+      "evidence": "Rather than explicitly enumerate every operation sequence, many GED algorithms search for an assignment between vertices of:",
+      "paragraphs": [
+        "Rather than explicitly enumerate every operation sequence, many GED algorithms search for an assignment between vertices of:",
+        "G",
+        "and:",
+        "H",
+        "including dummy symbols representing:",
+        "deletion or insertion",
+        "A mapping might contain:",
+        "v₁ → u₄ v₂ → ε v₃ → u₂ ε → u₅",
+        "meaning:",
+        "v₁ is substituted/matched with u₄ ;",
+        "v₂ is deleted;",
+        "v₃ is matched with u₂ ;",
+        "u₅ is inserted."
+      ]
+    },
+    {
+      "heading": "Why GED is not merely linear assignment",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 19,
+      "word_count": 61,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "v₁ → u₁ v₂ → u₂",
+        "The cost of these assignments cannot generally be evaluated independently.",
+        "Why?",
+        "Because if:",
+        "(v₁,v₂) ∈ E_G",
+        "the algorithm must also inspect whether:",
+        "(u₁,u₂) ∈ E_H",
+        "and whether the edge labels match.",
+        "Thus matching:",
+        "v₁",
+        "to:",
+        "u₁",
+        "changes the cost of matching:",
+        "v₂",
+        "to:",
+        "u₂",
+        "through edge consistency.",
+        "This pairwise dependency creates quadratic assignment structure."
+      ]
+    },
+    {
+      "heading": "A quadratic assignment view of GED",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 12,
+      "word_count": 72,
+      "evidence": "Let binary variable:",
+      "paragraphs": [
+        "Let binary variable:",
+        "x_(i,k)",
+        "indicate whether:",
+        "vertex i of G",
+        "is assigned to:",
+        "vertex k of H",
+        "Then an optimization can take the schematic form:",
+        "min Σ_(i,k) c_vertex(i,k) x_(i,k) + Σ_(i,j,k,l) c_edge( i,j,k,l ) x_(i,k) x_(j,l)",
+        "subject to assignment constraints.",
+        "The first term measures vertex operations.",
+        "The second measures compatibility between edge structures induced by pairs of assignments.",
+        "This quadratic interaction is one reason GED is substantially harder than ordinary bipartite assignment."
+      ]
+    },
+    {
+      "heading": "Exact GED is NP-hard",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 5,
+      "word_count": 54,
+      "evidence": "Unlike classical ordered tree edit distance, exact graph edit distance for general labeled graphs is NP-hard, including under uniform edit costs in standard formulations.",
+      "paragraphs": [
+        "Unlike classical ordered tree edit distance, exact graph edit distance for general labeled graphs is NP-hard, including under uniform edit costs in standard formulations.",
+        "This changes the meaning of \"exact algorithm.\"",
+        "For TED, an exact algorithm may be polynomial but expensive:",
+        "O(n³) or subcubic polynomial",
+        "For GED, exact algorithms generally face exponential worst-case search."
+      ]
+    },
+    {
+      "heading": "Why graph structure creates combinatorial explosion",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 16,
+      "word_count": 53,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "|V_G| = n |V_H| = n",
+        "Even before considering deletions and insertions, there are:",
+        "n!",
+        "possible bijections between vertex sets.",
+        "For:",
+        "n = 20",
+        "this is approximately:",
+        "2.43 × 10^18",
+        "candidate permutations.",
+        "Most exact GED algorithms must avoid enumerating this space explicitly through:",
+        "branch-and-bound;",
+        "lower bounds;",
+        "best-first search;",
+        "constraint propagation;",
+        "integer programming."
+      ]
+    },
+    {
+      "heading": "A* graph edit distance",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 10,
+      "word_count": 55,
+      "evidence": "One classical exact approach interprets partial vertex mappings as nodes in a search tree.",
+      "paragraphs": [
+        "One classical exact approach interprets partial vertex mappings as nodes in a search tree.",
+        "At each state:",
+        "g = cost already committed",
+        "and a heuristic:",
+        "h = lower bound on unavoidable remaining cost",
+        "give:",
+        "f = g + h",
+        "A* expands the state with the smallest:",
+        "f",
+        "until an optimal complete edit path is certified."
+      ]
+    },
+    {
+      "heading": "Why the heuristic must be a lower bound",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "h(state)",
+        "overestimates the true remaining cost, A* may incorrectly discard the path leading to the optimal solution.",
+        "For exact GED:",
+        "h must be admissible",
+        "when using the standard optimal A* guarantee."
+      ]
+    },
+    {
+      "heading": "Lower-bound quality controls search size",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 10,
+      "word_count": 41,
+      "evidence": "Suppose the true remaining cost is:",
+      "paragraphs": [
+        "Suppose the true remaining cost is:",
+        "20",
+        "A weak bound:",
+        "h = 1",
+        "provides little pruning.",
+        "A strong bound:",
+        "h = 19",
+        "can eliminate many partial assignments.",
+        "There is therefore a trade-off:",
+        "cheap weak lower bound versus expensive strong lower bound"
+      ]
+    },
+    {
+      "heading": "A* memory bottleneck",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "Best-first search may keep huge numbers of partial mappings in its open set.",
+      "paragraphs": [
+        "Best-first search may keep huge numbers of partial mappings in its open set.",
+        "Thus memory can become prohibitive even before runtime does.",
+        "This motivated depth-first and branch-and-bound alternatives."
+      ]
+    },
+    {
+      "heading": "Depth-first GED",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 9,
+      "word_count": 58,
+      "evidence": "Depth-first exact approaches explore one mapping path deeply and retain far fewer pending states.",
+      "paragraphs": [
+        "Depth-first exact approaches explore one mapping path deeply and retain far fewer pending states.",
+        "Once a complete edit path of cost:",
+        "U",
+        "has been found, it provides an upper bound.",
+        "Any partial state satisfying:",
+        "g + h ≥ U",
+        "can be pruned.",
+        "This is classical branch-and-bound:",
+        "current lower bound ≥ best known solution ⇒ subtree cannot improve optimum"
+      ]
+    },
+    {
+      "heading": "Exact GED algorithm families",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "Modern exact GED literature includes algorithm families such as:",
+      "paragraphs": [
+        "Modern exact GED literature includes algorithm families such as:",
+        "A*-based best-first search;",
+        "depth-first branch-and-bound;",
+        "edge- or common-subgraph-oriented search;",
+        "binary/integer-programming formulations;",
+        "assignment-based lower-bound methods.",
+        "Blumenthal and Gamper provide a unified treatment of several exact approaches, including A*-GED, DF-GED, CSI-GED, and integer-programming variants."
+      ]
+    },
+    {
+      "heading": "Upper bounds are just as useful as lower bounds",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "Suppose an inexpensive heuristic produces a valid edit script with cost:",
+      "paragraphs": [
+        "Suppose an inexpensive heuristic produces a valid edit script with cost:",
+        "U = 37",
+        "Then:",
+        "GED(G,H) ≤ 37",
+        "Any exact search state with lower bound:",
+        "≥ 37",
+        "can be discarded.",
+        "A better initial approximate solution therefore often accelerates exact GED substantially."
+      ]
+    },
+    {
+      "heading": "Bipartite graph matching approximation",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 13,
+      "word_count": 54,
+      "evidence": "A widely used approximate GED method converts the vertex-matching problem into a linear assignment problem.",
+      "paragraphs": [
+        "A widely used approximate GED method converts the vertex-matching problem into a linear assignment problem.",
+        "Construct a cost matrix:",
+        "C[i][j]",
+        "that estimates the cost of matching:",
+        "v_i with u_j",
+        "based on:",
+        "vertex-label similarity;",
+        "local edge neighborhoods;",
+        "degree differences;",
+        "local attributes.",
+        "Then solve:",
+        "minimum-cost bipartite assignment",
+        "using an assignment algorithm such as a Hungarian-type method."
+      ]
+    },
+    {
+      "heading": "Why bipartite GED is fast",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 7,
+      "word_count": 31,
+      "evidence": "The assignment problem is polynomial-time solvable.",
+      "paragraphs": [
+        "The assignment problem is polynomial-time solvable.",
+        "For a square:",
+        "n × n",
+        "cost matrix, classical assignment methods run in approximately:",
+        "O(n³)",
+        "time.",
+        "This is dramatically better than exponential exact GED search."
+      ]
+    },
+    {
+      "heading": "Why bipartite GED is approximate",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 6,
+      "word_count": 52,
+      "evidence": "The linear cost:",
+      "paragraphs": [
+        "The linear cost:",
+        "C[i][j]",
+        "must estimate the effect of a vertex mapping before the assignments of neighboring vertices are known.",
+        "But true edge-edit cost depends jointly on pairs of vertex assignments.",
+        "The method therefore replaces global graph consistency with local approximations.",
+        "It can be extremely useful in practice without providing exact GED."
+      ]
+    },
+    {
+      "heading": "Quadratic assignment improves structural fidelity",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "A quadratic assignment formulation preserves interactions:",
+      "paragraphs": [
+        "A quadratic assignment formulation preserves interactions:",
+        "(v_i → u_k) and (v_j → u_l)",
+        "when evaluating whether:",
+        "(v_i,v_j)",
+        "corresponds to:",
+        "(u_k,u_l)",
+        "This captures global edge consistency much better than independent linear assignment.",
+        "However, the quadratic assignment problem is itself NP-hard.",
+        "Thus one gains modeling accuracy but loses the polynomial optimization advantage."
+      ]
+    },
+    {
+      "heading": "Approximate QAP methods",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 9,
+      "word_count": 45,
+      "evidence": "Practical GED approximations may use:",
+      "paragraphs": [
+        "Practical GED approximations may use:",
+        "continuous relaxations;",
+        "projected fixed-point methods;",
+        "graduated nonconvex optimization;",
+        "local search;",
+        "beam search;",
+        "genetic or evolutionary methods;",
+        "learned graph-matching models.",
+        "These methods can produce useful graph similarity estimates but should not be labeled exact GED unless an optimality certificate is available."
+      ]
+    },
+    {
+      "heading": "Graph edit distance and maximum common subgraph",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 11,
+      "word_count": 60,
+      "evidence": "A maximum common subgraph (MCS) seeks the largest graph structure shared by:",
+      "paragraphs": [
+        "A maximum common subgraph (MCS) seeks the largest graph structure shared by:",
+        "G",
+        "and:",
+        "H",
+        "under the chosen notion of common subgraph.",
+        "There is an important relationship between:",
+        "GED",
+        "and:",
+        "MCS",
+        "but the relationship depends on the edit-cost model.",
+        "Horst Bunke showed that under a particular cost function, computing graph edit distance is equivalent to finding a maximum common subgraph."
+      ]
+    },
+    {
+      "heading": "Why the cost qualification is essential",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 8,
+      "word_count": 52,
+      "evidence": "It is incorrect to state universally:",
+      "paragraphs": [
+        "It is incorrect to state universally:",
+        "GED = graph size - MCS size",
+        "without specifying:",
+        "what counts as graph size;",
+        "whether edges and vertices have labels;",
+        "which MCS definition is used;",
+        "edit-operation costs.",
+        "The equivalence is a theorem for particular compatible definitions, not an identity between every possible GED and MCS formulation."
+      ]
+    },
+    {
+      "heading": "String ED and LCS: a useful analogy",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 5,
+      "word_count": 44,
+      "evidence": "For insertion-deletion string distance:",
+      "paragraphs": [
+        "For insertion-deletion string distance:",
+        "ED_ID(x,y) = |x| + |y| - 2LCS(x,y)",
+        "The GED–MCS relationship is structurally analogous:",
+        "large common structure ↓ few edits small common structure ↓ many edits",
+        "but graphs introduce isomorphism and edge-consistency constraints that make finding the common structure dramatically harder."
+      ]
+    },
+    {
+      "heading": "Graph isomorphism is not graph edit distance",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 8,
+      "word_count": 58,
+      "evidence": "Graph isomorphism asks:",
+      "paragraphs": [
+        "Graph isomorphism asks:",
+        "Is there a structure-preserving bijection between G and H?",
+        "GED asks:",
+        "What is the cheapest way to transform G into H?",
+        "If all nonidentity operations have positive cost:",
+        "GED(G,H) = 0",
+        "typically means the labeled graphs are isomorphic under the chosen model.",
+        "But positive GED additionally quantifies how far nonisomorphic graphs are from one another."
+      ]
+    },
+    {
+      "heading": "Subgraph isomorphism is not GED either",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 10,
+      "word_count": 35,
+      "evidence": "Subgraph isomorphism asks whether:",
+      "paragraphs": [
+        "Subgraph isomorphism asks whether:",
+        "G",
+        "contains a subgraph structurally equivalent to:",
+        "H",
+        "GED allows:",
+        "substitution;",
+        "deletion;",
+        "insertion;",
+        "error tolerance.",
+        "GED can therefore be understood as an error-tolerant graph-matching framework rather than an exact containment test."
+      ]
+    },
+    {
+      "heading": "Tree edit distance is not simply GED on trees",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 14,
+      "word_count": 85,
+      "evidence": "This distinction is extremely important.",
+      "paragraphs": [
+        "This distinction is extremely important.",
+        "A tree is mathematically a special graph, but classical TED defines specialized node operations.",
+        "Recall the TED deletion:",
+        "P | X / \\ A B delete X P / \\ A B",
+        "A generic graph vertex deletion normally removes:",
+        "X",
+        "and its incident edges:",
+        "P-X X-A X-B",
+        "It does not automatically create:",
+        "P-A P-B",
+        "unless edge insertion operations are also performed or the GED model explicitly defines such restructuring.",
+        "Therefore:",
+        "classical TED(T₁,T₂) ≠ generic GED( tree_graph(T₁), tree_graph(T₂) )",
+        "in general."
+      ]
+    },
+    {
+      "heading": "Same objects, different edit semantics, different distance",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "This principle applies broadly:",
+      "paragraphs": [
+        "This principle applies broadly:",
+        "distance is not determined only by the objects distance is determined by: objects + valid operations + operation costs",
+        "The edit model is part of the mathematical definition."
+      ]
+    },
+    {
+      "heading": "String distance as an even more constrained structural edit distance",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 7,
+      "word_count": 67,
+      "evidence": "A string can be represented as a path graph:",
+      "paragraphs": [
+        "A string can be represented as a path graph:",
+        "x₁ - x₂ - x₃ - ... - xₙ",
+        "but generic graph edit distance on these path graphs does not automatically equal Levenshtein distance either.",
+        "Levenshtein insertion and deletion shift a linear sequence while preserving order.",
+        "A generic graph-edit model manipulates vertices and edges according to graph semantics.",
+        "Again:",
+        "same representation class does not imply same edit metric"
+      ]
+    },
+    {
+      "heading": "Tree versus graph mapping constraints",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 58,
+      "evidence": "Constraint String ED Ordered TED General GED One-to-one matched elements Implicit Yes Usually in vertex mapping formulations Left-to-right order Yes Yes for ordered trees No general global order Ancestor preservation Not applicable Yes Not applicable generally Edge consistency Implicit linear adjacency Implicit tree structure Must be optimized explicitly General correspondence search Strongly constrained Constrained Very large search space",
+      "paragraphs": [
+        "Constraint String ED Ordered TED General GED One-to-one matched elements Implicit Yes Usually in vertex mapping formulations Left-to-right order Yes Yes for ordered trees No general global order Ancestor preservation Not applicable Yes Not applicable generally Edge consistency Implicit linear adjacency Implicit tree structure Must be optimized explicitly General correspondence search Strongly constrained Constrained Very large search space"
+      ]
+    },
+    {
+      "heading": "Complexity progression from strings to graphs",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 60,
+      "evidence": "STRING EDIT DISTANCE │ ├── classical exact: │ O(n²) │ └── general exact: near-quadratic barrier ORDERED TREE EDIT DISTANCE │ ├── classical exact: │ O(n³) │ ├── unweighted modern: │ truly subcubic │ └── weighted: tightly connected to APSP UNORDERED TREE EDIT DISTANCE │ └── NP-complete in general GENERAL GRAPH EDIT DISTANCE │ └── NP-hard even under simple cost models",
+      "paragraphs": [
+        "STRING EDIT DISTANCE │ ├── classical exact: │ O(n²) │ └── general exact: near-quadratic barrier ORDERED TREE EDIT DISTANCE │ ├── classical exact: │ O(n³) │ ├── unweighted modern: │ truly subcubic │ └── weighted: tightly connected to APSP UNORDERED TREE EDIT DISTANCE │ └── NP-complete in general GENERAL GRAPH EDIT DISTANCE │ └── NP-hard even under simple cost models"
+      ]
+    },
+    {
+      "heading": "Why tree structure is the boundary between tractability and combinatorial matching",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 15,
+      "word_count": 49,
+      "evidence": "Trees eliminate cycles.",
+      "paragraphs": [
+        "Trees eliminate cycles.",
+        "More importantly, rooted ordered trees provide:",
+        "unique parent relationships;",
+        "well-defined subtrees;",
+        "nested interval structure under traversals;",
+        "ancestor constraints;",
+        "sibling order.",
+        "These properties make dynamic-programming decomposition possible.",
+        "General graphs may contain:",
+        "cycles;",
+        "multiple alternative paths;",
+        "symmetries;",
+        "dense connectivity;",
+        "many structurally interchangeable vertices.",
+        "The clean nested-subproblem structure disappears."
+      ]
+    },
+    {
+      "heading": "Tree symmetry can already be dangerous",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "When sibling order is discarded, even trees develop a large permutation space.",
+      "paragraphs": [
+        "When sibling order is discarded, even trees develop a large permutation space.",
+        "For a node with:",
+        "d",
+        "children, there may be:",
+        "d!",
+        "possible child correspondences.",
+        "This helps explain why unordered TED jumps from polynomial ordered-tree algorithms to NP-completeness."
+      ]
+    },
+    {
+      "heading": "Graph symmetry amplifies the same phenomenon",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "Suppose a graph contains many vertices with identical:",
+      "paragraphs": [
+        "Suppose a graph contains many vertices with identical:",
+        "labels;",
+        "degrees;",
+        "local neighborhoods.",
+        "Then enormous numbers of candidate assignments can initially appear equally plausible.",
+        "Exact GED algorithms may have difficulty pruning until enough global structure has been exposed."
+      ]
+    },
+    {
+      "heading": "Labels can dramatically reduce complexity in practice",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "Consider a graph where every vertex has a unique label:",
+      "paragraphs": [
+        "Consider a graph where every vertex has a unique label:",
+        "customer_17 invoice_482 product_91 ...",
+        "The correspondence may be almost predetermined.",
+        "Compare this with a graph containing 100 vertices all labeled:",
+        "atom:C",
+        "Many assignments remain plausible.",
+        "Thus practical GED complexity depends strongly on:",
+        "graph size + graph density + label discriminativeness + structural symmetry + cost model",
+        "not merely vertex count."
+      ]
+    },
+    {
+      "heading": "Tree edit distance for JSON and XML",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 10,
+      "word_count": 61,
+      "evidence": "Hierarchical documents naturally form trees.",
+      "paragraphs": [
+        "Hierarchical documents naturally form trees.",
+        "Example JSON:",
+        "{ \"user\": { \"name\": \"Ada\", \"address\": { \"city\": \"London\" } } }",
+        "can be represented conceptually as:",
+        "object └── user ├── name │ └── Ada └── address └── city └── London",
+        "Tree edit distance can distinguish:",
+        "changing a value",
+        "from:",
+        "moving information to a different hierarchical location",
+        "whereas flat token edit distance may not."
+      ]
+    },
+    {
+      "heading": "But JSON object order usually should not be semantic",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "JSON objects are conceptually unordered collections of name-value members.",
+      "paragraphs": [
+        "JSON objects are conceptually unordered collections of name-value members.",
+        "Therefore classical ordered TED may incorrectly assign distance to:",
+        "{ \"a\": 1, \"b\": 2 }",
+        "versus:",
+        "{ \"b\": 2, \"a\": 1 }",
+        "unless the representation canonicalizes key order before comparison.",
+        "This is a perfect example of why choosing:",
+        "ordered versus unordered",
+        "semantics must follow the data model rather than algorithmic convenience."
+      ]
+    },
+    {
+      "heading": "XML is different",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 6,
+      "word_count": 42,
+      "evidence": "In XML, child order is often semantically significant:",
+      "paragraphs": [
+        "In XML, child order is often semantically significant:",
+        "<book> <title>...</title> <author>...</author> </book>",
+        "and:",
+        "<book> <author>...</author> <title>...</title> </book>",
+        "may or may not be equivalent depending on the schema and application.",
+        "Ordered TED is therefore often more natural for XML than for JSON objects."
+      ]
+    },
+    {
+      "heading": "Abstract syntax trees",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 10,
+      "word_count": 65,
+      "evidence": "Source code is commonly parsed into abstract syntax trees:",
+      "paragraphs": [
+        "Source code is commonly parsed into abstract syntax trees:",
+        "if (x > 0) return x;",
+        "might become:",
+        "IF ├── CONDITION │ └── GREATER_THAN │ ├── IDENTIFIER(x) │ └── INTEGER(0) └── RETURN └── IDENTIFIER(x)",
+        "Tree edit distance can detect structural changes such as:",
+        "adding a branch;",
+        "changing an operator;",
+        "adding a function argument;",
+        "changing nesting depth.",
+        "See Source Code and AST Similarity for the application-level treatment."
+      ]
+    },
+    {
+      "heading": "Why AST TED is still not semantic code equivalence",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 9,
+      "word_count": 41,
+      "evidence": "For example:",
+      "paragraphs": [
+        "For example:",
+        "x + 0",
+        "and:",
+        "x",
+        "have different syntax trees but may have identical semantics under suitable assumptions.",
+        "Conversely, a one-node AST change such as:",
+        "< → <=",
+        "may cause a critical semantic difference.",
+        "Structural distance is not program equivalence."
+      ]
+    },
+    {
+      "heading": "Bioinformatics",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "Trees appear in biological data such as:",
+      "paragraphs": [
+        "Trees appear in biological data such as:",
+        "RNA secondary-structure representations;",
+        "phylogenetic representations;",
+        "glycan structures;",
+        "neuronal morphology.",
+        "The edit model must reflect the biological meaning of a structural operation.",
+        "A generic node deletion cost of one may be scientifically inappropriate when deleting one biological motif is far more consequential than deleting another."
+      ]
+    },
+    {
+      "heading": "Graphs in chemistry",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 7,
+      "word_count": 61,
+      "evidence": "A molecule can be modeled as a graph:",
+      "paragraphs": [
+        "A molecule can be modeled as a graph:",
+        "vertices: atoms edges: bonds",
+        "with labels such as:",
+        "vertex: C, N, O, ... edge: single, double, aromatic, ...",
+        "GED can provide a structural dissimilarity measure between molecular graphs.",
+        "However, edit costs must not be interpreted automatically as chemical reaction energies or biological similarity.",
+        "They remain a modeling choice unless calibrated against domain knowledge."
+      ]
+    },
+    {
+      "heading": "Graph-based pattern recognition",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 10,
+      "word_count": 53,
+      "evidence": "Graph edit distance has a long history in structural pattern recognition.",
+      "paragraphs": [
+        "Graph edit distance has a long history in structural pattern recognition.",
+        "An object can be represented by:",
+        "parts = vertices relations = edges",
+        "Examples include:",
+        "handwritten characters;",
+        "images segmented into regions;",
+        "scene graphs;",
+        "shape representations;",
+        "symbolic diagrams.",
+        "Sanfeliu and Fu's 1983 work is a foundational reference for edit-based distance on attributed relational graphs."
+      ]
+    },
+    {
+      "heading": "Knowledge graphs",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 15,
+      "word_count": 54,
+      "evidence": "A knowledge graph contains entities and relations:",
+      "paragraphs": [
+        "A knowledge graph contains entities and relations:",
+        "Paris ──capital_of──► France",
+        "GED could in principle measure structural differences between subgraphs.",
+        "But real knowledge graphs introduce complications:",
+        "entity aliases;",
+        "relation direction;",
+        "ontology hierarchies;",
+        "multi-relational edges;",
+        "confidence scores;",
+        "open-world incompleteness.",
+        "A missing edge may mean:",
+        "unknown",
+        "rather than:",
+        "false",
+        "so ordinary edge-deletion GED semantics can be misleading."
+      ]
+    },
+    {
+      "heading": "Cost learning",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 13,
+      "word_count": 49,
+      "evidence": "Instead of manually choosing:",
+      "paragraphs": [
+        "Instead of manually choosing:",
+        "c_insert c_delete c_substitute",
+        "one can learn cost parameters from labeled training examples.",
+        "For example, suppose training data contains pairs:",
+        "(G_i,H_i,y_i)",
+        "where:",
+        "y_i",
+        "indicates whether the objects should be considered similar.",
+        "One may optimize cost parameters:",
+        "θ",
+        "so that:",
+        "GED_θ(G_i,H_i)",
+        "better correlates with the target labels."
+      ]
+    },
+    {
+      "heading": "The circularity problem in learned GED",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 7,
+      "word_count": 35,
+      "evidence": "Computing exact GED may itself be expensive.",
+      "paragraphs": [
+        "Computing exact GED may itself be expensive.",
+        "Therefore repeatedly solving exact GED inside a cost-learning optimization loop can be computationally prohibitive.",
+        "Practical methods often use:",
+        "approximate GED;",
+        "surrogate losses;",
+        "precomputed edit paths;",
+        "learned graph embeddings."
+      ]
+    },
+    {
+      "heading": "Neural graph similarity",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 9,
+      "word_count": 55,
+      "evidence": "Graph neural networks can learn representations:",
+      "paragraphs": [
+        "Graph neural networks can learn representations:",
+        "G → z_G ∈ R^d",
+        "and approximate structural similarity through:",
+        "distance( z_G, z_H )",
+        "This can make inference dramatically faster than exact GED.",
+        "But:",
+        "embedding distance ≠ GED",
+        "unless a theorem or training objective provides a precise relationship.",
+        "See Learned Edit Distance and Embeddings for the broader theoretical distinction."
+      ]
+    },
+    {
+      "heading": "Exact, approximate, and learned structural distance",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 1,
+      "word_count": 74,
+      "evidence": "Method Output Optimality guarantee Typical scalability Exact TED True tree edit distance Yes Polynomial, but potentially expensive Approximate TED Approximation Depends on theorem Better Exact GED True graph edit distance Yes Generally limited to small/moderate graphs Bipartite GED Suboptimal edit path / GED estimate No exact GED guarantee in general Polynomial QAP-based GED approximation Approximate structural matching Usually heuristic Problem dependent Learned embedding Learned similarity score Usually no exact GED guarantee Potentially very high",
+      "paragraphs": [
+        "Method Output Optimality guarantee Typical scalability Exact TED True tree edit distance Yes Polynomial, but potentially expensive Approximate TED Approximation Depends on theorem Better Exact GED True graph edit distance Yes Generally limited to small/moderate graphs Bipartite GED Suboptimal edit path / GED estimate No exact GED guarantee in general Polynomial QAP-based GED approximation Approximate structural matching Usually heuristic Problem dependent Learned embedding Learned similarity score Usually no exact GED guarantee Potentially very high"
+      ]
+    },
+    {
+      "heading": "Normalization",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 9,
+      "word_count": 51,
+      "evidence": "Raw structural edit distance grows naturally with object size.",
+      "paragraphs": [
+        "Raw structural edit distance grows naturally with object size.",
+        "A tree containing:",
+        "10,000 nodes",
+        "may accumulate more edits than one containing:",
+        "10 nodes",
+        "even if their relative structural divergence is similar.",
+        "Applications therefore sometimes define normalized scores such as:",
+        "TED_norm = TED(T₁,T₂) / max( |T₁|, |T₂| )",
+        "or analogous graph normalizations."
+      ]
+    },
+    {
+      "heading": "Post-normalization is not a new edit distance optimization problem",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "If one first computes:",
+      "paragraphs": [
+        "If one first computes:",
+        "TED",
+        "and then divides by tree size, the optimization problem remains unchanged.",
+        "But an objective such as:",
+        "min_edit_path cost(path) / structural_size(path)",
+        "is a different mathematical problem because normalization occurs inside the optimization."
+      ]
+    },
+    {
+      "heading": "Normalization can violate metric properties",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 8,
+      "word_count": 35,
+      "evidence": "Even if:",
+      "paragraphs": [
+        "Even if:",
+        "TED",
+        "or:",
+        "GED",
+        "is a metric, an arbitrary pair-dependent normalization:",
+        "d'(A,B) = d(A,B) / f(A,B)",
+        "does not automatically preserve triangle inequality.",
+        "One should therefore not call a normalized score a metric without proof."
+      ]
+    },
+    {
+      "heading": "Similarity conversion",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "Applications may convert a distance into:",
+      "paragraphs": [
+        "Applications may convert a distance into:",
+        "similarity = 1 / (1+d)",
+        "or:",
+        "similarity = exp(-λd)",
+        "These transformations preserve ordering when monotonically decreasing but do not preserve all metric properties.",
+        "The parameter:",
+        "λ",
+        "also changes the numerical interpretation dramatically."
+      ]
+    },
+    {
+      "heading": "Thresholds",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 15,
+      "word_count": 47,
+      "evidence": "A practical system may classify:",
+      "paragraphs": [
+        "A practical system may classify:",
+        "similar if TED ≤ k",
+        "or:",
+        "GED ≤ τ",
+        "But threshold selection should depend on:",
+        "object size;",
+        "edit-cost scale;",
+        "application error tolerance;",
+        "class distribution.",
+        "A universal threshold such as:",
+        "distance ≤ 3",
+        "has very different meaning for:",
+        "5-node trees",
+        "and:",
+        "50,000-node trees"
+      ]
+    },
+    {
+      "heading": "Lower bounds for filtering",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 1,
+      "word_count": 11,
+      "evidence": "Before expensive structural distance computation, simple invariants can provide lower bounds.",
+      "paragraphs": [
+        "Before expensive structural distance computation, simple invariants can provide lower bounds."
+      ]
+    },
+    {
+      "heading": "Tree node-count difference",
+      "level": 3,
+      "id": "ux-section-128",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "With unit node insertion/deletion:",
+      "paragraphs": [
+        "With unit node insertion/deletion:",
+        "TED(T₁,T₂) ≥ || |T₁| - |T₂| ||"
+      ]
+    },
+    {
+      "heading": "Graph vertex-count difference",
+      "level": 3,
+      "id": "ux-section-129",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Similarly:",
+      "paragraphs": [
+        "Similarly:",
+        "GED(G,H) ≥ || |V_G| - |V_H| ||",
+        "under a cost system where each required vertex insertion/deletion costs at least one."
+      ]
+    },
+    {
+      "heading": "Edge-count lower bounds",
+      "level": 3,
+      "id": "ux-section-130",
+      "paragraph_count": 2,
+      "word_count": 35,
+      "evidence": "Edge-count imbalance may provide additional information, but care is required because vertex operations may automatically induce edge operations depending on the GED definition.",
+      "paragraphs": [
+        "Edge-count imbalance may provide additional information, but care is required because vertex operations may automatically induce edge operations depending on the GED definition.",
+        "A formula valid for one graph-edit convention may be invalid for another."
+      ]
+    },
+    {
+      "heading": "Filter-and-verify for structural matching",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 2,
+      "word_count": 40,
+      "evidence": "OBJECT PAIR ↓ cheap invariants ↓ size / label filters ↓ structural lower bound ↓ approximate TED/GED ↓ surviving candidates ↓ exact computation",
+      "paragraphs": [
+        "OBJECT PAIR ↓ cheap invariants ↓ size / label filters ↓ structural lower bound ↓ approximate TED/GED ↓ surviving candidates ↓ exact computation",
+        "For large repositories this architecture is often far more important than optimizing one exact comparison in isolation."
+      ]
+    },
+    {
+      "heading": "Batch tree comparison",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "N",
+        "trees must be compared all-pairs.",
+        "The number of pairs is:",
+        "N(N-1)/2",
+        "Even a fast polynomial TED algorithm may become impractical.",
+        "Indexing, embeddings, signatures, and candidate filtering therefore become necessary at corpus scale."
+      ]
+    },
+    {
+      "heading": "Batch graph comparison is even more severe",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 5,
+      "word_count": 41,
+      "evidence": "If exact GED is exponential in the worst case, computing it for:",
+      "paragraphs": [
+        "If exact GED is exponential in the worst case, computing it for:",
+        "millions of graph pairs",
+        "is generally impossible.",
+        "A scalable architecture commonly uses:",
+        "graph fingerprint ↓ candidate search ↓ fast GED approximation ↓ small candidate set ↓ optional exact GED"
+      ]
+    },
+    {
+      "heading": "Parallel tree edit distance",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 7,
+      "word_count": 46,
+      "evidence": "Tree-edit subproblems contain substantial dependency but also reusable independent components.",
+      "paragraphs": [
+        "Tree-edit subproblems contain substantial dependency but also reusable independent components.",
+        "Modern systems have explored parallel TED computation, including GPU and massively parallel implementations for hierarchical data.",
+        "Parallelism changes:",
+        "wall-clock latency",
+        "without necessarily changing the total mathematical work bound.",
+        "As always:",
+        "hardware speedup ≠ better asymptotic algorithm"
+      ]
+    },
+    {
+      "heading": "Memory remains critical",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 3,
+      "word_count": 16,
+      "evidence": "A theoretical algorithm that requires matrices proportional to:",
+      "paragraphs": [
+        "A theoretical algorithm that requires matrices proportional to:",
+        "|T₁||T₂|",
+        "may fail before runtime becomes the bottleneck."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 3,
+      "id": "ux-section-136",
+      "paragraph_count": 12,
+      "word_count": 34,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "|T₁| = |T₂| = 100,000",
+        "a full:",
+        "10^10",
+        "entry matrix is impossible for ordinary memory budgets.",
+        "Real implementations therefore depend on:",
+        "subproblem reuse;",
+        "matrix reclamation;",
+        "sparse computation;",
+        "blocking;",
+        "bounded-distance pruning;",
+        "parallel storage strategies."
+      ]
+    },
+    {
+      "heading": "Represent trees compactly",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 3,
+      "word_count": 26,
+      "evidence": "For ordered trees, useful arrays include:",
+      "paragraphs": [
+        "For ordered trees, useful arrays include:",
+        "postorder index parent[index] leftmost_leaf[index] subtree_size[index] label[index] keyroot information",
+        "This is generally preferable to allocating pointer-heavy objects inside inner dynamic-programming loops."
+      ]
+    },
+    {
+      "heading": "Graph representation affects GED engineering",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 7,
+      "word_count": 53,
+      "evidence": "Sparse graphs are naturally stored using:",
+      "paragraphs": [
+        "Sparse graphs are naturally stored using:",
+        "adjacency lists",
+        "while dense graphs may benefit from:",
+        "adjacency matrices or bitsets",
+        "A branch-and-bound GED algorithm may require extremely fast repeated queries such as:",
+        "does edge (u,v) exist? what is its label? what is degree(u)? how many unmatched neighbors remain?",
+        "The graph representation should optimize those operations."
+      ]
+    },
+    {
+      "heading": "Bitsets for structural consistency",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "For moderate dense graphs, adjacency bitsets allow operations such as:",
+      "paragraphs": [
+        "For moderate dense graphs, adjacency bitsets allow operations such as:",
+        "neighbors(u) AND mapped_vertices",
+        "to process many adjacency relationships using machine-word parallelism.",
+        "This does not remove NP-hardness but can dramatically improve search constants."
+      ]
+    },
+    {
+      "heading": "Symmetry breaking in exact GED",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 6,
+      "word_count": 47,
+      "evidence": "Suppose several unmatched vertices are structurally indistinguishable.",
+      "paragraphs": [
+        "Suppose several unmatched vertices are structurally indistinguishable.",
+        "Exploring all symmetric assignments repeats equivalent work.",
+        "Exact solvers can sometimes impose canonical choices such as:",
+        "among equivalent vertices, map the smallest ID first",
+        "to eliminate duplicate branches.",
+        "Correct symmetry breaking must be proven not to eliminate distinct optimal solutions."
+      ]
+    },
+    {
+      "heading": "Cost-matrix preprocessing",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "Before graph search, compute:",
+      "paragraphs": [
+        "Before graph search, compute:",
+        "vertex_substitution_cost[i][j]",
+        "and, when feasible:",
+        "edge_substitution_cost[ edge_i ][ edge_j ]",
+        "once.",
+        "This avoids repeatedly evaluating expensive domain-specific attribute functions inside search."
+      ]
+    },
+    {
+      "heading": "Label-aware pruning",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Suppose vertex labels are categorical and substitution between incompatible types is forbidden:",
+      "paragraphs": [
+        "Suppose vertex labels are categorical and substitution between incompatible types is forbidden:",
+        "person cannot map to chemical_bond",
+        "Then those assignments can be removed before optimization begins.",
+        "Domain constraints can reduce exact GED search by orders of magnitude."
+      ]
+    },
+    {
+      "heading": "But forbidden edits change the mathematical space",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "Representing an edit as:",
+      "paragraphs": [
+        "Representing an edit as:",
+        "cost = ∞",
+        "means the transformation is impossible.",
+        "This may cause:",
+        "GED(G,H) = ∞",
+        "for some graph pairs.",
+        "The resulting function may be an extended metric rather than an ordinary finite-valued metric."
+      ]
+    },
+    {
+      "heading": "Identity",
+      "level": 3,
+      "id": "ux-section-145",
+      "paragraph_count": 2,
+      "word_count": 14,
+      "evidence": "TED(T,T) = 0",
+      "paragraphs": [
+        "TED(T,T) = 0",
+        "when identity edits cost zero and nonidentity edits have positive cost."
+      ]
+    },
+    {
+      "heading": "Single relabel",
+      "level": 3,
+      "id": "ux-section-146",
+      "paragraph_count": 6,
+      "word_count": 21,
+      "evidence": "A | B",
+      "paragraphs": [
+        "A | B",
+        "versus:",
+        "A | C",
+        "should equal:",
+        "c_ren(B,C)",
+        "provided relabeling is no more expensive than an alternative delete-plus-insert path."
+      ]
+    },
+    {
+      "heading": "Single leaf insertion",
+      "level": 3,
+      "id": "ux-section-147",
+      "paragraph_count": 5,
+      "word_count": 9,
+      "evidence": "A",
+      "paragraphs": [
+        "A",
+        "versus:",
+        "A | B",
+        "should have cost:",
+        "c_ins(B)"
+      ]
+    },
+    {
+      "heading": "Delete internal node",
+      "level": 3,
+      "id": "ux-section-148",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "Explicitly test child promotion:",
+      "paragraphs": [
+        "Explicitly test child promotion:",
+        "A | B / \\ C D",
+        "to:",
+        "A / \\ C D",
+        "with one deletion in the classical TED model."
+      ]
+    },
+    {
+      "heading": "Test ordered sibling behavior",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "A ├── B └── C",
+      "paragraphs": [
+        "A ├── B └── C",
+        "versus:",
+        "A ├── C └── B",
+        "must not accidentally return zero under an ordered-tree implementation."
+      ]
+    },
+    {
+      "heading": "Test unordered semantics separately",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 2,
+      "word_count": 35,
+      "evidence": "If an application intends unordered trees, the same sibling permutation should normally have zero cost.",
+      "paragraphs": [
+        "If an application intends unordered trees, the same sibling permutation should normally have zero cost.",
+        "Do not obtain unordered behavior merely by sorting children unless a canonical ordering is mathematically justified by stable node attributes."
+      ]
+    },
+    {
+      "heading": "Differential testing of TED",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "For small trees:",
+      "paragraphs": [
+        "For small trees:",
+        "reference = slow obviously-correct solver candidate = optimized TED solver assert reference == candidate",
+        "Generate trees with:",
+        "random labels;",
+        "paths;",
+        "stars;",
+        "balanced trees;",
+        "highly asymmetric shapes.",
+        "Tree shape is essential because decomposition algorithms can have very different behavior across these families."
+      ]
+    },
+    {
+      "heading": "Isomorphic relabeling of vertex IDs",
+      "level": 3,
+      "id": "ux-section-153",
+      "paragraph_count": 4,
+      "word_count": 15,
+      "evidence": "G and permuted-ID copy of G",
+      "paragraphs": [
+        "G and permuted-ID copy of G",
+        "should have:",
+        "GED = 0",
+        "under a label-preserving model."
+      ]
+    },
+    {
+      "heading": "Single edge deletion",
+      "level": 3,
+      "id": "ux-section-154",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Triangle versus path should produce exactly the configured edge-deletion cost when all other structure is identical.",
+      "paragraphs": [
+        "Triangle versus path should produce exactly the configured edge-deletion cost when all other structure is identical."
+      ]
+    },
+    {
+      "heading": "Single vertex substitution",
+      "level": 3,
+      "id": "ux-section-155",
+      "paragraph_count": 5,
+      "word_count": 15,
+      "evidence": "Verify:",
+      "paragraphs": [
+        "Verify:",
+        "direct substitution",
+        "against:",
+        "delete + insert",
+        "to ensure the optimum chooses the cheaper path."
+      ]
+    },
+    {
+      "heading": "Graph symmetry",
+      "level": 3,
+      "id": "ux-section-156",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "Use cycles and complete graphs where many vertex mappings are equivalent.",
+      "paragraphs": [
+        "Use cycles and complete graphs where many vertex mappings are equivalent.",
+        "These expose:",
+        "duplicate search;",
+        "incorrect pruning;",
+        "mapping-cache bugs."
+      ]
+    },
+    {
+      "heading": "Lower-bound correctness is critical",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "In exact branch-and-bound GED:",
+      "paragraphs": [
+        "In exact branch-and-bound GED:",
+        "lower_bound(state) ≤ true remaining optimum",
+        "must always hold.",
+        "A lower bound that is too small merely slows the algorithm.",
+        "A lower bound that is too large can prune the true optimal solution and silently make an \"exact\" solver incorrect."
+      ]
+    },
+    {
+      "heading": "Upper-bound correctness is easier",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "Any valid complete edit path gives:",
+      "paragraphs": [
+        "Any valid complete edit path gives:",
+        "GED ≤ path_cost",
+        "even if the path is poor.",
+        "Thus approximate methods are useful for exact search because every feasible solution provides a safe upper bound."
+      ]
+    },
+    {
+      "heading": "Common misconception: TED is Levenshtein distance on a traversal",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "A traversal sequence can discard structural information.",
+        "Tree edit distance optimizes over structure-preserving mappings, not merely over serialized node labels."
+      ]
+    },
+    {
+      "heading": "Common misconception: deleting a tree node deletes its subtree",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "Not in classical TED.",
+      "paragraphs": [
+        "Not in classical TED.",
+        "Children of a deleted node are promoted to the deleted node's parent while preserving the required ordering."
+      ]
+    },
+    {
+      "heading": "Common misconception: tree edit distance is always cubic",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Cubic time was the classical general benchmark for rooted ordered TED and remains extremely important.",
+        "But modern unweighted algorithms are truly subcubic, and the 2025 rooted unweighted result reaches approximately:",
+        "Õ( n^2.6857 )",
+        "under the corresponding matrix-multiplication bound."
+      ]
+    },
+    {
+      "heading": "Common misconception: weighted and unweighted TED have the same modern complexity",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "The modern theory explicitly separates them.",
+        "Unweighted TED admits much stronger truly subcubic improvements.",
+        "Weighted TED is fine-grained tied to APSP and currently has a different asymptotic frontier."
+      ]
+    },
+    {
+      "heading": "Common misconception: unordered TED is easier because order is ignored",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 3,
+      "word_count": 23,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Removing sibling order increases the set of possible structural mappings.",
+        "General unordered labeled TED is NP-complete even for strongly restricted tree classes."
+      ]
+    },
+    {
+      "heading": "Common misconception: GED on tree graphs equals TED",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Classical TED node deletion includes child promotion.",
+        "Generic graph vertex deletion normally has different edge semantics.",
+        "The distances coincide only if the graph edit operations and costs are designed to reproduce the tree edit model."
+      ]
+    },
+    {
+      "heading": "Common misconception: graph edit distance is always a metric",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 6,
+      "word_count": 24,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Metricity depends on the edit-cost system and graph equivalence convention.",
+        "Arbitrary asymmetric or inconsistent costs can violate:",
+        "symmetry;",
+        "identity of indiscernibles;",
+        "triangle inequality."
+      ]
+    },
+    {
+      "heading": "Common misconception: exact GED is polynomial because assignment is polynomial",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Linear vertex assignment ignores global pairwise edge interactions.",
+        "Exact GED remains NP-hard in general.",
+        "Polynomial bipartite assignment algorithms are primarily approximation or bounding tools for GED."
+      ]
+    },
+    {
+      "heading": "Common misconception: a low GED proves two real-world objects are identical",
+      "level": 2,
+      "id": "ux-section-167",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "GED measures similarity according to:",
+        "the graph representation + the edit model + the costs",
+        "If those omit important real-world information, low GED may be meaningless for identity."
+      ]
+    },
+    {
+      "heading": "Common misconception: learned graph similarity is GED",
+      "level": 2,
+      "id": "ux-section-168",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "A neural model trained to predict GED may provide a fast estimate.",
+        "Unless an exact or approximation guarantee exists, its score remains a learned similarity function rather than graph edit distance itself."
+      ]
+    },
+    {
+      "heading": "Common misconception: a better approximation factor always means a better system",
+      "level": 2,
+      "id": "ux-section-169",
+      "paragraph_count": 8,
+      "word_count": 35,
+      "evidence": "Not necessarily.",
+      "paragraphs": [
+        "Not necessarily.",
+        "A:",
+        "1.1×",
+        "GED approximation taking ten seconds may be less useful than a:",
+        "2×",
+        "approximation taking one millisecond for candidate filtering.",
+        "The relevant trade-off is:",
+        "accuracy × runtime × memory × downstream objective"
+      ]
+    },
+    {
+      "heading": "Choosing between string, tree, and graph edit distance",
+      "level": 2,
+      "id": "ux-section-170",
+      "paragraph_count": 1,
+      "word_count": 68,
+      "evidence": "Data Natural representation Candidate distance Plain text / DNA sequence Sequence String edit distance XML hierarchy Ordered labeled tree Tree edit distance JSON object Tree with careful ordering semantics Canonicalized or application-specific TED AST Labeled tree Tree edit distance or AST-specific edit model Molecule Attributed graph Graph edit distance / domain graph metric Scene relations Attributed graph Graph edit distance Knowledge graph Multi-relational graph Usually domain-specific graph similarity",
+      "paragraphs": [
+        "Data Natural representation Candidate distance Plain text / DNA sequence Sequence String edit distance XML hierarchy Ordered labeled tree Tree edit distance JSON object Tree with careful ordering semantics Canonicalized or application-specific TED AST Labeled tree Tree edit distance or AST-specific edit model Molecule Attributed graph Graph edit distance / domain graph metric Scene relations Attributed graph Graph edit distance Knowledge graph Multi-relational graph Usually domain-specific graph similarity"
+      ]
+    },
+    {
+      "heading": "Algorithm-selection guide for TED",
+      "level": 2,
+      "id": "ux-section-171",
+      "paragraph_count": 1,
+      "word_count": 52,
+      "evidence": "Situation Useful starting point Small/medium ordered trees Zhang–Shasha or APTED-style implementation Tree shapes vary strongly Robust input-dependent decomposition Very large but very similar trees Bounded / kernelized TED Uniform theoretical worst-case study Modern unweighted TED algorithms Arbitrary weighted theoretical TED Weighted/APSP-equivalent algorithmic framework Unordered trees Recognize NP-hardness; exploit special structure or approximation",
+      "paragraphs": [
+        "Situation Useful starting point Small/medium ordered trees Zhang–Shasha or APTED-style implementation Tree shapes vary strongly Robust input-dependent decomposition Very large but very similar trees Bounded / kernelized TED Uniform theoretical worst-case study Modern unweighted TED algorithms Arbitrary weighted theoretical TED Weighted/APSP-equivalent algorithmic framework Unordered trees Recognize NP-hardness; exploit special structure or approximation"
+      ]
+    },
+    {
+      "heading": "Algorithm-selection guide for GED",
+      "level": 2,
+      "id": "ux-section-172",
+      "paragraph_count": 1,
+      "word_count": 57,
+      "evidence": "Situation Useful starting point Tiny graphs, exact answer required A* / exact branch-and-bound Memory-constrained exact search Depth-first branch-and-bound Strong mathematical optimization environment Integer-programming formulation Fast approximation Bipartite assignment GED Need better edge consistency QAP-based approximation Massive graph corpus Embeddings/indexing first, GED only on candidates Latency-critical ML system Learned graph similarity with explicit acknowledgment that it is approximate",
+      "paragraphs": [
+        "Situation Useful starting point Tiny graphs, exact answer required A* / exact branch-and-bound Memory-constrained exact search Depth-first branch-and-bound Strong mathematical optimization environment Integer-programming formulation Fast approximation Bipartite assignment GED Need better edge consistency QAP-based approximation Massive graph corpus Embeddings/indexing first, GED only on candidates Latency-critical ML system Learned graph similarity with explicit acknowledgment that it is approximate"
+      ]
+    },
+    {
+      "heading": "A useful structural hierarchy",
+      "level": 2,
+      "id": "ux-section-173",
+      "paragraph_count": 1,
+      "word_count": 72,
+      "evidence": "EDIT-BASED DISSIMILARITY │ ├── Sequences │ │ │ └── Levenshtein / │ string edit distance │ ├── Trees │ │ │ ├── rooted │ │ ├── ordered │ │ │ ├── weighted │ │ │ └── unweighted │ │ │ │ │ └── unordered │ │ │ └── unrooted │ └── Graphs │ ├── directed / undirected ├── labeled / attributed ├── weighted ├── exact GED ├── approximate GED └── learned similarity",
+      "paragraphs": [
+        "EDIT-BASED DISSIMILARITY │ ├── Sequences │ │ │ └── Levenshtein / │ string edit distance │ ├── Trees │ │ │ ├── rooted │ │ ├── ordered │ │ │ ├── weighted │ │ │ └── unweighted │ │ │ │ │ └── unordered │ │ │ └── unrooted │ └── Graphs │ ├── directed / undirected ├── labeled / attributed ├── weighted ├── exact GED ├── approximate GED └── learned similarity"
+      ]
+    },
+    {
+      "heading": "Historical progression",
+      "level": 2,
+      "id": "ux-section-174",
+      "paragraph_count": 1,
+      "word_count": 141,
+      "evidence": "1970s │ ├── string edit-distance DP │ └── Tai: tree-to-tree correction │ 1980s │ ├── Sanfeliu–Fu: │ attributed graph │ edit distance │ └── structural matching develops rapidly │ 1989 │ Zhang–Shasha ordered TED algorithm │ 1992 │ unordered TED shown NP-complete in general │ 1997 │ Bunke: GED–maximum-common- subgraph relationship │ 1998 │ Klein: faster tree-edit decomposition │ 2000s │ Demaine et al.: optimal decomposition and cubic TED │ 2009 │ bipartite matching approximation for GED │ 2011–2016 │ RTED / APTED: robust practical TED │ 2018–2020 │ fine-grained subcubic hardness for weighted TED │ 2021–2023 │ cubic barrier broken for unweighted TED │ 2022–2025 │ n + poly(k) bounded TED kernelization │ 2025 │ weighted TED ↔ APSP equivalence │ ├── weighted: │ n³ / │ 2^Ω(sqrt(log n)) │ ├── unwei",
+      "paragraphs": [
+        "1970s │ ├── string edit-distance DP │ └── Tai: tree-to-tree correction │ 1980s │ ├── Sanfeliu–Fu: │ attributed graph │ edit distance │ └── structural matching develops rapidly │ 1989 │ Zhang–Shasha ordered TED algorithm │ 1992 │ unordered TED shown NP-complete in general │ 1997 │ Bunke: GED–maximum-common- subgraph relationship │ 1998 │ Klein: faster tree-edit decomposition │ 2000s │ Demaine et al.: optimal decomposition and cubic TED │ 2009 │ bipartite matching approximation for GED │ 2011–2016 │ RTED / APTED: robust practical TED │ 2018–2020 │ fine-grained subcubic hardness for weighted TED │ 2021–2023 │ cubic barrier broken for unweighted TED │ 2022–2025 │ n + poly(k) bounded TED kernelization │ 2025 │ weighted TED ↔ APSP equivalence │ ├── weighted: │ n³ / │ 2^Ω(sqrt(log n)) │ ├── unweighted: │ Õ(n^((3+ω)/2)) │ └── bounded: O(n+k⁶ log k)"
+      ]
+    },
+    {
+      "heading": "Key conceptual differences",
+      "level": 2,
+      "id": "ux-section-175",
+      "paragraph_count": 1,
+      "word_count": 76,
+      "evidence": "Property String ED Ordered TED General GED Object Sequence Hierarchy Arbitrary relation network Basic structure Total order Ancestor + sibling order Edges Canonical exact method Dynamic programming Forest/tree dynamic programming Combinatorial search / optimization General classical complexity Quadratic Polynomial, classically cubic NP-hard Ordering constraint Fixed Usually fixed Absent generally Structural mapping Alignment Ancestor/order-preserving mapping Vertex correspondence + edge consistency Common approximation strategy Sampling / embeddings / windows Approximate structural DP Assignment / QAP / learned methods",
+      "paragraphs": [
+        "Property String ED Ordered TED General GED Object Sequence Hierarchy Arbitrary relation network Basic structure Total order Ancestor + sibling order Edges Canonical exact method Dynamic programming Forest/tree dynamic programming Combinatorial search / optimization General classical complexity Quadratic Polynomial, classically cubic NP-hard Ordering constraint Fixed Usually fixed Absent generally Structural mapping Alignment Ancestor/order-preserving mapping Vertex correspondence + edge consistency Common approximation strategy Sampling / embeddings / windows Approximate structural DP Assignment / QAP / learned methods"
+      ]
+    },
+    {
+      "heading": "The most important modeling rule",
+      "level": 2,
+      "id": "ux-section-176",
+      "paragraph_count": 13,
+      "word_count": 74,
+      "evidence": "Before choosing an edit-distance algorithm, define:",
+      "paragraphs": [
+        "Before choosing an edit-distance algorithm, define:",
+        "What exactly is the object?",
+        "Which structural relations are semantically meaningful?",
+        "Which edits are valid?",
+        "What does each edit cost?",
+        "Does order matter?",
+        "Is the object rooted?",
+        "Are labels categorical or continuous?",
+        "Must the resulting distance be a metric?",
+        "Is exactness required?",
+        "What input sizes must be supported?",
+        "Only after those questions are answered does it make sense to choose between:",
+        "Levenshtein TED GED or another structural metric"
+      ]
+    },
+    {
+      "heading": "Key facts",
+      "level": 2,
+      "id": "ux-section-177",
+      "paragraph_count": 1,
+      "word_count": 186,
+      "evidence": "Question Answer Is TED just Levenshtein on preorder traversal? No. What does classical TED preserve? Node correspondence, ancestry, and sibling order for ordered trees. What happens when a classical TED node is deleted? Its children are promoted to its parent in the required order. Are ordered and unordered TED equally difficult? No; unordered labeled TED is NP-complete in general. Classical ordered TED benchmark? O(n³) through decomposition algorithms for equal-size trees. Best modern unweighted rooted TED regime? Õ(n^((3+ω)/2)) , reported at most about n^2.6857 in the 2025 result. What controls weighted TED complexity? It is now tightly connected to APSP in fine-grained complexity. Modern bounded TED? O(n+k⁶ log k) in the 2025 low-distance result for the stated weighted/unweighted settin",
+      "paragraphs": [
+        "Question Answer Is TED just Levenshtein on preorder traversal? No. What does classical TED preserve? Node correspondence, ancestry, and sibling order for ordered trees. What happens when a classical TED node is deleted? Its children are promoted to its parent in the required order. Are ordered and unordered TED equally difficult? No; unordered labeled TED is NP-complete in general. Classical ordered TED benchmark? O(n³) through decomposition algorithms for equal-size trees. Best modern unweighted rooted TED regime? Õ(n^((3+ω)/2)) , reported at most about n^2.6857 in the 2025 result. What controls weighted TED complexity? It is now tightly connected to APSP in fine-grained complexity. Modern bounded TED? O(n+k⁶ log k) in the 2025 low-distance result for the stated weighted/unweighted setting. Is exact GED polynomial in general? No; it is NP-hard. Why is GED harder? Vertex assignments interact through global edge consistency. Is bipartite GED exact? Not in general; it is a polynomial-time approximation approach. Is GED related to maximum common subgraph? Yes, under specific compatible edit-cost models. Does GED on tree graphs automatically equal TED? No. Is GED automatically a metric? No; metricity depends on the edit-cost model."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-178",
+      "paragraph_count": 14,
+      "word_count": 780,
+      "evidence": "Tree and graph edit distance extend the edit-distance principle from linear sequences to structured objects. The extension is conceptually simple—define valid edit operations and minimize their total cost—but computationally profound because the algorithm must determine not only which elements differ but how the structures themselves correspond.",
+      "paragraphs": [
+        "Tree and graph edit distance extend the edit-distance principle from linear sequences to structured objects. The extension is conceptually simple—define valid edit operations and minimize their total cost—but computationally profound because the algorithm must determine not only which elements differ but how the structures themselves correspond.",
+        "Classical tree edit distance operates on rooted ordered labeled trees and permits node insertion, deletion, and relabeling. Unlike subtree deletion, deleting an internal node normally promotes its children to the deleted node's parent. An equivalent mapping formulation requires matched nodes to preserve one-to-one correspondence, ancestry, and left-to-right order. These structural restrictions are precisely what make dynamic programming possible.",
+        "The historical ordered-TED algorithms progressed from Tai's high-degree polynomial dynamic programming to the shape-sensitive Zhang–Shasha algorithm, then through increasingly sophisticated path-decomposition methods to the cubic Demaine–Mozes–Rossman–Weimann framework. RTED and APTED subsequently made decomposition more robust and memory-conscious for practical workloads.",
+        "Modern complexity theory has revealed that weighted and unweighted TED behave differently. Fine-grained reductions tie weighted tree edit distance closely to All-Pairs Shortest Paths. The 2025 APSP-equivalence result yields a weighted TED algorithm of roughly n³ / 2^Ω(sqrt(log n)) , while continuing to suggest that a fixed-exponent truly subcubic weighted algorithm would require a breakthrough for APSP.",
+        "Unweighted tree edit distance has a substantially better frontier. Mao first broke the cubic barrier, and 2025 work reduced rooted ordered unweighted TED to Õ(n^((3+ω)/2)) , reported as at most roughly O(n^2.6857) under the corresponding matrix-multiplication bound. This is a genuine polynomial-exponent improvement over the classical cubic regime.",
+        "Low-distance trees admit another acceleration. Parameterized algorithms progressed from O(nk² log n) toward n+poly(k) through structural kernelization. The 2025 low-distance algorithm achieves O(n+k⁶ log k) for the covered weighted and unweighted models, demonstrating that extremely large trees can in principle be compared almost linearly when only a small number of edits separates them.",
+        "Ordering itself is a source of tractability. Once sibling order is discarded, the correspondence space grows dramatically: unordered labeled tree edit distance is NP-complete even for binary trees over a two-symbol alphabet. This is an important reminder that removing structural constraints may make a matching problem computationally harder rather than easier.",
+        "Graph edit distance generalizes the transformation paradigm further. Vertices and edges may be inserted, deleted, or substituted, and the distance is the minimum cost of an edit path leading to a graph isomorphic to the target. Unlike ordered trees, general graphs provide no ancestor hierarchy or global order that cleanly restricts correspondence.",
+        "The core difficulty of GED is that vertex matches are not independent. Mapping v₁ to u₁ changes the cost of mapping v₂ to u₂ because the algorithm must verify whether corresponding edges exist and whether their attributes agree. This creates pairwise assignment interactions and connects GED naturally to quadratic assignment, maximum common subgraph, integer programming, and combinatorial search.",
+        "Exact GED is NP-hard even for simple uniform-cost settings. Classical A*-based algorithms search partial vertex mappings using admissible lower bounds, while depth-first and branch-and-bound methods reduce memory pressure. Integer-programming formulations provide another exact route. In all cases, effective lower and upper bounds are essential because the raw correspondence space may contain factorially many assignments.",
+        "Approximate GED replaces the full global optimization with more manageable problems. Bipartite matching assigns vertices according to local structural costs and can be solved in polynomial time, typically around cubic assignment complexity, but it cannot fully represent pairwise edge consistency. Quadratic-assignment approximations recover more global structure at the price of a harder optimization problem. Learned graph embeddings offer still greater scalability but should not be confused with GED unless a formal relationship has been established.",
+        "Tree edit distance and graph edit distance also should not be conflated with one another merely because a tree is a graph. Their primitive operations differ. Classical TED deletion reconnects a deleted node's children to its parent, whereas ordinary graph vertex deletion removes incident edges. Consequently, applying generic GED to graph representations of trees generally produces a different distance from classical TED.",
+        "The broader principle is that an edit distance is defined by three components: the representation, the admissible transformations, and the cost model . Changing any one of them changes the mathematical problem. A perfectly computed distance can therefore still be the wrong measure if the representation or edit semantics do not correspond to the application.",
+        "For sequences, the natural structural model is linear and Levenshtein distance is often appropriate. For hierarchical data such as XML or syntax trees, tree edit distance retains ancestry and ordering information. For molecules, scene relations, or arbitrary relational objects, graph edit distance may be the appropriate abstraction. As the structural freedom increases from strings to trees to graphs, the computational problem moves from highly constrained dynamic programming toward general combinatorial optimization."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-179",
+      "paragraph_count": 9,
+      "word_count": 120,
+      "evidence": "Edit Distance — the general transformation-based framework from which string, tree, and graph edit measures arise.",
+      "paragraphs": [
+        "Edit Distance — the general transformation-based framework from which string, tree, and graph edit measures arise.",
+        "Edit Operations and Edit Scripts — how operation systems define the geometry of an edit distance.",
+        "Edit Distance Complexity — exact complexity, parameterization, and fine-grained lower bounds for strings.",
+        "Bounded and Parameterized Edit Distance — the low-distance principle that also motivates bounded TED.",
+        "Approximate Edit Distance Algorithms — exact-versus-approximate computational trade-offs.",
+        "Weighted Levenshtein Distance — why operation costs are part of the mathematical distance definition.",
+        "Source Code and AST Similarity — tree-based structural comparison for programs.",
+        "Learned Edit Distance and Embeddings — learned alternatives and approximations to explicit edit computation.",
+        "Edit Distance Research Frontiers — current theoretical boundaries across strings and structured edit problems."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-180",
+      "paragraph_count": 20,
+      "word_count": 485,
+      "evidence": "Kuo-Chung Tai, “The Tree-to-Tree Correction Problem,” Journal of the ACM , 26(3), 422–433, 1979. DOI record .",
+      "paragraphs": [
+        "Kuo-Chung Tai, “The Tree-to-Tree Correction Problem,” Journal of the ACM , 26(3), 422–433, 1979. DOI record .",
+        "Alberto Sanfeliu and King-Sun Fu, “A Distance Measure Between Attributed Relational Graphs for Pattern Recognition,” IEEE Transactions on Systems, Man, and Cybernetics , SMC-13(3), 353–362, 1983. DOI record .",
+        "Kaizhong Zhang and Dennis Shasha, “Simple Fast Algorithms for the Editing Distance Between Trees and Related Problems,” SIAM Journal on Computing , 18(6), 1245–1262, 1989. DOI record .",
+        "Kaizhong Zhang, Rick Statman, and Dennis Shasha, “On the Editing Distance Between Unordered Labeled Trees,” Information Processing Letters , 42(3), 133–139, 1992. DOI record .",
+        "Horst Bunke, “On a Relation Between Graph Edit Distance and Maximum Common Subgraph,” Pattern Recognition Letters , 18(8), 689–694, 1997. DOI record .",
+        "Philip N. Klein, “Computing the Edit-Distance Between Unrooted Ordered Trees,” European Symposium on Algorithms , 91–102, 1998. DOI record .",
+        "Philip Bille, “A Survey on Tree Edit Distance and Related Problems,” Theoretical Computer Science , 337(1–3), 217–239, 2005. DOI record .",
+        "Erik D. Demaine, Shay Mozes, Benjamin Rossman, and Oren Weimann, “An Optimal Decomposition Algorithm for Tree Edit Distance,” ACM Transactions on Algorithms , 6(1), 2009/2010. DOI record .",
+        "Kaspar Riesen and Horst Bunke, “Approximate Graph Edit Distance Computation by Means of Bipartite Graph Matching,” Image and Vision Computing , 27(7), 950–959, 2009. DOI record .",
+        "Mateusz Pawlik and Nikolaus Augsten, “RTED: A Robust Algorithm for the Tree Edit Distance,” Proceedings of the VLDB Endowment , 5(4), 2011. DOI record .",
+        "Mateusz Pawlik and Nikolaus Augsten, “Efficient Computation of the Tree Edit Distance,” ACM Transactions on Database Systems , 40(1), 2015. DOI record .",
+        "Mateusz Pawlik and Nikolaus Augsten, “Tree Edit Distance: Robust and Memory-Efficient,” Information Systems , 56, 157–173, 2016. DOI record .",
+        "David B. Blumenthal and Johann Gamper, “On the Exact Computation of the Graph Edit Distance,” Pattern Recognition Letters , 134, 46–57, 2020. DOI record .",
+        "Karl Bringmann, Paweł Gawrychowski, Shay Mozes, and Oren Weimann, “Tree Edit Distance Cannot Be Computed in Strongly Subcubic Time (Unless APSP Can),” ACM Transactions on Algorithms , 16(4), 2020. DOI record .",
+        "Mahdi Boroujeni, Mohammad Ghodsi, MohammadTaghi Hajiaghayi, and Saeed Seddighin, “1+ε Approximation of Tree Edit Distance in Quadratic Time,” STOC 2019 , 709–720. DOI record .",
+        "Shyan Akmal and Ce Jin, “Faster Algorithms for Bounded Tree Edit Distance,” ICALP 2021 . DOI record .",
+        "Xiao Mao, “Breaking the Cubic Barrier for (Unweighted) Tree Edit Distance,” SIAM Journal on Computing . DOI record .",
+        "Debarati Das, Jacob Gilbert, MohammadTaghi Hajiaghayi, Tomasz Kociumaka, Barna Saha, and Hamed Saleh, “Õ(n+poly(k))-Time Algorithm for Bounded Tree Edit Distance,” FOCS 2022 , 686–697. DOI record .",
+        "Jakob Nogler, Adam Polak, Barna Saha, Virginia Vassilevska Williams, Yinzhan Xu, and Christopher Ye, “Faster Weighted and Unweighted Tree Edit Distance and APSP Equivalence,” STOC 2025 , 2167–2178. DOI record .",
+        "Tomasz Kociumaka and Ali Shahali, “Faster Algorithm for Bounded Tree Edit Distance in the Low-Distance Regime,” ESA 2025 . DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-edit-distance-algorithms",
+      "evidence": [
+        {
+          "section": "Approximate tree edit distance",
+          "anchor_id": "ux-section-61",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "Thus the same exact-versus-approximate distinction seen in Approximate Edit Distance Algorithms also appears for structured objects."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-179",
+          "alias": "approximate edit distance algorithms",
+          "excerpt": "Approximate Edit Distance Algorithms — exact-versus-approximate computational trade-offs."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-179",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — the low-distance principle that also motivates bounded TED."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-complexity",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-179",
+          "alias": "edit distance complexity",
+          "excerpt": "Edit Distance Complexity — exact complexity, parameterization, and fine-grained lower bounds for strings."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-research-frontiers",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-179",
+          "alias": "edit distance research frontiers",
+          "excerpt": "Edit Distance Research Frontiers — current theoretical boundaries across strings and structured edit problems."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Tree and Graph Edit Distance",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Edit distance is not limited to strings. The same fundamental idea—measuring dissimilarity by the minimum cost of transforming one object into another—extends to hierarchical structures such as trees and to relational structures such as graphs. The resulting measures are known as tree edit distance (TED) and graph edit distance (GED)."
+        },
+        {
+          "section": "Tree 2",
+          "anchor_id": "ux-section-5",
+          "alias": "edit distance",
+          "excerpt": "so ordinary string edit distance between the traversals is:"
+        },
+        {
+          "section": "Tree edit distance",
+          "anchor_id": "ux-section-6",
+          "alias": "edit distance",
+          "excerpt": "The classical tree edit distance problem is defined on rooted, ordered, labeled trees."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "Tree edit distance",
+          "anchor_id": "ux-section-6",
+          "alias": "edit operations",
+          "excerpt": "The tree edit distance is the minimum total cost of a valid sequence of tree-edit operations that transforms:"
+        },
+        {
+          "section": "Node-labeled versus edge-labeled trees",
+          "anchor_id": "ux-section-26",
+          "alias": "edit operations",
+          "excerpt": "The edit operations must then specify whether costs apply to:"
+        },
+        {
+          "section": "Graph edit distance",
+          "anchor_id": "ux-section-62",
+          "alias": "edit operations",
+          "excerpt": "A GED definition is incomplete unless the graph model and edit operations are stated."
+        }
+      ]
+    },
+    {
+      "target": "/learned-edit-distance-and-embeddings",
+      "evidence": [
+        {
+          "section": "Neural graph similarity",
+          "anchor_id": "ux-section-120",
+          "alias": "learned edit distance and embeddings",
+          "excerpt": "See Learned Edit Distance and Embeddings for the broader theoretical distinction."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-179",
+          "alias": "learned edit distance and embeddings",
+          "excerpt": "Learned Edit Distance and Embeddings — learned alternatives and approximations to explicit edit computation."
+        }
+      ]
+    },
+    {
+      "target": "/source-code-and-ast-similarity",
+      "evidence": [
+        {
+          "section": "Abstract syntax trees",
+          "anchor_id": "ux-section-112",
+          "alias": "source code and ast similarity",
+          "excerpt": "See Source Code and AST Similarity for the application-level treatment."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-179",
+          "alias": "source code and ast similarity",
+          "excerpt": "Source Code and AST Similarity — tree-based structural comparison for programs."
+        }
+      ]
+    },
+    {
+      "target": "/theory",
+      "evidence": [
+        {
+          "section": "Why n + k⁶ log k matters",
+          "anchor_id": "ux-section-60",
+          "alias": "edit distance theory",
+          "excerpt": "This gives the same conceptual pattern seen throughout parameterized edit-distance theory:"
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-179",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — why operation costs are part of the mathematical distance definition."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/tree-and-graph-edit-distance#page",
+      "type": "WebPage",
+      "name": "Tree and Graph Edit Distance",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "type": "TechArticle",
+      "name": "Tree and Graph Edit Distance",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/edit-distance#term"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/tree-and-graph-edit-distance#concept",
+      "type": "DefinedTerm",
+      "name": "Tree and Graph Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Tree Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance",
+      "type": "DefinedTerm",
+      "name": "Graph Edit Distance",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/tree-and-graph-edit-distance#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/theory#collection",
+      "hasPart",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#page",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#page",
+      "mainEntity",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#page",
+      "isPartOf",
+      "https://www.levenshtein.net/theory#collection"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#page",
+      "hasPart",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "about",
+      "https://www.levenshtein.net/edit-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/edit-distance-complexity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/approximate-edit-distance-algorithms#concept"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/learned-edit-distance-and-embeddings#concept"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "mentions",
+      "https://www.levenshtein.net/source-code-and-ast-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "isPartOf",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#page"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/322139.322143"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1109/tsmc.1983.6313167"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1137/0218082"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/0020-0190(92)90136-j"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/s0167-8655(97)00060-3"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1007/3-540-68530-8_8"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/j.tcs.2004.12.030"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/1644015.1644017"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/j.imavis.2008.04.004"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.14778/2095686.2095692"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/2699485"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/j.is.2015.08.004"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1016/j.patrec.2018.05.002"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/3381878"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/3313276.3316388"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.4230/lipics.icalp.2021.12"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1137/22m1480719"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1109/focs54457.2022.00071"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.1145/3717823.3718116"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#article",
+      "citation",
+      "https://doi.org/10.4230/lipics.esa.2025.94"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance",
+      "isPartOf",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance",
+      "isPartOf",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#concept"
+    ],
+    [
+      "https://doi.org/10.1145/322139.322143",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1109/tsmc.1983.6313167",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1137/0218082",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1016/0020-0190(92)90136-j",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1016/s0167-8655(97)00060-3",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1145/1644015.1644017",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1016/j.imavis.2008.04.004",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1145/2699485",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1016/j.patrec.2018.05.002",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#graph-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1145/3381878",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1137/22m1480719",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://doi.org/10.1145/3717823.3718116",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ],
+    [
+      "https://doi.org/10.4230/lipics.esa.2025.94",
+      "about",
+      "https://www.levenshtein.net/tree-and-graph-edit-distance#tree-edit-distance"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://doi.org/10.1145/322139.322143",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/tsmc.1983.6313167",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/0218082",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/0020-0190(92)90136-j",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/s0167-8655(97)00060-3",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1007/3-540-68530-8_8",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.tcs.2004.12.030",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/1644015.1644017",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.imavis.2008.04.004",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.14778/2095686.2095692",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/2699485",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.is.2015.08.004",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1016/j.patrec.2018.05.002",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3381878",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3313276.3316388",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/lipics.icalp.2021.12",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1137/22m1480719",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/focs54457.2022.00071",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/3717823.3718116",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.4230/lipics.esa.2025.94",
+      "anchor": "DOI record"
+    }
+  ]
+}

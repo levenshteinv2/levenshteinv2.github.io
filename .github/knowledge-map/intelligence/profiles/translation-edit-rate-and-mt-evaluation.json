@@ -1,0 +1,1909 @@
+{
+  "url": "/translation-edit-rate-and-mt-evaluation",
+  "title": "Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations",
+  "h1": [
+    "Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations"
+  ],
+  "group": "Language",
+  "provisional_mission": "TER và đánh giá dịch máy",
+  "content_sha256": "57c7c2ecab7e3b7bc0353b02cecb331366ead906a23fd98f002c8807331d27d1",
+  "canonical": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation",
+  "primary_entity_candidate": "Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Translation Edit Rate and Machine Translation Evaluation",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 6,
+      "word_count": 127,
+      "evidence": "Translation Edit Rate (TER) is a reference-based metric for machine translation (MT) that estimates how much word-level editing is required to transform a system translation into a reference translation. It extends ordinary word-level Levenshtein distance by adding a fourth operation: a shift of a contiguous sequence of words.",
+      "paragraphs": [
+        "Translation Edit Rate (TER) is a reference-based metric for machine translation (MT) that estimates how much word-level editing is required to transform a system translation into a reference translation. It extends ordinary word-level Levenshtein distance by adding a fourth operation: a shift of a contiguous sequence of words.",
+        "The basic model is:",
+        "machine translation hypothesis | v insert words delete words substitute words shift word blocks | v reference translation",
+        "Lower TER generally means that fewer permitted edits separate the hypothesis from the reference. But TER must not be interpreted as a direct measurement of meaning, factual correctness, fluency, safety, or actual human editing time. It measures a structured relationship between particular textual realizations.",
+        "The crucial boundary is:",
+        "surface edit similarity != translation quality != semantic equivalence."
+      ]
+    },
+    {
+      "heading": "1. Formal definition of Translation Edit Rate",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 18,
+      "word_count": 124,
+      "evidence": "Let the MT hypothesis be:",
+      "paragraphs": [
+        "Let the MT hypothesis be:",
+        "H = (h1, h2, ..., hM)",
+        "and a reference translation be:",
+        "R = (r1, r2, ..., rN).",
+        "TER permits four principal operations:",
+        "insertion of one word;",
+        "deletion of one word;",
+        "substitution of one word;",
+        "shift of one contiguous block of hypothesis words.",
+        "Under the standard formulation, each operation has unit cost.",
+        "I + D + S + Sh TER = ---------------- N",
+        "where:",
+        "I = number of insertions;",
+        "D = number of deletions;",
+        "S = number of substitutions;",
+        "Sh = number of accepted block shifts;",
+        "N = reference length in words.",
+        "Matthew Snover, Bonnie Dorr, Rich Schwartz, Linnea Micciulla, and John Makhoul introduced TER in the 2006 paper A Study of Translation Edit Rate with Targeted Human Annotation ."
+      ]
+    },
+    {
+      "heading": "2. Relationship to Levenshtein distance",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 7,
+      "word_count": 61,
+      "evidence": "If block shifts are disabled, the central TER alignment reduces to word-level Levenshtein distance:",
+      "paragraphs": [
+        "If block shifts are disabled, the central TER alignment reduces to word-level Levenshtein distance:",
+        "insert delete substitute.",
+        "TER adds:",
+        "move contiguous word block.",
+        "Thus TER can be viewed conceptually as:",
+        "word-level edit distance + translation-oriented reordering operation.",
+        "This is a major difference from word error rate , where large reorderings are ordinarily represented through sequences of insertion, deletion, and substitution operations."
+      ]
+    },
+    {
+      "heading": "3. Why machine translation needs a reordering operation",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 5,
+      "word_count": 59,
+      "evidence": "Translation frequently changes phrase order without changing the intended proposition.",
+      "paragraphs": [
+        "Translation frequently changes phrase order without changing the intended proposition.",
+        "REFERENCE: I saw him yesterday at the station HYPOTHESIS: Yesterday I saw him at the station",
+        "Ordinary sequential edit distance can over-penalize this movement. TER can instead treat yesterday as one moved block.",
+        "The modeling assumption is:",
+        "moving already-correct material should sometimes cost less than deleting and recreating it."
+      ]
+    },
+    {
+      "heading": "4. TER shift is not Damerau transposition",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 7,
+      "word_count": 55,
+      "evidence": "A TER shift must not be confused with an adjacent transposition in Damerau-Levenshtein distance .",
+      "paragraphs": [
+        "A TER shift must not be confused with an adjacent transposition in Damerau-Levenshtein distance .",
+        "An adjacent transposition is:",
+        "A B -> B A",
+        "A TER shift can move an entire contiguous block:",
+        "A B [C D E] F G -> [C D E] A B F G.",
+        "Therefore:",
+        "TER block shift != adjacent-character transposition."
+      ]
+    },
+    {
+      "heading": "5. Basic worked example",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 8,
+      "word_count": 76,
+      "evidence": "REF: the committee approved the proposal HYP: the committee accepted proposal",
+      "paragraphs": [
+        "REF: the committee approved the proposal HYP: the committee accepted proposal",
+        "A plausible alignment contains:",
+        "approved -> accepted substitution missing \"the\" deletion relative to reference alignment",
+        "Using the usual hypothesis-to-reference edit terminology:",
+        "S = 1 D = 1 I = 0 Sh = 0 N = 5",
+        "so:",
+        "TER = 2 / 5 = 0.40 = 40%.",
+        "The metric treats approved and accepted as different lexical tokens even if they may be semantically close in context."
+      ]
+    },
+    {
+      "heading": "6. Worked reordering example",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 6,
+      "word_count": 61,
+      "evidence": "REF: we will discuss the proposal tomorrow HYP: tomorrow we will discuss the proposal",
+      "paragraphs": [
+        "REF: we will discuss the proposal tomorrow HYP: tomorrow we will discuss the proposal",
+        "If TER recognizes tomorrow as a valid one-block shift:",
+        "Sh = 1 I = 0 D = 0 S = 0 N = 6",
+        "then:",
+        "TER = 1 / 6 ≈ 16.67%.",
+        "Ordinary word-level Levenshtein distance can assign a larger cost because it has no block-move primitive."
+      ]
+    },
+    {
+      "heading": "7. TER is not computationally just Levenshtein plus a fourth DP transition",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 4,
+      "word_count": 72,
+      "evidence": "Insertion, deletion, and substitution fit directly into the standard two-dimensional dynamic program. Arbitrary block movement does not.",
+      "paragraphs": [
+        "Insertion, deletion, and substitution fit directly into the standard two-dimensional dynamic program. Arbitrary block movement does not.",
+        "Practical TER therefore uses constrained shift candidates and a heuristic search rather than solving unrestricted block-movement distance globally.",
+        "conceptual objective: few edits including shifts practical TER: constrained / greedy shift search + exact ordinary edit-distance alignment.",
+        "This distinction is discussed in Leusch and Ney, Edit distances with block movements and error rate confidence estimates ."
+      ]
+    },
+    {
+      "heading": "8. Conceptual TER search procedure",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 2,
+      "word_count": 54,
+      "evidence": "function ter_edits(hypothesis, reference): h = hypothesis shifts = 0 repeat: generate valid shift candidates select a shift that reduces ordinary word edit distance most if no useful shift: break apply shift shifts += 1 residual = word_levenshtein( h, reference ) return shifts + residual",
+      "paragraphs": [
+        "function ter_edits(hypothesis, reference): h = hypothesis shifts = 0 repeat: generate valid shift candidates select a shift that reduces ordinary word edit distance most if no useful shift: break apply shift shifts += 1 residual = word_levenshtein( h, reference ) return shifts + residual",
+        "This represents the architecture, not a byte-for-byte implementation of TERCOM."
+      ]
+    },
+    {
+      "heading": "9. Dynamic programming inside TER",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 2,
+      "word_count": 50,
+      "evidence": "After the current word order is fixed, ordinary edit distance uses the familiar recurrence behind the Wagner-Fischer algorithm .",
+      "paragraphs": [
+        "After the current word order is fixed, ordinary edit distance uses the familiar recurrence behind the Wagner-Fischer algorithm .",
+        "d[0][0] = 0 d[i][0] = i d[0][j] = j cost = 0 if hi = rj 1 otherwise d[i][j] = min( d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + cost )"
+      ]
+    },
+    {
+      "heading": "10. Shift eligibility is part of the metric",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 3,
+      "word_count": 41,
+      "evidence": "TER does not move arbitrary semantically related phrases anywhere it wishes. Practical implementations restrict shift candidates according to lexical matches and alignment-related conditions.",
+      "paragraphs": [
+        "TER does not move arbitrary semantically related phrases anywhere it wishes. Practical implementations restrict shift candidates according to lexical matches and alignment-related conditions.",
+        "Therefore a TER score depends on:",
+        "edit costs + shift eligibility + shift search + tokenization + normalization."
+      ]
+    },
+    {
+      "heading": "11. One shift may move many words",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 9,
+      "word_count": 61,
+      "evidence": "HYP: [A B C D] E F REF: E F [A B C D]",
+      "paragraphs": [
+        "HYP: [A B C D] E F REF: E F [A B C D]",
+        "If the four-word block qualifies as one shift:",
+        "Sh = 1.",
+        "Without that primitive, an ordinary sequential edit representation could require several deletions and insertions.",
+        "But the unit shift model also makes a strong simplification:",
+        "shift 1 word",
+        "and:",
+        "shift 10 words",
+        "can both cost one operation."
+      ]
+    },
+    {
+      "heading": "12. Lower TER is better",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 4,
+      "word_count": 49,
+      "evidence": "TER is an error rate:",
+      "paragraphs": [
+        "TER is an error rate:",
+        "lower TER = fewer edit operations relative to reference length.",
+        "TER = 0 means exact agreement with the accepted reference representation under the chosen preprocessing and scoring procedure.",
+        "It does not mean that arbitrary increases in TER correspond linearly to decreases in translation correctness."
+      ]
+    },
+    {
+      "heading": "13. TER can exceed 100 percent",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 7,
+      "word_count": 32,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "reference length = 5 required edits = 8",
+        "then:",
+        "TER = 8 / 5 = 1.6 = 160%.",
+        "Therefore:",
+        "1 - TER",
+        "must not be interpreted as an ordinary accuracy probability."
+      ]
+    },
+    {
+      "heading": "14. Multiple references",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 7,
+      "word_count": 63,
+      "evidence": "Machine translation is inherently one-to-many. Several target sentences can be equally valid renderings of the same source.",
+      "paragraphs": [
+        "Machine translation is inherently one-to-many. Several target sentences can be equally valid renderings of the same source.",
+        "With references:",
+        "R1, R2, ..., RK,",
+        "TER evaluates the hypothesis against them and uses the smallest edit count.",
+        "E* = min( edits(H,R1), edits(H,R2), ..., edits(H,RK) )",
+        "In the original multi-reference formulation, normalization uses average reference length.",
+        "minimum edit count TER_multi = -------------------------------- average reference word count"
+      ]
+    },
+    {
+      "heading": "15. Multiple references reduce but do not remove reference bias",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 5,
+      "word_count": 49,
+      "evidence": "A hypothesis can be perfectly acceptable yet lexically distant from every reference available in the benchmark.",
+      "paragraphs": [
+        "A hypothesis can be perfectly acceptable yet lexically distant from every reference available in the benchmark.",
+        "Adding another reference can dramatically change TER without changing the MT output.",
+        "Thus TER is a property of:",
+        "hypothesis + reference set + metric configuration,",
+        "not an intrinsic property of the hypothesis alone."
+      ]
+    },
+    {
+      "heading": "16. Translation is one-to-many",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 5,
+      "word_count": 40,
+      "evidence": "For source sentence X , imagine the set of all acceptable translations:",
+      "paragraphs": [
+        "For source sentence X , imagine the set of all acceptable translations:",
+        "T(X).",
+        "A benchmark observes only a finite subset:",
+        "R(X) ⊂ T(X).",
+        "Reference metrics measure similarity to the observed subset, not to the entire latent set of acceptable translations."
+      ]
+    },
+    {
+      "heading": "17. Lexical synonymy",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 5,
+      "word_count": 27,
+      "evidence": "REF: The plan was rejected. HYP: The proposal was declined.",
+      "paragraphs": [
+        "REF: The plan was rejected. HYP: The proposal was declined.",
+        "Basic TER can count:",
+        "plan -> proposal rejected -> declined",
+        "as substitutions.",
+        "This may penalize valid synonymy."
+      ]
+    },
+    {
+      "heading": "18. Morphology",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "Basic TER works with surface tokens. It does not inherently know that:",
+      "paragraphs": [
+        "Basic TER works with surface tokens. It does not inherently know that:",
+        "compete",
+        "and:",
+        "competing",
+        "share a lemma.",
+        "Therefore:",
+        "surface edit difference != morphological or linguistic difference."
+      ]
+    },
+    {
+      "heading": "19. TER-Plus",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "TER-Plus (TERp) extends TER with richer matching mechanisms. See TER-Plus: paraphrase, semantic, and alignment enhancements to Translation Edit Rate .",
+      "paragraphs": [
+        "TER-Plus (TERp) extends TER with richer matching mechanisms. See TER-Plus: paraphrase, semantic, and alignment enhancements to Translation Edit Rate .",
+        "TERp can incorporate:",
+        "stemming;",
+        "synonyms;",
+        "paraphrases;",
+        "relaxed alignment;",
+        "tunable edit costs.",
+        "TER | +-- exact token matching +-- insert/delete/substitute +-- shifts TERp | +-- TER operations +-- stems +-- synonyms +-- paraphrases +-- tuned costs"
+      ]
+    },
+    {
+      "heading": "20. TERp is still not semantic equivalence",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 10,
+      "word_count": 51,
+      "evidence": "A translation can preserve extensive vocabulary while:",
+      "paragraphs": [
+        "A translation can preserve extensive vocabulary while:",
+        "reversing negation;",
+        "changing a number;",
+        "assigning an event to the wrong entity;",
+        "omitting an important proposition;",
+        "adding unsupported information.",
+        "Conversely, a valid paraphrase can use very different vocabulary.",
+        "The broader rule remains:",
+        "string similarity != semantic similarity.",
+        "See string similarity versus semantic similarity ."
+      ]
+    },
+    {
+      "heading": "21. Human-targeted TER (HTER)",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 4,
+      "word_count": 57,
+      "evidence": "HTER changes the reference-generation protocol.",
+      "paragraphs": [
+        "HTER changes the reference-generation protocol.",
+        "Instead of relying only on an independently written translation, a human editor starts from the MT hypothesis and makes the minimum changes needed to produce an acceptable translation.",
+        "SOURCE | v MT HYPOTHESIS | v minimal human post-edit | v TARGETED REFERENCE",
+        "HTER then compares the original hypothesis with that targeted post-edit."
+      ]
+    },
+    {
+      "heading": "22. TER versus HTER",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 1,
+      "word_count": 25,
+      "evidence": "Metric Reference Interpretation TER Independent human translation(s) Distance from benchmark realization HTER Minimal human post-edit of the hypothesis Textual repair required for that specific output",
+      "paragraphs": [
+        "Metric Reference Interpretation TER Independent human translation(s) Distance from benchmark realization HTER Minimal human post-edit of the hypothesis Textual repair required for that specific output"
+      ]
+    },
+    {
+      "heading": "23. Why HTER reduces reference-style divergence",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "If the MT output is already correct, the targeted editor can leave it unchanged even if an independently created reference uses very different wording.",
+      "paragraphs": [
+        "If the MT output is already correct, the targeted editor can leave it unchanged even if an independently created reference uses very different wording.",
+        "Then:",
+        "HTER = 0.",
+        "The question becomes:",
+        "What must actually be changed in this translation to make it acceptable?"
+      ]
+    },
+    {
+      "heading": "24. HTER is not actual human effort",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "Two substitutions can have identical HTER cost yet radically different cognitive difficulty.",
+      "paragraphs": [
+        "Two substitutions can have identical HTER cost yet radically different cognitive difficulty.",
+        "Correcting punctuation may require almost no reasoning. Correcting specialist medical or legal terminology can require extensive verification.",
+        "Therefore:",
+        "HTER != post-editing time HTER != cognitive effort HTER != economic cost."
+      ]
+    },
+    {
+      "heading": "25. Dimensions of post-editing effort",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 1,
+      "word_count": 33,
+      "evidence": "Dimension Possible measure Technical effort Keystrokes, insertions, deletions, mouse operations Temporal effort Post-editing time Cognitive effort Pauses, gaze, workload, decision difficulty Textual difference HTER or related edit metric Final quality Human quality/error annotation",
+      "paragraphs": [
+        "Dimension Possible measure Technical effort Keystrokes, insertions, deletions, mouse operations Temporal effort Post-editing time Cognitive effort Pauses, gaze, workload, decision difficulty Textual difference HTER or related edit metric Final quality Human quality/error annotation"
+      ]
+    },
+    {
+      "heading": "26. Human-targeted references remain variable",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 1,
+      "word_count": 28,
+      "evidence": "Different editors can produce different acceptable post-edits from the same hypothesis. HTER therefore depends on instructions discouraging unnecessary stylistic rewriting when the experiment intends to measure minimal repair.",
+      "paragraphs": [
+        "Different editors can produce different acceptable post-edits from the same hypothesis. HTER therefore depends on instructions discouraging unnecessary stylistic rewriting when the experiment intends to measure minimal repair."
+      ]
+    },
+    {
+      "heading": "27. The post-editing target must be defined",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 8,
+      "word_count": 24,
+      "evidence": "An HTER protocol should specify whether the goal is:",
+      "paragraphs": [
+        "An HTER protocol should specify whether the goal is:",
+        "semantic adequacy;",
+        "publishable fluency;",
+        "minimal textual change;",
+        "minimal keystrokes;",
+        "terminology compliance;",
+        "style-guide compliance;",
+        "localization quality."
+      ]
+    },
+    {
+      "heading": "28. Preprocessing is part of TER",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 9,
+      "word_count": 47,
+      "evidence": "TER operates on concrete token sequences, not abstract meanings.",
+      "paragraphs": [
+        "TER operates on concrete token sequences, not abstract meanings.",
+        "Scores can therefore change with:",
+        "case normalization;",
+        "punctuation policy;",
+        "Unicode normalization;",
+        "tokenization;",
+        "CJK segmentation;",
+        "whitespace handling.",
+        "Preprocessing effects were studied explicitly by Leusch, Ueffing, Vilar, and Ney in Preprocessing and Normalization for Automatic Evaluation of Machine Translation ."
+      ]
+    },
+    {
+      "heading": "29. Tokenization example",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 6,
+      "word_count": 33,
+      "evidence": "REF: don't stop HYP: do n't stop",
+      "paragraphs": [
+        "REF: don't stop HYP: do n't stop",
+        "One tokenizer may produce:",
+        "REF = [\"don't\",\"stop\"] HYP = [\"do\",\"n't\",\"stop\"]",
+        "another may normalize both to:",
+        "[\"do\",\"n't\",\"stop\"].",
+        "Thus the same visible sentence pair can have different TER."
+      ]
+    },
+    {
+      "heading": "30. SacreBLEU and reproducibility",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 6,
+      "word_count": 54,
+      "evidence": "SacreBLEU provides an implementation of TER intended to improve reproducibility by exposing configuration details including case, normalization, punctuation, Asian-language tokenization, reference count, and software version.",
+      "paragraphs": [
+        "SacreBLEU provides an implementation of TER intended to improve reproducibility by exposing configuration details including case, normalization, punctuation, Asian-language tokenization, reference count, and software version.",
+        "The project is available at SacreBLEU .",
+        "Reporting only:",
+        "TER = 23.7",
+        "is weaker than reporting:",
+        "metric + implementation + version + tokenization + normalization + references + score."
+      ]
+    },
+    {
+      "heading": "31. Metric names are not sufficient for reproducibility",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "This is the same methodological problem highlighted by Matt Post for BLEU in A Call for Clarity in Reporting BLEU Scores .",
+      "paragraphs": [
+        "This is the same methodological problem highlighted by Matt Post for BLEU in A Call for Clarity in Reporting BLEU Scores .",
+        "The lesson applies equally to TER."
+      ]
+    },
+    {
+      "heading": "32. Language segmentation matters",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 3,
+      "word_count": 44,
+      "evidence": "TER is word oriented, but “word” is not universally determined by spaces.",
+      "paragraphs": [
+        "TER is word oriented, but “word” is not universally determined by spaces.",
+        "For Chinese, Japanese, and other writing systems, segmentation configuration can materially change the token sequence and therefore the score.",
+        "Unicode normalization and segmentation are separate operations; see text normalization and transliteration ."
+      ]
+    },
+    {
+      "heading": "33. TER versus BLEU",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 3,
+      "word_count": 65,
+      "evidence": "BLEU measures modified n-gram precision plus a brevity penalty. TER measures edit operations needed to transform hypothesis toward reference.",
+      "paragraphs": [
+        "BLEU measures modified n-gram precision plus a brevity penalty. TER measures edit operations needed to transform hypothesis toward reference.",
+        "Property TER BLEU Direction Lower is better Higher is better Primitive Edit operations n-gram overlap Explicit phrase shift Yes No Reference length Error-rate denominator Brevity-penalty component",
+        "BLEU was introduced by Papineni, Roukos, Ward, and Zhu in BLEU: a Method for Automatic Evaluation of Machine Translation ."
+      ]
+    },
+    {
+      "heading": "34. Reordering illustrates the TER/BLEU difference",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "REF: the minister will visit London next week HYP: next week the minister will visit London",
+      "paragraphs": [
+        "REF: the minister will visit London next week HYP: next week the minister will visit London",
+        "TER can potentially represent next week as one shift. BLEU instead loses n-gram matches around the movement boundary.",
+        "Neither abstraction is universally superior; they measure different structures."
+      ]
+    },
+    {
+      "heading": "35. TER versus METEOR",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 3,
+      "word_count": 44,
+      "evidence": "METEOR uses alignment, unigram precision/recall, fragmentation penalties, and richer token matching.",
+      "paragraphs": [
+        "METEOR uses alignment, unigram precision/recall, fragmentation penalties, and richer token matching.",
+        "See METEOR: An Automatic Metric for MT Evaluation with Improved Correlation with Human Judgments .",
+        "TER: explicit edit operations + block shifts METEOR: word matching + precision/recall + fragmentation + richer lexical correspondence."
+      ]
+    },
+    {
+      "heading": "36. TER versus chrF",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 3,
+      "word_count": 58,
+      "evidence": "chrF evaluates character n-gram precision and recall. Because related inflected forms often share substrings, chrF can be less brittle than word-level TER for morphology.",
+      "paragraphs": [
+        "chrF evaluates character n-gram precision and recall. Because related inflected forms often share substrings, chrF can be less brittle than word-level TER for morphology.",
+        "See chrF: character n-gram F-score for automatic MT evaluation .",
+        "Property TER chrF Unit Words Character n-grams Reordering Explicit shift Local n-gram disruption Morphology Surface-word sensitive Partial overlap retained Interpretation Edit operations n-gram F-score"
+      ]
+    },
+    {
+      "heading": "37. TER versus learned MT metrics",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "Learned metrics such as COMET use contextual multilingual representations and can incorporate source, hypothesis, and reference to predict human quality judgments.",
+      "paragraphs": [
+        "Learned metrics such as COMET use contextual multilingual representations and can incorporate source, hypothesis, and reference to predict human quality judgments.",
+        "See COMET: A Neural Framework for MT Evaluation .",
+        "TER: explicit symbolic edit model COMET-like metric: learned representation + human-supervised quality prediction."
+      ]
+    },
+    {
+      "heading": "38. Learned metrics solve different problems and introduce new risks",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 9,
+      "word_count": 38,
+      "evidence": "Learned metrics may recognize paraphrases that lexical metrics miss, but they introduce dependencies on:",
+      "paragraphs": [
+        "Learned metrics may recognize paraphrases that lexical metrics miss, but they introduce dependencies on:",
+        "training data;",
+        "model version;",
+        "language coverage;",
+        "domain shift;",
+        "black-box behavior;",
+        "adversarial/challenge examples;",
+        "greater computation.",
+        "Therefore semantic metrics do not make explicit edit metrics obsolete."
+      ]
+    },
+    {
+      "heading": "39. Modern MT evaluation is hybrid",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 3,
+      "word_count": 41,
+      "evidence": "A strong evaluation can combine:",
+      "paragraphs": [
+        "A strong evaluation can combine:",
+        "edit metric + surface-overlap metric + learned semantic metric + human evaluation.",
+        "Recent WMT metric research follows this multidimensional direction. MetricX-24 is one example: MetricX-24: The Google Submission to the WMT 2024 Metrics Shared Task ."
+      ]
+    },
+    {
+      "heading": "40. Why TER remains useful",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "TER remains valuable because it is:",
+      "paragraphs": [
+        "TER remains valuable because it is:",
+        "explicit;",
+        "interpretable;",
+        "deterministic under fixed configuration;",
+        "easy to inspect at sentence level;",
+        "useful for alignment diagnostics;",
+        "independent of neural model representations."
+      ]
+    },
+    {
+      "heading": "41. Error decomposition matters",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 3,
+      "word_count": 44,
+      "evidence": "Two systems can have identical total TER while producing very different error profiles.",
+      "paragraphs": [
+        "Two systems can have identical total TER while producing very different error profiles.",
+        "System S D I Sh Total A 20 5 5 2 32 B 5 15 10 2 32",
+        "System A is substitution-heavy; system B contains much more missing or extra material."
+      ]
+    },
+    {
+      "heading": "42. Undertranslation",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 2,
+      "word_count": 33,
+      "evidence": "REF: The committee approved the proposal after a three-hour debate. HYP: The committee approved the proposal.",
+      "paragraphs": [
+        "REF: The committee approved the proposal after a three-hour debate. HYP: The committee approved the proposal.",
+        "The missing material generates edit operations, but interpretation requires the source: the problem may be genuine undertranslation."
+      ]
+    },
+    {
+      "heading": "43. Unsupported additions",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "An insertion-heavy hypothesis may contain either legitimate elaboration or hallucinated information.",
+      "paragraphs": [
+        "An insertion-heavy hypothesis may contain either legitimate elaboration or hallucinated information.",
+        "TER identifies textual additions but cannot determine their semantic legitimacy without source-aware analysis."
+      ]
+    },
+    {
+      "heading": "44. Reference similarity is not source faithfulness",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "TER directly compares:",
+      "paragraphs": [
+        "TER directly compares:",
+        "hypothesis vs. reference.",
+        "It does not directly measure:",
+        "source vs. hypothesis.",
+        "Therefore:",
+        "reference similarity != source faithfulness."
+      ]
+    },
+    {
+      "heading": "45. Severe semantic errors can have tiny TER",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "REF: The drug does not increase mortality. HYP: The drug does increase mortality.",
+      "paragraphs": [
+        "REF: The drug does not increase mortality. HYP: The drug does increase mortality.",
+        "Only one token differs, yet the proposition has reversed.",
+        "This is a fundamental limitation of uniform lexical edit costs."
+      ]
+    },
+    {
+      "heading": "46. Correct paraphrases can have large TER",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "REF: The negotiations failed to produce an agreement. HYP: The parties were unable to reach a deal.",
+      "paragraphs": [
+        "REF: The negotiations failed to produce an agreement. HYP: The parties were unable to reach a deal.",
+        "Meaning can remain similar despite substantial surface-edit distance.",
+        "Thus:",
+        "small TER does not guarantee small semantic error and large TER does not guarantee large semantic error."
+      ]
+    },
+    {
+      "heading": "47. Uniform edit costs are a strong assumption",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "Standard TER can treat all the following as unit substitutions/deletions:",
+      "paragraphs": [
+        "Standard TER can treat all the following as unit substitutions/deletions:",
+        "remove \"not\" remove \"very\" million -> billion car -> vehicle.",
+        "The semantic severities are clearly different.",
+        "A weighted model can capture task-specific costs, as discussed in weighted Levenshtein distance ."
+      ]
+    },
+    {
+      "heading": "48. Edit count is not editing time",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "One trivial lexical substitution and one specialist terminology correction may both cost one TER operation while requiring radically different human effort.",
+      "paragraphs": [
+        "One trivial lexical substitution and one specialist terminology correction may both cost one TER operation while requiring radically different human effort.",
+        "Therefore:",
+        "technical edit count != temporal effort != cognitive effort."
+      ]
+    },
+    {
+      "heading": "49. Human effort depends on the editor",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 9,
+      "word_count": 20,
+      "evidence": "Post-editing time is influenced by:",
+      "paragraphs": [
+        "Post-editing time is influenced by:",
+        "translator expertise;",
+        "domain familiarity;",
+        "typing speed;",
+        "interface;",
+        "translation-memory tooling;",
+        "target quality;",
+        "terminology resources;",
+        "individual strategy."
+      ]
+    },
+    {
+      "heading": "50. TER should not be converted directly into labor cost",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 1,
+      "word_count": 34,
+      "evidence": "TER measures textual edits under its scoring rules. HTER is closer to actual post-editing because the reference is produced from the hypothesis, but neither provides a universal conversion to time, money, or cognitive burden.",
+      "paragraphs": [
+        "TER measures textual edits under its scoring rules. HTER is closer to actual post-editing because the reference is produced from the hypothesis, but neither provides a universal conversion to time, money, or cognitive burden."
+      ]
+    },
+    {
+      "heading": "51. Sentence TER is noisy",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "Short references produce unstable normalized scores.",
+      "paragraphs": [
+        "Short references produce unstable normalized scores.",
+        "reference length = 2 errors = 1 TER = 50% reference length = 20 errors = 1 TER = 5%.",
+        "The underlying event count is identical."
+      ]
+    },
+    {
+      "heading": "52. Corpus TER",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "A natural corpus aggregate pools edits and reference words:",
+      "paragraphs": [
+        "A natural corpus aggregate pools edits and reference words:",
+        "Σ E_k TER_corpus = ------- Σ L_k",
+        "This differs from averaging individual sentence TER values, which gives short and long sentences equal weight."
+      ]
+    },
+    {
+      "heading": "53. Micro and macro aggregation",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 1,
+      "word_count": 31,
+      "evidence": "Aggregation Weighting Interpretation Corpus/micro Reference words Overall edit burden Sentence macro Sentences Average sentence-relative error Document macro Documents Average document performance Language macro Language pairs Prevents large datasets dominating multilingual averages",
+      "paragraphs": [
+        "Aggregation Weighting Interpretation Corpus/micro Reference words Overall edit burden Sentence macro Sentences Average sentence-relative error Document macro Documents Average document performance Language macro Language pairs Prevents large datasets dominating multilingual averages"
+      ]
+    },
+    {
+      "heading": "54. Absolute and relative TER improvement",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "baseline = 30 new = 27",
+      "paragraphs": [
+        "baseline = 30 new = 27",
+        "Absolute change:",
+        "3 TER points.",
+        "Relative reduction:",
+        "(30 - 27) / 30 = 10%.",
+        "Reports should give the original scores rather than only a percentage improvement."
+      ]
+    },
+    {
+      "heading": "55. Small differences need uncertainty estimates",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 7,
+      "word_count": 30,
+      "evidence": "System A = 18.4 System B = 18.1",
+      "paragraphs": [
+        "System A = 18.4 System B = 18.1",
+        "The numerical ordering alone does not prove a reliable difference.",
+        "Useful procedures include:",
+        "paired bootstrap resampling;",
+        "approximate randomization;",
+        "document-level resampling;",
+        "confidence intervals."
+      ]
+    },
+    {
+      "heading": "56. The resampling unit matters",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "Sentences within the same document are not necessarily independent. Appropriate resampling may operate over:",
+      "paragraphs": [
+        "Sentences within the same document are not necessarily independent. Appropriate resampling may operate over:",
+        "sentences;",
+        "documents;",
+        "conversations;",
+        "domains;",
+        "source files."
+      ]
+    },
+    {
+      "heading": "57. Segment-level and system-level metric reliability differ",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 2,
+      "word_count": 28,
+      "evidence": "A metric can rank complete MT systems reasonably well yet be unreliable for choosing between two individual segment translations.",
+      "paragraphs": [
+        "A metric can rank complete MT systems reasonably well yet be unreliable for choosing between two individual segment translations.",
+        "System-level aggregation reduces some sentence-specific reference and denominator noise."
+      ]
+    },
+    {
+      "heading": "58. Do not optimize only TER",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 2,
+      "word_count": 30,
+      "evidence": "optimize proxy | v system adapts to proxy | v metric improvement may exceed real quality improvement.",
+      "paragraphs": [
+        "optimize proxy | v system adapts to proxy | v metric improvement may exceed real quality improvement.",
+        "TER should be treated as one evaluation signal rather than the complete objective."
+      ]
+    },
+    {
+      "heading": "59. Metric portfolio",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 1,
+      "word_count": 33,
+      "evidence": "Metric Primary signal TER Explicit word-level editing and reordering BLEU Word n-gram overlap chrF Character n-gram similarity COMET / learned metric Human-aligned contextual quality prediction Human evaluation Adequacy, fluency, severity, preference, task quality",
+      "paragraphs": [
+        "Metric Primary signal TER Explicit word-level editing and reordering BLEU Word n-gram overlap chrF Character n-gram similarity COMET / learned metric Human-aligned contextual quality prediction Human evaluation Adequacy, fluency, severity, preference, task quality"
+      ]
+    },
+    {
+      "heading": "60. Human evaluation remains necessary",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 7,
+      "word_count": 19,
+      "evidence": "For high-stakes translation, an automatic metric cannot independently establish:",
+      "paragraphs": [
+        "For high-stakes translation, an automatic metric cannot independently establish:",
+        "factual faithfulness;",
+        "terminological correctness;",
+        "contextual appropriateness;",
+        "style;",
+        "safety;",
+        "pragmatic correctness."
+      ]
+    },
+    {
+      "heading": "61. Human evaluation is not one thing",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 9,
+      "word_count": 29,
+      "evidence": "Human protocols can measure:",
+      "paragraphs": [
+        "Human protocols can measure:",
+        "adequacy;",
+        "fluency;",
+        "preference;",
+        "direct quality ratings;",
+        "error severity;",
+        "post-edit effort;",
+        "task success.",
+        "Metric correlation should therefore always specify which human target it is correlating with."
+      ]
+    },
+    {
+      "heading": "62. TER does not measure discourse consistency",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 7,
+      "word_count": 19,
+      "evidence": "Sentence-level scoring can miss:",
+      "paragraphs": [
+        "Sentence-level scoring can miss:",
+        "pronoun inconsistency;",
+        "terminology drift;",
+        "formality inconsistency;",
+        "entity naming inconsistency;",
+        "cross-sentence tense problems;",
+        "contextual ambiguity errors."
+      ]
+    },
+    {
+      "heading": "63. Reference omissions can hide source omissions",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 2,
+      "word_count": 31,
+      "evidence": "SOURCE: The company lost $5 million in 2025. REF: The company lost money. HYP: The company lost money.",
+      "paragraphs": [
+        "SOURCE: The company lost $5 million in 2025. REF: The company lost money. HYP: The company lost money.",
+        "TER can be zero against that reference while important source information is missing."
+      ]
+    },
+    {
+      "heading": "64. Insertions have multiple semantic interpretations",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "An apparent insertion can represent:",
+      "paragraphs": [
+        "An apparent insertion can represent:",
+        "hallucination;",
+        "legitimate explicit rendering;",
+        "a required function word;",
+        "stylistic wording;",
+        "tokenization artifacts.",
+        "The edit operation identifies difference, not its semantic cause."
+      ]
+    },
+    {
+      "heading": "65. Morphologically rich languages",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 1,
+      "word_count": 23,
+      "evidence": "Word-level TER may penalize entire inflected words even when much of their morphological structure matches. chrF or morphology-aware analysis can provide complementary evidence.",
+      "paragraphs": [
+        "Word-level TER may penalize entire inflected words even when much of their morphological structure matches. chrF or morphology-aware analysis can provide complementary evidence."
+      ]
+    },
+    {
+      "heading": "66. Translation direction matters",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 1,
+      "word_count": 21,
+      "evidence": "TER values from different language directions should not automatically be compared directly because tokenization, morphology, word-order flexibility, and reference variation differ.",
+      "paragraphs": [
+        "TER values from different language directions should not automatically be compared directly because tokenization, morphology, word-order flexibility, and reference variation differ."
+      ]
+    },
+    {
+      "heading": "67. Domain matters",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 8,
+      "word_count": 31,
+      "evidence": "A system can obtain very different TER on news and medical translation because the underlying task has changed.",
+      "paragraphs": [
+        "A system can obtain very different TER on news and medical translation because the underlying task has changed.",
+        "Domain variables include:",
+        "terminology;",
+        "sentence complexity;",
+        "named entities;",
+        "style;",
+        "training coverage;",
+        "reference conventions."
+      ]
+    },
+    {
+      "heading": "68. Reference quality limits reference-based metrics",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "A flawed reference containing omissions or translation errors can penalize a better system output.",
+      "paragraphs": [
+        "A flawed reference containing omissions or translation errors can penalize a better system output.",
+        "Reference provenance and quality therefore matter directly to TER validity."
+      ]
+    },
+    {
+      "heading": "69. Benchmark contamination",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 1,
+      "word_count": 25,
+      "evidence": "If test references or closely related translations occur in model training data, high reference-based scores can partly reflect memorization or exposure rather than clean generalization.",
+      "paragraphs": [
+        "If test references or closely related translations occur in model training data, high reference-based scores can partly reflect memorization or exposure rather than clean generalization."
+      ]
+    },
+    {
+      "heading": "70. Sentence segmentation changes TER",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 2,
+      "word_count": 36,
+      "evidence": "If one system joins two reference sentences into one segment, fixed one-to-one scoring can generate substantial apparent edit error even when the underlying lexical content is present.",
+      "paragraphs": [
+        "If one system joins two reference sentences into one segment, fixed one-to-one scoring can generate substantial apparent edit error even when the underlying lexical content is present.",
+        "Segmentation policy is therefore part of the evaluation protocol."
+      ]
+    },
+    {
+      "heading": "71. Punctuation policy",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "REF: Let's eat, grandmother. HYP: Let's eat grandmother.",
+      "paragraphs": [
+        "REF: Let's eat, grandmother. HYP: Let's eat grandmother.",
+        "Removing punctuation can make these sequences identical despite the potential change in meaning.",
+        "Punctuation normalization changes what the metric measures."
+      ]
+    },
+    {
+      "heading": "72. Case normalization",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "Case-insensitive evaluation can collapse distinctions such as:",
+      "paragraphs": [
+        "Case-insensitive evaluation can collapse distinctions such as:",
+        "Turkey vs. turkey.",
+        "Whether this is desirable depends on the task."
+      ]
+    },
+    {
+      "heading": "73. Numerical errors",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "15 million -> 50 million",
+      "paragraphs": [
+        "15 million -> 50 million",
+        "can be one substitution under TER while being a major factual error.",
+        "High-stakes applications should therefore include number-specific evaluation."
+      ]
+    },
+    {
+      "heading": "74. Named entities",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 4,
+      "word_count": 30,
+      "evidence": "Vienna -> Venice",
+      "paragraphs": [
+        "Vienna -> Venice",
+        "is also one lexical substitution, although the downstream consequence can be substantial.",
+        "A production evaluation can combine:",
+        "TER + number accuracy + named-entity accuracy + terminology accuracy."
+      ]
+    },
+    {
+      "heading": "75. TER alignment as an error trace",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 2,
+      "word_count": 40,
+      "evidence": "HYP: The minister has approved proposal yesterday REF: The minister approved the proposal yesterday TRACE: The MATCH minister MATCH has DELETE approved MATCH the INSERT proposal MATCH yesterday MATCH",
+      "paragraphs": [
+        "HYP: The minister has approved proposal yesterday REF: The minister approved the proposal yesterday TRACE: The MATCH minister MATCH has DELETE approved MATCH the INSERT proposal MATCH yesterday MATCH",
+        "The alignment provides diagnostic information that a scalar leaderboard score hides."
+      ]
+    },
+    {
+      "heading": "76. Severity-aware analysis can be layered on TER",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 1,
+      "word_count": 27,
+      "evidence": "Error TER cost Possible domain severity Punctuation 1 Often low Terminology substitution 1 High Negation deletion 1 Critical Entity substitution 1 High Article deletion 1 Often low",
+      "paragraphs": [
+        "Error TER cost Possible domain severity Punctuation 1 Often low Terminology substitution 1 High Negation deletion 1 Critical Entity substitution 1 High Article deletion 1 Often low"
+      ]
+    },
+    {
+      "heading": "77. TER is not semantic distance",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "A semantic metric should ideally respond to propositions, entities, relations, polarity, temporal meaning, and pragmatic interpretation.",
+      "paragraphs": [
+        "A semantic metric should ideally respond to propositions, entities, relations, polarity, temporal meaning, and pragmatic interpretation.",
+        "TER instead models word-sequence transformation cost.",
+        "TER = surface/edit-based evaluation TER != semantic equivalence measure."
+      ]
+    },
+    {
+      "heading": "78. Correlation does not change what a metric computes",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 4,
+      "word_count": 21,
+      "evidence": "Even if TER correlates strongly with human scores on one dataset:",
+      "paragraphs": [
+        "Even if TER correlates strongly with human scores on one dataset:",
+        "correlation(TER, human quality)",
+        "does not imply:",
+        "TER = human quality."
+      ]
+    },
+    {
+      "heading": "79. MT error distributions evolve",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 2,
+      "word_count": 36,
+      "evidence": "Modern neural and large-language-model translation systems often produce fluent output containing subtler errors such as omissions, hallucinations, contextual mistakes, or paraphrastic divergence.",
+      "paragraphs": [
+        "Modern neural and large-language-model translation systems often produce fluent output containing subtler errors such as omissions, hallucinations, contextual mistakes, or paraphrastic divergence.",
+        "A metric created in an earlier MT regime can therefore encounter new failure modes."
+      ]
+    },
+    {
+      "heading": "80. TER remains useful because its meaning is narrow",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "TER can answer:",
+      "paragraphs": [
+        "TER can answer:",
+        "How much word-level editing, including allowed phrase movement, separates this hypothesis from this reference?",
+        "It cannot independently answer whether the translation is completely faithful, fluent, safe, or appropriate."
+      ]
+    },
+    {
+      "heading": "81. Conceptual reference implementation",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 2,
+      "word_count": 136,
+      "evidence": "function ter(hypothesis, references): hypothesis = preprocess(hypothesis) references = preprocess_each(references) best_edit_count = infinity for reference in references: h = hypothesis shift_count = 0 repeat: current = levenshtein_words( h, reference ) candidates = valid_ter_shifts( h, reference ) best_shift = NONE best_gain = 0 for shift in candidates: candidate = apply_shift( h, shift ) new_distance = levenshtein_words( candidate, reference ) gain = current - new_distance if gain > best_gain: best_gain = gain best_shift = shift if best_shift is NONE: break h = apply_shift( h, best_shift ) shift_count += 1 residual = levenshtein_words( h, reference ) edits = shift_count + residual best_edit_count = min( best_edit_count, edits ) average_reference_length = mean( length(r) for r in referenc",
+      "paragraphs": [
+        "function ter(hypothesis, references): hypothesis = preprocess(hypothesis) references = preprocess_each(references) best_edit_count = infinity for reference in references: h = hypothesis shift_count = 0 repeat: current = levenshtein_words( h, reference ) candidates = valid_ter_shifts( h, reference ) best_shift = NONE best_gain = 0 for shift in candidates: candidate = apply_shift( h, shift ) new_distance = levenshtein_words( candidate, reference ) gain = current - new_distance if gain > best_gain: best_gain = gain best_shift = shift if best_shift is NONE: break h = apply_shift( h, best_shift ) shift_count += 1 residual = levenshtein_words( h, reference ) edits = shift_count + residual best_edit_count = min( best_edit_count, edits ) average_reference_length = mean( length(r) for r in references ) return best_edit_count / average_reference_length",
+        "This describes the architecture only. For reproducible published results, use a known implementation and record its exact version and options."
+      ]
+    },
+    {
+      "heading": "82. Computational complexity",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "Ordinary word-level edit distance requires:",
+      "paragraphs": [
+        "Ordinary word-level edit distance requires:",
+        "O(NM)",
+        "time using standard dynamic programming for sequences of lengths N and M .",
+        "TER additionally evaluates phrase-shift candidates, so practical cost depends on sentence length, phrase matches, shift constraints, search behavior, and implementation optimizations."
+      ]
+    },
+    {
+      "heading": "83. TER is not globally exact arbitrary block-movement distance",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 3,
+      "word_count": 30,
+      "evidence": "A precise description is:",
+      "paragraphs": [
+        "A precise description is:",
+        "TER = constrained heuristic block-shift search + ordinary word edit alignment.",
+        "It should not be described as globally solving unrestricted edit distance with arbitrary block moves."
+      ]
+    },
+    {
+      "heading": "84. Shift matching remains lexical",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 1,
+      "word_count": 22,
+      "evidence": "A semantically related phrase cannot simply be shifted because it “means the same thing.” Candidate eligibility depends on the implementation's matching rules.",
+      "paragraphs": [
+        "A semantically related phrase cannot simply be shifted because it “means the same thing.” Candidate eligibility depends on the implementation's matching rules."
+      ]
+    },
+    {
+      "heading": "85. TERp relaxes lexical rigidity",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "TERp can match or align relationships supported by stemming, synonym, or paraphrase resources.",
+      "paragraphs": [
+        "TERp can match or align relationships supported by stemming, synonym, or paraphrase resources.",
+        "This reduces some reference-surface bias but introduces additional resources, versions, and configuration dependencies."
+      ]
+    },
+    {
+      "heading": "86. Adequacy and fluency should sometimes be evaluated separately",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 5,
+      "word_count": 18,
+      "evidence": "A translation may be:",
+      "paragraphs": [
+        "A translation may be:",
+        "fluent but wrong",
+        "or:",
+        "faithful but awkward.",
+        "TER does not explicitly distinguish these dimensions."
+      ]
+    },
+    {
+      "heading": "87. Human severity annotation",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 1,
+      "word_count": 36,
+      "evidence": "Difference TER view Possible human interpretation a → the 1 substitution Minor can → cannot 1 substitution Major meaning reversal 15 → 50 1 substitution Potentially critical automobile → car 1 substitution Possibly no quality loss",
+      "paragraphs": [
+        "Difference TER view Possible human interpretation a → the 1 substitution Minor can → cannot 1 substitution Major meaning reversal 15 → 50 1 substitution Potentially critical automobile → car 1 substitution Possibly no quality loss"
+      ]
+    },
+    {
+      "heading": "88. Recommended MT evaluation architecture",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 1,
+      "word_count": 51,
+      "evidence": "SOURCE TEST SET | v MT SYSTEMS | v system outputs | +-----------------------+ | | v v automatic metrics human evaluation | | TER / BLEU / chrF adequacy / learned metric error severity / | post-editing +-----------+-----------+ | v paired analysis | v statistical testing | v qualitative error audit",
+      "paragraphs": [
+        "SOURCE TEST SET | v MT SYSTEMS | v system outputs | +-----------------------+ | | v v automatic metrics human evaluation | | TER / BLEU / chrF adequacy / learned metric error severity / | post-editing +-----------+-----------+ | v paired analysis | v statistical testing | v qualitative error audit"
+      ]
+    },
+    {
+      "heading": "89. TER reporting checklist",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 1,
+      "word_count": 42,
+      "evidence": "Field Report Dataset Name and exact split Language direction Source → target References Number and provenance Implementation TERCOM, SacreBLEU, or other Version Exact software version Case Sensitive/insensitive Normalization Exact policy Punctuation Included/removed Tokenization Exact tokenizer Aggregation Corpus/macro Scale Fraction/percentage Uncertainty CI/significance test",
+      "paragraphs": [
+        "Field Report Dataset Name and exact split Language direction Source → target References Number and provenance Implementation TERCOM, SacreBLEU, or other Version Exact software version Case Sensitive/insensitive Normalization Exact policy Punctuation Included/removed Tokenization Exact tokenizer Aggregation Corpus/macro Scale Fraction/percentage Uncertainty CI/significance test"
+      ]
+    },
+    {
+      "heading": "90. What TER can and cannot answer",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 1,
+      "word_count": 62,
+      "evidence": "Question TER sufficient? How much surface editing separates hypothesis and reference? Often useful Does phrase reordering differ from ordinary word edits? Yes Is the translation semantically faithful to the source? No Is the translation fluent? No Are critical numbers/entities correct? Not reliably alone How long will human post-editing take? No How many textual changes did a targeted editor make? HTER is relevant",
+      "paragraphs": [
+        "Question TER sufficient? How much surface editing separates hypothesis and reference? Often useful Does phrase reordering differ from ordinary word edits? Yes Is the translation semantically faithful to the source? No Is the translation fluent? No Are critical numbers/entities correct? Not reliably alone How long will human post-editing take? No How many textual changes did a targeted editor make? HTER is relevant"
+      ]
+    },
+    {
+      "heading": "91. Choosing among related metrics",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 1,
+      "word_count": 42,
+      "evidence": "Problem Useful approach Sequential word differences Word edit distance MT with phrase reordering TER Targeted human repair HTER Synonym/paraphrase-aware TER TERp Morphological surface variation chrF can complement TER Semantic quality prediction Learned metric + human validation Production editing effort Direct process/time measurement",
+      "paragraphs": [
+        "Problem Useful approach Sequential word differences Word edit distance MT with phrase reordering TER Targeted human repair HTER Synonym/paraphrase-aware TER TERp Morphological surface variation chrF can complement TER Semantic quality prediction Learned metric + human validation Production editing effort Direct process/time measurement"
+      ]
+    },
+    {
+      "heading": "92.1 Calling TER ordinary Levenshtein distance",
+      "level": 3,
+      "id": "ux-section-94",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "TER additionally permits phrase shifts.",
+      "paragraphs": [
+        "TER additionally permits phrase shifts."
+      ]
+    },
+    {
+      "heading": "92.2 Calling shifts character transpositions",
+      "level": 3,
+      "id": "ux-section-95",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "TER moves contiguous word blocks.",
+      "paragraphs": [
+        "TER moves contiguous word blocks."
+      ]
+    },
+    {
+      "heading": "92.3 Assuming global optimal block-movement search",
+      "level": 3,
+      "id": "ux-section-96",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Practical TER uses constrained heuristic shift search.",
+      "paragraphs": [
+        "Practical TER uses constrained heuristic shift search."
+      ]
+    },
+    {
+      "heading": "92.4 Calling TER semantic evaluation",
+      "level": 3,
+      "id": "ux-section-97",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "TER is fundamentally surface/edit based.",
+      "paragraphs": [
+        "TER is fundamentally surface/edit based."
+      ]
+    },
+    {
+      "heading": "92.5 Treating 1 - TER as accuracy",
+      "level": 3,
+      "id": "ux-section-98",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "TER is not a probability and can exceed one.",
+      "paragraphs": [
+        "TER is not a probability and can exceed one."
+      ]
+    },
+    {
+      "heading": "92.6 Treating HTER as human time",
+      "level": 3,
+      "id": "ux-section-99",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Textual edits, cognitive effort, and temporal effort differ.",
+      "paragraphs": [
+        "Textual edits, cognitive effort, and temporal effort differ."
+      ]
+    },
+    {
+      "heading": "92.7 Comparing incompatible tokenization",
+      "level": 3,
+      "id": "ux-section-100",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Changing tokenization changes the sequences being scored.",
+      "paragraphs": [
+        "Changing tokenization changes the sequences being scored."
+      ]
+    },
+    {
+      "heading": "92.8 Comparing unrelated language pairs casually",
+      "level": 3,
+      "id": "ux-section-101",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Morphology, segmentation, and reference variation differ.",
+      "paragraphs": [
+        "Morphology, segmentation, and reference variation differ."
+      ]
+    },
+    {
+      "heading": "92.9 Ignoring reference composition",
+      "level": 3,
+      "id": "ux-section-102",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "Reference choice can materially alter TER.",
+      "paragraphs": [
+        "Reference choice can materially alter TER."
+      ]
+    },
+    {
+      "heading": "92.10 Assuming tiny differences are significant",
+      "level": 3,
+      "id": "ux-section-103",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "Use paired uncertainty analysis.",
+      "paragraphs": [
+        "Use paired uncertainty analysis."
+      ]
+    },
+    {
+      "heading": "92.11 Reporting only aggregate TER",
+      "level": 3,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Domain-specific and error-type failures can be hidden.",
+      "paragraphs": [
+        "Domain-specific and error-type failures can be hidden."
+      ]
+    },
+    {
+      "heading": "92.12 Optimizing only TER",
+      "level": 3,
+      "id": "ux-section-105",
+      "paragraph_count": 1,
+      "word_count": 9,
+      "evidence": "The proxy must not replace the actual translation objective.",
+      "paragraphs": [
+        "The proxy must not replace the actual translation objective."
+      ]
+    },
+    {
+      "heading": "93. High-quality MT evaluation report",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 2,
+      "word_count": 53,
+      "evidence": "1. test corpus and language direction 2. reference provenance 3. exact preprocessing 4. TER implementation/version 5. TER score 6. edit decomposition 7. complementary lexical metric 8. learned/semantic metric 9. paired uncertainty analysis 10. human evaluation 11. critical-error analysis",
+      "paragraphs": [
+        "1. test corpus and language direction 2. reference provenance 3. exact preprocessing 4. TER implementation/version 5. TER score 6. edit decomposition 7. complementary lexical metric 8. learned/semantic metric 9. paired uncertainty analysis 10. human evaluation 11. critical-error analysis",
+        "Production systems should additionally consider post-editing time, terminology, numbers, entities, document context, and domain-specific safety."
+      ]
+    },
+    {
+      "heading": "94. TER's role in modern MT",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 3,
+      "word_count": 42,
+      "evidence": "TER originated when statistical MT systems often produced highly visible lexical and word-order errors. Modern systems have different error distributions, but TER still provides a transparent alignment-oriented diagnostic.",
+      "paragraphs": [
+        "TER originated when statistical MT systems often produced highly visible lexical and word-order errors. Modern systems have different error distributions, but TER still provides a transparent alignment-oriented diagnostic.",
+        "Its strongest role today is usually:",
+        "one interpretable metric inside a multi-dimensional evaluation suite."
+      ]
+    },
+    {
+      "heading": "95. Final interpretation",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 8,
+      "word_count": 154,
+      "evidence": "Translation Edit Rate is best understood as a translation-specific extension of word-level edit distance. Its defining addition is a block-shift operation intended to represent phrase reordering more economically than a series of sequential deletions and insertions.",
+      "paragraphs": [
+        "Translation Edit Rate is best understood as a translation-specific extension of word-level edit distance. Its defining addition is a block-shift operation intended to represent phrase reordering more economically than a series of sequential deletions and insertions.",
+        "The observed score is jointly determined by:",
+        "hypothesis + reference set + preprocessing + shift search + ordinary alignment + edit-cost model.",
+        "It is not an intrinsic semantic quality measure.",
+        "The most important distinctions are:",
+        "TER != semantic error rate TER != human quality score TER != post-editing time HTER != cognitive effort reference similarity != source faithfulness low edit distance != correct translation.",
+        "TER remains scientifically valuable when the question is narrow and explicit: how many permitted word-level edits, including block shifts, separate a machine translation from a selected reference representation?",
+        "For broader MT evaluation, it should be combined with complementary character or lexical metrics, source-aware learned metrics, statistical uncertainty analysis, human evaluation, and task-specific critical-error measurements."
+      ]
+    },
+    {
+      "heading": "Selected technical references",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 13,
+      "word_count": 268,
+      "evidence": "Snover, M., Dorr, B., Schwartz, R., Micciulla, L., and Makhoul, J. A Study of Translation Edit Rate with Targeted Human Annotation. AMTA, 2006. ACL Anthology .",
+      "paragraphs": [
+        "Snover, M., Dorr, B., Schwartz, R., Micciulla, L., and Makhoul, J. A Study of Translation Edit Rate with Targeted Human Annotation. AMTA, 2006. ACL Anthology .",
+        "Snover, M. G., Madnani, N., Dorr, B., and Schwartz, R. TER-Plus: paraphrase, semantic, and alignment enhancements to Translation Edit Rate. Machine Translation, 2009. https://doi.org/10.1007/s10590-009-9062-9 .",
+        "Leusch, G., and Ney, H. Edit distances with block movements and error rate confidence estimates. Machine Translation, 2009. https://doi.org/10.1007/s10590-009-9063-8 .",
+        "Leusch, G., Ueffing, N., and Ney, H. CDER: Efficient MT Evaluation Using Block Movements. EACL, 2006. ACL Anthology .",
+        "Leusch, G., Ueffing, N., Vilar, D., and Ney, H. Preprocessing and Normalization for Automatic Evaluation of Machine Translation. 2005. ACL Anthology .",
+        "Papineni, K., Roukos, S., Ward, T., and Zhu, W.-J. BLEU: a Method for Automatic Evaluation of Machine Translation. ACL, 2002. https://doi.org/10.3115/1073083.1073135 .",
+        "Banerjee, S., and Lavie, A. METEOR: An Automatic Metric for MT Evaluation with Improved Correlation with Human Judgments. 2005. ACL Anthology .",
+        "Popović, M. chrF: character n-gram F-score for automatic MT evaluation. WMT, 2015. https://doi.org/10.18653/v1/W15-3049 .",
+        "Post, M. A Call for Clarity in Reporting BLEU Scores. WMT, 2018. https://doi.org/10.18653/v1/W18-6319 .",
+        "Rei, R., Stewart, C., Farinha, A. C., and Lavie, A. COMET: A Neural Framework for MT Evaluation. EMNLP, 2020. https://doi.org/10.18653/v1/2020.emnlp-main.213 .",
+        "Juraska, J., Deutsch, D., Finkelstein, M., and Freitag, M. MetricX-24: The Google Submission to the WMT 2024 Metrics Shared Task. WMT, 2024. https://doi.org/10.18653/v1/2024.wmt-1.35 .",
+        "Specia, L., Raj, D., and Turchi, M. Estimating Machine Translation Post-Editing Effort with HTER. 2010. ACL Anthology .",
+        "Koponen, M., Aziz, W., Ramos, L., and Specia, L. Post-editing time as a measure of cognitive effort. 2012. ACL Anthology ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "4. TER shift is not Damerau transposition",
+          "anchor_id": "ux-section-5",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "A TER shift must not be confused with an adjacent transposition in Damerau-Levenshtein distance ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "2. Relationship to Levenshtein distance",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "word-level edit distance + translation-oriented reordering operation."
+        },
+        {
+          "section": "3. Why machine translation needs a reordering operation",
+          "anchor_id": "ux-section-4",
+          "alias": "edit distance",
+          "excerpt": "Ordinary sequential edit distance can over-penalize this movement. TER can instead treat yesterday as one moved block."
+        },
+        {
+          "section": "7. TER is not computationally just Levenshtein plus a fourth DP transition",
+          "anchor_id": "ux-section-8",
+          "alias": "edit distance",
+          "excerpt": "conceptual objective: few edits including shifts practical TER: constrained / greedy shift search + exact ordinary edit-distance alignment."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "12. Lower TER is better",
+          "anchor_id": "ux-section-13",
+          "alias": "edit operations",
+          "excerpt": "lower TER = fewer edit operations relative to reference length."
+        },
+        {
+          "section": "33. TER versus BLEU",
+          "anchor_id": "ux-section-34",
+          "alias": "edit operations",
+          "excerpt": "BLEU measures modified n-gram precision plus a brevity penalty. TER measures edit operations needed to transform hypothesis toward reference."
+        },
+        {
+          "section": "35. TER versus METEOR",
+          "anchor_id": "ux-section-36",
+          "alias": "edit operations",
+          "excerpt": "TER: explicit edit operations + block shifts METEOR: word matching + precision/recall + fragmentation + richer lexical correspondence."
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "32. Language segmentation matters",
+          "anchor_id": "ux-section-33",
+          "alias": "text normalization and transliteration",
+          "excerpt": "Unicode normalization and segmentation are separate operations; see text normalization and transliteration ."
+        }
+      ]
+    },
+    {
+      "target": "/wagner-fischer-algorithm",
+      "evidence": [
+        {
+          "section": "9. Dynamic programming inside TER",
+          "anchor_id": "ux-section-10",
+          "alias": "wagner fischer algorithm",
+          "excerpt": "After the current word order is fixed, ordinary edit distance uses the familiar recurrence behind the Wagner-Fischer algorithm ."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "47. Uniform edit costs are a strong assumption",
+          "anchor_id": "ux-section-48",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "A weighted model can capture task-specific costs, as discussed in weighted Levenshtein distance ."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page",
+      "type": "WebPage",
+      "name": "Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#machine-translation-evaluation"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "type": "TechArticle",
+      "name": "Translation Edit Rate (TER) and Machine Translation Evaluation: Alignment, Shifts, HTER, Metrics, and Limitations",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#machine-translation-evaluation"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept",
+      "type": "DefinedTerm",
+      "name": "Translation Edit Rate",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#machine-translation-evaluation",
+      "type": "DefinedTerm",
+      "name": "Machine Translation Evaluation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#shift-operation",
+      "type": "DefinedTerm",
+      "name": "TER Shift Operation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#hter",
+      "type": "DefinedTerm",
+      "name": "Human-Targeted Translation Edit Rate",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#terp",
+      "type": "DefinedTerm",
+      "name": "TER-Plus",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#reference-bias",
+      "type": "DefinedTerm",
+      "name": "Reference Bias in Machine Translation Evaluation",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#post-editing-effort",
+      "type": "DefinedTerm",
+      "name": "Machine Translation Post-Editing Effort",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page",
+      "about",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page",
+      "about",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#machine-translation-evaluation"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page",
+      "mainEntity",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page",
+      "isPartOf",
+      "https://www.levenshtein.net/language-processing#collection"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "about",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#concept"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "about",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#machine-translation-evaluation"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#shift-operation"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#hter"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#terp"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#reference-bias"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "mentions",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#post-editing-effort"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "isPartOf",
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#page"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://aclanthology.org/2006.amta-papers.25/"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://doi.org/10.1007/s10590-009-9062-9"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://doi.org/10.1007/s10590-009-9063-8"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://aclanthology.org/E06-1031/"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://aclanthology.org/W05-0903/"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://doi.org/10.3115/1073083.1073135"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://aclanthology.org/W05-0909/"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://doi.org/10.18653/v1/W15-3049"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://doi.org/10.18653/v1/W18-6319"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://doi.org/10.18653/v1/2020.emnlp-main.213"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://doi.org/10.18653/v1/2024.wmt-1.35"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://aclanthology.org/2010.jec-1.5/"
+    ],
+    [
+      "https://www.levenshtein.net/translation-edit-rate-and-mt-evaluation#article",
+      "citation",
+      "https://aclanthology.org/2012.amta-wptp.2/"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://aclanthology.org/2006.amta-papers.25/",
+      "anchor": "ACL Anthology"
+    },
+    {
+      "url": "https://doi.org/10.1007/s10590-009-9063-8",
+      "anchor": "https://doi.org/10.1007/s10590-009-9063-8"
+    },
+    {
+      "url": "https://doi.org/10.1007/s10590-009-9062-9",
+      "anchor": "https://doi.org/10.1007/s10590-009-9062-9"
+    },
+    {
+      "url": "https://aclanthology.org/W05-0903/",
+      "anchor": "ACL Anthology"
+    },
+    {
+      "url": "https://github.com/mjpost/sacrebleu",
+      "anchor": "SacreBLEU"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/W18-6319",
+      "anchor": "https://doi.org/10.18653/v1/W18-6319"
+    },
+    {
+      "url": "https://doi.org/10.3115/1073083.1073135",
+      "anchor": "https://doi.org/10.3115/1073083.1073135"
+    },
+    {
+      "url": "https://aclanthology.org/W05-0909/",
+      "anchor": "ACL Anthology"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/W15-3049",
+      "anchor": "https://doi.org/10.18653/v1/W15-3049"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/2020.emnlp-main.213",
+      "anchor": "https://doi.org/10.18653/v1/2020.emnlp-main.213"
+    },
+    {
+      "url": "https://doi.org/10.18653/v1/2024.wmt-1.35",
+      "anchor": "https://doi.org/10.18653/v1/2024.wmt-1.35"
+    },
+    {
+      "url": "https://aclanthology.org/E06-1031/",
+      "anchor": "ACL Anthology"
+    },
+    {
+      "url": "https://aclanthology.org/2010.jec-1.5/",
+      "anchor": "ACL Anthology"
+    },
+    {
+      "url": "https://aclanthology.org/2012.amta-wptp.2/",
+      "anchor": "ACL Anthology"
+    }
+  ]
+}

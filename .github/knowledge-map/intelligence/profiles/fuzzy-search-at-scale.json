@@ -1,0 +1,3737 @@
+{
+  "url": "/fuzzy-search-at-scale",
+  "title": "Fuzzy Search at Scale: Indexing, Filtering & Exact Verification",
+  "h1": [
+    "Fuzzy Search at Scale: Indexing, Filtering & Exact Verification"
+  ],
+  "group": "Search",
+  "provisional_mission": "Kiến trúc retrieval quy mô lớn",
+  "content_sha256": "28054e908bd2e6e8f45ad62c96c6a694798eca41be5e28a3c02f56a674ca8d49",
+  "canonical": "https://www.levenshtein.net/fuzzy-search-at-scale",
+  "primary_entity_candidate": "Fuzzy Search at Scale: Indexing, Filtering & Exact Verification",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Fuzzy Search at Scale",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 19,
+      "word_count": 227,
+      "evidence": "Calculating edit distance between two strings is not the difficult part of large-scale fuzzy search.",
+      "paragraphs": [
+        "Calculating edit distance between two strings is not the difficult part of large-scale fuzzy search.",
+        "The difficult part is avoiding the need to calculate it against almost everything.",
+        "Suppose a collection contains:",
+        "N = 100,000,000 terms",
+        "and a query asks for every term satisfying:",
+        "ED(q,s) ≤ 2",
+        "where ED is classical Levenshtein distance .",
+        "A brute-force system performs:",
+        "100,000,000 pairwise edit-distance computations",
+        "even if only twenty strings are plausible answers.",
+        "Making each pairwise calculation ten times faster still leaves the system performing almost all of the unnecessary comparisons.",
+        "Scalable fuzzy search therefore changes the engineering objective from:",
+        "How do we compute ED(q,s) faster?",
+        "to:",
+        "How do we identify a tiny candidate set C(q) such that true matches ⊆ C(q) and |C(q)| ≪ N?",
+        "Only those candidates should reach an exact edit-distance verifier.",
+        "This leads to the central architecture of exact large-scale fuzzy search:",
+        "QUERY ↓ representation / normalization ↓ cheap necessary conditions ↓ index lookup ↓ candidate generation ↓ candidate pruning ↓ small candidate set ↓ bounded exact edit-distance verification ↓ ranking ↓ results",
+        "The most important distinction is that filtering and indexing reduce the search space; they do not replace the distance definition . If every pruning condition is mathematically necessary for a true match and the final verifier is exact, the entire pipeline can still return exactly the same threshold result set as brute force."
+      ]
+    },
+    {
+      "heading": "Three different large-scale string-search problems",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "The phrase fuzzy search at scale can refer to several mathematically different problems.",
+      "paragraphs": [
+        "The phrase fuzzy search at scale can refer to several mathematically different problems."
+      ]
+    },
+    {
+      "heading": "Threshold search",
+      "level": 3,
+      "id": "ux-section-3",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "Given:",
+      "paragraphs": [
+        "Given:",
+        "string collection S query q threshold τ",
+        "return:",
+        "Rτ(q) = { s ∈ S : ED(q,s) ≤ τ }",
+        "This is an exact range query in edit-distance space."
+      ]
+    },
+    {
+      "heading": "Top-k search",
+      "level": 3,
+      "id": "ux-section-4",
+      "paragraph_count": 10,
+      "word_count": 47,
+      "evidence": "Given:",
+      "paragraphs": [
+        "Given:",
+        "collection S query q integer k",
+        "return the k strings having the smallest edit distance to q .",
+        "Formally, for result set R :",
+        "|R| = k",
+        "and for:",
+        "r ∈ R s ∈ S \\ R",
+        "we require:",
+        "ED(q,r) ≤ ED(q,s)",
+        "up to tie policy."
+      ]
+    },
+    {
+      "heading": "Similarity join",
+      "level": 3,
+      "id": "ux-section-5",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Given two collections:",
+      "paragraphs": [
+        "Given two collections:",
+        "A and B",
+        "find:",
+        "Jτ(A,B) = { (a,b) : a ∈ A, b ∈ B, ED(a,b) ≤ τ }",
+        "If:",
+        "A = B",
+        "the task becomes a self-join, frequently used for deduplication and data cleaning."
+      ]
+    },
+    {
+      "heading": "Do not confuse query search with similarity join",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 4,
+      "word_count": 65,
+      "evidence": "Many important database algorithms such as Ed-Join and Pass-Join were developed for similarity joins.",
+      "paragraphs": [
+        "Many important database algorithms such as Ed-Join and Pass-Join were developed for similarity joins.",
+        "The underlying filtering principles can often inform indexed query search, but the workload differs:",
+        "QUERY SEARCH one query against preindexed collection SIMILARITY JOIN many records against many records",
+        "Index-build cost can be amortized heavily in query search, whereas a batch join may optimize a different balance between preprocessing and pair generation."
+      ]
+    },
+    {
+      "heading": "Threshold search and top-k search also differ",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 15,
+      "word_count": 56,
+      "evidence": "Threshold search knows:",
+      "paragraphs": [
+        "Threshold search knows:",
+        "τ",
+        "in advance.",
+        "That value can drive:",
+        "length filtering;",
+        "q-gram overlap bounds;",
+        "partition count;",
+        "band width in dynamic programming;",
+        "automaton degree.",
+        "Top-k search initially has no such radius.",
+        "It must often discover an upper bound:",
+        "U = distance of current k-th best candidate",
+        "and then use:",
+        "U",
+        "as a progressively tightening pruning radius."
+      ]
+    },
+    {
+      "heading": "Exact search versus approximate nearest-neighbor search",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 10,
+      "word_count": 64,
+      "evidence": "There is another critical distinction.",
+      "paragraphs": [
+        "There is another critical distinction.",
+        "An exact threshold index guarantees:",
+        "ED(q,s) ≤ τ ⇒ s is not pruned",
+        "before verification.",
+        "An approximate retrieval system may intentionally miss some true neighbors to reduce latency or memory.",
+        "Therefore:",
+        "fuzzy search ≠ approximate nearest-neighbor search",
+        "and:",
+        "approximate candidate generation + exact final verifier",
+        "does not make the overall system exact if true candidates can disappear during retrieval."
+      ]
+    },
+    {
+      "heading": "The exact filter-and-verify invariant",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 14,
+      "word_count": 65,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "Mτ(q) = { s ∈ S : ED(q,s) ≤ τ }",
+        "be the true match set.",
+        "Let:",
+        "Cτ(q)",
+        "be the candidate set generated by an index.",
+        "For an exact filter:",
+        "Mτ(q) ⊆ Cτ(q)",
+        "must always hold.",
+        "The final verifier computes:",
+        "Rτ(q) = { s ∈ Cτ(q) : ED(q,s) ≤ τ }",
+        "and therefore:",
+        "Rτ(q) = Mτ(q)",
+        "despite not evaluating every string in the collection."
+      ]
+    },
+    {
+      "heading": "False positives are acceptable during filtering",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 9,
+      "word_count": 41,
+      "evidence": "Suppose a filter returns:",
+      "paragraphs": [
+        "Suppose a filter returns:",
+        "candidate c",
+        "even though:",
+        "ED(q,c) > τ",
+        "That is not a correctness error.",
+        "The verifier rejects it.",
+        "The filter's goal is therefore:",
+        "zero false negatives + as few false positives as practical",
+        "for an exact threshold pipeline."
+      ]
+    },
+    {
+      "heading": "Candidate selectivity is a core performance variable",
+      "level": 2,
+      "id": "ux-section-11",
+      "paragraph_count": 8,
+      "word_count": 45,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "candidate ratio = |Cτ(q)| / |S|",
+        "If:",
+        "|S| = 100,000,000 |Cτ(q)| = 2,000",
+        "then:",
+        "candidate ratio = 0.002%",
+        "and more than 99.99% of the corpus avoided exact pairwise verification.",
+        "That structural reduction can matter far more than optimizing a dynamic-programming cell by another 20%."
+      ]
+    },
+    {
+      "heading": "Why brute-force Levenshtein fails at collection scale",
+      "level": 2,
+      "id": "ux-section-12",
+      "paragraph_count": 10,
+      "word_count": 68,
+      "evidence": "Suppose each candidate has average length:",
+      "paragraphs": [
+        "Suppose each candidate has average length:",
+        "L",
+        "and the query has comparable length.",
+        "Straightforward Wagner–Fischer verification against all N records costs approximately:",
+        "O( N L² )",
+        "logical DP work.",
+        "Even a bit-parallel verifier still has a factor proportional to the collection size:",
+        "O( N · verification_cost )",
+        "if no retrieval structure eliminates candidates first.",
+        "This is why large-scale fuzzy search is primarily an indexing and filtering problem ."
+      ]
+    },
+    {
+      "heading": "Layer 0: define the string representation before indexing",
+      "level": 2,
+      "id": "ux-section-13",
+      "paragraph_count": 4,
+      "word_count": 58,
+      "evidence": "An index is only correct relative to the representation it indexes.",
+      "paragraphs": [
+        "An index is only correct relative to the representation it indexes.",
+        "A text pipeline might perform:",
+        "raw UTF-8 ↓ decode ↓ NFC ↓ case fold ↓ tokenization ↓ grapheme or code-point sequence ↓ fuzzy index",
+        "If query strings and indexed strings use different transformations, the mathematical filtering bounds may no longer correspond to the distance actually being verified."
+      ]
+    },
+    {
+      "heading": "Index the same domain that the verifier measures",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 10,
+      "word_count": 39,
+      "evidence": "Suppose verification uses:",
+      "paragraphs": [
+        "Suppose verification uses:",
+        "ED( graphemes(NFC(q)), graphemes(NFC(s)) )",
+        "but length filtering uses:",
+        "UTF-8 byte length",
+        "Then:",
+        "|len_bytes(q)-len_bytes(s)| > τ",
+        "does not imply:",
+        "grapheme ED(q,s) > τ",
+        "and a supposedly safe filter can become incorrect.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Layer 1: length filtering",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "For unit-cost Levenshtein distance:",
+      "paragraphs": [
+        "For unit-cost Levenshtein distance:",
+        "ED(x,y) ≥ || x | - | y ||",
+        "because at least the length difference must be compensated by insertions or deletions.",
+        "Therefore:",
+        "ED(q,s) ≤ τ ⇒ |s| ∈ [ |q|-τ, |q|+τ ]"
+      ]
+    },
+    {
+      "heading": "Length-partitioned indexes",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 9,
+      "word_count": 50,
+      "evidence": "A collection can be partitioned into buckets:",
+      "paragraphs": [
+        "A collection can be partitioned into buckets:",
+        "length 1 length 2 length 3 ...",
+        "or broader ranges.",
+        "For:",
+        "|q| = 20 τ = 2",
+        "only lengths:",
+        "18 19 20 21 22",
+        "need to be considered.",
+        "This filter is extremely cheap and should generally be applied before more expensive signature processing."
+      ]
+    },
+    {
+      "heading": "Length filtering becomes weak for large τ",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 6,
+      "word_count": 33,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "|q| = 20 τ = 10",
+        "the admissible length interval expands to:",
+        "10 ... 30",
+        "and may include a large fraction of the dictionary.",
+        "Large edit radii weaken many exact filters simultaneously."
+      ]
+    },
+    {
+      "heading": "Layer 2: q-grams",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 8,
+      "word_count": 63,
+      "evidence": "A q-gram is a contiguous substring of fixed length q .",
+      "paragraphs": [
+        "A q-gram is a contiguous substring of fixed length q .",
+        "For:",
+        "s = \"levenshtein\" q = 3",
+        "the ordinary trigrams include:",
+        "lev eve ven ens nsh sht hte tei ein",
+        "The key idea is simple:",
+        "A small number of character edits cannot arbitrarily destroy every local substring of a sufficiently long string.",
+        "Therefore q-gram overlap supplies necessary conditions for low edit distance."
+      ]
+    },
+    {
+      "heading": "q-gram inverted index",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 8,
+      "word_count": 48,
+      "evidence": "For each gram:",
+      "paragraphs": [
+        "For each gram:",
+        "g",
+        "store a posting list:",
+        "I[g] = { IDs of strings containing g }",
+        "Example:",
+        "\"lev\" → [12, 91, 155, ...] \"ein\" → [12, 44, 91, ...]",
+        "At query time:",
+        "grams(q) ↓ retrieve postings ↓ accumulate candidate overlap ↓ apply lower bound ↓ verify survivors"
+      ]
+    },
+    {
+      "heading": "Why one edit damages only a local q-gram neighborhood",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "For a substitution at one character position, only q-grams overlapping that position can be directly changed.",
+      "paragraphs": [
+        "For a substitution at one character position, only q-grams overlapping that position can be directly changed.",
+        "There are at most roughly:",
+        "q",
+        "such q-grams for an interior position.",
+        "This leads to classical q-gram overlap bounds."
+      ]
+    },
+    {
+      "heading": "The classical padded q-gram bound",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 7,
+      "word_count": 70,
+      "evidence": "In the positional padded-q-gram model used by Gravano and colleagues, a string of length L produces:",
+      "paragraphs": [
+        "In the positional padded-q-gram model used by Gravano and colleagues, a string of length L produces:",
+        "L + q - 1",
+        "padded q-grams.",
+        "For two strings within edit distance τ , the classical count-filter reasoning yields a required overlap of at least:",
+        "max(|x|,|y|) + q - 1 - τq",
+        "when this lower bound is positive.",
+        "Thus a candidate that shares too few q-grams can be rejected without calculating edit distance."
+      ]
+    },
+    {
+      "heading": "A historically important q-gram caveat",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 7,
+      "word_count": 80,
+      "evidence": "The erratum to the original approximate-string-join work points out an important boundary case:",
+      "paragraphs": [
+        "The erratum to the original approximate-string-join work points out an important boundary case:",
+        "If:",
+        "τq ≥ max(|x|,|y|) + q - 1",
+        "then two strings can be within the edit threshold while sharing no q-gram at all.",
+        "A system that generates candidates only by joining shared grams can then miss valid matches unless these short-string or weak-bound cases are handled separately.",
+        "This is an excellent example of a general rule:",
+        "A filter is safe only if its exact preconditions are respected."
+      ]
+    },
+    {
+      "heading": "q is a major design parameter",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 13,
+      "word_count": 64,
+      "evidence": "Small q:",
+      "paragraphs": [
+        "Small q:",
+        "q = 1 or 2",
+        "produces common grams and long posting lists.",
+        "Candidate generation may become expensive because many unrelated strings share them.",
+        "Large q:",
+        "q = 5 or 6",
+        "produces more selective grams but each edit destroys a larger number of q-gram signatures relative to the error budget.",
+        "The optimal q depends on:",
+        "string length;",
+        "alphabet;",
+        "threshold;",
+        "corpus distribution;",
+        "memory budget."
+      ]
+    },
+    {
+      "heading": "Rare grams are more valuable than common grams",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 11,
+      "word_count": 47,
+      "evidence": "Suppose a query contains:",
+      "paragraphs": [
+        "Suppose a query contains:",
+        "\"the\" \"hte\"",
+        "and:",
+        "df(\"the\") = 10,000,000 df(\"hte\") = 1,000",
+        "where:",
+        "df(g)",
+        "is the number of indexed strings containing gram g .",
+        "Looking up:",
+        "\"hte\"",
+        "is far more selective.",
+        "This motivates signature selection based on corpus frequency rather than blindly reading every posting list."
+      ]
+    },
+    {
+      "heading": "But arbitrary rare-gram selection may destroy exactness",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 5,
+      "word_count": 51,
+      "evidence": "For an exact search, selected signatures must satisfy a proof such as:",
+      "paragraphs": [
+        "For an exact search, selected signatures must satisfy a proof such as:",
+        "true match ⇒ shares at least one selected signature",
+        "Rarity alone does not provide that guarantee.",
+        "The art of exact signature filtering is finding signatures that are simultaneously:",
+        "necessary enough to guarantee recall and rare enough to prune aggressively"
+      ]
+    },
+    {
+      "heading": "Positional q-grams",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 8,
+      "word_count": 59,
+      "evidence": "Ordinary q-gram overlap ignores where the grams occur.",
+      "paragraphs": [
+        "Ordinary q-gram overlap ignores where the grams occur.",
+        "Positional q-grams associate:",
+        "(position, gram)",
+        "with each occurrence.",
+        "For example:",
+        "(1, \"lev\") (2, \"eve\") (3, \"ven\") ...",
+        "An insertion or deletion shifts positions, but the shift is limited by the edit budget.",
+        "Therefore a gram occurring at wildly incompatible positions can sometimes be discarded even if the textual gram itself matches."
+      ]
+    },
+    {
+      "heading": "Count filtering versus position filtering",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 3,
+      "word_count": 30,
+      "evidence": "Conceptually:",
+      "paragraphs": [
+        "Conceptually:",
+        "COUNT FILTER Do the strings share enough grams? POSITION FILTER Could those shared grams align within the edit budget?",
+        "Position-aware bounds reduce false positives that survive simple overlap counting."
+      ]
+    },
+    {
+      "heading": "Ed-Join",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 8,
+      "word_count": 71,
+      "evidence": "Ed-Join, proposed by Xiao, Wang, and Lin, studies edit-distance similarity joins through the behavior of mismatching q-grams rather than relying only on total matching-q-gram counts.",
+      "paragraphs": [
+        "Ed-Join, proposed by Xiao, Wang, and Lin, studies edit-distance similarity joins through the behavior of mismatching q-grams rather than relying only on total matching-q-gram counts.",
+        "It derives edit-distance lower bounds from:",
+        "the locations of mismatching grams;",
+        "their contents.",
+        "The purpose remains the same:",
+        "derive cheap lower bound LB(x,y) if LB(x,y) > τ reject else verify exact ED",
+        "This illustrates a recurring pattern in fuzzy-search research:",
+        "Better lower bounds reduce verification volume."
+      ]
+    },
+    {
+      "heading": "Variable-length grams",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 5,
+      "word_count": 58,
+      "evidence": "Fixed-length grams force every signature to have the same length even though corpus selectivity varies.",
+      "paragraphs": [
+        "Fixed-length grams force every signature to have the same length even though corpus selectivity varies.",
+        "VGRAM introduced variable-length grams selected from the collection.",
+        "The basic motivation is:",
+        "common short gram may be weak while longer selective gram may produce much shorter posting list",
+        "A gram dictionary can therefore select high-quality variable-length substrings and represent strings using that vocabulary."
+      ]
+    },
+    {
+      "heading": "Why variable grams can reduce index work",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 7,
+      "word_count": 44,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "\"tion\"",
+        "occurs extremely frequently, but:",
+        "\"ization\"",
+        "is substantially more selective.",
+        "A variable-length scheme can exploit corpus statistics rather than treating both only as collections of identical-length q-grams.",
+        "The complexity is that edit-distance filtering bounds must now account correctly for the chosen variable signatures."
+      ]
+    },
+    {
+      "heading": "Signature-based search",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 13,
+      "word_count": 45,
+      "evidence": "Many exact methods can be generalized as follows.",
+      "paragraphs": [
+        "Many exact methods can be generalized as follows.",
+        "For indexed string:",
+        "s",
+        "compute signatures:",
+        "Sig_D(s)",
+        "For query:",
+        "q",
+        "compute:",
+        "Sig_Q(q)",
+        "with the guarantee:",
+        "ED(q,s) ≤ τ ⇒ Sig_Q(q) ∩ Sig_D(s) ≠ ∅",
+        "or a stronger overlap condition.",
+        "Then an inverted index maps signatures to strings."
+      ]
+    },
+    {
+      "heading": "Symmetric signatures are not always optimal",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 4,
+      "word_count": 47,
+      "evidence": "A naive system may extract the same style and number of signatures from both:",
+      "paragraphs": [
+        "A naive system may extract the same style and number of signatures from both:",
+        "indexed strings and query",
+        "But query processing and offline indexing have very different cost profiles.",
+        "It can be worthwhile to store more structured information offline so that the query generates fewer signatures online."
+      ]
+    },
+    {
+      "heading": "Asymmetric signature schemes",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 12,
+      "word_count": 69,
+      "evidence": "Qin and colleagues studied this explicitly.",
+      "paragraphs": [
+        "Qin and colleagues studied this explicitly.",
+        "Their edit-similarity work established a lower bound of:",
+        "τ + 1",
+        "for the minimum number of signatures in the corresponding framework and developed asymmetric data/query signature schemes that achieve this bound under their construction.",
+        "The systems use ideas including:",
+        "q-chunks;",
+        "q-grams;",
+        "floating q-chunks;",
+        "signature ordering;",
+        "candidate pruning.",
+        "The broader systems principle is:",
+        "Offline index complexity can be traded for lower online query cost."
+      ]
+    },
+    {
+      "heading": "The pigeonhole principle behind partition filters",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 13,
+      "word_count": 76,
+      "evidence": "Partition-based filtering provides one of the cleanest exact-search arguments.",
+      "paragraphs": [
+        "Partition-based filtering provides one of the cleanest exact-search arguments.",
+        "Suppose an indexed string is partitioned into:",
+        "τ + 1",
+        "disjoint segments.",
+        "If:",
+        "ED(q,s) ≤ τ",
+        "then at most:",
+        "τ",
+        "edit operations exist in an optimal script.",
+        "By the pigeonhole principle, at least one of the:",
+        "τ + 1",
+        "segments must avoid direct corruption by those edits under the partition argument used by the method.",
+        "This yields an exact-match signature that can be used for candidate generation."
+      ]
+    },
+    {
+      "heading": "Why τ + 1 partitions are powerful",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 7,
+      "word_count": 49,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "τ = 2",
+        "split a string into:",
+        "S₁ | S₂ | S₃",
+        "Two edit operations cannot independently destroy all three disjoint segments.",
+        "Therefore at least one segment supplies an exact anchor.",
+        "Instead of searching an enormous edit neighborhood, the system can search exact substrings in an inverted index."
+      ]
+    },
+    {
+      "heading": "Insertions and deletions shift positions",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 6,
+      "word_count": 64,
+      "evidence": "The previous intuition is not enough by itself for a complete algorithm.",
+      "paragraphs": [
+        "The previous intuition is not enough by itself for a complete algorithm.",
+        "If:",
+        "s = segment₁ segment₂ segment₃",
+        "and the query contains an insertion near the beginning, later segment positions shift.",
+        "Therefore the query cannot inspect only the identical absolute segment position.",
+        "A correct partition-based method must identify the set of query substrings whose lengths and positions are compatible with at most τ edits."
+      ]
+    },
+    {
+      "heading": "Pass-Join",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 4,
+      "word_count": 77,
+      "evidence": "Pass-Join applies this partition principle to edit-distance similarity joins.",
+      "paragraphs": [
+        "Pass-Join applies this partition principle to edit-distance similarity joins.",
+        "Its high-level procedure is:",
+        "1. partition indexed strings into segments 2. build inverted indexes for segments 3. for each probe string, select substrings that could correspond to an unchanged segment 4. retrieve candidate strings from inverted lists 5. apply additional pruning 6. verify exact edit distance",
+        "The work is particularly important because it develops selection rules to limit how many probe substrings must be generated while retaining completeness."
+      ]
+    },
+    {
+      "heading": "Partition filtering versus q-gram filtering",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 1,
+      "word_count": 36,
+      "evidence": "Property q-Gram Filtering Partition Filtering Signature Overlapping local grams Disjoint segments Main principle Edits destroy limited gram evidence At least one segment remains usable Index Gram postings Segment postings Main challenge Posting-list volume Probe substring selection",
+      "paragraphs": [
+        "Property q-Gram Filtering Partition Filtering Signature Overlapping local grams Disjoint segments Main principle Edits destroy limited gram evidence At least one segment remains usable Index Gram postings Segment postings Main challenge Posting-list volume Probe substring selection"
+      ]
+    },
+    {
+      "heading": "Pigeonhole filters can still be weak",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "A condition such as:",
+      "paragraphs": [
+        "A condition such as:",
+        "at least one segment satisfies condition X",
+        "may allow many false positives because satisfying one segment says little about the remaining segments.",
+        "This motivated stronger multi-segment constraints."
+      ]
+    },
+    {
+      "heading": "The pigeonring principle",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 5,
+      "word_count": 74,
+      "evidence": "Qin and Xiao generalized the usual pigeonhole reasoning by arranging partitions in a conceptual ring.",
+      "paragraphs": [
+        "Qin and Xiao generalized the usual pigeonhole reasoning by arranging partitions in a conceptual ring.",
+        "Instead of constraining only one individual partition, the pigeonring principle creates conditions over multiple consecutive partitions.",
+        "Conceptually:",
+        "ordinary pigeonhole: at least one box is sufficiently light pigeonring: for different lengths l, some l consecutive boxes have a sufficiently bounded aggregate load",
+        "Applied to thresholded similarity search, such stronger necessary conditions can prune candidates that pass the weaker single-partition condition."
+      ]
+    },
+    {
+      "heading": "Filtering research is largely about stronger necessary conditions",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 3,
+      "word_count": 41,
+      "evidence": "The evolution can be understood as:",
+      "paragraphs": [
+        "The evolution can be understood as:",
+        "length bound ↓ gram overlap ↓ position-aware overlap ↓ signature selection ↓ partition anchors ↓ multi-partition constraints ↓ exact verification",
+        "Each layer attempts to reject more impossible strings at lower cost than full dynamic programming."
+      ]
+    },
+    {
+      "heading": "Prefix filtering",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 8,
+      "word_count": 57,
+      "evidence": "Signature frameworks often impose a global ordering on signatures, for example:",
+      "paragraphs": [
+        "Signature frameworks often impose a global ordering on signatures, for example:",
+        "rare signatures first",
+        "and inspect only a prefix of the ordered signature list.",
+        "If a theorem guarantees that similar strings must share at least one signature in the selected prefix, then only those signatures need to access postings.",
+        "This reduces:",
+        "index probes;",
+        "posting-list reads;",
+        "candidate generation."
+      ]
+    },
+    {
+      "heading": "Pivotal prefix filtering",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 8,
+      "word_count": 61,
+      "evidence": "Deng, Li, and Feng proposed a pivotal-prefix filtering method for edit-distance string similarity search.",
+      "paragraphs": [
+        "Deng, Li, and Feng proposed a pivotal-prefix filtering method for edit-distance string similarity search.",
+        "The design attempts to select a small number of high-quality signatures from a prefix rather than using a larger collection of redundant signatures.",
+        "The method combines:",
+        "signature selection;",
+        "dynamic programming for choosing pivotal signatures;",
+        "alignment-aware filtering.",
+        "Again the central trade-off is:",
+        "stronger pruning versus filter evaluation cost"
+      ]
+    },
+    {
+      "heading": "A filter can be too expensive",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 10,
+      "word_count": 45,
+      "evidence": "Suppose filter A removes:",
+      "paragraphs": [
+        "Suppose filter A removes:",
+        "99.9%",
+        "of candidates but costs:",
+        "100 μs per candidate",
+        "while exact verification costs:",
+        "2 μs",
+        "for the workload.",
+        "The filter is counterproductive.",
+        "Therefore filters should be ordered by expected cost-effectiveness:",
+        "cheap / broad ↓ more expensive / selective ↓ exact verifier"
+      ]
+    },
+    {
+      "heading": "A practical pruning cascade",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "length ↓ rare signature lookup ↓ gram-count bound ↓ position bound ↓ partition/alignment bound ↓ bounded exact ED",
+      "paragraphs": [
+        "length ↓ rare signature lookup ↓ gram-count bound ↓ position bound ↓ partition/alignment bound ↓ bounded exact ED",
+        "Not every workload needs every stage."
+      ]
+    },
+    {
+      "heading": "Levenshtein automata provide a different indexing strategy",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Rather than converting the query into q-gram signatures, a Levenshtein automaton represents the set:",
+      "paragraphs": [
+        "Rather than converting the query into q-gram signatures, a Levenshtein automaton represents the set:",
+        "Lτ(q) = { s : ED(q,s) ≤ τ }",
+        "as a finite-state language for a fixed query and threshold.",
+        "See Levenshtein Automata ."
+      ]
+    },
+    {
+      "heading": "Trie × automaton traversal",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 6,
+      "word_count": 47,
+      "evidence": "Suppose the indexed term dictionary is stored as a trie.",
+      "paragraphs": [
+        "Suppose the indexed term dictionary is stored as a trie.",
+        "At each trie node, maintain the current fuzzy automaton state:",
+        "(trie_node, automaton_state)",
+        "If following a trie branch leads to no automaton state from which acceptance is possible, prune:",
+        "the entire subtree",
+        "without examining every term below it."
+      ]
+    },
+    {
+      "heading": "Why tries are attractive",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "A dictionary such as:",
+      "paragraphs": [
+        "A dictionary such as:",
+        "algorithm algorithmic algorithms alignment alignments ...",
+        "contains enormous prefix redundancy.",
+        "Trie traversal computes fuzzy feasibility once for:",
+        "alg...",
+        "rather than restarting a full pairwise comparison for every term sharing that prefix."
+      ]
+    },
+    {
+      "heading": "Finite-state term dictionaries",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "Compressed finite-state structures can merge not only common prefixes but also equivalent suffix states.",
+      "paragraphs": [
+        "Compressed finite-state structures can merge not only common prefixes but also equivalent suffix states.",
+        "Intersecting:",
+        "term dictionary automaton with Levenshtein automaton",
+        "allows enumeration of accepted terms without scanning all indexed terms."
+      ]
+    },
+    {
+      "heading": "Schulz–Mihov automata",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "The Schulz–Mihov construction is a foundational method for fast string correction using Levenshtein automata.",
+      "paragraphs": [
+        "The Schulz–Mihov construction is a foundational method for fast string correction using Levenshtein automata.",
+        "For fixed error bound, the automaton structure can be exploited efficiently for dictionary search.",
+        "This approach directly influences production fuzzy term enumeration."
+      ]
+    },
+    {
+      "heading": "Lucene's fuzzy term search",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 10,
+      "word_count": 88,
+      "evidence": "Apache Lucene provides a useful production example.",
+      "paragraphs": [
+        "Apache Lucene provides a useful production example.",
+        "Its fuzzy-query implementation compiles automata used to enumerate matching terms in the term dictionary rather than computing dynamic programming independently against every indexed term.",
+        "Lucene's current documented fuzzy-query behavior includes:",
+        "a maximum edit setting;",
+        "an exact prefix length;",
+        "a maximum expansion count;",
+        "optional primitive transpositions;",
+        "compiled fuzzy automata.",
+        "Lucene's documentation also explicitly warns that large edit distances can match a substantial portion of the term dictionary and recommends n-gram-style indexing for use cases demanding larger fuzzy radii.",
+        "Lucene FuzzyQuery documentation ."
+      ]
+    },
+    {
+      "heading": "Why Lucene limits the useful edit radius",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 11,
+      "word_count": 45,
+      "evidence": "This is not merely an implementation inconvenience.",
+      "paragraphs": [
+        "This is not merely an implementation inconvenience.",
+        "As:",
+        "τ",
+        "increases:",
+        "the accepted automaton language grows;",
+        "more dictionary paths survive;",
+        "term expansions grow;",
+        "edit distance becomes less discriminative.",
+        "At some point the fuzzy query approaches:",
+        "scan a large fraction of the dictionary",
+        "and index selectivity collapses."
+      ]
+    },
+    {
+      "heading": "Exact prefix constraints",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 10,
+      "word_count": 62,
+      "evidence": "If a fuzzy query requires:",
+      "paragraphs": [
+        "If a fuzzy query requires:",
+        "first p characters to match exactly",
+        "then the automaton or dictionary traversal starts only below that prefix.",
+        "This can reduce the search space dramatically.",
+        "However:",
+        "ED(q,s) ≤ τ",
+        "no longer defines the complete retrieval relation.",
+        "The actual predicate becomes:",
+        "ED(q,s) ≤ τ AND prefix_p(q) = prefix_p(s)",
+        "so valid edit-distance neighbors with an early error are intentionally excluded."
+      ]
+    },
+    {
+      "heading": "Expansion caps also change the system contract",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "Suppose there are:",
+      "paragraphs": [
+        "Suppose there are:",
+        "10,000 valid fuzzy terms",
+        "but:",
+        "max_expansions = 50",
+        "Then only a bounded subset is permitted into the rewritten downstream query.",
+        "This is a resource-control decision, not a theorem about edit distance."
+      ]
+    },
+    {
+      "heading": "Elasticsearch exposes the same systems trade-offs",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "Current Elasticsearch fuzzy queries expose controls including:",
+      "paragraphs": [
+        "Current Elasticsearch fuzzy queries expose controls including:",
+        "fuzziness ;",
+        "prefix_length ;",
+        "max_expansions ;",
+        "transpositions .",
+        "Its documentation warns that a high expansion limit, especially with zero protected prefix, can produce poor performance because many term variations must be examined.",
+        "Elasticsearch fuzzy-query documentation ."
+      ]
+    },
+    {
+      "heading": "Production fuzzy search is usually term expansion, not raw document scanning",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "An inverted search engine generally stores:",
+      "paragraphs": [
+        "An inverted search engine generally stores:",
+        "TERM → posting list of documents",
+        "A fuzzy query first finds nearby indexed terms:",
+        "query term ↓ fuzzy term dictionary search ↓ matching terms ↓ document posting lists ↓ document ranking",
+        "It does not normally compute:",
+        "Levenshtein( query, entire raw document )",
+        "for every document."
+      ]
+    },
+    {
+      "heading": "Term-level fuzzy search scales because it separates two indexes",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "Conceptually:",
+      "paragraphs": [
+        "Conceptually:",
+        "FUZZY LEXICON INDEX query → nearby terms DOCUMENT INVERTED INDEX term → documents",
+        "This separation is fundamental.",
+        "The first stage solves lexical variation; the second solves information retrieval."
+      ]
+    },
+    {
+      "heading": "Metric-space indexing",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 3,
+      "word_count": 28,
+      "evidence": "Classical Levenshtein distance is a metric under unit costs:",
+      "paragraphs": [
+        "Classical Levenshtein distance is a metric under unit costs:",
+        "d(x,y) ≥ 0 d(x,y)=0 ⇔ x=y d(x,y)=d(y,x) d(x,z) ≤ d(x,y)+d(y,z)",
+        "The triangle inequality allows metric indexes to prune candidates."
+      ]
+    },
+    {
+      "heading": "BK-tree intuition",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 15,
+      "word_count": 53,
+      "evidence": "At a BK-tree node containing string:",
+      "paragraphs": [
+        "At a BK-tree node containing string:",
+        "p",
+        "children are organized by distance:",
+        "d(p,child)",
+        "Suppose:",
+        "d(q,p) = d",
+        "and we search radius:",
+        "τ",
+        "For any result x :",
+        "d(q,x) ≤ τ",
+        "the triangle inequality implies:",
+        "|d(q,p)-d(p,x)| ≤ d(q,x) ≤ τ",
+        "so only branches whose edge distance lies in:",
+        "[ d-τ, d+τ ]",
+        "need exploration."
+      ]
+    },
+    {
+      "heading": "Metric pruning is elegant but data dependent",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 7,
+      "word_count": 46,
+      "evidence": "A BK-tree can work well when distances divide the corpus selectively.",
+      "paragraphs": [
+        "A BK-tree can work well when distances divide the corpus selectively.",
+        "It can perform poorly when:",
+        "many points have similar distances from pivots;",
+        "the radius is large;",
+        "the corpus is dense;",
+        "branching becomes broad.",
+        "There is no guarantee that every metric dataset will produce dramatic pruning."
+      ]
+    },
+    {
+      "heading": "Metric indexing requires a true metric",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 6,
+      "word_count": 54,
+      "evidence": "The triangle inequality is not optional.",
+      "paragraphs": [
+        "The triangle inequality is not optional.",
+        "For example, if an application uses a nonmetric variant such as certain Optimal String Alignment behavior, metric-tree pruning based on triangle inequality may become invalid.",
+        "Likewise arbitrary learned or asymmetric edit costs may define:",
+        "quasimetrics or nonmetrics",
+        "rather than metrics.",
+        "See Weighted Levenshtein Distance and Damerau–Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Burkhard–Keller best-match indexing",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "The metric-tree family traces back to the best-match file-searching structures described by Burkhard and Keller in 1973, explicitly exploiting inequalities satisfied by metric distances.",
+      "paragraphs": [
+        "The metric-tree family traces back to the best-match file-searching structures described by Burkhard and Keller in 1973, explicitly exploiting inequalities satisfied by metric distances.",
+        "DOI record ."
+      ]
+    },
+    {
+      "heading": "Deletion-neighborhood indexing",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 8,
+      "word_count": 51,
+      "evidence": "Another practical approach for short dictionary terms is to precompute deletion signatures.",
+      "paragraphs": [
+        "Another practical approach for short dictionary terms is to precompute deletion signatures.",
+        "For dictionary word:",
+        "\"book\"",
+        "one-deletion variants include:",
+        "\"ook\" \"bok\" \"bok\" \"boo\"",
+        "after duplicate removal.",
+        "A hash index can map delete signatures back to dictionary terms.",
+        "At query time, generate deletion signatures for the query and probe exact hash keys."
+      ]
+    },
+    {
+      "heading": "Why delete signatures can cover other edit types",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 5,
+      "word_count": 52,
+      "evidence": "The basic intuition is symmetric.",
+      "paragraphs": [
+        "The basic intuition is symmetric.",
+        "Two strings separated by insertion, deletion, or substitution may share an appropriate common subsequence after deleting a small number of characters from one or both sides.",
+        "Thus an offline deletion index can transform part of fuzzy candidate generation into:",
+        "exact hash lookup",
+        "followed by exact distance verification."
+      ]
+    },
+    {
+      "heading": "Deletion indexes trade memory for speed",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "If every dictionary term stores all deletion variants up to radius:",
+      "paragraphs": [
+        "If every dictionary term stores all deletion variants up to radius:",
+        "τ",
+        "the number of generated signatures grows combinatorially with:",
+        "term length;",
+        "maximum deletion depth.",
+        "They are therefore especially attractive for:",
+        "short words;",
+        "small edit radii;",
+        "relatively static vocabularies."
+      ]
+    },
+    {
+      "heading": "Filter-and-verify versus direct index traversal",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 1,
+      "word_count": 4,
+      "evidence": "Two broad architectures emerge.",
+      "paragraphs": [
+        "Two broad architectures emerge."
+      ]
+    },
+    {
+      "heading": "Signature filter-and-verify",
+      "level": 3,
+      "id": "ux-section-67",
+      "paragraph_count": 1,
+      "word_count": 10,
+      "evidence": "query signatures ↓ inverted lists ↓ candidates ↓ exact verifier",
+      "paragraphs": [
+        "query signatures ↓ inverted lists ↓ candidates ↓ exact verifier"
+      ]
+    },
+    {
+      "heading": "Automaton / tree traversal",
+      "level": 3,
+      "id": "ux-section-68",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "query state machine ↓ traverse dictionary structure ↓ only reachable terms ↓ results / verification",
+      "paragraphs": [
+        "query state machine ↓ traverse dictionary structure ↓ only reachable terms ↓ results / verification",
+        "Neither is universally superior."
+      ]
+    },
+    {
+      "heading": "Workload determines index choice",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 1,
+      "word_count": 43,
+      "evidence": "Workload Often Useful Direction Dictionary terms, tiny τ Trie/FST + Levenshtein automaton Large string tables Gram/signature inverted indexes Batch deduplication Similarity-join filters Static short vocabulary Deletion-neighborhood index may be practical True metric, suitable distribution Metric-tree indexing Very large distributed data Partitioned signature/index architecture",
+      "paragraphs": [
+        "Workload Often Useful Direction Dictionary terms, tiny τ Trie/FST + Levenshtein automaton Large string tables Gram/signature inverted indexes Batch deduplication Similarity-join filters Static short vocabulary Deletion-neighborhood index may be practical True metric, suitable distribution Metric-tree indexing Very large distributed data Partitioned signature/index architecture"
+      ]
+    },
+    {
+      "heading": "Top-k fuzzy search",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 7,
+      "word_count": 43,
+      "evidence": "Threshold search has:",
+      "paragraphs": [
+        "Threshold search has:",
+        "known τ",
+        "but top-k search asks:",
+        "find k nearest strings",
+        "without initially knowing the distance of the kth result.",
+        "A brute-force exact algorithm calculates every distance and sorts.",
+        "A scalable exact algorithm attempts to discover a good upper bound early."
+      ]
+    },
+    {
+      "heading": "Dynamic upper bound",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 10,
+      "word_count": 47,
+      "evidence": "Suppose the current best k candidates have distances:",
+      "paragraphs": [
+        "Suppose the current best k candidates have distances:",
+        "1 2 2 3 3",
+        "for:",
+        "k = 5",
+        "Then:",
+        "U = 3",
+        "is the current kth-best distance.",
+        "Any unseen candidate for which a lower bound proves:",
+        "LB(q,s) > 3",
+        "cannot enter the top five and may be pruned."
+      ]
+    },
+    {
+      "heading": "The importance of finding good candidates early",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 7,
+      "word_count": 37,
+      "evidence": "If the first candidates produce:",
+      "paragraphs": [
+        "If the first candidates produce:",
+        "U = 20",
+        "pruning remains weak.",
+        "If promising retrieval quickly finds:",
+        "U = 3",
+        "the search radius contracts dramatically.",
+        "Top-k systems therefore care not only about candidate correctness but about candidate ordering."
+      ]
+    },
+    {
+      "heading": "HS-Tree",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 7,
+      "word_count": 71,
+      "evidence": "Wang and colleagues proposed a hierarchical segment-tree framework supporting both:",
+      "paragraphs": [
+        "Wang and colleagues proposed a hierarchical segment-tree framework supporting both:",
+        "threshold-based string similarity search;",
+        "top-k string similarity search.",
+        "Strings are recursively partitioned into segments and organized in a hierarchical index.",
+        "For top-k search, promising strings are used to establish an upper bound that then supports pruning of less promising candidates.",
+        "This illustrates a general principle:",
+        "Threshold indexes and top-k indexes can sometimes share structural primitives even though their query algorithms differ."
+      ]
+    },
+    {
+      "heading": "Top-k by edit distance is still not relevance ranking",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 15,
+      "word_count": 40,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "q = \"apple\"",
+        "The edit-nearest terms may not be the best search results.",
+        "Search-engine ranking may additionally include:",
+        "document relevance;",
+        "term frequency;",
+        "field weight;",
+        "popularity;",
+        "context;",
+        "semantic evidence.",
+        "Thus:",
+        "top-k nearest strings",
+        "and:",
+        "top-k search results",
+        "are different problems."
+      ]
+    },
+    {
+      "heading": "The verification stage still matters",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 7,
+      "word_count": 29,
+      "evidence": "A scalable index does not eliminate exact edit-distance computation.",
+      "paragraphs": [
+        "A scalable index does not eliminate exact edit-distance computation.",
+        "It attempts to reduce:",
+        "N",
+        "pairwise comparisons to:",
+        "C ≪ N",
+        "comparisons.",
+        "The remaining verification kernel must still be efficient."
+      ]
+    },
+    {
+      "heading": "Use bounded verification",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 7,
+      "word_count": 41,
+      "evidence": "If the query condition is:",
+      "paragraphs": [
+        "If the query condition is:",
+        "ED(q,s) ≤ τ",
+        "an unrestricted full matrix is unnecessary.",
+        "Any alignment with at most τ unit-cost edits remains within:",
+        "|i-j| ≤ τ",
+        "so verification can use a diagonal band.",
+        "See Bounded and Parameterized Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Verification pipeline",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 2,
+      "word_count": 29,
+      "evidence": "candidate s ↓ length lower bound ↓ trim equal prefix ↓ trim equal suffix ↓ bounded / bit-parallel ED ↓ accept or reject",
+      "paragraphs": [
+        "candidate s ↓ length lower bound ↓ trim equal prefix ↓ trim equal suffix ↓ bounded / bit-parallel ED ↓ accept or reject",
+        "These optimizations compound with upstream filtering."
+      ]
+    },
+    {
+      "heading": "Bit-parallel verification",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "For unit-cost Levenshtein distance, Myers's bit-vector algorithm represents many logical DP states in machine-word bits.",
+      "paragraphs": [
+        "For unit-cost Levenshtein distance, Myers's bit-vector algorithm represents many logical DP states in machine-word bits.",
+        "A suitable verifier can therefore process candidates much faster than ordinary scalar DP.",
+        "See Myers Bit-Vector Algorithm ."
+      ]
+    },
+    {
+      "heading": "Prepared-query verification",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 9,
+      "word_count": 32,
+      "evidence": "When one query is verified against many candidates:",
+      "paragraphs": [
+        "When one query is verified against many candidates:",
+        "build pattern masks once",
+        "rather than per candidate.",
+        "Conceptually:",
+        "prepared = prepare(q) for s in candidates: verify(prepared,s)",
+        "This reduces repeated:",
+        "normalization;",
+        "tokenization;",
+        "bit-mask construction."
+      ]
+    },
+    {
+      "heading": "Candidate generation and verification should share the same τ",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "A subtle inefficiency occurs when:",
+      "paragraphs": [
+        "A subtle inefficiency occurs when:",
+        "index generates candidates for τ = 3",
+        "but:",
+        "final application only accepts τ = 1",
+        "The candidate generator is then unnecessarily permissive.",
+        "Push the tightest valid threshold as far upstream as possible."
+      ]
+    },
+    {
+      "heading": "Filter ordering is a cost model",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 6,
+      "word_count": 47,
+      "evidence": "Let filter F_i have:",
+      "paragraphs": [
+        "Let filter F_i have:",
+        "cost c_i survival probability p_i",
+        "Applying a selective but expensive filter first is not automatically optimal.",
+        "A simple conceptual objective is to minimize expected downstream cost:",
+        "cheap filters with strong rejection should usually run early",
+        "but actual ordering depends on correlations between filters."
+      ]
+    },
+    {
+      "heading": "Posting-list cost is often dominant",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 9,
+      "word_count": 39,
+      "evidence": "A q-gram lookup does not cost:",
+      "paragraphs": [
+        "A q-gram lookup does not cost:",
+        "O(1)",
+        "merely because the gram dictionary lookup does.",
+        "The system must process the posting list:",
+        "I[g]",
+        "whose length may be millions.",
+        "Therefore query cost is strongly affected by:",
+        "Σ posting_length(g)",
+        "over selected signatures."
+      ]
+    },
+    {
+      "heading": "Common signatures create hot postings",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 7,
+      "word_count": 27,
+      "evidence": "In natural language:",
+      "paragraphs": [
+        "In natural language:",
+        "\"ing\" \"ion\" \"the\"",
+        "may be extremely common.",
+        "A query dominated by such grams can produce:",
+        "huge posting scans;",
+        "large accumulator tables;",
+        "poor cache locality."
+      ]
+    },
+    {
+      "heading": "Index statistics are therefore essential",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "Maintain statistics such as:",
+      "paragraphs": [
+        "Maintain statistics such as:",
+        "document frequency term frequency posting length length distribution signature selectivity",
+        "to drive query planning."
+      ]
+    },
+    {
+      "heading": "The smallest posting list is not always sufficient",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 4,
+      "word_count": 43,
+      "evidence": "Selecting one rare gram may have excellent selectivity but fail to satisfy a completeness theorem.",
+      "paragraphs": [
+        "Selecting one rare gram may have excellent selectivity but fail to satisfy a completeness theorem.",
+        "Exact retrieval requires a set of signatures whose combined coverage guarantees:",
+        "every true match hits at least the required signatures",
+        "Thus signature planning is a constrained optimization problem."
+      ]
+    },
+    {
+      "heading": "Index space versus query time",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "A major system trade-off is:",
+      "paragraphs": [
+        "A major system trade-off is:",
+        "larger index ↔ faster candidate lookup",
+        "Examples:",
+        "more q-grams create more postings;",
+        "deletion neighborhoods replicate dictionary references;",
+        "additional positional information consumes space;",
+        "multiple length or threshold-specific structures increase storage."
+      ]
+    },
+    {
+      "heading": "Index-build time matters for dynamic corpora",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 9,
+      "word_count": 31,
+      "evidence": "An index requiring:",
+      "paragraphs": [
+        "An index requiring:",
+        "10× corpus size",
+        "and:",
+        "hours of preprocessing",
+        "may be acceptable for a static reference dictionary.",
+        "It may be unsuitable for:",
+        "rapidly changing product inventory",
+        "or:",
+        "real-time user-generated content"
+      ]
+    },
+    {
+      "heading": "Update complexity",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 8,
+      "word_count": 25,
+      "evidence": "Evaluate:",
+      "paragraphs": [
+        "Evaluate:",
+        "insert cost;",
+        "delete cost;",
+        "compaction;",
+        "posting-list fragmentation;",
+        "rebuilding statistics;",
+        "cache invalidation.",
+        "An algorithm with outstanding static-query benchmarks may be operationally poor under heavy writes."
+      ]
+    },
+    {
+      "heading": "Immutable-segment architecture",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 4,
+      "word_count": 50,
+      "evidence": "Search systems often mitigate update complexity using immutable index segments:",
+      "paragraphs": [
+        "Search systems often mitigate update complexity using immutable index segments:",
+        "new writes ↓ small new segment background merge ↓ larger immutable segment",
+        "Fuzzy term dictionaries can then be searched independently across segments and results merged.",
+        "This reduces in-place mutation complexity at the expense of multi-segment query overhead and background compaction."
+      ]
+    },
+    {
+      "heading": "Cache prepared query structures",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 4,
+      "word_count": 21,
+      "evidence": "Popular typo queries repeat.",
+      "paragraphs": [
+        "Popular typo queries repeat.",
+        "A cache may store:",
+        "normalized query compiled Levenshtein automaton selected signatures posting-plan metadata",
+        "subject to index-version compatibility."
+      ]
+    },
+    {
+      "heading": "But cache keys must include semantics",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 11,
+      "word_count": 33,
+      "evidence": "These two queries are not necessarily equivalent:",
+      "paragraphs": [
+        "These two queries are not necessarily equivalent:",
+        "query=\"cafe\" normalization=NFC transpositions=false τ=1",
+        "and:",
+        "query=\"cafe\" normalization=NFKC transpositions=true τ=2",
+        "Cache keys should therefore encode:",
+        "query representation;",
+        "threshold;",
+        "edit model;",
+        "index version;",
+        "field;",
+        "language or analyzer configuration."
+      ]
+    },
+    {
+      "heading": "Distributed fuzzy search",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 9,
+      "word_count": 55,
+      "evidence": "When the corpus no longer fits comfortably on one machine, fuzzy search becomes a distributed-systems problem.",
+      "paragraphs": [
+        "When the corpus no longer fits comfortably on one machine, fuzzy search becomes a distributed-systems problem.",
+        "A naive architecture broadcasts:",
+        "every query to every shard",
+        "and asks each shard to run a local fuzzy search.",
+        "If:",
+        "P",
+        "shards exist, query fan-out becomes:",
+        "O(P)",
+        "network requests even when relevant candidates reside on only a few nodes."
+      ]
+    },
+    {
+      "heading": "Distributed candidate routing",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "A stronger architecture uses global signatures:",
+      "paragraphs": [
+        "A stronger architecture uses global signatures:",
+        "query signatures ↓ global routing structure ↓ candidate shards ↓ local fuzzy index ↓ verification",
+        "The objective is to minimize:",
+        "network fan-out;",
+        "transmitted candidates;",
+        "duplicate work."
+      ]
+    },
+    {
+      "heading": "Load skew",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 7,
+      "word_count": 34,
+      "evidence": "Suppose a very common q-gram:",
+      "paragraphs": [
+        "Suppose a very common q-gram:",
+        "\"ing\"",
+        "maps predominantly to one worker.",
+        "Queries containing it may overload that worker while others remain idle.",
+        "Distributed fuzzy indexes must therefore consider:",
+        "signature selectivity and load balance",
+        "simultaneously."
+      ]
+    },
+    {
+      "heading": "Balance-aware signatures",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 8,
+      "word_count": 57,
+      "evidence": "The Dima system studied distributed in-memory similarity-based query processing and introduced balance-aware signatures for routing similar records while balancing workloads across nodes.",
+      "paragraphs": [
+        "The Dima system studied distributed in-memory similarity-based query processing and introduced balance-aware signatures for routing similar records while balancing workloads across nodes.",
+        "Its architecture combines:",
+        "global signature indexes;",
+        "local indexes;",
+        "distributed query optimization;",
+        "load-aware signature selection.",
+        "The general lesson is:",
+        "The most selective signature is not necessarily the best distributed signature if it creates a severe hotspot."
+      ]
+    },
+    {
+      "heading": "Sharding by string length",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "Because:",
+      "paragraphs": [
+        "Because:",
+        "|len(q)-len(s)| ≤ τ",
+        "is necessary for a match, length-aware routing can sometimes reduce shard fan-out.",
+        "But pure length sharding can create imbalance if the corpus length distribution is highly skewed."
+      ]
+    },
+    {
+      "heading": "Shard by signatures",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "Signature-based sharding can place strings sharing particular grams or partitions near each other.",
+      "paragraphs": [
+        "Signature-based sharding can place strings sharing particular grams or partitions near each other.",
+        "However one string may have many signatures, creating:",
+        "replication;",
+        "routing complexity;",
+        "skew.",
+        "There is no free partitioning scheme."
+      ]
+    },
+    {
+      "heading": "Distributed top-k requires global bounds",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "If each shard returns its local nearest strings, the coordinator must determine whether unseen candidates on another shard can still beat the current global kth distance.",
+      "paragraphs": [
+        "If each shard returns its local nearest strings, the coordinator must determine whether unseen candidates on another shard can still beat the current global kth distance.",
+        "This can require:",
+        "per-shard lower bounds;",
+        "iterative widening;",
+        "over-fetching;",
+        "global candidate merging.",
+        "Top-k distributed fuzzy search is therefore more complex than independent local threshold queries."
+      ]
+    },
+    {
+      "heading": "Batch fuzzy search",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 14,
+      "word_count": 44,
+      "evidence": "Another scale axis is:",
+      "paragraphs": [
+        "Another scale axis is:",
+        "many queries against one corpus",
+        "rather than one query against many strings.",
+        "Examples include:",
+        "offline typo generation;",
+        "entity cleaning;",
+        "bulk record matching;",
+        "catalog reconciliation.",
+        "Batch processing can reuse:",
+        "index pages;",
+        "posting intersections;",
+        "thread pools;",
+        "SIMD verification;",
+        "GPU kernels where justified."
+      ]
+    },
+    {
+      "heading": "Similarity join is often preferable to issuing millions of independent queries",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 5,
+      "word_count": 31,
+      "evidence": "If every record in:",
+      "paragraphs": [
+        "If every record in:",
+        "A",
+        "must be matched against:",
+        "B",
+        "a dedicated similarity-join algorithm can exploit shared sorting, partitions, and batch index access more effectively than repeatedly invoking a single-query API."
+      ]
+    },
+    {
+      "heading": "All-pairs brute force is quadratic in collection size",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 10,
+      "word_count": 32,
+      "evidence": "For self-join of:",
+      "paragraphs": [
+        "For self-join of:",
+        "N strings",
+        "the naive number of pairs is:",
+        "N(N-1)/2",
+        "For:",
+        "N = 10,000,000",
+        "that is approximately:",
+        "5 × 10^13 pairs",
+        "before even considering edit-distance cost.",
+        "Filtering is therefore mandatory."
+      ]
+    },
+    {
+      "heading": "Threshold-sensitive indexes",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 9,
+      "word_count": 42,
+      "evidence": "Some index structures depend directly on:",
+      "paragraphs": [
+        "Some index structures depend directly on:",
+        "τ",
+        "For example:",
+        "partition count = τ + 1",
+        "A system serving many thresholds must decide whether to:",
+        "build separate structures;",
+        "use hierarchical indexes;",
+        "derive smaller-threshold behavior from larger indexes;",
+        "rely on a threshold-independent signature layer."
+      ]
+    },
+    {
+      "heading": "Threshold distribution matters",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 4,
+      "word_count": 38,
+      "evidence": "If production traffic is:",
+      "paragraphs": [
+        "If production traffic is:",
+        "τ = 1 : 80% τ = 2 : 19% τ = 3 : 1%",
+        "then optimizing equally for every threshold wastes engineering effort.",
+        "The index should be designed around the real query distribution."
+      ]
+    },
+    {
+      "heading": "Short strings are pathological",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 8,
+      "word_count": 53,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "q = \"cat\" τ = 2",
+        "A two-edit neighborhood occupies a large fraction of the lexical possibilities near such a short term.",
+        "Several filtering schemes weaken because:",
+        "few q-grams exist;",
+        "length range is broad relative to the query;",
+        "small signatures are common;",
+        "the edit radius is large as a fraction of length."
+      ]
+    },
+    {
+      "heading": "Relative edit rate",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "ρ = τ / |q|",
+        "For:",
+        "|q| = 3 τ = 2 ρ ≈ 0.67",
+        "whereas:",
+        "|q| = 30 τ = 2 ρ ≈ 0.067",
+        "The second query is far more selective."
+      ]
+    },
+    {
+      "heading": "Length-adaptive fuzziness is also a scalability mechanism",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 4,
+      "word_count": 20,
+      "evidence": "Restricting:",
+      "paragraphs": [
+        "Restricting:",
+        "very short query → τ = 0 or 1",
+        "does not merely improve relevance.",
+        "It prevents massive candidate explosions."
+      ]
+    },
+    {
+      "heading": "Long strings create different problems",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 6,
+      "word_count": 37,
+      "evidence": "For long strings:",
+      "paragraphs": [
+        "For long strings:",
+        "many q-grams exist;",
+        "posting probes can become numerous;",
+        "candidate verification becomes more expensive;",
+        "index entries per string increase.",
+        "Partition schemes can become attractive because only a controlled number of segment signatures may be required."
+      ]
+    },
+    {
+      "heading": "Dense corpora are harder than sparse corpora",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 6,
+      "word_count": 46,
+      "evidence": "Suppose a collection consists of random 30-character identifiers.",
+      "paragraphs": [
+        "Suppose a collection consists of random 30-character identifiers.",
+        "Near-neighbor collisions may be rare.",
+        "Now consider:",
+        "10 million product variants sharing long prefixes and suffixes",
+        "Many candidates can genuinely lie close together.",
+        "No exact index can prune a true match merely because too many true matches exist."
+      ]
+    },
+    {
+      "heading": "Output size is a lower bound",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "|Rτ(q)| = 1,000,000",
+        "the system must at least process and return information about those million matches.",
+        "An index cannot make output-size cost disappear.",
+        "This is why huge fuzzy radii can be inherently expensive even with excellent indexing."
+      ]
+    },
+    {
+      "heading": "Candidate explosion versus result explosion",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "These should be measured separately.",
+      "paragraphs": [
+        "These should be measured separately.",
+        "CANDIDATE EXPLOSION many false positives reach verifier RESULT EXPLOSION many candidates are actually valid matches",
+        "The first can potentially be improved with better filters.",
+        "The second is intrinsic to the query predicate."
+      ]
+    },
+    {
+      "heading": "Weighted edit distance changes the indexing problem",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 8,
+      "word_count": 43,
+      "evidence": "Unit-cost filtering frequently relies on:",
+      "paragraphs": [
+        "Unit-cost filtering frequently relies on:",
+        "at most τ primitive edits",
+        "If substitution costs can be:",
+        "0.1",
+        "then a total threshold:",
+        "τ = 2",
+        "might permit many more than two substitutions.",
+        "Partition and q-gram bounds derived from unit edit counts cannot be transplanted unchanged."
+      ]
+    },
+    {
+      "heading": "Minimum positive cost can recover coarse bounds",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "If every nonidentity edit has:",
+      "paragraphs": [
+        "If every nonidentity edit has:",
+        "cost ≥ c_min > 0",
+        "then:",
+        "number of edits ≤ floor( τ / c_min )",
+        "provides a coarse count bound.",
+        "But specialized weighted-distance indexing often needs more careful derivation."
+      ]
+    },
+    {
+      "heading": "Transposition-aware distance changes signatures too",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 4,
+      "word_count": 31,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "ab → ba",
+        "costs one edit, the relationship between one error and affected q-grams differs from classical insertion/deletion/substitution-only Levenshtein.",
+        "Filters must be proven for the exact edit model being used."
+      ]
+    },
+    {
+      "heading": "Index metadata must therefore include metric semantics",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 4,
+      "word_count": 30,
+      "evidence": "A production fuzzy index should know whether it supports:",
+      "paragraphs": [
+        "A production fuzzy index should know whether it supports:",
+        "classic Levenshtein OSA / transpositions weighted costs Unicode code points grapheme clusters",
+        "rather than presenting all as one generic:",
+        "\"fuzzy index\""
+      ]
+    },
+    {
+      "heading": "Scale and ranking are separate layers",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 13,
+      "word_count": 46,
+      "evidence": "An exact fuzzy term index may return:",
+      "paragraphs": [
+        "An exact fuzzy term index may return:",
+        "{ \"apple\", \"apply\", \"ample\" }",
+        "with valid edit distances.",
+        "The search engine still needs to decide:",
+        "which should rank first?",
+        "Possible ranking features include:",
+        "raw edit distance;",
+        "normalized distance;",
+        "term frequency;",
+        "document relevance;",
+        "query frequency;",
+        "field weight;",
+        "contextual probability."
+      ]
+    },
+    {
+      "heading": "Candidate recall and ranking quality are orthogonal",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 4,
+      "word_count": 30,
+      "evidence": "A perfect exact fuzzy index can have:",
+      "paragraphs": [
+        "A perfect exact fuzzy index can have:",
+        "candidate recall = 100%",
+        "while ranking the intended term badly.",
+        "Conversely, an excellent ranker cannot recover a term lost by approximate candidate generation."
+      ]
+    },
+    {
+      "heading": "Production architecture",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 1,
+      "word_count": 145,
+      "evidence": "RAW QUERY │ ▼ ┌──────────────────────┐ │ text representation │ │ normalization │ └──────────┬───────────┘ │ ▼ ┌──────────────────────┐ │ query classification │ │ term / phrase / id │ └──────────┬───────────┘ │ ▼ ┌──────────────────────┐ │ threshold / policy │ └──────────┬───────────┘ │ ▼ ┌────────────────────────────────┐ │ cheap exact lower bounds │ │ length / protected prefix │ └───────────────┬────────────────┘ │ ▼ ┌────────────────────────────────┐ │ candidate index │ │ │ │ q-grams / signatures │ │ partition index │ │ trie / FST + automaton │ │ metric structure │ └───────────────┬────────────────┘ │ ▼ ┌────────────────────────────────┐ │ pruning │ │ │ │ count bound │ │ position bound │ │ alignment bound │ │ partition bound │ └───────────────┬────────────────┘ │ ▼ ┌─────────────────────",
+      "paragraphs": [
+        "RAW QUERY │ ▼ ┌──────────────────────┐ │ text representation │ │ normalization │ └──────────┬───────────┘ │ ▼ ┌──────────────────────┐ │ query classification │ │ term / phrase / id │ └──────────┬───────────┘ │ ▼ ┌──────────────────────┐ │ threshold / policy │ └──────────┬───────────┘ │ ▼ ┌────────────────────────────────┐ │ cheap exact lower bounds │ │ length / protected prefix │ └───────────────┬────────────────┘ │ ▼ ┌────────────────────────────────┐ │ candidate index │ │ │ │ q-grams / signatures │ │ partition index │ │ trie / FST + automaton │ │ metric structure │ └───────────────┬────────────────┘ │ ▼ ┌────────────────────────────────┐ │ pruning │ │ │ │ count bound │ │ position bound │ │ alignment bound │ │ partition bound │ └───────────────┬────────────────┘ │ ▼ ┌────────────────────────────────┐ │ small candidate set │ └───────────────┬────────────────┘ │ ▼ ┌────────────────────────────────┐ │ exact bounded verifier │ │ DP / bit vector │ └───────────────┬────────────────┘ │ ▼ ┌────────────────────────────────┐ │ lexical + retrieval ranking │ └───────────────┬────────────────┘ │ ▼ RESULTS"
+      ]
+    },
+    {
+      "heading": "Distributed production architecture",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 1,
+      "word_count": 51,
+      "evidence": "QUERY │ ▼ global normalization │ ▼ query signatures │ ▼ global routing index │ ├─────────────┬─────────────┐ ▼ ▼ ▼ shard A shard B shard C local index local index local index │ │ │ ▼ ▼ ▼ candidates candidates candidates └─────────────┼─────────────┘ ▼ global merge │ ▼ exact verification │ ▼ ranking",
+      "paragraphs": [
+        "QUERY │ ▼ global normalization │ ▼ query signatures │ ▼ global routing index │ ├─────────────┬─────────────┐ ▼ ▼ ▼ shard A shard B shard C local index local index local index │ │ │ ▼ ▼ ▼ candidates candidates candidates └─────────────┼─────────────┘ ▼ global merge │ ▼ exact verification │ ▼ ranking"
+      ]
+    },
+    {
+      "heading": "What should be measured?",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 3,
+      "word_count": 11,
+      "evidence": "A fuzzy-search benchmark that reports only:",
+      "paragraphs": [
+        "A fuzzy-search benchmark that reports only:",
+        "queries / second",
+        "is incomplete."
+      ]
+    },
+    {
+      "heading": "Corpus metrics",
+      "level": 3,
+      "id": "ux-section-120",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "number of strings total characters unique strings length distribution alphabet size Unicode composition",
+      "paragraphs": [
+        "number of strings total characters unique strings length distribution alphabet size Unicode composition"
+      ]
+    },
+    {
+      "heading": "Index metrics",
+      "level": 3,
+      "id": "ux-section-121",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "index bytes index / source ratio build time insert rate delete/update cost number of signatures posting-list distribution",
+      "paragraphs": [
+        "index bytes index / source ratio build time insert rate delete/update cost number of signatures posting-list distribution"
+      ]
+    },
+    {
+      "heading": "Query metrics",
+      "level": 3,
+      "id": "ux-section-122",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "query length threshold τ true edit distance distribution result count candidate count posting entries read verification count",
+      "paragraphs": [
+        "query length threshold τ true edit distance distribution result count candidate count posting entries read verification count"
+      ]
+    },
+    {
+      "heading": "Latency metrics",
+      "level": 3,
+      "id": "ux-section-123",
+      "paragraph_count": 1,
+      "word_count": 5,
+      "evidence": "p50 p90 p95 p99 p99.9",
+      "paragraphs": [
+        "p50 p90 p95 p99 p99.9"
+      ]
+    },
+    {
+      "heading": "Quality metrics",
+      "level": 3,
+      "id": "ux-section-124",
+      "paragraph_count": 3,
+      "word_count": 25,
+      "evidence": "For an exact threshold system:",
+      "paragraphs": [
+        "For an exact threshold system:",
+        "recall must be 100% relative to the defined search predicate",
+        "unless the system explicitly introduces approximate pruning or resource caps."
+      ]
+    },
+    {
+      "heading": "Candidate amplification",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "Define:",
+      "paragraphs": [
+        "Define:",
+        "amplification = candidates verified / true results",
+        "Suppose:",
+        "true results = 10 verified candidates = 10,000",
+        "Then:",
+        "amplification = 1000",
+        "The index may still be substantially better than brute force, but the filtering layer has room for improvement."
+      ]
+    },
+    {
+      "heading": "Filter survival rates",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "Measure each stage:",
+      "paragraphs": [
+        "Measure each stage:",
+        "N ↓ length survivors ↓ signature survivors ↓ position survivors ↓ verified candidates ↓ true results",
+        "For example:",
+        "100,000,000 ↓ 8,000,000 ↓ 40,000 ↓ 3,000 ↓ 900 ↓ 14",
+        "This reveals which filter contributes real value."
+      ]
+    },
+    {
+      "heading": "Posting-list bytes read",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Two indexes producing the same candidate count can have very different costs.",
+      "paragraphs": [
+        "Two indexes producing the same candidate count can have very different costs.",
+        "Index A may read:",
+        "2 MB postings",
+        "while index B reads:",
+        "500 MB",
+        "before producing identical candidates.",
+        "I/O and cache behavior therefore belong in the benchmark."
+      ]
+    },
+    {
+      "heading": "Warm-cache versus cold-cache performance",
+      "level": 2,
+      "id": "ux-section-128",
+      "paragraph_count": 3,
+      "word_count": 32,
+      "evidence": "A benchmark with the entire index resident in memory measures a different system from one whose postings reside partly on SSD.",
+      "paragraphs": [
+        "A benchmark with the entire index resident in memory measures a different system from one whose postings reside partly on SSD.",
+        "Report both when relevant:",
+        "warm cache cold cache steady mixed workload"
+      ]
+    },
+    {
+      "heading": "Query-frequency skew",
+      "level": 2,
+      "id": "ux-section-129",
+      "paragraph_count": 4,
+      "word_count": 38,
+      "evidence": "Real search traffic is rarely uniform.",
+      "paragraphs": [
+        "Real search traffic is rarely uniform.",
+        "A small set of queries may account for a large fraction of requests.",
+        "Caching can make production performance far better than a benchmark using uniformly random unseen queries.",
+        "Both should be measured."
+      ]
+    },
+    {
+      "heading": "Threshold distribution",
+      "level": 2,
+      "id": "ux-section-130",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "Benchmark:",
+      "paragraphs": [
+        "Benchmark:",
+        "τ = 0 τ = 1 τ = 2 τ = 3 ...",
+        "separately.",
+        "Averages can hide the exponential-like candidate expansion triggered by increasing fuzziness."
+      ]
+    },
+    {
+      "heading": "String length distribution",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 3,
+      "word_count": 18,
+      "evidence": "Test at least:",
+      "paragraphs": [
+        "Test at least:",
+        "very short short medium long very long",
+        "because different index families dominate different length regimes."
+      ]
+    },
+    {
+      "heading": "Corpus entropy matters",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "Benchmark both:",
+      "paragraphs": [
+        "Benchmark both:",
+        "highly repetitive data",
+        "and:",
+        "high-entropy identifiers",
+        "A q-gram index that performs exceptionally on random strings may perform poorly on a corpus with millions of near-duplicate product names."
+      ]
+    },
+    {
+      "heading": "Use adversarial queries",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 8,
+      "word_count": 26,
+      "evidence": "Include:",
+      "paragraphs": [
+        "Include:",
+        "very short queries;",
+        "queries composed of common grams;",
+        "high-radius queries;",
+        "queries with enormous true result sets;",
+        "Unicode-heavy queries;",
+        "popular prefixes.",
+        "These expose worst-case resource behavior."
+      ]
+    },
+    {
+      "heading": "Timeouts and budgets",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 3,
+      "word_count": 34,
+      "evidence": "A production system may impose:",
+      "paragraphs": [
+        "A production system may impose:",
+        "maximum index expansions maximum candidate count maximum postings scanned maximum CPU time",
+        "Once such caps can suppress valid matches, the operational API should no longer imply unconditional exact completeness."
+      ]
+    },
+    {
+      "heading": "Resource-bounded exactness",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "A useful contract can distinguish:",
+      "paragraphs": [
+        "A useful contract can distinguish:",
+        "COMPLETE all matches returned TRUNCATED search budget exhausted APPROXIMATE candidate retrieval may miss matches",
+        "This is better than silently returning a partial result set as if it were mathematically complete."
+      ]
+    },
+    {
+      "heading": "Security: fuzzy queries can be expensive by construction",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 11,
+      "word_count": 38,
+      "evidence": "Attackers can submit queries designed to maximize expansion:",
+      "paragraphs": [
+        "Attackers can submit queries designed to maximize expansion:",
+        "short common prefixes;",
+        "high edit thresholds;",
+        "common q-grams;",
+        "queries hitting dense vocabulary regions.",
+        "A public API should enforce:",
+        "maximum threshold;",
+        "minimum query length for fuzziness;",
+        "candidate budgets;",
+        "timeouts;",
+        "rate limits."
+      ]
+    },
+    {
+      "heading": "High threshold can defeat the index",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Every exact indexing method has a regime where pruning loses power.",
+      "paragraphs": [
+        "Every exact indexing method has a regime where pruning loses power.",
+        "As:",
+        "τ → string length",
+        "the set:",
+        "{ s : ED(q,s) ≤ τ }",
+        "becomes increasingly broad.",
+        "A scan may eventually become competitive with elaborate index processing."
+      ]
+    },
+    {
+      "heading": "The dispatcher should know when not to use the fuzzy index",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 7,
+      "word_count": 25,
+      "evidence": "A cost-based engine can choose:",
+      "paragraphs": [
+        "A cost-based engine can choose:",
+        "automaton traversal gram index partition index metric tree direct scan",
+        "depending on:",
+        "query length;",
+        "threshold;",
+        "expected result count;",
+        "index statistics."
+      ]
+    },
+    {
+      "heading": "Cost-based fuzzy query planning",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 3,
+      "word_count": 36,
+      "evidence": "A conceptual plan cost can be:",
+      "paragraphs": [
+        "A conceptual plan cost can be:",
+        "Cost = signature lookup cost + posting scan cost + candidate accumulation cost + verification cost + result expansion cost",
+        "The mathematically strongest filter is not necessarily the lowest-cost plan."
+      ]
+    },
+    {
+      "heading": "Adaptive planning",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 5,
+      "word_count": 43,
+      "evidence": "The engine can inspect:",
+      "paragraphs": [
+        "The engine can inspect:",
+        "posting lengths for query signatures",
+        "before deciding how many signatures to evaluate.",
+        "For example:",
+        "if one safe rare-signature strategy is available: use it else: use partition filter if predicted candidate set is enormous: apply stricter policy or alternate index"
+      ]
+    },
+    {
+      "heading": "Hybrid indexes",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "A sophisticated engine does not need one universal index.",
+      "paragraphs": [
+        "A sophisticated engine does not need one universal index.",
+        "It may maintain:",
+        "short strings → deletion / automaton index medium strings → q-gram index long strings → partition index",
+        "and dispatch by length and threshold."
+      ]
+    },
+    {
+      "heading": "Why hybrid design is natural",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 5,
+      "word_count": 19,
+      "evidence": "The statistical properties of:",
+      "paragraphs": [
+        "The statistical properties of:",
+        "3-character string",
+        "and:",
+        "3,000-character string",
+        "are too different to expect one representation to dominate both."
+      ]
+    },
+    {
+      "heading": "Fuzzy search at scale is not merely an algorithm",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 2,
+      "word_count": 39,
+      "evidence": "A complete system contains at least four layers:",
+      "paragraphs": [
+        "A complete system contains at least four layers:",
+        "MATHEMATICAL LAYER What is a match? INDEX LAYER How are possible matches located? VERIFICATION LAYER How is exactness certified? RETRIEVAL LAYER How are accepted matches ranked and converted into useful results?"
+      ]
+    },
+    {
+      "heading": "Failure mode: filtering with the wrong metric",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 6,
+      "word_count": 34,
+      "evidence": "Suppose the index assumes:",
+      "paragraphs": [
+        "Suppose the index assumes:",
+        "classical Levenshtein",
+        "but verification switches to:",
+        "transposition-aware OSA",
+        "A candidate rejected by a classical-Levenshtein-derived bound might be valid under the cheaper transposition model.",
+        "Index and verifier semantics must remain aligned."
+      ]
+    },
+    {
+      "heading": "Failure mode: arbitrary normalization after indexing",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 6,
+      "word_count": 32,
+      "evidence": "If the collection was indexed before:",
+      "paragraphs": [
+        "If the collection was indexed before:",
+        "accent removal",
+        "but queries are filtered after:",
+        "accent removal",
+        "q-grams and lengths may no longer represent the same strings.",
+        "Reindex or maintain a separate normalized index."
+      ]
+    },
+    {
+      "heading": "Failure mode: assuming q-gram overlap is always positive",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "Short strings and large thresholds can invalidate the assumption that every true match shares at least one gram.",
+      "paragraphs": [
+        "Short strings and large thresholds can invalidate the assumption that every true match shares at least one gram.",
+        "The q-gram lower bound must be checked before using shared-gram retrieval as the only candidate source."
+      ]
+    },
+    {
+      "heading": "Failure mode: enormous common posting lists",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "An inverted index can degenerate into a scan if every selected signature occurs in most records.",
+      "paragraphs": [
+        "An inverted index can degenerate into a scan if every selected signature occurs in most records.",
+        "Maintain corpus statistics and choose signatures deliberately."
+      ]
+    },
+    {
+      "heading": "Failure mode: using a metric tree with a nonmetric distance",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 2,
+      "word_count": 20,
+      "evidence": "Triangle-inequality pruning is correct only when the distance satisfies triangle inequality.",
+      "paragraphs": [
+        "Triangle-inequality pruning is correct only when the distance satisfies triangle inequality.",
+        "A nonmetric substitution model can silently make pruning unsound."
+      ]
+    },
+    {
+      "heading": "Failure mode: measuring only verification speed",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "If:",
+      "paragraphs": [
+        "If:",
+        "95% of latency = posting and candidate processing",
+        "making Levenshtein verification twice as fast improves total latency by at most roughly:",
+        "5%",
+        "before other effects.",
+        "Profile the complete query."
+      ]
+    },
+    {
+      "heading": "Failure mode: measuring only average latency",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 3,
+      "word_count": 21,
+      "evidence": "Most queries may be easy while a small subset produces massive posting scans.",
+      "paragraphs": [
+        "Most queries may be easy while a small subset produces massive posting scans.",
+        "Tail latency is therefore critical:",
+        "p95 p99 p99.9"
+      ]
+    },
+    {
+      "heading": "Failure mode: hiding incomplete recall behind max expansions",
+      "level": 2,
+      "id": "ux-section-151",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "A product may need expansion limits for safety.",
+      "paragraphs": [
+        "A product may need expansion limits for safety.",
+        "But:",
+        "resource-capped fuzzy retrieval",
+        "should not be described as equivalent to unrestricted mathematical:",
+        "ED ≤ τ",
+        "search unless completeness is still guaranteed."
+      ]
+    },
+    {
+      "heading": "Failure mode: sorting every result by exact ED when not necessary",
+      "level": 2,
+      "id": "ux-section-152",
+      "paragraph_count": 4,
+      "word_count": 29,
+      "evidence": "If the product only needs:",
+      "paragraphs": [
+        "If the product only needs:",
+        "all terms within τ",
+        "there is no requirement to sort the complete result set by distance.",
+        "Avoid ranking work the API does not need."
+      ]
+    },
+    {
+      "heading": "Failure mode: verifying duplicate candidates repeatedly",
+      "level": 2,
+      "id": "ux-section-153",
+      "paragraph_count": 5,
+      "word_count": 17,
+      "evidence": "A candidate can appear through several:",
+      "paragraphs": [
+        "A candidate can appear through several:",
+        "q-grams;",
+        "segments;",
+        "signatures.",
+        "Candidate accumulation should deduplicate IDs before expensive verification."
+      ]
+    },
+    {
+      "heading": "Failure mode: clearing a huge accumulator per query",
+      "level": 2,
+      "id": "ux-section-154",
+      "paragraph_count": 9,
+      "word_count": 30,
+      "evidence": "If an array of size:",
+      "paragraphs": [
+        "If an array of size:",
+        "N",
+        "stores q-gram counts, clearing the entire array on every request can itself become:",
+        "O(N)",
+        "work.",
+        "Techniques include:",
+        "sparse hash accumulators;",
+        "generation counters;",
+        "touched-ID lists."
+      ]
+    },
+    {
+      "heading": "Candidate accumulator engineering",
+      "level": 2,
+      "id": "ux-section-155",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "Suppose postings produce IDs:",
+      "paragraphs": [
+        "Suppose postings produce IDs:",
+        "17 17 17 91 91 220 ...",
+        "The accumulator must efficiently track:",
+        "candidate ID + number of matching signatures + possibly positional evidence",
+        "without allocating one heavy object per posting occurrence."
+      ]
+    },
+    {
+      "heading": "Integer IDs are preferable in the hot path",
+      "level": 2,
+      "id": "ux-section-156",
+      "paragraph_count": 5,
+      "word_count": 25,
+      "evidence": "Use:",
+      "paragraphs": [
+        "Use:",
+        "integer record IDs",
+        "inside posting lists rather than repeated:",
+        "full strings or object references",
+        "and dereference source strings only after candidates survive inexpensive filtering."
+      ]
+    },
+    {
+      "heading": "Compressed posting lists",
+      "level": 2,
+      "id": "ux-section-157",
+      "paragraph_count": 8,
+      "word_count": 38,
+      "evidence": "Sorted IDs can be delta encoded:",
+      "paragraphs": [
+        "Sorted IDs can be delta encoded:",
+        "100 103 108 109 → 100 3 5 1",
+        "and compressed using integer codecs.",
+        "This reduces:",
+        "memory footprint;",
+        "cache pressure;",
+        "I/O bandwidth.",
+        "Decompression cost must be measured against the saved memory traffic."
+      ]
+    },
+    {
+      "heading": "Posting-list intersection",
+      "level": 2,
+      "id": "ux-section-158",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "If a safe condition requires matching multiple signatures, candidate generation can intersect sorted posting lists rather than materialize their union.",
+      "paragraphs": [
+        "If a safe condition requires matching multiple signatures, candidate generation can intersect sorted posting lists rather than materialize their union.",
+        "Starting with the shortest posting list generally reduces intermediate candidate size.",
+        "Again, signature frequency statistics become part of query planning."
+      ]
+    },
+    {
+      "heading": "Threshold count accumulation",
+      "level": 2,
+      "id": "ux-section-159",
+      "paragraph_count": 4,
+      "word_count": 36,
+      "evidence": "If a candidate needs at least:",
+      "paragraphs": [
+        "If a candidate needs at least:",
+        "r",
+        "matching grams, accumulation can stop considering it once mathematical upper bounds show it cannot reach r with the remaining postings.",
+        "This is analogous to early termination in ranked retrieval."
+      ]
+    },
+    {
+      "heading": "Parallel candidate processing",
+      "level": 2,
+      "id": "ux-section-160",
+      "paragraph_count": 6,
+      "word_count": 36,
+      "evidence": "Independent posting regions or candidate buckets can be processed across CPU cores.",
+      "paragraphs": [
+        "Independent posting regions or candidate buckets can be processed across CPU cores.",
+        "But parallelism introduces:",
+        "shared accumulator contention;",
+        "cache-line bouncing;",
+        "duplicate candidate merging.",
+        "Per-thread local candidate structures followed by merging can outperform one globally locked table."
+      ]
+    },
+    {
+      "heading": "Verification parallelism",
+      "level": 2,
+      "id": "ux-section-161",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "Once the candidate set is known:",
+      "paragraphs": [
+        "Once the candidate set is known:",
+        "candidate 1 candidate 2 candidate 3 ...",
+        "distance verifications are independent and can be distributed across:",
+        "CPU workers;",
+        "SIMD lanes;",
+        "GPU batches where sufficiently large.",
+        "See Levenshtein Performance Engineering ."
+      ]
+    },
+    {
+      "heading": "Do not parallelize a bad candidate set",
+      "level": 2,
+      "id": "ux-section-162",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "Processing:",
+      "paragraphs": [
+        "Processing:",
+        "10 million false candidates on 64 cores",
+        "is generally inferior to filtering them down to:",
+        "10,000 candidates on one or several cores",
+        "Algorithmic pruning remains the first priority."
+      ]
+    },
+    {
+      "heading": "Search-scale decision table",
+      "level": 2,
+      "id": "ux-section-163",
+      "paragraph_count": 1,
+      "word_count": 112,
+      "evidence": "Situation Likely Direction One query against tiny dictionary Direct bounded verification may be enough Large term dictionary, τ ≤ 2 Trie/FST + Levenshtein automata Large static string collection q-gram/signature inverted index Short strings Automata or deletion signatures; avoid weak q-gram assumptions Long strings Partition/signature methods become attractive Large similarity join Dedicated filter-and-verify join such as partition/q-gram family True metric and suitable corpus Consider metric indexing Top-k nearest strings Dynamic upper bound + hierarchical/prioritized search Distributed corpus Global routing signatures + local indexes High write rate Favor update-friendly or segmented indexes Large edit threshold Expect index selectivity to collapse; reconsider search semantics Weighted/n",
+      "paragraphs": [
+        "Situation Likely Direction One query against tiny dictionary Direct bounded verification may be enough Large term dictionary, τ ≤ 2 Trie/FST + Levenshtein automata Large static string collection q-gram/signature inverted index Short strings Automata or deletion signatures; avoid weak q-gram assumptions Long strings Partition/signature methods become attractive Large similarity join Dedicated filter-and-verify join such as partition/q-gram family True metric and suitable corpus Consider metric indexing Top-k nearest strings Dynamic upper bound + hierarchical/prioritized search Distributed corpus Global routing signatures + local indexes High write rate Favor update-friendly or segmented indexes Large edit threshold Expect index selectivity to collapse; reconsider search semantics Weighted/nonmetric distance Re-derive filtering bounds; do not reuse unit-cost assumptions blindly"
+      ]
+    },
+    {
+      "heading": "Index-family comparison",
+      "level": 2,
+      "id": "ux-section-164",
+      "paragraph_count": 1,
+      "word_count": 98,
+      "evidence": "Index Family Main Strength Main Cost / Limitation Length buckets Almost free exact pruning Weak alone q-Gram inverted index Strong general filtering, database friendly Large posting volume; parameter sensitive Variable grams Can improve signature selectivity More complex construction and bounds Partition index Strong pigeonhole-based filtering Probe-substring selection complexity Levenshtein automaton + trie/FST Excellent bounded term enumeration Small edit radii most practical Metric tree Generic exact metric search Can degenerate in dense spaces; requires metric Deletion signatures Very fast exact-key candidate lookup for short terms Index expansion Distributed signature routing Reduces network-wide brute force Load balancing and replication complexity",
+      "paragraphs": [
+        "Index Family Main Strength Main Cost / Limitation Length buckets Almost free exact pruning Weak alone q-Gram inverted index Strong general filtering, database friendly Large posting volume; parameter sensitive Variable grams Can improve signature selectivity More complex construction and bounds Partition index Strong pigeonhole-based filtering Probe-substring selection complexity Levenshtein automaton + trie/FST Excellent bounded term enumeration Small edit radii most practical Metric tree Generic exact metric search Can degenerate in dense spaces; requires metric Deletion signatures Very fast exact-key candidate lookup for short terms Index expansion Distributed signature routing Reduces network-wide brute force Load balancing and replication complexity"
+      ]
+    },
+    {
+      "heading": "A practical exact threshold-search blueprint",
+      "level": 2,
+      "id": "ux-section-165",
+      "paragraph_count": 1,
+      "word_count": 65,
+      "evidence": "function fuzzyThresholdSearch(q, τ): q = preprocess(q) if τ < 0: error if τ == 0: return exactLookup(q) admissibleLengths = [ len(q)-τ, len(q)+τ ] signatures = selectSafeQuerySignatures( q, τ, corpusStatistics ) candidates = retrieveFromIndex( signatures, admissibleLengths ) candidates = applyCheapBounds( q, candidates, τ ) results = [] prepared = prepareVerifier(q, τ) for s in candidates: if boundedDistance( prepared, s, τ ) ≤ τ: results.append(s) return rank(results)",
+      "paragraphs": [
+        "function fuzzyThresholdSearch(q, τ): q = preprocess(q) if τ < 0: error if τ == 0: return exactLookup(q) admissibleLengths = [ len(q)-τ, len(q)+τ ] signatures = selectSafeQuerySignatures( q, τ, corpusStatistics ) candidates = retrieveFromIndex( signatures, admissibleLengths ) candidates = applyCheapBounds( q, candidates, τ ) results = [] prepared = prepareVerifier(q, τ) for s in candidates: if boundedDistance( prepared, s, τ ) ≤ τ: results.append(s) return rank(results)"
+      ]
+    },
+    {
+      "heading": "Correctness obligations for the blueprint",
+      "level": 2,
+      "id": "ux-section-166",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "Every optimization must have an explicit contract.",
+      "paragraphs": [
+        "Every optimization must have an explicit contract."
+      ]
+    },
+    {
+      "heading": "Preprocessing",
+      "level": 3,
+      "id": "ux-section-167",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "same transformation for query and corpus",
+      "paragraphs": [
+        "same transformation for query and corpus"
+      ]
+    },
+    {
+      "heading": "Length filter",
+      "level": 3,
+      "id": "ux-section-168",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "provably necessary under chosen edit costs",
+      "paragraphs": [
+        "provably necessary under chosen edit costs"
+      ]
+    },
+    {
+      "heading": "Signature filter",
+      "level": 3,
+      "id": "ux-section-169",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "true match cannot miss all selected signatures",
+      "paragraphs": [
+        "true match cannot miss all selected signatures"
+      ]
+    },
+    {
+      "heading": "Additional pruning",
+      "level": 3,
+      "id": "ux-section-170",
+      "paragraph_count": 1,
+      "word_count": 7,
+      "evidence": "lower bound never exceeds true ED incorrectly",
+      "paragraphs": [
+        "lower bound never exceeds true ED incorrectly"
+      ]
+    },
+    {
+      "heading": "Verifier",
+      "level": 3,
+      "id": "ux-section-171",
+      "paragraph_count": 1,
+      "word_count": 6,
+      "evidence": "returns exact answer up to threshold",
+      "paragraphs": [
+        "returns exact answer up to threshold"
+      ]
+    },
+    {
+      "heading": "A practical top-k blueprint",
+      "level": 2,
+      "id": "ux-section-172",
+      "paragraph_count": 1,
+      "word_count": 57,
+      "evidence": "function fuzzyTopK(q, k): q = preprocess(q) initialize best = empty max-heap U = infinity stream candidates in promising order for candidate s: LB = lowerBound(q,s) if LB > U: continue d = exactDistanceWithCutoff( q, s, U ) if d improves top-k: insert into best if |best| == k: U = distance of current kth result return best",
+      "paragraphs": [
+        "function fuzzyTopK(q, k): q = preprocess(q) initialize best = empty max-heap U = infinity stream candidates in promising order for candidate s: LB = lowerBound(q,s) if LB > U: continue d = exactDistanceWithCutoff( q, s, U ) if d improves top-k: insert into best if |best| == k: U = distance of current kth result return best"
+      ]
+    },
+    {
+      "heading": "Exact top-k requires termination proof",
+      "level": 2,
+      "id": "ux-section-173",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "It is not enough to stop because:",
+      "paragraphs": [
+        "It is not enough to stop because:",
+        "\"the remaining candidates look unlikely\"",
+        "An exact method must prove:",
+        "for every unseen s: LB(q,s) ≥ U",
+        "or an equivalent condition showing none can improve the current answer."
+      ]
+    },
+    {
+      "heading": "Common misconception: a faster Levenshtein implementation solves scalability",
+      "level": 2,
+      "id": "ux-section-174",
+      "paragraph_count": 4,
+      "word_count": 16,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "It reduces verification cost but does not remove the factor:",
+        "N",
+        "from brute-force corpus search."
+      ]
+    },
+    {
+      "heading": "Common misconception: q-grams approximate edit distance",
+      "level": 2,
+      "id": "ux-section-175",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "Not necessarily.",
+      "paragraphs": [
+        "Not necessarily.",
+        "In exact filter-and-verify systems, q-grams can be used only as a mathematically safe filter , while the final answer still uses exact edit distance."
+      ]
+    },
+    {
+      "heading": "Common misconception: every true edit-distance neighbor shares a q-gram",
+      "level": 2,
+      "id": "ux-section-176",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "For sufficiently short strings or large thresholds, the guaranteed q-gram-overlap lower bound can become zero."
+      ]
+    },
+    {
+      "heading": "Common misconception: more signatures always improve pruning",
+      "level": 2,
+      "id": "ux-section-177",
+      "paragraph_count": 6,
+      "word_count": 18,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "They can increase:",
+        "index size;",
+        "posting reads;",
+        "candidate accumulation work.",
+        "Signature quality matters more than raw count."
+      ]
+    },
+    {
+      "heading": "Common misconception: the rarest gram is always the best query signature",
+      "level": 2,
+      "id": "ux-section-178",
+      "paragraph_count": 2,
+      "word_count": 11,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "An exact signature scheme must also preserve the completeness guarantee."
+      ]
+    },
+    {
+      "heading": "Common misconception: automata eliminate the need for an index",
+      "level": 2,
+      "id": "ux-section-179",
+      "paragraph_count": 2,
+      "word_count": 23,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "The automaton is powerful because it traverses an organized term dictionary such as a trie or finite-state structure while pruning impossible prefixes."
+      ]
+    },
+    {
+      "heading": "Common misconception: Levenshtein automata are useful for arbitrarily large τ",
+      "level": 2,
+      "id": "ux-section-180",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "Not generally.",
+      "paragraphs": [
+        "Not generally.",
+        "Automaton state space and accepted dictionary neighborhood grow with the allowed error radius, reducing practical selectivity."
+      ]
+    },
+    {
+      "heading": "Common misconception: BK-trees work with every string similarity function",
+      "level": 2,
+      "id": "ux-section-181",
+      "paragraph_count": 2,
+      "word_count": 6,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Triangle-inequality pruning requires a metric."
+      ]
+    },
+    {
+      "heading": "Common misconception: top-k search is threshold search with τ = infinity",
+      "level": 2,
+      "id": "ux-section-182",
+      "paragraph_count": 2,
+      "word_count": 19,
+      "evidence": "That formulation is mathematically possible but computationally useless.",
+      "paragraphs": [
+        "That formulation is mathematically possible but computationally useless.",
+        "Efficient top-k search progressively establishes and tightens a finite upper bound."
+      ]
+    },
+    {
+      "heading": "Common misconception: max expansions is an edit-distance property",
+      "level": 2,
+      "id": "ux-section-183",
+      "paragraph_count": 2,
+      "word_count": 18,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "It is a system resource constraint on how many fuzzy terms are permitted into later query processing."
+      ]
+    },
+    {
+      "heading": "Common misconception: distributed fuzzy search means broadcast everywhere",
+      "level": 2,
+      "id": "ux-section-184",
+      "paragraph_count": 2,
+      "word_count": 16,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Global signatures or routing indexes can direct queries toward likely shards and reduce data movement."
+      ]
+    },
+    {
+      "heading": "Common misconception: indexing makes large result sets cheap",
+      "level": 2,
+      "id": "ux-section-185",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "If millions of terms genuinely satisfy the fuzzy predicate, output processing itself is expensive."
+      ]
+    },
+    {
+      "heading": "Common misconception: filtering and ranking are the same problem",
+      "level": 2,
+      "id": "ux-section-186",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "Filtering determines whether a candidate can satisfy the textual constraint.",
+        "Ranking determines how accepted candidates should be ordered for the application."
+      ]
+    },
+    {
+      "heading": "Common misconception: an exact final verifier guarantees exact search",
+      "level": 2,
+      "id": "ux-section-187",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "No.",
+      "paragraphs": [
+        "No.",
+        "The candidate generator must also have 100% recall under the defined predicate."
+      ]
+    },
+    {
+      "heading": "The scalability equation",
+      "level": 2,
+      "id": "ux-section-188",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "A useful conceptual latency decomposition is:",
+      "paragraphs": [
+        "A useful conceptual latency decomposition is:",
+        "T_query = T_preprocess + T_index_lookup + T_postings + T_candidate_filter + T_verify + T_rank + T_network",
+        "where:",
+        "T_network = 0",
+        "for a purely local system.",
+        "Optimizing only:",
+        "T_verify",
+        "is rational only when verification is actually dominant."
+      ]
+    },
+    {
+      "heading": "Candidate-count equation",
+      "level": 2,
+      "id": "ux-section-189",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "The index objective can be expressed as:",
+      "paragraphs": [
+        "The index objective can be expressed as:",
+        "N × p_length × p_signature × p_position × p_other ≈ candidate count",
+        "where each p is an empirical survival rate.",
+        "Filters are not independent in reality, but the expression is useful for understanding multiplicative pruning."
+      ]
+    },
+    {
+      "heading": "Example",
+      "level": 2,
+      "id": "ux-section-190",
+      "paragraph_count": 4,
+      "word_count": 40,
+      "evidence": "N = 100,000,000 length filter survival = 0.10 signature filter survival = 0.005 position filter survival = 0.10",
+      "paragraphs": [
+        "N = 100,000,000 length filter survival = 0.10 signature filter survival = 0.005 position filter survival = 0.10",
+        "Then a rough independent approximation gives:",
+        "100,000,000 × 0.10 × 0.005 × 0.10 = 5,000 candidates",
+        "instead of one hundred million verifications."
+      ]
+    },
+    {
+      "heading": "The engineering objective",
+      "level": 2,
+      "id": "ux-section-191",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "The ideal large-scale fuzzy system minimizes:",
+      "paragraphs": [
+        "The ideal large-scale fuzzy system minimizes:",
+        "INDEX COST + QUERY FILTER COST + FALSE CANDIDATE COST + EXACT VERIFICATION COST + RESULT PROCESSING COST",
+        "subject to:",
+        "correctness latency SLO memory budget update requirements"
+      ]
+    },
+    {
+      "heading": "Research progression",
+      "level": 2,
+      "id": "ux-section-192",
+      "paragraph_count": 2,
+      "word_count": 84,
+      "evidence": "The development of scalable edit-distance search can be understood as several overlapping lines:",
+      "paragraphs": [
+        "The development of scalable edit-distance search can be understood as several overlapping lines:",
+        "METRIC INDEXING Burkhard–Keller │ ▼ generic distance-space pruning Q-GRAM FILTERING positional grams │ ▼ database approximate joins │ ▼ VGRAM / Ed-Join AUTOMATA Levenshtein automata │ ▼ dictionary traversal │ ▼ modern fuzzy term enumeration SIGNATURE / PARTITION METHODS q-chunks │ ▼ asymmetric signatures │ ▼ Pass-Join │ ▼ pivotal filters │ ▼ pigeonring-style stronger bounds SYSTEMS local exact search │ ▼ top-k unified indexes │ ▼ distributed balanced similarity processing"
+      ]
+    },
+    {
+      "heading": "What should a modern system actually build?",
+      "level": 2,
+      "id": "ux-section-193",
+      "paragraph_count": 4,
+      "word_count": 38,
+      "evidence": "For a short-term search engine with typical:",
+      "paragraphs": [
+        "For a short-term search engine with typical:",
+        "τ ∈ {1,2}",
+        "a strong starting architecture is:",
+        "normalized term dictionary ↓ compressed trie / FST ↓ Levenshtein automaton enumeration ↓ small expansion set ↓ document inverted index ↓ retrieval ranking"
+      ]
+    },
+    {
+      "heading": "For large record collections",
+      "level": 2,
+      "id": "ux-section-194",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "For deduplication or record lookup involving longer strings:",
+      "paragraphs": [
+        "For deduplication or record lookup involving longer strings:",
+        "normalized strings ↓ length partitions ↓ q-gram / segment signatures ↓ inverted index ↓ position / partition filters ↓ bounded exact ED ↓ record-level decision",
+        "is often a more appropriate conceptual architecture."
+      ]
+    },
+    {
+      "heading": "For very large distributed collections",
+      "level": 2,
+      "id": "ux-section-195",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "global statistics ↓ balance-aware signatures ↓ query routing ↓ local candidate indexes ↓ local verification ↓ distributed result merge",
+      "paragraphs": [
+        "global statistics ↓ balance-aware signatures ↓ query routing ↓ local candidate indexes ↓ local verification ↓ distributed result merge",
+        "becomes necessary."
+      ]
+    },
+    {
+      "heading": "When not to use character-level fuzzy search",
+      "level": 2,
+      "id": "ux-section-196",
+      "paragraph_count": 12,
+      "word_count": 53,
+      "evidence": "Scaling an unsuitable similarity signal does not make it suitable.",
+      "paragraphs": [
+        "Scaling an unsuitable similarity signal does not make it suitable.",
+        "Levenshtein-oriented fuzzy search is weak when variation is primarily:",
+        "semantic;",
+        "synonymic;",
+        "token-reordering based;",
+        "abbreviation based;",
+        "entity-specific;",
+        "cross-lingual.",
+        "For:",
+        "\"car\" \"automobile\"",
+        "no amount of q-gram indexing changes the fact that character edit distance does not capture synonymy.",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Hybrid lexical and semantic retrieval",
+      "level": 2,
+      "id": "ux-section-197",
+      "paragraph_count": 9,
+      "word_count": 34,
+      "evidence": "A modern search engine may run:",
+      "paragraphs": [
+        "A modern search engine may run:",
+        "lexical fuzzy retrieval and semantic retrieval",
+        "in parallel, then combine the candidate sets.",
+        "Levenshtein remains valuable for:",
+        "typos;",
+        "near-spellings;",
+        "OCR errors;",
+        "identifier corruption.",
+        "Embeddings address a different relation."
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-198",
+      "paragraph_count": 21,
+      "word_count": 1044,
+      "evidence": "Fuzzy search at scale is fundamentally a candidate-reduction problem. Pairwise Levenshtein implementations can be optimized aggressively, but a system that compares one query against every stored string still performs work proportional to the entire corpus. At millions or billions of strings, that architecture is the main bottleneck.",
+      "paragraphs": [
+        "Fuzzy search at scale is fundamentally a candidate-reduction problem. Pairwise Levenshtein implementations can be optimized aggressively, but a system that compares one query against every stored string still performs work proportional to the entire corpus. At millions or billions of strings, that architecture is the main bottleneck.",
+        "Exact threshold search is best understood through a filter-and-verify contract. The index generates a candidate set that must contain every string whose true edit distance is within the requested threshold. Filters are permitted to produce false positives because the final verifier removes them, but they must not produce false negatives if the system claims complete exact retrieval.",
+        "The simplest safe filter is string length. Unit-cost Levenshtein distance is at least the absolute difference in sequence lengths, so only strings within the interval |q|±τ can qualify. Although elementary, this bound is almost free and should usually be applied before more expensive processing.",
+        "q-gram filtering turns strings into collections of overlapping local substrings and uses the fact that a bounded number of edits can destroy only bounded local evidence. Inverted indexes over q-grams make it possible to retrieve strings sharing sufficient signatures without scanning the complete corpus. Count, position, and mismatch-aware filters progressively strengthen the resulting lower bounds.",
+        "q-gram systems require careful boundary handling. The classical padded q-gram count bound can become nonpositive for short strings or large thresholds, meaning a valid low-edit-distance pair may share no q-gram. A candidate generator that relies exclusively on shared grams must explicitly handle that regime or it can lose true matches.",
+        "Corpus statistics matter because posting-list cost dominates many gram indexes. Common signatures create enormous postings, while rare signatures are selective. But an exact system cannot select signatures only because they are rare; the selected signature family must still guarantee that every valid edit-distance neighbor intersects the query's retrieval signatures.",
+        "Variable-length grams, asymmetric signatures, and pivotal-prefix methods refine this principle by attempting to use fewer and more discriminative signatures while preserving exactness. Research in this area is largely the search for increasingly powerful necessary conditions whose evaluation costs remain lower than exact distance verification.",
+        "Partition-based methods exploit the pigeonhole principle. Splitting a string into τ+1 disjoint segments ensures that a pair within τ edits retains an appropriate unaffected anchor under the method's partition argument. Pass-Join develops this into an indexed candidate-generation framework and carefully selects the query substrings that could correspond to those indexed segments despite positional shifts caused by insertions and deletions.",
+        "The pigeonring principle strengthens ordinary pigeonhole filtering by imposing aggregate conditions on multiple consecutive partitions instead of relying only on one qualifying partition. This demonstrates the broader direction of exact similarity-search research: stronger lower bounds reject more impossible candidates before edit-distance computation.",
+        "Levenshtein automata represent another major branch. A fixed query and error threshold define a regular language of strings lying inside the bounded edit-distance neighborhood. Traversing a trie or finite-state term dictionary together with this automaton prunes complete lexical subtrees as soon as their prefixes can no longer lead to an accepted string. This is particularly attractive for short terms and small edit thresholds.",
+        "Production search systems such as Lucene expose the consequences of these principles directly. Their fuzzy term search uses compiled automata, supports a protected exact prefix, limits edit radius, and controls the number of term expansions. Such limits are not properties of Levenshtein distance itself; they are engineering controls designed to prevent fuzzy term enumeration from consuming a disproportionate amount of the term dictionary.",
+        "Metric indexes such as the structures originating with Burkhard and Keller exploit the triangle inequality. Classical Levenshtein distance satisfies this requirement, allowing branches to be pruned when pivot distances prove they cannot contain results. However, metric indexes can lose pruning power in dense regions, and they must not be applied blindly to edit-distance variants that fail metric properties.",
+        "Top-k search requires a different strategy because there is no fixed threshold initially. Efficient exact systems seek promising candidates early, use their distances to establish the current kth-best upper bound, and reject unseen candidates whose lower bounds already exceed it. Hierarchical segment indexes demonstrate how partition structures can support both threshold and top-k retrieval.",
+        "No index makes verification irrelevant. The objective is to reduce a collection of N strings to a candidate set C where |C|≪N . Those survivors can then be checked with bounded dynamic programming, Myers-style bit vectors, common-affix trimming, and prepared-query state. Indexing and fast Levenshtein kernels therefore operate at different layers and compound rather than replace each other.",
+        "At distributed scale, network movement and load balance become part of similarity search. Broadcasting every fuzzy query to every shard is simple but expensive. Global signatures can route queries toward candidate partitions, while local indexes perform detailed filtering and verification. Signature selectivity must be balanced against distributed load because a highly common signature can create hotspots.",
+        "Index design is also an operational trade-off. More signatures, deletion neighborhoods, positional metadata, and threshold-specific structures can improve query speed while increasing index size, build time, and update cost. Static dictionaries can afford heavier preprocessing than rapidly changing catalogs. A production architecture therefore needs to optimize not only query latency but also memory, writes, compaction, and cache behavior.",
+        "Benchmarking should expose the complete pruning pipeline. Corpus size, string-length distribution, threshold, true result count, candidate count, posting entries read, verification count, index size, build time, update cost, and tail latency all matter. Reporting only pairwise Levenshtein throughput obscures the dominant systems question: how often is pairwise verification invoked at all?",
+        "Large thresholds create an intrinsic scalability limit. As the allowed edit radius grows, length filters widen, q-gram bounds weaken, automata accept more paths, partition signatures become less selective, and the true result set itself can become enormous. Eventually the query is asking for such a broad lexical neighborhood that no exact index can avoid processing substantial portions of the corpus.",
+        "The most reliable architecture is therefore layered:",
+        "define the exact text semantics apply the cheapest necessary bounds use an index to retrieve only plausible candidates strengthen filtering with proven lower bounds verify survivors with bounded exact distance then rank them for the application",
+        "The decisive scalability improvement is not making every edit-distance calculation slightly faster. It is arranging the corpus so that almost all strings can be proven irrelevant without calculating their edit distance at all."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-199",
+      "paragraph_count": 10,
+      "word_count": 145,
+      "evidence": "Fuzzy Search with Edit Distance — search semantics, thresholds, ranking, substring matching, and the role of edit distance in retrieval.",
+      "paragraphs": [
+        "Fuzzy Search with Edit Distance — search semantics, thresholds, ranking, substring matching, and the role of edit distance in retrieval.",
+        "Spell and Query Correction — candidate generation and correction ranking for noisy queries.",
+        "Indexing and Filtering for Edit Distance — the algorithmic foundations of gram, signature, partition, and lower-bound filters.",
+        "Levenshtein Automata — finite-state recognition of bounded edit-distance neighborhoods.",
+        "Bounded and Parameterized Edit Distance — exact verification when a threshold is known.",
+        "Myers Bit-Vector Algorithm — word-parallel verification of edit-distance candidates.",
+        "Levenshtein Performance Engineering — CPU, memory, batching, SIMD, multicore, and benchmarking after the candidate set has been reduced.",
+        "Unicode and Grapheme-Safe Levenshtein — ensuring the index and verifier operate over consistent international text units.",
+        "Weighted Levenshtein Distance — why nonuniform edit costs require different threshold and filtering reasoning.",
+        "String Similarity vs Semantic Similarity — when scalable character-level retrieval is still the wrong similarity model."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-200",
+      "paragraph_count": 17,
+      "word_count": 397,
+      "evidence": "Walter A. Burkhard and Robert M. Keller, “Some Approaches to Best-Match File Searching,” Communications of the ACM , 16(4), 230–236, 1973. DOI record .",
+      "paragraphs": [
+        "Walter A. Burkhard and Robert M. Keller, “Some Approaches to Best-Match File Searching,” Communications of the ACM , 16(4), 230–236, 1973. DOI record .",
+        "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI record .",
+        "Luis Gravano, Panagiotis G. Ipeirotis, H. V. Jagadish, Nick Koudas, S. Muthukrishnan, and Divesh Srivastava, “Approximate String Joins in a Database (Almost) for Free,” VLDB 2001 , 491–500. Paper .",
+        "Luis Gravano and colleagues, “Errata for Approximate String Joins in a Database (Almost) for Free.” Erratum .",
+        "Klaus U. Schulz and Stoyan Mihov, “Fast String Correction with Levenshtein Automata,” International Journal on Document Analysis and Recognition , 5(1), 67–85, 2002. DOI record .",
+        "Chen Li, Bin Wang, and Xiaochun Yang, “VGRAM: Improving Performance of Approximate Queries on String Collections Using Variable-Length Grams,” VLDB 2007 , 303–314. Paper .",
+        "Chuan Xiao, Wei Wang, and Xuemin Lin, “Ed-Join: An Efficient Algorithm for Similarity Joins with Edit Distance Constraints,” Proceedings of the VLDB Endowment , 1(1), 933–944, 2008. DOI record .",
+        "Jianbin Qin, Wei Wang, Yifei Lu, Chuan Xiao, and Xuemin Lin, “Efficient Exact Edit Similarity Query Processing with the Asymmetric Signature Scheme,” ACM SIGMOD 2011 , 1033–1044. DOI record .",
+        "Guoliang Li, Dong Deng, Jiannan Wang, and Jianhua Feng, “Pass-Join: A Partition-based Method for Similarity Joins,” Proceedings of the VLDB Endowment , 5(3), 253–264, 2011. DOI record .",
+        "Jianbin Qin, Wei Wang, Chuan Xiao, Yifei Lu, Xuemin Lin, and Haixun Wang, “Asymmetric Signature Schemes for Efficient Exact Edit Similarity Query Processing,” ACM Transactions on Database Systems , 38(3), Article 16, 2013. DOI record .",
+        "Dong Deng, Guoliang Li, and Jianhua Feng, “A Pivotal Prefix Based Filtering Algorithm for String Similarity Search,” ACM SIGMOD 2014 , 673–684. DOI record .",
+        "Jin Wang, Guoliang Li, Dong Deng, Yong Zhang, and Jianhua Feng, “Two Birds with One Stone: An Efficient Hierarchical Framework for Top-k and Threshold-based String Similarity Search,” ICDE 2015 , 519–530. DOI record .",
+        "Jianbin Qin and Chuan Xiao, “Pigeonring: A Principle for Faster Thresholded Similarity Search,” Proceedings of the VLDB Endowment , 12(1), 28–42, 2018. DOI record .",
+        "Ji Sun, Zeyuan Shang, Guoliang Li, Zhifeng Bao, and Dong Deng, “Balance-Aware Distributed String Similarity-Based Query Processing System,” Proceedings of the VLDB Endowment , 12(9), 961–974, 2019. DOI record .",
+        "Apache Lucene, “FuzzyQuery.” Lucene documentation .",
+        "Apache Lucene, “LevenshteinAutomata.” Lucene documentation .",
+        "Elastic, “Fuzzy Query.” Elasticsearch documentation ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/approximate-string-matching",
+      "evidence": [
+        {
+          "section": "References",
+          "anchor_id": "ux-section-200",
+          "alias": "approximate string matching",
+          "excerpt": "Gonzalo Navarro, “A Guided Tour to Approximate String Matching,” ACM Computing Surveys , 33(1), 31–88, 2001. DOI record ."
+        }
+      ]
+    },
+    {
+      "target": "/bounded-and-parameterized-edit-distance",
+      "evidence": [
+        {
+          "section": "Use bounded verification",
+          "anchor_id": "ux-section-76",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "See Bounded and Parameterized Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-199",
+          "alias": "bounded and parameterized edit distance",
+          "excerpt": "Bounded and Parameterized Edit Distance — exact verification when a threshold is known."
+        }
+      ]
+    },
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Metric indexing requires a true metric",
+          "anchor_id": "ux-section-61",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance and Damerau–Levenshtein Distance ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance-variants",
+      "evidence": [
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-198",
+          "alias": "edit distance variants",
+          "excerpt": "Metric indexes such as the structures originating with Burkhard and Keller exploit the triangle inequality. Classical Levenshtein distance satisfies this requirement, allowing branches to be pruned when pivot distances prove they cannot contain results. However, metric indexes can lose pruning power in dense regions, and they must not be applied blindly to edit-distance variants that fail metric properties."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Fuzzy Search at Scale",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Calculating edit distance between two strings is not the difficult part of large-scale fuzzy search."
+        },
+        {
+          "section": "Threshold search",
+          "anchor_id": "ux-section-3",
+          "alias": "edit distance",
+          "excerpt": "This is an exact range query in edit-distance space."
+        },
+        {
+          "section": "Top-k search",
+          "anchor_id": "ux-section-4",
+          "alias": "edit distance",
+          "excerpt": "return the k strings having the smallest edit distance to q ."
+        }
+      ]
+    },
+    {
+      "target": "/edit-operations",
+      "evidence": [
+        {
+          "section": "The pigeonhole principle behind partition filters",
+          "anchor_id": "ux-section-34",
+          "alias": "edit operations",
+          "excerpt": "edit operations exist in an optimal script."
+        },
+        {
+          "section": "Why τ + 1 partitions are powerful",
+          "anchor_id": "ux-section-35",
+          "alias": "edit operations",
+          "excerpt": "Two edit operations cannot independently destroy all three disjoint segments."
+        }
+      ]
+    },
+    {
+      "target": "/fuzzy-search-with-edit-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-199",
+          "alias": "fuzzy search with edit distance",
+          "excerpt": "Fuzzy Search with Edit Distance — search semantics, thresholds, ranking, substring matching, and the role of edit distance in retrieval."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-199",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — the algorithmic foundations of gram, signature, partition, and lower-bound filters."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-automata",
+      "evidence": [
+        {
+          "section": "Levenshtein automata provide a different indexing strategy",
+          "anchor_id": "ux-section-46",
+          "alias": "levenshtein automata",
+          "excerpt": "See Levenshtein Automata ."
+        },
+        {
+          "section": "Schulz–Mihov automata",
+          "anchor_id": "ux-section-50",
+          "alias": "levenshtein automata",
+          "excerpt": "The Schulz–Mihov construction is a foundational method for fast string correction using Levenshtein automata."
+        },
+        {
+          "section": "Search-scale decision table",
+          "anchor_id": "ux-section-163",
+          "alias": "levenshtein automata",
+          "excerpt": "Situation Likely Direction One query against tiny dictionary Direct bounded verification may be enough Large term dictionary, τ ≤ 2 Trie/FST + Levenshtein automata Large static string collection q-gram/signature inverted index Short strings Automata or deletion signatures; avoid weak q-gram assumptions Long strings Partition/signature methods become attractive Large similarity join Dedicated filter-and-verify join such as partition/q-gram family True metric and suitable corpus Consider metric indexing Top-k nearest strings Dynamic upper bound + hierarchical/prioritized search Distributed corpus Global routing signatures + local indexes High write rate Favor update-friendly or segmented index"
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-implementations",
+      "evidence": [
+        {
+          "section": "Summary",
+          "anchor_id": "ux-section-198",
+          "alias": "levenshtein implementations",
+          "excerpt": "Fuzzy search at scale is fundamentally a candidate-reduction problem. Pairwise Levenshtein implementations can be optimized aggressively, but a system that compares one query against every stored string still performs work proportional to the entire corpus. At millions or billions of strings, that architecture is the main bottleneck."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-performance-engineering",
+      "evidence": [
+        {
+          "section": "Verification parallelism",
+          "anchor_id": "ux-section-161",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "See Levenshtein Performance Engineering ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-199",
+          "alias": "levenshtein performance engineering",
+          "excerpt": "Levenshtein Performance Engineering — CPU, memory, batching, SIMD, multicore, and benchmarking after the candidate set has been reduced."
+        }
+      ]
+    },
+    {
+      "target": "/myers-bit-vector-algorithm",
+      "evidence": [
+        {
+          "section": "Bit-parallel verification",
+          "anchor_id": "ux-section-78",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "See Myers Bit-Vector Algorithm ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-199",
+          "alias": "myers bit vector algorithm",
+          "excerpt": "Myers Bit-Vector Algorithm — word-parallel verification of edit-distance candidates."
+        }
+      ]
+    },
+    {
+      "target": "/spell-and-query-correction",
+      "evidence": [
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-199",
+          "alias": "spell and query correction",
+          "excerpt": "Spell and Query Correction — candidate generation and correction ranking for noisy queries."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "When not to use character-level fuzzy search",
+          "anchor_id": "ux-section-196",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-199",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "String Similarity vs Semantic Similarity — when scalable character-level retrieval is still the wrong similarity model."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Index the same domain that the verifier measures",
+          "anchor_id": "ux-section-14",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-199",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "Unicode and Grapheme-Safe Levenshtein — ensuring the index and verifier operate over consistent international text units."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Metric indexing requires a true metric",
+          "anchor_id": "ux-section-61",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance and Damerau–Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-199",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — why nonuniform edit costs require different threshold and filtering reasoning."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/fuzzy-search-at-scale#page",
+      "type": "WebPage",
+      "name": "Fuzzy Search at Scale",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/fuzzy-search-at-scale#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/fuzzy-search-at-scale#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "type": "TechArticle",
+      "name": "Fuzzy Search at Scale",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/fuzzy-search-at-scale#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-algorithm"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/fuzzy-search-at-scale#concept",
+      "type": "DefinedTerm",
+      "name": "Fuzzy Search at Scale",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/fuzzy-search-at-scale#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "hasPart",
+      "https://www.levenshtein.net/applications#collection"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "mainEntity",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#webpage",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "hasPart",
+      "https://www.levenshtein.net/search#collection"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/applications#collection"
+    ],
+    [
+      "https://www.levenshtein.net/search#collection",
+      "hasPart",
+      "https://www.levenshtein.net/fuzzy-search-at-scale#page"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#page",
+      "about",
+      "https://www.levenshtein.net/fuzzy-search-at-scale#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#page",
+      "mainEntity",
+      "https://www.levenshtein.net/fuzzy-search-at-scale#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#page",
+      "isPartOf",
+      "https://www.levenshtein.net/search#collection"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#page",
+      "hasPart",
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "about",
+      "https://www.levenshtein.net/fuzzy-search-at-scale#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "mentions",
+      "https://www.levenshtein.net/fuzzy-search-with-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-automata#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "mentions",
+      "https://www.levenshtein.net/bounded-and-parameterized-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "mentions",
+      "https://www.levenshtein.net/myers-bit-vector-algorithm#algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "mentions",
+      "https://www.levenshtein.net/levenshtein-performance-engineering#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "mentions",
+      "https://www.levenshtein.net/string-similarity-vs-semantic-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "isPartOf",
+      "https://www.levenshtein.net/fuzzy-search-at-scale#page"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.1145/362003.362025"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.1145/375360.375365"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.1007/s10032-002-0082-8"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.14778/1453856.1453957"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.1145/1989323.1989431"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.14778/2078331.2078340"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.1145/2508020.2508023"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.1145/2588555.2593675"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.1109/icde.2015.7113311"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.14778/3275536.3275539"
+    ],
+    [
+      "https://www.levenshtein.net/fuzzy-search-at-scale#article",
+      "citation",
+      "https://doi.org/10.14778/3329772.3329774"
+    ],
+    [
+      "https://doi.org/10.1007/s10032-002-0082-8",
+      "about",
+      "https://www.levenshtein.net/levenshtein-automata#algorithm"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://lucene.apache.org/core/10_0_0/core/org/apache/lucene/search/FuzzyQuery.html",
+      "anchor": "Lucene documentation"
+    },
+    {
+      "url": "https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-fuzzy-query",
+      "anchor": "Elasticsearch documentation"
+    },
+    {
+      "url": "https://doi.org/10.1145/362003.362025",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/375360.375365",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://ipeirotis.org/wp-content/uploads/2012/01/vldb2001.pdf",
+      "anchor": "Paper"
+    },
+    {
+      "url": "https://www.cs.columbia.edu/~gravano/Papers/2003/errata-vldb01.pdf",
+      "anchor": "Erratum"
+    },
+    {
+      "url": "https://doi.org/10.1007/s10032-002-0082-8",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://www.vldb.org/conf/2007/papers/research/p303-li.pdf",
+      "anchor": "Paper"
+    },
+    {
+      "url": "https://doi.org/10.14778/1453856.1453957",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/1989323.1989431",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.14778/2078331.2078340",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/2508020.2508023",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1145/2588555.2593675",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1109/icde.2015.7113311",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.14778/3275536.3275539",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.14778/3329772.3329774",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://lucene.apache.org/core/10_3_0/core/org/apache/lucene/util/automaton/LevenshteinAutomata.html",
+      "anchor": "Lucene documentation"
+    }
+  ]
+}

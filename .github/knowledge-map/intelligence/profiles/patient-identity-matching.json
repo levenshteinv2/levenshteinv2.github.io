@@ -1,0 +1,2837 @@
+{
+  "url": "/patient-identity-matching",
+  "title": "Patient Identity Matching: Algorithms, MPI, Safety & Record Linkage",
+  "h1": [
+    "Patient Identity Matching: Algorithms, MPI, Safety & Record Linkage"
+  ],
+  "group": "DataMatching",
+  "provisional_mission": "Định danh bệnh nhân",
+  "content_sha256": "fc6ca8b2fda0d2454bab6722f88878cfb9a8a7421691bcf928f617576c4dffa2",
+  "canonical": "https://www.levenshtein.net/patient-identity-matching",
+  "primary_entity_candidate": "Patient Identity Matching: Algorithms, MPI, Safety & Record Linkage",
+  "intent_hypothesis": "informational/technical",
+  "review_status": "machine_extracted_pending_ai_review",
+  "sections": [
+    {
+      "heading": "Patient Identity Matching",
+      "level": 2,
+      "id": "ux-section-1",
+      "paragraph_count": 11,
+      "word_count": 149,
+      "evidence": "Patient identity matching is the process of determining whether patient records created by different encounters, departments, facilities, health systems, or data sources refer to the same real-world person.",
+      "paragraphs": [
+        "Patient identity matching is the process of determining whether patient records created by different encounters, departments, facilities, health systems, or data sources refer to the same real-world person.",
+        "The problem appears superficially similar to ordinary entity resolution and record linkage , but healthcare changes the consequences of error.",
+        "A missed match can fragment one patient's clinical history across multiple records.",
+        "An incorrect match can associate another person's clinical information with the wrong patient.",
+        "The technical objective is therefore not:",
+        "find the most similar demographic record",
+        "but:",
+        "determine whether two observations represent the same patient with enough confidence for the intended healthcare workflow",
+        "This distinction is fundamental.",
+        "Levenshtein distance can help compare names, addresses, identifiers, and other textual fields, but edit distance is only one source of evidence inside a patient-identity system.",
+        "Patient identity is a real-world identity relation. Character similarity is only evidence about one representation of that identity."
+      ]
+    },
+    {
+      "heading": "What is patient matching?",
+      "level": 2,
+      "id": "ux-section-2",
+      "paragraph_count": 13,
+      "word_count": 80,
+      "evidence": "The Office of the National Coordinator for Health Information Technology defines patient matching in terms of identifying and linking a patient's data within and across health systems so that information belonging to the same patient can be brought together.",
+      "paragraphs": [
+        "The Office of the National Coordinator for Health Information Technology defines patient matching in terms of identifying and linking a patient's data within and across health systems so that information belonging to the same patient can be brought together.",
+        "Typical demographic matching fields include:",
+        "given name;",
+        "family name;",
+        "middle name or initial;",
+        "previous names;",
+        "date of birth;",
+        "address;",
+        "telephone number;",
+        "email address;",
+        "locally assigned identifiers;",
+        "other demographic or identity attributes where appropriate.",
+        "ONC Patient Identity and Patient Record Matching ."
+      ]
+    },
+    {
+      "heading": "Patient identity matching is not patient similarity",
+      "level": 2,
+      "id": "ux-section-3",
+      "paragraph_count": 9,
+      "word_count": 80,
+      "evidence": "The phrase patient similarity is also used in clinical informatics for questions such as:",
+      "paragraphs": [
+        "The phrase patient similarity is also used in clinical informatics for questions such as:",
+        "Which patients have similar diagnoses, phenotypes, laboratory values, treatments, or outcomes?",
+        "That is a different problem.",
+        "Patient identity matching asks:",
+        "Are these records about the same person?",
+        "Clinical patient similarity asks:",
+        "How medically similar are two different patients?",
+        "Two patients can have nearly identical disease profiles and still be different people.",
+        "Conversely, records for the same patient can contain very different clinical information at different times."
+      ]
+    },
+    {
+      "heading": "The identity graph",
+      "level": 2,
+      "id": "ux-section-4",
+      "paragraph_count": 6,
+      "word_count": 70,
+      "evidence": "A useful abstraction separates:",
+      "paragraphs": [
+        "A useful abstraction separates:",
+        "REAL PERSON │ ├── Hospital A patient record │ ├── Clinic B patient record │ ├── Laboratory C identifier │ ├── Pharmacy D record │ └── Health information exchange identity",
+        "The records are not themselves the patient.",
+        "They are information-system representations associated with the patient.",
+        "A patient matching system attempts to infer the relationships:",
+        "record A ─────┐ record B ─────┼──► same real person record C ─────┘"
+      ]
+    },
+    {
+      "heading": "Local identifiers are not automatically global identifiers",
+      "level": 2,
+      "id": "ux-section-5",
+      "paragraph_count": 8,
+      "word_count": 63,
+      "evidence": "A medical record number can uniquely identify a record within one assigning organization while having no meaning outside that identifier namespace.",
+      "paragraphs": [
+        "A medical record number can uniquely identify a record within one assigning organization while having no meaning outside that identifier namespace.",
+        "For example:",
+        "Hospital A MRN: 482901 Hospital B MRN: 482901",
+        "does not imply:",
+        "same patient",
+        "because the same numerical value may have been independently assigned by two institutions.",
+        "The identifier must be interpreted together with:",
+        "identifier value + assigning authority / namespace"
+      ]
+    },
+    {
+      "heading": "FHIR makes the same distinction",
+      "level": 2,
+      "id": "ux-section-6",
+      "paragraph_count": 3,
+      "word_count": 38,
+      "evidence": "In HL7 FHIR, Patient.identifier represents business identifiers associated with the patient.",
+      "paragraphs": [
+        "In HL7 FHIR, Patient.identifier represents business identifiers associated with the patient.",
+        "The identifier of the FHIR resource itself is a different concept from a patient identifier assigned by a hospital or another authority.",
+        "HL7 FHIR Patient resource ."
+      ]
+    },
+    {
+      "heading": "Master Patient Index",
+      "level": 2,
+      "id": "ux-section-7",
+      "paragraph_count": 4,
+      "word_count": 53,
+      "evidence": "A Master Patient Index, or MPI, provides identity-management services where multiple patient records or databases must be reconciled.",
+      "paragraphs": [
+        "A Master Patient Index, or MPI, provides identity-management services where multiple patient records or databases must be reconciled.",
+        "Conceptually:",
+        "LOCAL SYSTEM A A-10483 \\ \\ LOCAL SYSTEM B B-77810 ─────► MPI PERSON 391284 / / LOCAL SYSTEM C C-20017",
+        "The MPI maintains the knowledge that several source identifiers refer to one patient identity."
+      ]
+    },
+    {
+      "heading": "Enterprise Master Patient Index",
+      "level": 2,
+      "id": "ux-section-8",
+      "paragraph_count": 3,
+      "word_count": 41,
+      "evidence": "The term enterprise master patient index , or EMPI, is commonly used when the identity service spans multiple applications, facilities, hospitals, or organizational units.",
+      "paragraphs": [
+        "The term enterprise master patient index , or EMPI, is commonly used when the identity service spans multiple applications, facilities, hospitals, or organizational units.",
+        "Terminology varies between implementations, but the underlying problem remains:",
+        "many local identities ↓ one enterprise identity graph"
+      ]
+    },
+    {
+      "heading": "An MPI should not erase provenance",
+      "level": 2,
+      "id": "ux-section-9",
+      "paragraph_count": 8,
+      "word_count": 60,
+      "evidence": "A robust architecture distinguishes:",
+      "paragraphs": [
+        "A robust architecture distinguishes:",
+        "identity resolution from source-record provenance",
+        "If records:",
+        "A-10483 B-77810 C-20017",
+        "are determined to refer to the same patient, their source identifiers should normally remain traceable.",
+        "The result should conceptually be:",
+        "patient identity │ ├── source A identifier ├── source B identifier └── source C identifier",
+        "rather than destructively replacing the source history with one unexplained record."
+      ]
+    },
+    {
+      "heading": "Three major identity-integrity errors",
+      "level": 2,
+      "id": "ux-section-10",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "Healthcare identity management commonly distinguishes several failure patterns.",
+      "paragraphs": [
+        "Healthcare identity management commonly distinguishes several failure patterns."
+      ]
+    },
+    {
+      "heading": "Duplicate",
+      "level": 3,
+      "id": "ux-section-11",
+      "paragraph_count": 3,
+      "word_count": 31,
+      "evidence": "A duplicate occurs when multiple records are created for the same patient.",
+      "paragraphs": [
+        "A duplicate occurs when multiple records are created for the same patient.",
+        "REAL PATIENT P ├── MRN 1004 └── MRN 7812",
+        "This corresponds closely to an undermerge or false-negative identity-resolution error."
+      ]
+    },
+    {
+      "heading": "Overlay",
+      "level": 3,
+      "id": "ux-section-12",
+      "paragraph_count": 3,
+      "word_count": 43,
+      "evidence": "An overlay occurs when information belonging to different individuals becomes associated with one patient record or identifier.",
+      "paragraphs": [
+        "An overlay occurs when information belonging to different individuals becomes associated with one patient record or identifier.",
+        "PATIENT A ─┐ ├── MRN 1004 PATIENT B ─┘",
+        "This is an especially dangerous form of overmerge because the resulting record can contain commingled clinical information."
+      ]
+    },
+    {
+      "heading": "Overlap",
+      "level": 3,
+      "id": "ux-section-13",
+      "paragraph_count": 3,
+      "word_count": 54,
+      "evidence": "In enterprise identity management, an overlap can describe the same person carrying different identifiers across separate facilities before those identities are connected at the enterprise level.",
+      "paragraphs": [
+        "In enterprise identity management, an overlap can describe the same person carrying different identifiers across separate facilities before those identities are connected at the enterprise level.",
+        "The current SAFER Patient Identification guidance explicitly discusses duplicate, overlay, and overlap conditions as identity-integrity errors that organizations should monitor and remediate.",
+        "ONC SAFER Guide: Patient Identification ."
+      ]
+    },
+    {
+      "heading": "False positive versus false negative matching",
+      "level": 2,
+      "id": "ux-section-14",
+      "paragraph_count": 5,
+      "word_count": 55,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "M = two records truly belong to the same patient",
+        "and let the matching system decide:",
+        "LINK or DO NOT LINK",
+        "Reality Decision Outcome Same patient Link True positive Different patients Do not link True negative Different patients Link False positive / overmerge risk Same patient Do not link False negative / duplicate-fragmentation risk"
+      ]
+    },
+    {
+      "heading": "The two errors are not operationally symmetric",
+      "level": 2,
+      "id": "ux-section-15",
+      "paragraph_count": 10,
+      "word_count": 79,
+      "evidence": "In many clinical workflows an erroneous automatic merge can be particularly hazardous because unrelated clinical information can be presented as if it belongs to one patient.",
+      "paragraphs": [
+        "In many clinical workflows an erroneous automatic merge can be particularly hazardous because unrelated clinical information can be presented as if it belongs to one patient.",
+        "But a missed match also matters because a clinician may not see relevant information that exists in another record.",
+        "Therefore there is no universally correct threshold.",
+        "The appropriate decision policy depends on:",
+        "workflow;",
+        "clinical consequences;",
+        "availability of human review;",
+        "ability to reverse a merge;",
+        "quality of the source data;",
+        "purpose of the linkage."
+      ]
+    },
+    {
+      "heading": "A safer decision architecture",
+      "level": 2,
+      "id": "ux-section-16",
+      "paragraph_count": 3,
+      "word_count": 44,
+      "evidence": "Instead of forcing a binary decision for every candidate, use multiple decision regions:",
+      "paragraphs": [
+        "Instead of forcing a binary decision for every candidate, use multiple decision regions:",
+        "very strong evidence ↓ AUTOMATIC MATCH intermediate evidence ↓ POSSIBLE MATCH MANUAL REVIEW or DEFER strong contradictory evidence ↓ NON-MATCH",
+        "This resembles the classical three-way decision framework in probabilistic record linkage."
+      ]
+    },
+    {
+      "heading": "Patient matching is a pipeline, not a comparator",
+      "level": 2,
+      "id": "ux-section-17",
+      "paragraph_count": 1,
+      "word_count": 82,
+      "evidence": "PATIENT DEMOGRAPHICS │ ▼ ┌─────────────────────────┐ │ data-quality validation │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ representation and │ │ standardization │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ candidate generation │ │ / MPI search │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ field comparators │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ evidence combination │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ match / review / reject │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ identity graph / MPI │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ monitoring and │ │ remediation │ └─────────────────────────┘",
+      "paragraphs": [
+        "PATIENT DEMOGRAPHICS │ ▼ ┌─────────────────────────┐ │ data-quality validation │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ representation and │ │ standardization │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ candidate generation │ │ / MPI search │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ field comparators │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ evidence combination │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ match / review / reject │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ identity graph / MPI │ └────────────┬────────────┘ │ ▼ ┌─────────────────────────┐ │ monitoring and │ │ remediation │ └─────────────────────────┘"
+      ]
+    },
+    {
+      "heading": "Stage 1: demographic data quality",
+      "level": 2,
+      "id": "ux-section-18",
+      "paragraph_count": 14,
+      "word_count": 70,
+      "evidence": "Matching quality is bounded by the quality of the data presented to the algorithm.",
+      "paragraphs": [
+        "Matching quality is bounded by the quality of the data presented to the algorithm.",
+        "A mathematically sophisticated matcher cannot recover information that was never captured.",
+        "Typical problems include:",
+        "misspelled names;",
+        "truncated names;",
+        "names entered into the wrong component field;",
+        "nicknames instead of another recorded name form;",
+        "missing middle names;",
+        "transposed date components;",
+        "old addresses;",
+        "shared telephone numbers;",
+        "typographical errors in email addresses;",
+        "inconsistent punctuation and whitespace;",
+        "different scripts or transliterations."
+      ]
+    },
+    {
+      "heading": "Real duplicate records exhibit substantial demographic disagreement",
+      "level": 2,
+      "id": "ux-section-19",
+      "paragraph_count": 5,
+      "word_count": 67,
+      "evidence": "A multisite study of hundreds of thousands of confirmed duplicate patient-record pairs found substantial discrepancies across key identifying fields, including frequent name errors and mismatches in other demographic data.",
+      "paragraphs": [
+        "A multisite study of hundreds of thousands of confirmed duplicate patient-record pairs found substantial discrepancies across key identifying fields, including frequent name errors and mismatches in other demographic data.",
+        "The important lesson is not one particular percentage.",
+        "It is that:",
+        "Records known to belong to the same patient often do not contain identical demographic attributes.",
+        "Why Patient Matching Is a Challenge: Research on MPI Data Discrepancies ."
+      ]
+    },
+    {
+      "heading": "Names must support history",
+      "level": 2,
+      "id": "ux-section-20",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "A patient may legitimately be represented by:",
+      "paragraphs": [
+        "A patient may legitimately be represented by:",
+        "current family name previous family name preferred name legal name middle name initial transliterated form",
+        "A single canonical string:",
+        "FIRST + LAST",
+        "can discard useful identity history.",
+        "See Name, Address and Place Matching ."
+      ]
+    },
+    {
+      "heading": "Do not use one universal name-cleaning rule",
+      "level": 2,
+      "id": "ux-section-21",
+      "paragraph_count": 7,
+      "word_count": 36,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "Mary Ann Maryann",
+        "or:",
+        "De La Cruz Delacruz",
+        "or names containing:",
+        "hyphens particles multiple family names non-Latin scripts",
+        "Removing punctuation, whitespace, or particles can increase recall in some cases while destroying identity evidence in others."
+      ]
+    },
+    {
+      "heading": "Unicode belongs in the identity pipeline",
+      "level": 2,
+      "id": "ux-section-22",
+      "paragraph_count": 5,
+      "word_count": 29,
+      "evidence": "A patient name can have canonically equivalent Unicode representations.",
+      "paragraphs": [
+        "A patient name can have canonically equivalent Unicode representations.",
+        "Therefore:",
+        "raw bytes or un-normalized code points",
+        "should not automatically define the matching sequence.",
+        "See Unicode and Grapheme-Safe Levenshtein ."
+      ]
+    },
+    {
+      "heading": "Transliteration should be auxiliary evidence",
+      "level": 2,
+      "id": "ux-section-23",
+      "paragraph_count": 10,
+      "word_count": 44,
+      "evidence": "Cross-script names may require transliteration before character-level comparison.",
+      "paragraphs": [
+        "Cross-script names may require transliteration before character-level comparison.",
+        "But transliteration can be:",
+        "nonunique;",
+        "language dependent;",
+        "many-to-one;",
+        "inconsistent across systems.",
+        "A strong architecture keeps:",
+        "original script + normalized original + optional transliteration",
+        "rather than replacing the original name permanently.",
+        "See Text Normalization and Transliteration ."
+      ]
+    },
+    {
+      "heading": "Date of birth",
+      "level": 2,
+      "id": "ux-section-24",
+      "paragraph_count": 6,
+      "word_count": 59,
+      "evidence": "Date of birth is often highly discriminative, but it should not be treated as infallible.",
+      "paragraphs": [
+        "Date of birth is often highly discriminative, but it should not be treated as infallible.",
+        "Possible discrepancies include:",
+        "month/day transposition single-digit typo default date estimated date missing day or month format conversion error",
+        "A comparison model can distinguish:",
+        "exact date same year/month same year/day one-component disagreement complete disagreement missing",
+        "rather than reducing every nonexact comparison to one generic failure."
+      ]
+    },
+    {
+      "heading": "Addresses are useful and unstable",
+      "level": 2,
+      "id": "ux-section-25",
+      "paragraph_count": 7,
+      "word_count": 38,
+      "evidence": "Addresses are often highly discriminative because they contain several structured components.",
+      "paragraphs": [
+        "Addresses are often highly discriminative because they contain several structured components.",
+        "But patients move.",
+        "Therefore:",
+        "different current address ⇏ different patient",
+        "and:",
+        "same address ⇏ same patient",
+        "because family members and other household members can share an address."
+      ]
+    },
+    {
+      "heading": "Address history is valuable identity evidence",
+      "level": 2,
+      "id": "ux-section-26",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "SYSTEM A Jane Wilson 18 Grove Street SYSTEM B Jane Wilson 92 River Road",
+        "If historical data show:",
+        "Jane Wilson previously lived at 18 Grove Street",
+        "the apparent address disagreement becomes positive longitudinal evidence."
+      ]
+    },
+    {
+      "heading": "Project US@",
+      "level": 2,
+      "id": "ux-section-27",
+      "paragraph_count": 3,
+      "word_count": 34,
+      "evidence": "Project US@ defines a healthcare-oriented specification for consistent representation of U.S. patient addresses.",
+      "paragraphs": [
+        "Project US@ defines a healthcare-oriented specification for consistent representation of U.S. patient addresses.",
+        "Its purpose explicitly includes improving address quality for patient matching, while building on USPS addressing conventions.",
+        "Project US@ Technical Specification ."
+      ]
+    },
+    {
+      "heading": "Standardization should precede fuzzy address comparison",
+      "level": 2,
+      "id": "ux-section-28",
+      "paragraph_count": 4,
+      "word_count": 41,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "125 North Jefferson Street Apartment 4 125 N Jefferson St Apt 4",
+        "Much of the apparent difference can be removed by structured address standardization.",
+        "The matching system should not spend its fuzzy-error budget on differences that are known formatting conventions."
+      ]
+    },
+    {
+      "heading": "Telephone numbers",
+      "level": 2,
+      "id": "ux-section-29",
+      "paragraph_count": 9,
+      "word_count": 44,
+      "evidence": "Telephone numbers may be strong identifiers when normalized correctly.",
+      "paragraphs": [
+        "Telephone numbers may be strong identifiers when normalized correctly.",
+        "But they can also be:",
+        "reassigned;",
+        "shared by household members;",
+        "entered with or without country codes;",
+        "formatted inconsistently;",
+        "obsolete.",
+        "Useful comparisons may distinguish:",
+        "exact normalized number same national significant number same suffix different number missing"
+      ]
+    },
+    {
+      "heading": "Email addresses",
+      "level": 2,
+      "id": "ux-section-30",
+      "paragraph_count": 8,
+      "word_count": 42,
+      "evidence": "Exact email agreement can be highly discriminative in many populations.",
+      "paragraphs": [
+        "Exact email agreement can be highly discriminative in many populations.",
+        "However:",
+        "accounts can be shared;",
+        "people can have several addresses;",
+        "addresses change;",
+        "typographical errors occur;",
+        "some systems contain placeholder addresses.",
+        "The local part and domain can also be compared separately when appropriate."
+      ]
+    },
+    {
+      "heading": "Local patient identifiers",
+      "level": 2,
+      "id": "ux-section-31",
+      "paragraph_count": 7,
+      "word_count": 47,
+      "evidence": "An exact identifier match under the correct assigning authority is usually much stronger evidence than approximate demographic similarity.",
+      "paragraphs": [
+        "An exact identifier match under the correct assigning authority is usually much stronger evidence than approximate demographic similarity.",
+        "But identifiers can still be:",
+        "entered into the wrong namespace;",
+        "reused incorrectly during migration;",
+        "missing;",
+        "mapped incorrectly between systems.",
+        "Identity systems should therefore preserve identifier provenance and assignment authority."
+      ]
+    },
+    {
+      "heading": "Stage 2: candidate generation",
+      "level": 2,
+      "id": "ux-section-32",
+      "paragraph_count": 5,
+      "word_count": 40,
+      "evidence": "Suppose an enterprise MPI contains:",
+      "paragraphs": [
+        "Suppose an enterprise MPI contains:",
+        "N = 50,000,000 patient identities",
+        "A registration event should not normally run every expensive comparator against all 50 million identities.",
+        "Instead:",
+        "new patient observation ↓ candidate generation ↓ small plausible identity set ↓ detailed comparison"
+      ]
+    },
+    {
+      "heading": "Candidate generation is safety critical",
+      "level": 2,
+      "id": "ux-section-33",
+      "paragraph_count": 6,
+      "word_count": 51,
+      "evidence": "If the correct patient is not placed into the candidate set:",
+      "paragraphs": [
+        "If the correct patient is not placed into the candidate set:",
+        "true patient ∉ candidate set",
+        "no downstream probabilistic model can recover the match.",
+        "Therefore:",
+        "end-to-end recall ≤ candidate recall",
+        "This is the same structural principle that appears in scalable approximate string retrieval. See Indexing and Filtering for Edit Distance ."
+      ]
+    },
+    {
+      "heading": "Candidate-generation examples",
+      "level": 2,
+      "id": "ux-section-34",
+      "paragraph_count": 2,
+      "word_count": 40,
+      "evidence": "Candidate identities might be retrieved through several independent routes:",
+      "paragraphs": [
+        "Candidate identities might be retrieved through several independent routes:",
+        "exact local identifier OR same date of birth + surname prefix OR same normalized phone OR same email OR same postcode + similar name OR historical address + date of birth"
+      ]
+    },
+    {
+      "heading": "Use multiple candidate routes",
+      "level": 2,
+      "id": "ux-section-35",
+      "paragraph_count": 4,
+      "word_count": 33,
+      "evidence": "A patient can have an error in any one field.",
+      "paragraphs": [
+        "A patient can have an error in any one field.",
+        "A union of candidate strategies:",
+        "C = C_identifier ∪ C_name_dob ∪ C_phone ∪ C_address ∪ C_email",
+        "reduces dependence on one supposedly stable attribute."
+      ]
+    },
+    {
+      "heading": "Stage 3: field-level comparators",
+      "level": 2,
+      "id": "ux-section-36",
+      "paragraph_count": 2,
+      "word_count": 56,
+      "evidence": "Once candidates have been retrieved, compare attributes using models appropriate to their semantics.",
+      "paragraphs": [
+        "Once candidates have been retrieved, compare attributes using models appropriate to their semantics.",
+        "Field Possible comparator Patient identifier Exact value + assigning authority Name Exact, edit distance, Jaro-Winkler, phonetic, alias logic Date of birth Exact and component-aware disagreement Address Structured address components + history Phone Normalized exact / partial comparison Email Exact or structured textual comparison"
+      ]
+    },
+    {
+      "heading": "Levenshtein distance for patient names",
+      "level": 2,
+      "id": "ux-section-37",
+      "paragraph_count": 15,
+      "word_count": 47,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "Jonathan Rivera Jonathon Rivera",
+        "The names differ by a small edit.",
+        "Levenshtein distance therefore provides useful evidence.",
+        "But:",
+        "d_L(name₁,name₂) = 1",
+        "does not imply:",
+        "P( same patient | names ) = high",
+        "without considering:",
+        "name frequency;",
+        "date of birth;",
+        "address;",
+        "telephone;",
+        "other identifiers;",
+        "the candidate population."
+      ]
+    },
+    {
+      "heading": "Short names require special caution",
+      "level": 2,
+      "id": "ux-section-38",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "For:",
+      "paragraphs": [
+        "For:",
+        "Li Lu",
+        "one edit constitutes a large proportion of the entire string.",
+        "For:",
+        "Alexanderson Alexandersson",
+        "one edit is much smaller relative to the name length.",
+        "Raw edit thresholds should therefore not be applied blindly across every string length."
+      ]
+    },
+    {
+      "heading": "Transpositions",
+      "level": 2,
+      "id": "ux-section-39",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "A data-entry error such as:",
+      "paragraphs": [
+        "A data-entry error such as:",
+        "Brian Biran",
+        "is naturally interpreted as an adjacent character transposition.",
+        "Classic Levenshtein distance does not include transposition as a primitive operation.",
+        "See Damerau-Levenshtein Distance ."
+      ]
+    },
+    {
+      "heading": "Weighted edit costs",
+      "level": 2,
+      "id": "ux-section-40",
+      "paragraph_count": 5,
+      "word_count": 38,
+      "evidence": "Some errors occur more frequently than others:",
+      "paragraphs": [
+        "Some errors occur more frequently than others:",
+        "keyboard-neighbor substitution OCR confusion missing punctuation common transliteration difference",
+        "A weighted model can encode those differences.",
+        "See Weighted Levenshtein Distance .",
+        "But arbitrary weights do not automatically produce calibrated patient-match probabilities."
+      ]
+    },
+    {
+      "heading": "Jaro-Winkler and phonetic methods",
+      "level": 2,
+      "id": "ux-section-41",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "Healthcare matching systems frequently use more than one name comparator.",
+      "paragraphs": [
+        "Healthcare matching systems frequently use more than one name comparator.",
+        "Jaro-Winkler can be useful for short noisy names, while phonetic comparators can capture some pronunciation-related variants.",
+        "Their strengths and limitations are developed in Levenshtein vs Jaro-Winkler and Phonetic Matching ."
+      ]
+    },
+    {
+      "heading": "Never let a string comparator decide patient identity by itself",
+      "level": 2,
+      "id": "ux-section-42",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "These names can be identical:",
+      "paragraphs": [
+        "These names can be identical:",
+        "Michael Johnson Michael Johnson",
+        "and still describe different patients.",
+        "This is the central boundary:",
+        "string equality ≠ person identity",
+        "See String Similarity vs Semantic Similarity ."
+      ]
+    },
+    {
+      "heading": "Comparison vector",
+      "level": 2,
+      "id": "ux-section-43",
+      "paragraph_count": 7,
+      "word_count": 51,
+      "evidence": "For candidate records:",
+      "paragraphs": [
+        "For candidate records:",
+        "a and b",
+        "construct:",
+        "γ(a,b) = [ name_similarity, dob_comparison, address_comparison, phone_comparison, email_comparison, identifier_comparison ]",
+        "Example:",
+        "name: very similar date of birth: exact address: historical agreement phone: missing email: exact MRN: different namespaces",
+        "The identity decision should be made from the combined evidence, not from the name score alone."
+      ]
+    },
+    {
+      "heading": "Deterministic matching",
+      "level": 2,
+      "id": "ux-section-44",
+      "paragraph_count": 13,
+      "word_count": 59,
+      "evidence": "A deterministic system uses explicit rules.",
+      "paragraphs": [
+        "A deterministic system uses explicit rules.",
+        "For example:",
+        "MATCH if: exact date of birth AND exact normalized phone AND ( exact surname OR surname edit distance ≤ 1 )",
+        "Advantages include:",
+        "interpretability;",
+        "predictability;",
+        "easy auditing;",
+        "simple operational deployment.",
+        "Weaknesses include:",
+        "threshold cliffs;",
+        "difficulty modeling missing data;",
+        "poor adaptation to complex error patterns;",
+        "large rule sets becoming difficult to maintain."
+      ]
+    },
+    {
+      "heading": "Exact matching is a special deterministic case",
+      "level": 2,
+      "id": "ux-section-45",
+      "paragraph_count": 9,
+      "word_count": 37,
+      "evidence": "A rule:",
+      "paragraphs": [
+        "A rule:",
+        "first name exact AND last name exact AND DOB exact",
+        "can have excellent precision on some data.",
+        "But it will miss patients whose records contain:",
+        "name changes;",
+        "spelling errors;",
+        "abbreviated names;",
+        "transposed dates;",
+        "incomplete fields."
+      ]
+    },
+    {
+      "heading": "Probabilistic patient matching",
+      "level": 2,
+      "id": "ux-section-46",
+      "paragraph_count": 10,
+      "word_count": 55,
+      "evidence": "A probabilistic system treats field agreements and disagreements as evidence about two hypotheses:",
+      "paragraphs": [
+        "A probabilistic system treats field agreements and disagreements as evidence about two hypotheses:",
+        "M = same patient U = different patients",
+        "For comparison pattern:",
+        "γ",
+        "define:",
+        "m(γ) = P(γ | M) u(γ) = P(γ | U)",
+        "and the likelihood ratio:",
+        "Λ(γ) = m(γ) / u(γ)",
+        "or log weight:",
+        "w(γ) = log( m(γ) / u(γ) )"
+      ]
+    },
+    {
+      "heading": "Rare agreement can carry more evidence",
+      "level": 2,
+      "id": "ux-section-47",
+      "paragraph_count": 4,
+      "word_count": 22,
+      "evidence": "Exact agreement on:",
+      "paragraphs": [
+        "Exact agreement on:",
+        "Smith",
+        "is not necessarily as discriminative as exact agreement on a rare surname.",
+        "Probabilistic matching can model this distinction."
+      ]
+    },
+    {
+      "heading": "Missing data need their own state",
+      "level": 2,
+      "id": "ux-section-48",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "phone A: 3175550191 phone B: missing",
+        "This is not the same observation as:",
+        "phone A: 3175550191 phone B: 2125557700",
+        "The first represents missing evidence.",
+        "The second represents explicit disagreement."
+      ]
+    },
+    {
+      "heading": "Conditional dependence remains a limitation",
+      "level": 2,
+      "id": "ux-section-49",
+      "paragraph_count": 5,
+      "word_count": 26,
+      "evidence": "Attributes are not always independent.",
+      "paragraphs": [
+        "Attributes are not always independent.",
+        "For example:",
+        "street address and postcode",
+        "are related.",
+        "Multiplying evidence as though every field were conditionally independent can double-count correlated information."
+      ]
+    },
+    {
+      "heading": "Supervised patient matching",
+      "level": 2,
+      "id": "ux-section-50",
+      "paragraph_count": 11,
+      "word_count": 46,
+      "evidence": "With labeled record pairs, matching becomes a classification problem.",
+      "paragraphs": [
+        "With labeled record pairs, matching becomes a classification problem.",
+        "Feature vector:",
+        "x(a,b) = [ exact_identifier, name_edit_distance, jaro_winkler, dob_exact, address_similarity, phone_exact, email_exact, missingness_flags, history_features ]",
+        "A model can estimate:",
+        "score = f(x(a,b))",
+        "using methods such as:",
+        "logistic regression;",
+        "gradient-boosted trees;",
+        "random forests;",
+        "neural architectures;",
+        "other supervised classifiers."
+      ]
+    },
+    {
+      "heading": "Training distribution matters",
+      "level": 2,
+      "id": "ux-section-51",
+      "paragraph_count": 8,
+      "word_count": 55,
+      "evidence": "Random nonmatching record pairs are usually very easy negatives.",
+      "paragraphs": [
+        "Random nonmatching record pairs are usually very easy negatives.",
+        "For example:",
+        "different name different DOB different city different phone",
+        "But production candidates have usually passed blocking and are deliberately similar.",
+        "Training on random negatives can therefore produce an unrealistically easy classification problem.",
+        "Training and evaluation should represent:",
+        "the actual candidate population",
+        "encountered by the MPI."
+      ]
+    },
+    {
+      "heading": "Referential matching",
+      "level": 2,
+      "id": "ux-section-52",
+      "paragraph_count": 8,
+      "word_count": 41,
+      "evidence": "Referential patient matching supplements source patient records with additional identity information drawn from reference data.",
+      "paragraphs": [
+        "Referential patient matching supplements source patient records with additional identity information drawn from reference data.",
+        "Conceptually:",
+        "SOURCE RECORD A \\ \\ ► REFERENTIAL IDENTITY / / SOURCE RECORD B",
+        "Reference information may provide historical:",
+        "names;",
+        "addresses;",
+        "telephone numbers;",
+        "other identity associations."
+      ]
+    },
+    {
+      "heading": "Why historical identity information can improve recall",
+      "level": 2,
+      "id": "ux-section-53",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "Suppose:",
+      "paragraphs": [
+        "Suppose:",
+        "RECORD A Sarah Adams 14 West Street RECORD B Sarah Mitchell 88 North Road",
+        "Pairwise comparison appears weak.",
+        "Reference history might reveal:",
+        "Sarah Mitchell previous surname: Adams previous address: 14 West Street",
+        "The identity evidence changes substantially."
+      ]
+    },
+    {
+      "heading": "Referential matching is not automatically superior",
+      "level": 2,
+      "id": "ux-section-54",
+      "paragraph_count": 8,
+      "word_count": 24,
+      "evidence": "Its performance depends on:",
+      "paragraphs": [
+        "Its performance depends on:",
+        "reference-data quality;",
+        "coverage;",
+        "freshness;",
+        "population characteristics;",
+        "privacy and governance;",
+        "matching logic.",
+        "It must be evaluated empirically on the intended population."
+      ]
+    },
+    {
+      "heading": "Real-world comparison of probabilistic and referential matching",
+      "level": 2,
+      "id": "ux-section-55",
+      "paragraph_count": 6,
+      "word_count": 75,
+      "evidence": "A 2022 JAMIA study evaluated probabilistic and referential approaches against a manually reviewed 30,000-record reference set derived from a health information exchange with tens of millions of registrations.",
+      "paragraphs": [
+        "A 2022 JAMIA study evaluated probabilistic and referential approaches against a manually reviewed 30,000-record reference set derived from a health information exchange with tens of millions of registrations.",
+        "In that particular study and configuration, referential matching achieved substantially higher sensitivity while retaining very high positive predictive value.",
+        "The result should not be generalized into:",
+        "referential matching always beats probabilistic matching",
+        "because algorithm tuning, population, available fields, and reference-data coverage matter.",
+        "Grannis et al., 2022 ."
+      ]
+    },
+    {
+      "heading": "Digital identity and patient matching are distinct",
+      "level": 2,
+      "id": "ux-section-56",
+      "paragraph_count": 3,
+      "word_count": 45,
+      "evidence": "A modern healthcare identity architecture can also use verified digital identifiers or identity-assurance processes.",
+      "paragraphs": [
+        "A modern healthcare identity architecture can also use verified digital identifiers or identity-assurance processes.",
+        "This is conceptually different from inferring identity entirely from demographics.",
+        "DEMOGRAPHIC MATCHING name DOB address phone ↓ infer identity VERIFIED DIGITAL IDENTITY verified identity + trusted identifier ↓ direct identity evidence"
+      ]
+    },
+    {
+      "heading": "Higher-assurance identifiers can reduce ambiguity",
+      "level": 2,
+      "id": "ux-section-57",
+      "paragraph_count": 2,
+      "word_count": 46,
+      "evidence": "The current HL7 Interoperable Digital Identity and Patient Matching implementation guide explicitly distinguishes digital identity from patient matching and favors reliable identifiers when those are available, while providing guidance for demographic matching when they are not.",
+      "paragraphs": [
+        "The current HL7 Interoperable Digital Identity and Patient Matching implementation guide explicitly distinguishes digital identity from patient matching and favors reliable identifiers when those are available, while providing guidance for demographic matching when they are not.",
+        "HL7 Interoperable Digital Identity and Patient Matching Implementation Guide ."
+      ]
+    },
+    {
+      "heading": "FHIR Patient $match",
+      "level": 2,
+      "id": "ux-section-58",
+      "paragraph_count": 6,
+      "word_count": 52,
+      "evidence": "FHIR provides a standardized operation for asking an MPI or equivalent identity service to find likely patient matches.",
+      "paragraphs": [
+        "FHIR provides a standardized operation for asking an MPI or equivalent identity service to find likely patient matches.",
+        "Conceptually:",
+        "POST [base]/Patient/$match input: patient demographics ↓ MPI algorithm ↓ candidate Patient records",
+        "The matching algorithm itself is intentionally implementation-specific.",
+        "FHIR standardizes the interaction, not one universal patient-matching algorithm.",
+        "FHIR Patient $match operation ."
+      ]
+    },
+    {
+      "heading": "FHIR match results can be ranked",
+      "level": 2,
+      "id": "ux-section-59",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "The operation can return candidate Patient resources ordered by likely match quality.",
+      "paragraphs": [
+        "The operation can return candidate Patient resources ordered by likely match quality.",
+        "FHIR also supports:",
+        "search score + match-grade",
+        "to communicate the MPI's assessment of the result."
+      ]
+    },
+    {
+      "heading": "A score is not automatically a calibrated probability",
+      "level": 2,
+      "id": "ux-section-60",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "A value such as:",
+      "paragraphs": [
+        "A value such as:",
+        "0.95",
+        "must not automatically be interpreted as:",
+        "95% probability that this is the same patient",
+        "unless the matching implementation explicitly defines and validates that interpretation.",
+        "Scores can represent ranking confidence without satisfying probability calibration."
+      ]
+    },
+    {
+      "heading": "onlyCertainMatches and ambiguity",
+      "level": 2,
+      "id": "ux-section-61",
+      "paragraph_count": 5,
+      "word_count": 30,
+      "evidence": "FHIR's $match operation also recognizes that a request can yield several plausible identities.",
+      "paragraphs": [
+        "FHIR's $match operation also recognizes that a request can yield several plausible identities.",
+        "This is important because:",
+        "multiple plausible candidates",
+        "should not automatically become:",
+        "choose the top one and merge"
+      ]
+    },
+    {
+      "heading": "Ambiguity is a legitimate output state",
+      "level": 2,
+      "id": "ux-section-62",
+      "paragraph_count": 6,
+      "word_count": 44,
+      "evidence": "Suppose an MPI finds:",
+      "paragraphs": [
+        "Suppose an MPI finds:",
+        "Candidate A: 0.91 Candidate B: 0.90 Candidate C: 0.20",
+        "The tiny separation between A and B can be more important than A's absolute score.",
+        "A system may need:",
+        "candidate margin + absolute confidence + contradiction checks",
+        "before accepting one identity."
+      ]
+    },
+    {
+      "heading": "One-to-one constraints",
+      "level": 2,
+      "id": "ux-section-63",
+      "paragraph_count": 6,
+      "word_count": 44,
+      "evidence": "Some matching operations have structural constraints.",
+      "paragraphs": [
+        "Some matching operations have structural constraints.",
+        "Suppose records from system A and system B should represent one patient at most once in each system.",
+        "Then:",
+        "A1 → B1 A2 → B1",
+        "may indicate a conflict.",
+        "Independent pair scores do not enforce one-to-one identity structure."
+      ]
+    },
+    {
+      "heading": "Global identity consistency",
+      "level": 2,
+      "id": "ux-section-64",
+      "paragraph_count": 6,
+      "word_count": 35,
+      "evidence": "Consider:",
+      "paragraphs": [
+        "Consider:",
+        "A matches B strongly B matches C strongly A contradicts C strongly",
+        "Simple transitive closure would merge:",
+        "A B C",
+        "despite the contradiction.",
+        "Patient identity systems need safeguards against this type of bridge error."
+      ]
+    },
+    {
+      "heading": "Do not blindly apply transitivity to noisy pairwise matches",
+      "level": 2,
+      "id": "ux-section-65",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "True identity is transitive:",
+      "paragraphs": [
+        "True identity is transitive:",
+        "A = B and B = C ⇒ A = C",
+        "But a classifier's statement:",
+        "score(A,B) > threshold",
+        "does not have the certainty of mathematical identity.",
+        "One false-positive edge can contaminate an entire cluster."
+      ]
+    },
+    {
+      "heading": "Merge versus link",
+      "level": 2,
+      "id": "ux-section-66",
+      "paragraph_count": 6,
+      "word_count": 41,
+      "evidence": "A patient identity platform should distinguish:",
+      "paragraphs": [
+        "A patient identity platform should distinguish:",
+        "we believe these records refer to the same patient",
+        "from:",
+        "we will irreversibly physically merge the records",
+        "A link can often preserve source records and provenance.",
+        "A destructive merge may be much harder to reverse."
+      ]
+    },
+    {
+      "heading": "Use stricter thresholds for irreversible operations",
+      "level": 2,
+      "id": "ux-section-67",
+      "paragraph_count": 3,
+      "word_count": 34,
+      "evidence": "A system can reasonably use:",
+      "paragraphs": [
+        "A system can reasonably use:",
+        "lower threshold for candidate retrieval higher threshold for probable match very high threshold for automatic merge",
+        "because the cost of false positives rises as the operation becomes more consequential."
+      ]
+    },
+    {
+      "heading": "Clinical record content should not casually become the identity key",
+      "level": 2,
+      "id": "ux-section-68",
+      "paragraph_count": 9,
+      "word_count": 60,
+      "evidence": "It can be tempting to use:",
+      "paragraphs": [
+        "It can be tempting to use:",
+        "diagnoses;",
+        "medications;",
+        "procedures;",
+        "laboratory values;",
+        "as identity evidence.",
+        "This requires extreme caution.",
+        "Clinical similarity is not identity, and using sensitive clinical information can introduce circular reasoning, privacy concerns, and bias.",
+        "Patient identity should primarily be grounded in appropriate identity and demographic attributes, unless a carefully governed system has a justified reason to do otherwise."
+      ]
+    },
+    {
+      "heading": "Family members are a difficult case",
+      "level": 2,
+      "id": "ux-section-69",
+      "paragraph_count": 7,
+      "word_count": 26,
+      "evidence": "Family members may share:",
+      "paragraphs": [
+        "Family members may share:",
+        "family name;",
+        "address;",
+        "telephone number;",
+        "insurance information;",
+        "emergency contacts.",
+        "A matcher that gives excessive weight to shared household information can overmerge relatives."
+      ]
+    },
+    {
+      "heading": "Twins and multiple births",
+      "level": 2,
+      "id": "ux-section-70",
+      "paragraph_count": 4,
+      "word_count": 35,
+      "evidence": "Twins may share:",
+      "paragraphs": [
+        "Twins may share:",
+        "family name date of birth address telephone parent information",
+        "while differing only in a small number of fields.",
+        "This creates exactly the situation where a superficially strong demographic match can be dangerous."
+      ]
+    },
+    {
+      "heading": "Newborn records",
+      "level": 2,
+      "id": "ux-section-71",
+      "paragraph_count": 3,
+      "word_count": 51,
+      "evidence": "Newborn identity management can be difficult because a permanent name may not yet be available and temporary naming conventions can create very similar records.",
+      "paragraphs": [
+        "Newborn identity management can be difficult because a permanent name may not yet be available and temporary naming conventions can create very similar records.",
+        "The safe lesson is:",
+        "When a population naturally contains many near-identical demographic records, matching thresholds and workflow safeguards must reflect that population rather than assuming generic uniqueness."
+      ]
+    },
+    {
+      "heading": "Name changes",
+      "level": 2,
+      "id": "ux-section-72",
+      "paragraph_count": 4,
+      "word_count": 32,
+      "evidence": "A longitudinal healthcare system may observe:",
+      "paragraphs": [
+        "A longitudinal healthcare system may observe:",
+        "current surname ≠ historical surname",
+        "while all records belong to the same patient.",
+        "Retaining previous names can therefore improve matching without forcing overly permissive fuzzy thresholds."
+      ]
+    },
+    {
+      "heading": "Default and low-information demographics",
+      "level": 2,
+      "id": "ux-section-73",
+      "paragraph_count": 4,
+      "word_count": 28,
+      "evidence": "Some records may contain placeholders or highly nondiscriminative values.",
+      "paragraphs": [
+        "Some records may contain placeholders or highly nondiscriminative values.",
+        "If many records share:",
+        "same default date same placeholder phone same generic address",
+        "those fields can create misleading agreement."
+      ]
+    },
+    {
+      "heading": "Discriminative power matters",
+      "level": 2,
+      "id": "ux-section-74",
+      "paragraph_count": 5,
+      "word_count": 31,
+      "evidence": "For a field value:",
+      "paragraphs": [
+        "For a field value:",
+        "v",
+        "the evidence from exact agreement depends partly on:",
+        "P( random non-match also has v )",
+        "A rare value is generally more discriminative than a common one."
+      ]
+    },
+    {
+      "heading": "Data completeness is not enough",
+      "level": 2,
+      "id": "ux-section-75",
+      "paragraph_count": 10,
+      "word_count": 31,
+      "evidence": "A field can be:",
+      "paragraphs": [
+        "A field can be:",
+        "99.9% populated",
+        "but still have low linkage value if most records contain:",
+        "the same few values",
+        "Data-linkage fitness depends on:",
+        "completeness;",
+        "validity;",
+        "discriminative power;",
+        "stability;",
+        "error patterns."
+      ]
+    },
+    {
+      "heading": "Historical values can be stronger than increasingly fuzzy matching",
+      "level": 2,
+      "id": "ux-section-76",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "Suppose two records differ in both surname and address.",
+      "paragraphs": [
+        "Suppose two records differ in both surname and address.",
+        "One response is to continually loosen string thresholds.",
+        "A better response may be:",
+        "retain historical surnames and historical addresses",
+        "so that legitimate identity transitions can be recognized directly."
+      ]
+    },
+    {
+      "heading": "Do not assume one attribute is permanently stable",
+      "level": 2,
+      "id": "ux-section-77",
+      "paragraph_count": 6,
+      "word_count": 31,
+      "evidence": "Names can change.",
+      "paragraphs": [
+        "Names can change.",
+        "Addresses change.",
+        "Phone numbers change.",
+        "Email addresses change.",
+        "Even dates and government identifiers can be entered incorrectly.",
+        "A resilient identity system therefore combines multiple attributes and their history."
+      ]
+    },
+    {
+      "heading": "Registration is part of the algorithm",
+      "level": 2,
+      "id": "ux-section-78",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "Many matching errors originate before any sophisticated model runs.",
+      "paragraphs": [
+        "Many matching errors originate before any sophisticated model runs.",
+        "For example:",
+        "patient arrives ↓ registration search skipped ↓ new record created ↓ duplicate exists forever",
+        "or:",
+        "wrong candidate selected ↓ registration continues ↓ information entered into another patient's record"
+      ]
+    },
+    {
+      "heading": "Human workflow and algorithm design are coupled",
+      "level": 2,
+      "id": "ux-section-79",
+      "paragraph_count": 7,
+      "word_count": 48,
+      "evidence": "A matching system may be statistically strong while its user interface encourages unsafe behavior.",
+      "paragraphs": [
+        "A matching system may be statistically strong while its user interface encourages unsafe behavior.",
+        "Examples include:",
+        "presenting one weak candidate as if it were certain;",
+        "hiding contradictory attributes;",
+        "sorting candidates without showing why they matched;",
+        "making “create new patient” easier than searching carefully;",
+        "allowing merges without independent review."
+      ]
+    },
+    {
+      "heading": "Explain the evidence",
+      "level": 2,
+      "id": "ux-section-80",
+      "paragraph_count": 4,
+      "word_count": 46,
+      "evidence": "A candidate-review screen should expose relevant comparisons:",
+      "paragraphs": [
+        "A candidate-review screen should expose relevant comparisons:",
+        "NAME Jonathan Rivera Jonathon Rivera → close DOB 1987-04-13 1987-04-13 → exact ADDRESS current differs historical matches → compatible PHONE exact → strong IDENTIFIER different local namespaces → neutral",
+        "This is much safer than displaying only:",
+        "MATCH SCORE: 94.3"
+      ]
+    },
+    {
+      "heading": "Contradiction rules",
+      "level": 2,
+      "id": "ux-section-81",
+      "paragraph_count": 4,
+      "word_count": 45,
+      "evidence": "Some evidence should be able to block an otherwise high score.",
+      "paragraphs": [
+        "Some evidence should be able to block an otherwise high score.",
+        "For example:",
+        "strong positive: same name same address strong contradiction: verified identity document belongs to another person",
+        "A purely additive scoring model can incorrectly allow many weak positive signals to outweigh one decisive contradiction."
+      ]
+    },
+    {
+      "heading": "Hard-negative evidence",
+      "level": 2,
+      "id": "ux-section-82",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "Systems can therefore distinguish:",
+      "paragraphs": [
+        "Systems can therefore distinguish:",
+        "ordinary disagreement from hard contradiction",
+        "where the latter requires:",
+        "manual review;",
+        "match rejection;",
+        "additional identity verification."
+      ]
+    },
+    {
+      "heading": "Data source reliability",
+      "level": 2,
+      "id": "ux-section-83",
+      "paragraph_count": 5,
+      "word_count": 35,
+      "evidence": "The same value may have different evidential quality depending on how it was obtained.",
+      "paragraphs": [
+        "The same value may have different evidential quality depending on how it was obtained.",
+        "For example:",
+        "self-entered web form versus identity-verified registration",
+        "may deserve different confidence.",
+        "Modern digital identity standards increasingly make this distinction explicit."
+      ]
+    },
+    {
+      "heading": "Identity assurance",
+      "level": 2,
+      "id": "ux-section-84",
+      "paragraph_count": 5,
+      "word_count": 27,
+      "evidence": "Identity assurance asks:",
+      "paragraphs": [
+        "Identity assurance asks:",
+        "How confidently was this real-world identity established?",
+        "Patient matching asks:",
+        "Does this record correspond to that established identity?",
+        "These are related but separate operations."
+      ]
+    },
+    {
+      "heading": "Point-of-care identification is another separate layer",
+      "level": 2,
+      "id": "ux-section-85",
+      "paragraph_count": 9,
+      "word_count": 61,
+      "evidence": "Even if the MPI is perfectly resolved, a clinician or device can still interact with the wrong person at the point of care.",
+      "paragraphs": [
+        "Even if the MPI is perfectly resolved, a clinician or device can still interact with the wrong person at the point of care.",
+        "Therefore:",
+        "record linkage ≠ bedside identity verification",
+        "Patient identification workflows may additionally use:",
+        "multiple identifiers;",
+        "barcodes;",
+        "wristband scanning;",
+        "other electronically supported verification mechanisms.",
+        "The SAFER Patient Identification Guide treats these operational safeguards as part of reliable patient identification."
+      ]
+    },
+    {
+      "heading": "Privacy-preserving patient linkage",
+      "level": 2,
+      "id": "ux-section-86",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "Cross-organizational matching creates a difficult privacy problem.",
+      "paragraphs": [
+        "Cross-organizational matching creates a difficult privacy problem.",
+        "Organizations may need to determine:",
+        "which patients are shared?",
+        "without freely exchanging:",
+        "raw names addresses dates of birth telephone numbers other identifiers",
+        "This motivates privacy-preserving record linkage.",
+        "See Privacy-Preserving Record Linkage ."
+      ]
+    },
+    {
+      "heading": "Privacy preservation creates a three-way trade-off",
+      "level": 2,
+      "id": "ux-section-87",
+      "paragraph_count": 3,
+      "word_count": 33,
+      "evidence": "matching accuracy ↕ privacy protection ↕ computational efficiency",
+      "paragraphs": [
+        "matching accuracy ↕ privacy protection ↕ computational efficiency",
+        "A representation that hides too much information can reduce linkage recall.",
+        "A representation that preserves too much comparative structure can increase disclosure or re-identification risk."
+      ]
+    },
+    {
+      "heading": "Do not assume hashing alone solves privacy",
+      "level": 2,
+      "id": "ux-section-88",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "Demographic fields often come from small or predictable domains.",
+      "paragraphs": [
+        "Demographic fields often come from small or predictable domains.",
+        "Straightforward deterministic hashing can therefore retain vulnerability to dictionary-style attacks when an adversary can enumerate likely values.",
+        "Privacy-preserving linkage requires a threat model, not merely:",
+        "hash the identifiers"
+      ]
+    },
+    {
+      "heading": "Threshold selection",
+      "level": 2,
+      "id": "ux-section-89",
+      "paragraph_count": 5,
+      "word_count": 36,
+      "evidence": "Suppose a model produces:",
+      "paragraphs": [
+        "Suppose a model produces:",
+        "s(a,b)",
+        "where larger values indicate stronger match evidence.",
+        "A three-zone policy might be:",
+        "s ≥ T_auto → automatic link T_review ≤ s < T_auto → manual review s < T_review → non-match"
+      ]
+    },
+    {
+      "heading": "Thresholds depend on downstream action",
+      "level": 2,
+      "id": "ux-section-90",
+      "paragraph_count": 6,
+      "word_count": 23,
+      "evidence": "For merely displaying:",
+      "paragraphs": [
+        "For merely displaying:",
+        "possible external records",
+        "a lower threshold might be acceptable.",
+        "For:",
+        "automatic irreversible merge",
+        "a much stricter threshold may be justified."
+      ]
+    },
+    {
+      "heading": "Precision",
+      "level": 2,
+      "id": "ux-section-91",
+      "paragraph_count": 5,
+      "word_count": 37,
+      "evidence": "For predicted matches:",
+      "paragraphs": [
+        "For predicted matches:",
+        "precision = TP ─────── TP + FP",
+        "In healthcare literature this is also frequently reported as positive predictive value.",
+        "It answers:",
+        "Of the record pairs we linked, what proportion were truly the same patient?"
+      ]
+    },
+    {
+      "heading": "Recall",
+      "level": 2,
+      "id": "ux-section-92",
+      "paragraph_count": 4,
+      "word_count": 26,
+      "evidence": "recall = TP ─────── TP + FN",
+      "paragraphs": [
+        "recall = TP ─────── TP + FN",
+        "also called sensitivity in many patient-matching studies.",
+        "It answers:",
+        "Of all true patient links, what proportion did we recover?"
+      ]
+    },
+    {
+      "heading": "Why accuracy is often misleading",
+      "level": 2,
+      "id": "ux-section-93",
+      "paragraph_count": 5,
+      "word_count": 39,
+      "evidence": "Among all possible patient pairs, true matches can be extraordinarily rare.",
+      "paragraphs": [
+        "Among all possible patient pairs, true matches can be extraordinarily rare.",
+        "A classifier that declares:",
+        "NON-MATCH for everything",
+        "can therefore achieve superficially high overall accuracy while being useless.",
+        "Precision, recall, candidate recall, and operational error rates are more informative."
+      ]
+    },
+    {
+      "heading": "Candidate-generation recall",
+      "level": 2,
+      "id": "ux-section-94",
+      "paragraph_count": 9,
+      "word_count": 40,
+      "evidence": "Let:",
+      "paragraphs": [
+        "Let:",
+        "T = all true matching pairs",
+        "and:",
+        "C = pairs reaching the matcher",
+        "Then:",
+        "candidate recall = |T ∩ C| ─────── |T|",
+        "If this is:",
+        "97%",
+        "then no downstream classifier can exceed 97% end-to-end recall without changing candidate generation."
+      ]
+    },
+    {
+      "heading": "False-match rate should be measured operationally",
+      "level": 2,
+      "id": "ux-section-95",
+      "paragraph_count": 8,
+      "word_count": 30,
+      "evidence": "Healthcare organizations should monitor not only offline classifier statistics but real identity-integrity outcomes such as:",
+      "paragraphs": [
+        "Healthcare organizations should monitor not only offline classifier statistics but real identity-integrity outcomes such as:",
+        "duplicate records;",
+        "incorrect merges;",
+        "overlays;",
+        "ambiguous-match queues;",
+        "manual-review reversals;",
+        "records later unlinked;",
+        "source-specific failure rates."
+      ]
+    },
+    {
+      "heading": "Gold standards are difficult",
+      "level": 2,
+      "id": "ux-section-96",
+      "paragraph_count": 8,
+      "word_count": 32,
+      "evidence": "Evaluation requires knowing:",
+      "paragraphs": [
+        "Evaluation requires knowing:",
+        "which pairs really are the same patient?",
+        "But this ground truth is often created using:",
+        "manual review;",
+        "trusted identifiers;",
+        "previous linkage systems;",
+        "combined adjudication.",
+        "Each method can contain errors."
+      ]
+    },
+    {
+      "heading": "Manual review must itself be reproducible",
+      "level": 2,
+      "id": "ux-section-97",
+      "paragraph_count": 2,
+      "word_count": 29,
+      "evidence": "A 2022 JAMIA framework emphasized that manually reviewed patient-matching reference sets should document the complete adjudication process, including preprocessing, blocking, reviewers, and evaluation procedures.",
+      "paragraphs": [
+        "A 2022 JAMIA framework emphasized that manually reviewed patient-matching reference sets should document the complete adjudication process, including preprocessing, blocking, reviewers, and evaluation procedures.",
+        "Gupta et al., 2022 ."
+      ]
+    },
+    {
+      "heading": "Inter-reviewer disagreement matters",
+      "level": 2,
+      "id": "ux-section-98",
+      "paragraph_count": 7,
+      "word_count": 39,
+      "evidence": "If two expert reviewers frequently disagree about whether difficult records represent the same patient, the supposed “ground truth” contains genuine uncertainty.",
+      "paragraphs": [
+        "If two expert reviewers frequently disagree about whether difficult records represent the same patient, the supposed “ground truth” contains genuine uncertainty.",
+        "A strong evaluation therefore records:",
+        "number of reviewers;",
+        "review rules;",
+        "disagreement rate;",
+        "adjudication process;",
+        "information exposed to reviewers."
+      ]
+    },
+    {
+      "heading": "Do not leak the answer into evaluation",
+      "level": 2,
+      "id": "ux-section-99",
+      "paragraph_count": 6,
+      "word_count": 38,
+      "evidence": "Suppose gold-standard labels are created primarily using:",
+      "paragraphs": [
+        "Suppose gold-standard labels are created primarily using:",
+        "telephone number",
+        "and then the evaluated matching model also uses:",
+        "telephone number",
+        "as its strongest predictor.",
+        "Performance can partly reflect the labeling procedure rather than independent evidence of general matching ability."
+      ]
+    },
+    {
+      "heading": "Stratified evaluation",
+      "level": 2,
+      "id": "ux-section-100",
+      "paragraph_count": 12,
+      "word_count": 39,
+      "evidence": "Aggregate performance can hide vulnerable subpopulations and difficult identity conditions.",
+      "paragraphs": [
+        "Aggregate performance can hide vulnerable subpopulations and difficult identity conditions.",
+        "Stratify by factors such as:",
+        "name frequency;",
+        "record completeness;",
+        "language and script;",
+        "source system;",
+        "age of demographic data;",
+        "changed surname;",
+        "changed address;",
+        "multiple births;",
+        "duplicate-record history;",
+        "amount of corruption."
+      ]
+    },
+    {
+      "heading": "Source-specific evaluation",
+      "level": 2,
+      "id": "ux-section-101",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "A matcher can perform well overall while failing badly for one hospital whose registration system truncates names or formats addresses differently.",
+      "paragraphs": [
+        "A matcher can perform well overall while failing badly for one hospital whose registration system truncates names or formats addresses differently.",
+        "Therefore evaluate:",
+        "source A → source B source A → source C source B → source C",
+        "separately where volume permits."
+      ]
+    },
+    {
+      "heading": "Data drift",
+      "level": 2,
+      "id": "ux-section-102",
+      "paragraph_count": 12,
+      "word_count": 45,
+      "evidence": "Patient matching is not a one-time modeling problem.",
+      "paragraphs": [
+        "Patient matching is not a one-time modeling problem.",
+        "Distributions change because of:",
+        "hospital acquisitions;",
+        "new EHR systems;",
+        "new registration workflows;",
+        "population changes;",
+        "new digital identity capabilities;",
+        "new address standards;",
+        "changes in data completeness.",
+        "Thus:",
+        "P(comparison | match) and P(comparison | non-match)",
+        "can drift over time."
+      ]
+    },
+    {
+      "heading": "System migration is a high-risk identity event",
+      "level": 2,
+      "id": "ux-section-103",
+      "paragraph_count": 9,
+      "word_count": 47,
+      "evidence": "When two hospitals or EHR environments are consolidated:",
+      "paragraphs": [
+        "When two hospitals or EHR environments are consolidated:",
+        "MPI A + MPI B ↓ new enterprise MPI",
+        "the organization may suddenly need to reconcile millions of historical identities with different identifier formats and data-quality conventions.",
+        "This is exactly where:",
+        "overlaps;",
+        "duplicates;",
+        "incorrect merges;",
+        "namespace confusion",
+        "can proliferate."
+      ]
+    },
+    {
+      "heading": "Do not deduplicate only once during migration",
+      "level": 2,
+      "id": "ux-section-104",
+      "paragraph_count": 1,
+      "word_count": 16,
+      "evidence": "Identity quality requires continuing operational monitoring after conversion because new registration errors will continue to occur.",
+      "paragraphs": [
+        "Identity quality requires continuing operational monitoring after conversion because new registration errors will continue to occur."
+      ]
+    },
+    {
+      "heading": "Merge reversibility",
+      "level": 2,
+      "id": "ux-section-105",
+      "paragraph_count": 3,
+      "word_count": 40,
+      "evidence": "A production identity system should maintain enough history to answer:",
+      "paragraphs": [
+        "A production identity system should maintain enough history to answer:",
+        "who merged these records? when? using which evidence? which algorithm version? which source records? can the merge be reversed?",
+        "Without this provenance, repairing an incorrect merge becomes much more difficult."
+      ]
+    },
+    {
+      "heading": "Version the matching system",
+      "level": 2,
+      "id": "ux-section-106",
+      "paragraph_count": 11,
+      "word_count": 28,
+      "evidence": "A complete match decision depends on more than software code.",
+      "paragraphs": [
+        "A complete match decision depends on more than software code.",
+        "Version:",
+        "normalization rules;",
+        "nickname tables;",
+        "address standards;",
+        "transliteration rules;",
+        "blocking logic;",
+        "field weights;",
+        "machine-learning model;",
+        "thresholds;",
+        "reference datasets."
+      ]
+    },
+    {
+      "heading": "Audit record",
+      "level": 2,
+      "id": "ux-section-107",
+      "paragraph_count": 2,
+      "word_count": 26,
+      "evidence": "For an automatic patient link, retain:",
+      "paragraphs": [
+        "For an automatic patient link, retain:",
+        "source identities normalized attributes candidate-generation routes field comparisons historical values used model version score threshold decision type timestamp review status"
+      ]
+    },
+    {
+      "heading": "Operational review queues",
+      "level": 2,
+      "id": "ux-section-108",
+      "paragraph_count": 8,
+      "word_count": 32,
+      "evidence": "Ambiguous cases should be prioritized intelligently.",
+      "paragraphs": [
+        "Ambiguous cases should be prioritized intelligently.",
+        "Possible priority factors include:",
+        "patient currently receiving care;",
+        "large amount of clinical information involved;",
+        "suspected overlay;",
+        "two near-equal candidates;",
+        "contradictory high-confidence identifiers;",
+        "records created during migration."
+      ]
+    },
+    {
+      "heading": "Do not optimize only the model",
+      "level": 2,
+      "id": "ux-section-109",
+      "paragraph_count": 3,
+      "word_count": 35,
+      "evidence": "A patient matching system can fail because of:",
+      "paragraphs": [
+        "A patient matching system can fail because of:",
+        "bad registration bad normalization weak candidate generation wrong comparator poor calibration unsafe threshold bad reviewer UI incorrect merge lack of monitoring",
+        "The model is only one component."
+      ]
+    },
+    {
+      "heading": "Failure decomposition",
+      "level": 2,
+      "id": "ux-section-110",
+      "paragraph_count": 2,
+      "word_count": 48,
+      "evidence": "Every investigated identity error should be assigned to a stage when possible:",
+      "paragraphs": [
+        "Every investigated identity error should be assigned to a stage when possible:",
+        "1. data capture failure 2. representation / normalization failure 3. candidate-generation failure 4. comparator failure 5. evidence-model failure 6. threshold failure 7. human-review failure 8. merge / identity-graph failure 9. source-system integration failure 10. ground-truth error"
+      ]
+    },
+    {
+      "heading": "Common failure mode: exact matching only",
+      "level": 2,
+      "id": "ux-section-111",
+      "paragraph_count": 2,
+      "word_count": 13,
+      "evidence": "This misses legitimate variations:",
+      "paragraphs": [
+        "This misses legitimate variations:",
+        "Jonathan Jonathon Smith-Jones Smith Jones old address new address"
+      ]
+    },
+    {
+      "heading": "Common failure mode: one fuzzy name threshold",
+      "level": 2,
+      "id": "ux-section-112",
+      "paragraph_count": 8,
+      "word_count": 21,
+      "evidence": "A rule:",
+      "paragraphs": [
+        "A rule:",
+        "same patient if name distance ≤ 2",
+        "ignores:",
+        "common-name collisions;",
+        "date of birth;",
+        "household structure;",
+        "historical data;",
+        "identifier evidence."
+      ]
+    },
+    {
+      "heading": "Common failure mode: normalize away contradictions",
+      "level": 2,
+      "id": "ux-section-113",
+      "paragraph_count": 6,
+      "word_count": 20,
+      "evidence": "Overaggressive cleaning can convert meaningful differences into apparent agreement.",
+      "paragraphs": [
+        "Overaggressive cleaning can convert meaningful differences into apparent agreement.",
+        "Examples include deleting:",
+        "apartment numbers;",
+        "name suffixes;",
+        "directionals;",
+        "other discriminating components."
+      ]
+    },
+    {
+      "heading": "Common failure mode: address must match exactly",
+      "level": 2,
+      "id": "ux-section-114",
+      "paragraph_count": 2,
+      "word_count": 15,
+      "evidence": "Patients move, and address formats vary.",
+      "paragraphs": [
+        "Patients move, and address formats vary.",
+        "Exact address matching can therefore produce substantial false negatives."
+      ]
+    },
+    {
+      "heading": "Common failure mode: same household means same patient",
+      "level": 2,
+      "id": "ux-section-115",
+      "paragraph_count": 3,
+      "word_count": 11,
+      "evidence": "Shared:",
+      "paragraphs": [
+        "Shared:",
+        "surname address phone",
+        "can describe several members of one family."
+      ]
+    },
+    {
+      "heading": "Common failure mode: missing field equals disagreement",
+      "level": 2,
+      "id": "ux-section-116",
+      "paragraph_count": 4,
+      "word_count": 13,
+      "evidence": "Missing:",
+      "paragraphs": [
+        "Missing:",
+        "phone",
+        "does not provide the same evidence as:",
+        "two known, different phones"
+      ]
+    },
+    {
+      "heading": "Common failure mode: score equals probability",
+      "level": 2,
+      "id": "ux-section-117",
+      "paragraph_count": 1,
+      "word_count": 12,
+      "evidence": "A ranking score between 0 and 1 is not necessarily probabilistically calibrated.",
+      "paragraphs": [
+        "A ranking score between 0 and 1 is not necessarily probabilistically calibrated."
+      ]
+    },
+    {
+      "heading": "Common failure mode: automatic best-candidate selection",
+      "level": 2,
+      "id": "ux-section-118",
+      "paragraph_count": 4,
+      "word_count": 27,
+      "evidence": "The candidate with the largest score can still be wrong.",
+      "paragraphs": [
+        "The candidate with the largest score can still be wrong.",
+        "Particularly dangerous:",
+        "best = 0.90 second = 0.899",
+        "The ranking is clear, but the identity is not."
+      ]
+    },
+    {
+      "heading": "Common failure mode: use random negatives for evaluation",
+      "level": 2,
+      "id": "ux-section-119",
+      "paragraph_count": 3,
+      "word_count": 22,
+      "evidence": "Random patients are too easy to distinguish.",
+      "paragraphs": [
+        "Random patients are too easy to distinguish.",
+        "The relevant negatives are:",
+        "different people who look similar enough to enter the candidate set"
+      ]
+    },
+    {
+      "heading": "Common failure mode: tune only for F1",
+      "level": 2,
+      "id": "ux-section-120",
+      "paragraph_count": 4,
+      "word_count": 37,
+      "evidence": "F1 treats precision and recall in one particular mathematical balance.",
+      "paragraphs": [
+        "F1 treats precision and recall in one particular mathematical balance.",
+        "Healthcare workflows may impose very different costs on:",
+        "false merge versus missed match",
+        "Thresholds should therefore reflect the operational loss function, not merely maximize one generic metric."
+      ]
+    },
+    {
+      "heading": "Common failure mode: trust external reference data as infallible",
+      "level": 2,
+      "id": "ux-section-121",
+      "paragraph_count": 5,
+      "word_count": 13,
+      "evidence": "Reference datasets can themselves contain:",
+      "paragraphs": [
+        "Reference datasets can themselves contain:",
+        "stale addresses;",
+        "identity conflation;",
+        "missing populations;",
+        "incorrect associations."
+      ]
+    },
+    {
+      "heading": "Common failure mode: silently merge entire clusters transitively",
+      "level": 2,
+      "id": "ux-section-122",
+      "paragraph_count": 3,
+      "word_count": 19,
+      "evidence": "One mistaken edge:",
+      "paragraphs": [
+        "One mistaken edge:",
+        "A ─ B",
+        "can bridge two otherwise separate patient clusters and create a much larger overmerge."
+      ]
+    },
+    {
+      "heading": "Common failure mode: no feedback from corrected errors",
+      "level": 2,
+      "id": "ux-section-123",
+      "paragraph_count": 6,
+      "word_count": 25,
+      "evidence": "Human corrections provide valuable information about:",
+      "paragraphs": [
+        "Human corrections provide valuable information about:",
+        "bad thresholds;",
+        "new error patterns;",
+        "weak blocking rules;",
+        "source-specific data problems.",
+        "A mature MPI should monitor these corrections systematically."
+      ]
+    },
+    {
+      "heading": "Common failure mode: optimize aggregate recall while ignoring overlays",
+      "level": 2,
+      "id": "ux-section-124",
+      "paragraph_count": 2,
+      "word_count": 34,
+      "evidence": "A more permissive matcher can increase recall by creating additional links.",
+      "paragraphs": [
+        "A more permissive matcher can increase recall by creating additional links.",
+        "But if those additional links include false positives, the resulting overlays or incorrect merges can be more harmful than the aggregate metric suggests."
+      ]
+    },
+    {
+      "heading": "Precision-recall frontier",
+      "level": 2,
+      "id": "ux-section-125",
+      "paragraph_count": 4,
+      "word_count": 42,
+      "evidence": "As the match threshold decreases:",
+      "paragraphs": [
+        "As the match threshold decreases:",
+        "lower threshold ↓ more matches returned ↓ usually higher recall ↓ potentially lower precision",
+        "The choice is not merely statistical.",
+        "It is a policy decision about what the system is allowed to do with uncertain identity evidence."
+      ]
+    },
+    {
+      "heading": "Recent real-world evidence illustrates the threshold trade-off",
+      "level": 2,
+      "id": "ux-section-126",
+      "paragraph_count": 5,
+      "word_count": 52,
+      "evidence": "A 2026 study comparing a privacy-preserving machine-learning linkage system with an operational EHR patient-matching workflow found materially different match volumes and performance depending on the threshold selected.",
+      "paragraphs": [
+        "A 2026 study comparing a privacy-preserving machine-learning linkage system with an operational EHR patient-matching workflow found materially different match volumes and performance depending on the threshold selected.",
+        "That is exactly what theory predicts:",
+        "threshold changes precision / recall behavior",
+        "rather than revealing one universally correct score cutoff.",
+        "Bell et al., 2026 ."
+      ]
+    },
+    {
+      "heading": "Registration-time matching versus retrospective linkage",
+      "level": 2,
+      "id": "ux-section-127",
+      "paragraph_count": 1,
+      "word_count": 8,
+      "evidence": "The same algorithm can face very different requirements.",
+      "paragraphs": [
+        "The same algorithm can face very different requirements."
+      ]
+    },
+    {
+      "heading": "Registration-time search",
+      "level": 3,
+      "id": "ux-section-128",
+      "paragraph_count": 1,
+      "word_count": 13,
+      "evidence": "patient is present latency: milliseconds / seconds decision may affect current clinical workflow",
+      "paragraphs": [
+        "patient is present latency: milliseconds / seconds decision may affect current clinical workflow"
+      ]
+    },
+    {
+      "heading": "Retrospective deduplication",
+      "level": 3,
+      "id": "ux-section-129",
+      "paragraph_count": 1,
+      "word_count": 14,
+      "evidence": "millions of records batch processing possible more expensive models and review may be feasible",
+      "paragraphs": [
+        "millions of records batch processing possible more expensive models and review may be feasible"
+      ]
+    },
+    {
+      "heading": "Cross-organizational exchange",
+      "level": 3,
+      "id": "ux-section-130",
+      "paragraph_count": 2,
+      "word_count": 21,
+      "evidence": "different institutions different namespaces different normalization privacy constraints interoperability standards",
+      "paragraphs": [
+        "different institutions different namespaces different normalization privacy constraints interoperability standards",
+        "One matching architecture should not be assumed optimal for every scenario."
+      ]
+    },
+    {
+      "heading": "Latency and candidate budgets",
+      "level": 2,
+      "id": "ux-section-131",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "Registration workflows require bounded response time.",
+      "paragraphs": [
+        "Registration workflows require bounded response time.",
+        "Possible controls include:",
+        "maximum candidate count maximum fuzzy expansions indexed demographic search cached normalized values tiered matching stages"
+      ]
+    },
+    {
+      "heading": "Tiered matching architecture",
+      "level": 2,
+      "id": "ux-section-132",
+      "paragraph_count": 2,
+      "word_count": 43,
+      "evidence": "TIER 1 trusted identifier exact match ↓ if unresolved TIER 2 high-confidence deterministic rules ↓ if unresolved TIER 3 probabilistic / ML matching ↓ if ambiguous TIER 4 human review / identity proofing",
+      "paragraphs": [
+        "TIER 1 trusted identifier exact match ↓ if unresolved TIER 2 high-confidence deterministic rules ↓ if unresolved TIER 3 probabilistic / ML matching ↓ if ambiguous TIER 4 human review / identity proofing",
+        "This avoids running the most expensive logic on every request."
+      ]
+    },
+    {
+      "heading": "Fast path should not bypass safety checks",
+      "level": 2,
+      "id": "ux-section-133",
+      "paragraph_count": 1,
+      "word_count": 17,
+      "evidence": "Even an exact identifier hit may require namespace validation and sanity checks before a merge is performed.",
+      "paragraphs": [
+        "Even an exact identifier hit may require namespace validation and sanity checks before a merge is performed."
+      ]
+    },
+    {
+      "heading": "Data quality feedback loop",
+      "level": 2,
+      "id": "ux-section-134",
+      "paragraph_count": 2,
+      "word_count": 27,
+      "evidence": "matching errors ↓ root-cause analysis ↓ registration policy ↓ better demographics ↓ better matching ↓ fewer errors",
+      "paragraphs": [
+        "matching errors ↓ root-cause analysis ↓ registration policy ↓ better demographics ↓ better matching ↓ fewer errors",
+        "Patient matching quality is therefore partly an organizational data-governance problem."
+      ]
+    },
+    {
+      "heading": "Front-end prevention can outperform back-end repair",
+      "level": 2,
+      "id": "ux-section-135",
+      "paragraph_count": 7,
+      "word_count": 33,
+      "evidence": "If registration workflows consistently:",
+      "paragraphs": [
+        "If registration workflows consistently:",
+        "search before creating a new record;",
+        "capture names consistently;",
+        "confirm birth date;",
+        "maintain historical names and addresses;",
+        "validate identifiers and namespaces;",
+        "the MPI receives a much easier matching problem."
+      ]
+    },
+    {
+      "heading": "Patient-entered data",
+      "level": 2,
+      "id": "ux-section-136",
+      "paragraph_count": 6,
+      "word_count": 30,
+      "evidence": "Patient portals and digital registration can improve demographic accuracy by allowing patients to review their own information.",
+      "paragraphs": [
+        "Patient portals and digital registration can improve demographic accuracy by allowing patients to review their own information.",
+        "But systems must still handle:",
+        "typographical errors;",
+        "shared accounts;",
+        "incorrect autofill;",
+        "identity-assurance differences."
+      ]
+    },
+    {
+      "heading": "International matching",
+      "level": 2,
+      "id": "ux-section-137",
+      "paragraph_count": 3,
+      "word_count": 24,
+      "evidence": "Global health systems cannot assume:",
+      "paragraphs": [
+        "Global health systems cannot assume:",
+        "one address format one naming order ASCII one date convention one phonetic model",
+        "International matching requires explicit representation rules."
+      ]
+    },
+    {
+      "heading": "Do not force global data into U.S.-specific address logic",
+      "level": 2,
+      "id": "ux-section-138",
+      "paragraph_count": 2,
+      "word_count": 24,
+      "evidence": "Project US@ is designed primarily for U.S. domestic and military addresses.",
+      "paragraphs": [
+        "Project US@ is designed primarily for U.S. domestic and military addresses.",
+        "International systems need country-appropriate address representations rather than assuming U.S. formatting is universal."
+      ]
+    },
+    {
+      "heading": "Population-specific calibration",
+      "level": 2,
+      "id": "ux-section-139",
+      "paragraph_count": 3,
+      "word_count": 34,
+      "evidence": "A name comparator calibrated on one population can produce a different false-match rate in another population because surname frequencies and naming structures differ.",
+      "paragraphs": [
+        "A name comparator calibrated on one population can produce a different false-match rate in another population because surname frequencies and naming structures differ.",
+        "Therefore:",
+        "same score threshold ≠ same identity risk for every population"
+      ]
+    },
+    {
+      "heading": "Fairness and representativeness",
+      "level": 2,
+      "id": "ux-section-140",
+      "paragraph_count": 5,
+      "word_count": 44,
+      "evidence": "Patient matching should be evaluated for performance variation across the populations the system actually serves.",
+      "paragraphs": [
+        "Patient matching should be evaluated for performance variation across the populations the system actually serves.",
+        "The objective is not to infer sensitive characteristics.",
+        "It is to detect whether:",
+        "data quality or matching behavior",
+        "systematically produces different error rates for relevant patient groups and workflows."
+      ]
+    },
+    {
+      "heading": "Privacy and false matches are linked",
+      "level": 2,
+      "id": "ux-section-141",
+      "paragraph_count": 5,
+      "word_count": 33,
+      "evidence": "An erroneous patient match is not only a data-quality problem.",
+      "paragraphs": [
+        "An erroneous patient match is not only a data-quality problem.",
+        "It can also disclose one person's health information in another person's context.",
+        "Thus:",
+        "identity accuracy + privacy + clinical safety",
+        "are interconnected properties."
+      ]
+    },
+    {
+      "heading": "Production architecture",
+      "level": 2,
+      "id": "ux-section-142",
+      "paragraph_count": 1,
+      "word_count": 148,
+      "evidence": "PATIENT EVENT │ ▼ ┌─────────────────────┐ │ demographic capture │ │ identity evidence │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ validation │ │ standardization │ │ Unicode handling │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ candidate search │ │ MPI / EMPI │ └──────────┬──────────┘ │ ▼ ┌──────────────────────────────────┐ │ field comparators │ │ │ │ identifiers │ │ names │ │ date of birth │ │ address + history │ │ phone │ │ email │ └────────────────┬─────────────────┘ │ ▼ ┌──────────────────────────────────┐ │ evidence model │ │ │ │ deterministic │ │ probabilistic │ │ referential │ │ supervised / ML │ └────────────────┬─────────────────┘ │ ┌───────────┼────────────┐ ▼ ▼ ▼ certain ambiguous non-match │ │ │ │ ▼ │ │ human review │ │ │ │ └───────────┼────────────┘ ▼ ┌─",
+      "paragraphs": [
+        "PATIENT EVENT │ ▼ ┌─────────────────────┐ │ demographic capture │ │ identity evidence │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ validation │ │ standardization │ │ Unicode handling │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ candidate search │ │ MPI / EMPI │ └──────────┬──────────┘ │ ▼ ┌──────────────────────────────────┐ │ field comparators │ │ │ │ identifiers │ │ names │ │ date of birth │ │ address + history │ │ phone │ │ email │ └────────────────┬─────────────────┘ │ ▼ ┌──────────────────────────────────┐ │ evidence model │ │ │ │ deterministic │ │ probabilistic │ │ referential │ │ supervised / ML │ └────────────────┬─────────────────┘ │ ┌───────────┼────────────┐ ▼ ▼ ▼ certain ambiguous non-match │ │ │ │ ▼ │ │ human review │ │ │ │ └───────────┼────────────┘ ▼ ┌─────────────────────┐ │ identity graph │ │ source crosswalks │ └──────────┬──────────┘ │ ▼ ┌─────────────────────┐ │ monitoring │ │ duplicate detection │ │ overlay detection │ │ remediation │ └─────────────────────┘"
+      ]
+    },
+    {
+      "heading": "Suggested match-decision record",
+      "level": 2,
+      "id": "ux-section-143",
+      "paragraph_count": 1,
+      "word_count": 30,
+      "evidence": "decision_id source_record_a source_record_b candidate_routes normalized_name_a normalized_name_b name_comparisons dob_comparison address_comparison historical_address_evidence phone_comparison email_comparison identifier_namespaces hard_contradictions model_version raw_score calibrated_probability (if available) decision_threshold decision: match / review / non-match reviewer (if applicable) timestamp",
+      "paragraphs": [
+        "decision_id source_record_a source_record_b candidate_routes normalized_name_a normalized_name_b name_comparisons dob_comparison address_comparison historical_address_evidence phone_comparison email_comparison identifier_namespaces hard_contradictions model_version raw_score calibrated_probability (if available) decision_threshold decision: match / review / non-match reviewer (if applicable) timestamp"
+      ]
+    },
+    {
+      "heading": "Operational metrics dashboard",
+      "level": 2,
+      "id": "ux-section-144",
+      "paragraph_count": 2,
+      "word_count": 38,
+      "evidence": "A mature patient identity service should monitor:",
+      "paragraphs": [
+        "A mature patient identity service should monitor:",
+        "candidate recall automatic match rate manual-review rate precision / PPV recall / sensitivity duplicate rate overlay rate overlap queue merge reversals ambiguous matches review turnaround source-specific errors population-specific errors model drift"
+      ]
+    },
+    {
+      "heading": "Decision table",
+      "level": 2,
+      "id": "ux-section-145",
+      "paragraph_count": 1,
+      "word_count": 105,
+      "evidence": "Problem Preferred response Exact trusted identifier in correct namespace Strong deterministic identity evidence Small spelling error in name Edit-distance or related name comparator Adjacent character transposition Transposition-aware comparator Historical surname Retain and compare name history Patient moved Use address history rather than exact current-address requirement Shared household attributes Require additional discriminating evidence Missing demographic field Model missingness separately from disagreement Several plausible MPI candidates Ambiguous state / review rather than forced merge Cross-organizational matching Namespace-aware identity model and interoperability standards Privacy-restricted linkage Privacy-preserving record-linkage architecture System migration Dedicated EMP",
+      "paragraphs": [
+        "Problem Preferred response Exact trusted identifier in correct namespace Strong deterministic identity evidence Small spelling error in name Edit-distance or related name comparator Adjacent character transposition Transposition-aware comparator Historical surname Retain and compare name history Patient moved Use address history rather than exact current-address requirement Shared household attributes Require additional discriminating evidence Missing demographic field Model missingness separately from disagreement Several plausible MPI candidates Ambiguous state / review rather than forced merge Cross-organizational matching Namespace-aware identity model and interoperability standards Privacy-restricted linkage Privacy-preserving record-linkage architecture System migration Dedicated EMPI reconciliation, provenance, and intensive monitoring Irreversible record merge Very high confidence plus auditability and remediation path"
+      ]
+    },
+    {
+      "heading": "Where Levenshtein distance belongs",
+      "level": 2,
+      "id": "ux-section-146",
+      "paragraph_count": 6,
+      "word_count": 56,
+      "evidence": "Levenshtein distance belongs at a specific layer:",
+      "paragraphs": [
+        "Levenshtein distance belongs at a specific layer:",
+        "PATIENT IDENTITY SYSTEM demographic capture ↓ normalization ↓ candidate generation ↓ FIELD COMPARISON │ ├── exact comparison ├── Levenshtein ├── Jaro-Winkler ├── phonetic comparison ├── address logic └── identifier comparison ↓ evidence model ↓ identity decision",
+        "Its job is:",
+        "quantify one kind of textual discrepancy",
+        "not:",
+        "prove patient identity"
+      ]
+    },
+    {
+      "heading": "The deeper principle",
+      "level": 2,
+      "id": "ux-section-147",
+      "paragraph_count": 11,
+      "word_count": 83,
+      "evidence": "Patient identity matching is inference about a latent real-world person.",
+      "paragraphs": [
+        "Patient identity matching is inference about a latent real-world person.",
+        "The observed records are noisy measurements:",
+        "REAL PATIENT │ ├── registration at hospital A │ ↓ │ observation A │ ├── clinic portal │ ↓ │ observation B │ ├── laboratory system │ ↓ │ observation C │ └── health information exchange ↓ observation D",
+        "Each observation may contain:",
+        "different identifiers;",
+        "different names;",
+        "different address history;",
+        "different completeness;",
+        "different error patterns.",
+        "The matching system asks:",
+        "Which latent patient identity best explains these observations?"
+      ]
+    },
+    {
+      "heading": "Summary",
+      "level": 2,
+      "id": "ux-section-148",
+      "paragraph_count": 16,
+      "word_count": 673,
+      "evidence": "Patient identity matching links healthcare records that belong to the same real-world person across encounters, databases, facilities, and organizations. It is a specialized form of entity resolution in which identity errors can directly affect clinical information integrity, interoperability, privacy, operations, and patient safety.",
+      "paragraphs": [
+        "Patient identity matching links healthcare records that belong to the same real-world person across encounters, databases, facilities, and organizations. It is a specialized form of entity resolution in which identity errors can directly affect clinical information integrity, interoperability, privacy, operations, and patient safety.",
+        "An MPI or EMPI provides the identity layer that maps source-system patient identifiers to resolved patient identities while preserving the provenance of those source records. The objective is not merely to remove duplicate rows; it is to maintain a coherent identity graph across systems.",
+        "Identity-integrity errors include duplicates, overlays, and enterprise overlaps. A duplicate fragments one patient's information into multiple records. An overlay can commingle records belonging to different people. These errors represent different sides of the false-negative and false-positive matching problem and require different remediation strategies.",
+        "Demographic data quality is a primary determinant of match quality. Names are misspelled and change over time. Addresses change. Phones and emails become obsolete or can be shared. Dates of birth can contain entry errors. Local identifiers are meaningful only within the correct assigning namespace. A patient identity model therefore needs multiple attributes and, when available, longitudinal attribute history.",
+        "Standardization should precede fuzzy comparison. Unicode normalization, field-specific name handling, structured address representation, telephone normalization, and identifier namespace validation remove avoidable representational differences before approximate matching is attempted. Project US@ illustrates how address standardization can be designed specifically to support patient matching.",
+        "Candidate generation is another critical stage. At enterprise scale, the matcher should not exhaustively compare every new observation with every identity. High-recall candidate retrieval narrows the population using several independent routes. Because a true patient omitted from the candidate set cannot be recovered later, candidate recall places an upper bound on total system recall.",
+        "Field-level comparison can then use exact matching, Levenshtein distance, transposition-aware distance, Jaro-Winkler, phonetic methods, structured date and address comparison, historical attributes, and trusted identifiers. Each comparator should model a specific type of discrepancy rather than being treated as a universal identity function.",
+        "Probabilistic patient matching combines comparison evidence according to how frequently each pattern occurs among true matches and true non-matches. Supervised machine-learning systems can learn more complex relationships, while referential systems can incorporate historical identity evidence from reference data. No approach should be assumed superior without validation on the intended population.",
+        "Modern healthcare identity architecture also distinguishes demographic matching from verified digital identity. When trustworthy digital identifiers are available, they can provide stronger and less ambiguous evidence than demographic inference alone. HL7's current identity-matching work reflects this distinction while continuing to standardize demographic patient-matching workflows.",
+        "FHIR's Patient/$match operation standardizes how an application can request candidate matches from an MPI. It does not prescribe one matching algorithm. The MPI can return ranked candidate records and match-quality information, preserving ambiguity rather than requiring every request to produce one supposedly certain patient.",
+        "Threshold selection is a safety and operational decision as well as a statistical one. Candidate retrieval can use permissive rules to preserve recall. Automatic links require stronger evidence. Irreversible merges may need an even higher threshold and explicit contradiction checks. Ambiguous cases should remain ambiguous until additional evidence or manual review resolves them.",
+        "Evaluation should measure precision, recall, candidate recall, and operational identity errors rather than overall classification accuracy alone. Gold-standard record pairs must themselves be created carefully, and manual adjudication procedures should be reproducible. Performance should also be stratified across data sources, languages, scripts, naming patterns, demographic completeness, and other conditions relevant to the population.",
+        "Finally, patient identity matching is not only an algorithmic problem. Registration workflow, user-interface design, demographic capture, system migrations, review queues, model versioning, audit history, reversible remediation, and ongoing monitoring all influence identity integrity.",
+        "The correct conceptual architecture is:",
+        "accurate data capture → consistent representation → high-recall candidate generation → field-specific comparison → evidence combination → risk-aware decision → provenance-preserving identity graph → continuous monitoring and remediation",
+        "Within that architecture, Levenshtein distance has a precise and valuable role: it measures character-level discrepancy in selected textual fields. Patient identity emerges only when that evidence is interpreted together with the rest of the identity record."
+      ]
+    },
+    {
+      "heading": "Continue studying",
+      "level": 2,
+      "id": "ux-section-149",
+      "paragraph_count": 10,
+      "word_count": 127,
+      "evidence": "Entity Resolution and Record Linkage — the general probabilistic and statistical framework behind identity resolution.",
+      "paragraphs": [
+        "Entity Resolution and Record Linkage — the general probabilistic and statistical framework behind identity resolution.",
+        "Name, Address and Place Matching — detailed treatment of names, addresses, transliteration, parsing, and geographic identity evidence.",
+        "Privacy-Preserving Record Linkage — matching records across organizations while reducing disclosure of raw identifying information.",
+        "Weighted Levenshtein Distance — modeling nonuniform textual error costs.",
+        "Damerau-Levenshtein Distance — transposition-aware matching for data-entry errors.",
+        "Levenshtein vs Jaro-Winkler and Phonetic Matching — choosing comparators for different name-error distributions.",
+        "Text Normalization and Transliteration — multilingual representation and cross-script comparison.",
+        "Unicode and Grapheme-Safe Levenshtein — correct text units and normalization before international matching.",
+        "Indexing and Filtering for Edit Distance — scalable candidate generation before expensive string verification.",
+        "String Similarity vs Semantic Similarity — why textual resemblance is not real-world identity."
+      ]
+    },
+    {
+      "heading": "References",
+      "level": 2,
+      "id": "ux-section-150",
+      "paragraph_count": 12,
+      "word_count": 310,
+      "evidence": "Ivan P. Fellegi and Alan B. Sunter, “A Theory for Record Linkage,” Journal of the American Statistical Association , 64(328), 1183–1210, 1969. DOI record .",
+      "paragraphs": [
+        "Ivan P. Fellegi and Alan B. Sunter, “A Theory for Record Linkage,” Journal of the American Statistical Association , 64(328), 1183–1210, 1969. DOI record .",
+        "Matthew A. Jaro, “Advances in Record-Linkage Methodology as Applied to Matching the 1985 Census of Tampa, Florida,” Journal of the American Statistical Association , 84(406), 414–420, 1989. DOI record .",
+        "Office of the National Coordinator for Health Information Technology, Patient Identification and Matching Final Report , 2014. ONC report .",
+        "U.S. Government Accountability Office, Health Information Technology: Approaches and Challenges to Electronically Matching Patients' Records across Providers , GAO-19-197, 2019. GAO report .",
+        "Beth Haenke Just, David Marc, Megan Munns, and Ryan Sandefer, “Why Patient Matching Is a Challenge: Research on Master Patient Index (MPI) Data Discrepancies in Key Identifying Fields,” 2016. Full text .",
+        "Shaun J. Grannis et al., “Evaluation of Real-World Referential and Probabilistic Patient Matching to Advance Patient Identification Strategy,” Journal of the American Medical Informatics Association , 29(8), 1409–1415, 2022. DOI record .",
+        "Agrayan K. Gupta et al., “A Framework for a Consistent and Reproducible Evaluation of Manual Review for Patient Matching Algorithms,” Journal of the American Medical Informatics Association , 29(12), 2105–2109, 2022. DOI record .",
+        "HL7 International, Interoperable Digital Identity and Patient Matching Implementation Guide , Version 2.0.0. Implementation Guide .",
+        "HL7 International, “Patient $match Operation,” FHIR Specification . FHIR documentation .",
+        "Project US@ Technical Workgroup and Office of the National Coordinator for Health Information Technology, Project US@ Technical Specification , Version 1.0. Technical specification .",
+        "Office of the National Coordinator for Health Information Technology, SAFER Guide: Patient Identification . SAFER Guide .",
+        "Douglas S. Bell et al., “Accuracy of an XGBoost-Based Privacy Preserving Record Linkage System Compared with an Electronic Health Record Patient Matching Module in Identifying Patients Shared Between Nearby Academic Health Centers,” Journal of the American Medical Informatics Association , 33(4), 901–908, 2026. DOI record ."
+      ]
+    }
+  ],
+  "explicit_mention_candidates": [
+    {
+      "target": "/damerau-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Transpositions",
+          "anchor_id": "ux-section-39",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "See Damerau-Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "damerau levenshtein distance",
+          "excerpt": "Damerau-Levenshtein Distance — transposition-aware matching for data-entry errors."
+        }
+      ]
+    },
+    {
+      "target": "/edit-distance",
+      "evidence": [
+        {
+          "section": "Patient Identity Matching",
+          "anchor_id": "ux-section-1",
+          "alias": "edit distance",
+          "excerpt": "Levenshtein distance can help compare names, addresses, identifiers, and other textual fields, but edit distance is only one source of evidence inside a patient-identity system."
+        },
+        {
+          "section": "Candidate generation is safety critical",
+          "anchor_id": "ux-section-33",
+          "alias": "edit distance",
+          "excerpt": "This is the same structural principle that appears in scalable approximate string retrieval. See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Stage 3: field-level comparators",
+          "anchor_id": "ux-section-36",
+          "alias": "edit distance",
+          "excerpt": "Field Possible comparator Patient identifier Exact value + assigning authority Name Exact, edit distance, Jaro-Winkler, phonetic, alias logic Date of birth Exact and component-aware disagreement Address Structured address components + history Phone Normalized exact / partial comparison Email Exact or structured textual comparison"
+        }
+      ]
+    },
+    {
+      "target": "/entity-resolution-and-record-linkage",
+      "evidence": [
+        {
+          "section": "Patient Identity Matching",
+          "anchor_id": "ux-section-1",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "The problem appears superficially similar to ordinary entity resolution and record linkage , but healthcare changes the consequences of error."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "entity resolution and record linkage",
+          "excerpt": "Entity Resolution and Record Linkage — the general probabilistic and statistical framework behind identity resolution."
+        }
+      ]
+    },
+    {
+      "target": "/indexing-and-filtering-for-edit-distance",
+      "evidence": [
+        {
+          "section": "Candidate generation is safety critical",
+          "anchor_id": "ux-section-33",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "This is the same structural principle that appears in scalable approximate string retrieval. See Indexing and Filtering for Edit Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "indexing and filtering for edit distance",
+          "excerpt": "Indexing and Filtering for Edit Distance — scalable candidate generation before expensive string verification."
+        }
+      ]
+    },
+    {
+      "target": "/levenshtein-vs-jaro-winkler-and-phonetic-matching",
+      "evidence": [
+        {
+          "section": "Jaro-Winkler and phonetic methods",
+          "anchor_id": "ux-section-41",
+          "alias": "levenshtein vs jaro winkler and phonetic matching",
+          "excerpt": "Their strengths and limitations are developed in Levenshtein vs Jaro-Winkler and Phonetic Matching ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "levenshtein vs jaro winkler and phonetic matching",
+          "excerpt": "Levenshtein vs Jaro-Winkler and Phonetic Matching — choosing comparators for different name-error distributions."
+        }
+      ]
+    },
+    {
+      "target": "/name-address-and-place-matching",
+      "evidence": [
+        {
+          "section": "Names must support history",
+          "anchor_id": "ux-section-20",
+          "alias": "name address and place matching",
+          "excerpt": "See Name, Address and Place Matching ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "name address and place matching",
+          "excerpt": "Name, Address and Place Matching — detailed treatment of names, addresses, transliteration, parsing, and geographic identity evidence."
+        }
+      ]
+    },
+    {
+      "target": "/privacy-preserving-record-linkage",
+      "evidence": [
+        {
+          "section": "Privacy-preserving patient linkage",
+          "anchor_id": "ux-section-86",
+          "alias": "privacy preserving record linkage",
+          "excerpt": "This motivates privacy-preserving record linkage."
+        },
+        {
+          "section": "Decision table",
+          "anchor_id": "ux-section-145",
+          "alias": "privacy preserving record linkage",
+          "excerpt": "Problem Preferred response Exact trusted identifier in correct namespace Strong deterministic identity evidence Small spelling error in name Edit-distance or related name comparator Adjacent character transposition Transposition-aware comparator Historical surname Retain and compare name history Patient moved Use address history rather than exact current-address requirement Shared household attributes Require additional discriminating evidence Missing demographic field Model missingness separately from disagreement Several plausible MPI candidates Ambiguous state / review rather than forced merge Cross-organizational matching Namespace-aware identity model and interoperability standards Priv"
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "privacy preserving record linkage",
+          "excerpt": "Privacy-Preserving Record Linkage — matching records across organizations while reducing disclosure of raw identifying information."
+        }
+      ]
+    },
+    {
+      "target": "/string-similarity-vs-semantic-similarity",
+      "evidence": [
+        {
+          "section": "Never let a string comparator decide patient identity by itself",
+          "anchor_id": "ux-section-42",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "See String Similarity vs Semantic Similarity ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "string similarity vs semantic similarity",
+          "excerpt": "String Similarity vs Semantic Similarity — why textual resemblance is not real-world identity."
+        }
+      ]
+    },
+    {
+      "target": "/text-normalization-and-transliteration",
+      "evidence": [
+        {
+          "section": "Transliteration should be auxiliary evidence",
+          "anchor_id": "ux-section-23",
+          "alias": "text normalization and transliteration",
+          "excerpt": "See Text Normalization and Transliteration ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "text normalization and transliteration",
+          "excerpt": "Text Normalization and Transliteration — multilingual representation and cross-script comparison."
+        }
+      ]
+    },
+    {
+      "target": "/unicode-and-grapheme-safe-levenshtein",
+      "evidence": [
+        {
+          "section": "Unicode belongs in the identity pipeline",
+          "anchor_id": "ux-section-22",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "See Unicode and Grapheme-Safe Levenshtein ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "unicode and grapheme safe levenshtein",
+          "excerpt": "Unicode and Grapheme-Safe Levenshtein — correct text units and normalization before international matching."
+        }
+      ]
+    },
+    {
+      "target": "/weighted-levenshtein-distance",
+      "evidence": [
+        {
+          "section": "Weighted edit costs",
+          "anchor_id": "ux-section-40",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "See Weighted Levenshtein Distance ."
+        },
+        {
+          "section": "Continue studying",
+          "anchor_id": "ux-section-149",
+          "alias": "weighted levenshtein distance",
+          "excerpt": "Weighted Levenshtein Distance — modeling nonuniform textual error costs."
+        }
+      ]
+    }
+  ],
+  "schema_entities": [
+    {
+      "id": "https://www.levenshtein.net/patient-identity-matching#page",
+      "type": "WebPage",
+      "name": "Patient Identity Matching",
+      "mainEntity": {
+        "@id": "https://www.levenshtein.net/patient-identity-matching#concept"
+      },
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/patient-identity-matching#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/patient-identity-matching#article",
+      "type": "TechArticle",
+      "name": "Patient Identity Matching",
+      "mainEntity": null,
+      "about": [
+        {
+          "@id": "https://www.levenshtein.net/patient-identity-matching#concept"
+        },
+        {
+          "@id": "https://www.levenshtein.net/patient-identity-matching#master-patient-index"
+        },
+        {
+          "@id": "https://www.levenshtein.net/#levenshtein-distance"
+        }
+      ]
+    },
+    {
+      "id": "https://www.levenshtein.net/patient-identity-matching#concept",
+      "type": "DefinedTerm",
+      "name": "Patient Identity Matching",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/patient-identity-matching#master-patient-index",
+      "type": "DefinedTerm",
+      "name": "Master Patient Index",
+      "mainEntity": null,
+      "about": null
+    },
+    {
+      "id": "https://www.levenshtein.net/patient-identity-matching#breadcrumb",
+      "type": "BreadcrumbList",
+      "name": null,
+      "mainEntity": null,
+      "about": null
+    }
+  ],
+  "schema_relations": [
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/#website",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-algorithm"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://en.wikipedia.org/wiki/Levenshtein_distance"
+    ],
+    [
+      "https://www.levenshtein.net/#levenshtein-distance",
+      "sameAs",
+      "https://www.wikidata.org/wiki/Q496939"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/#website"
+    ],
+    [
+      "https://www.levenshtein.net/applications#collection",
+      "hasPart",
+      "https://www.levenshtein.net/data-matching#collection"
+    ],
+    [
+      "https://www.levenshtein.net/data-matching#collection",
+      "isPartOf",
+      "https://www.levenshtein.net/applications#collection"
+    ],
+    [
+      "https://www.levenshtein.net/data-matching#collection",
+      "hasPart",
+      "https://www.levenshtein.net/patient-identity-matching#page"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#page",
+      "about",
+      "https://www.levenshtein.net/patient-identity-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#page",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#page",
+      "mainEntity",
+      "https://www.levenshtein.net/patient-identity-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#page",
+      "isPartOf",
+      "https://www.levenshtein.net/data-matching#collection"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#page",
+      "hasPart",
+      "https://www.levenshtein.net/patient-identity-matching#article"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "about",
+      "https://www.levenshtein.net/patient-identity-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "about",
+      "https://www.levenshtein.net/patient-identity-matching#master-patient-index"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "about",
+      "https://www.levenshtein.net/#levenshtein-distance"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/entity-resolution-and-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/name-address-and-place-matching#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/privacy-preserving-record-linkage#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/weighted-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/damerau-levenshtein-distance#term"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/text-normalization-and-transliteration#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/unicode-and-grapheme-safe-levenshtein#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/indexing-and-filtering-for-edit-distance#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "mentions",
+      "https://www.levenshtein.net/string-similarity-vs-semantic-similarity#concept"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "isPartOf",
+      "https://www.levenshtein.net/patient-identity-matching#page"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://doi.org/10.1080/01621459.1969.10501049"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://doi.org/10.1080/01621459.1989.10478785"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://healthit.gov/wp-content/uploads/2017/09/patient_identification_matching_final_report.pdf"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://www.gao.gov/assets/gao-19-197.pdf"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC4832129/"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://doi.org/10.1093/jamia/ocac068"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://doi.org/10.1093/jamia/ocac175"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://hl7.org/fhir/us/identity-matching/"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://fhir.hl7.org/fhir/patient-operation-match.html"
+    ],
+    [
+      "https://www.levenshtein.net/patient-identity-matching#article",
+      "citation",
+      "https://doi.org/10.1093/jamia/ocag020"
+    ]
+  ],
+  "external_citations": [
+    {
+      "url": "https://healthit.gov/standards-and-technology/patient-identity-and-patient-record-matching/",
+      "anchor": "ONC Patient Identity and Patient Record Matching"
+    },
+    {
+      "url": "https://hl7.org/fhir/patient-definitions.html",
+      "anchor": "HL7 FHIR Patient resource"
+    },
+    {
+      "url": "https://healthit.gov/resources/2025-safer-guide-patient-identification/",
+      "anchor": "SAFER Guide"
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4832129/",
+      "anchor": "Full text"
+    },
+    {
+      "url": "https://oncprojectracking.healthit.gov/wiki/download/attachments/180486153/Project%20US%40%20FINAL%20Technical%20Specification%20Version%201.0.pdf",
+      "anchor": "Technical specification"
+    },
+    {
+      "url": "https://doi.org/10.1093/jamia/ocac068",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://hl7.org/fhir/us/identity-matching/",
+      "anchor": "Implementation Guide"
+    },
+    {
+      "url": "https://fhir.hl7.org/fhir/patient-operation-match.html",
+      "anchor": "FHIR documentation"
+    },
+    {
+      "url": "https://doi.org/10.1093/jamia/ocac175",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1093/jamia/ocag020",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1080/01621459.1969.10501049",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://doi.org/10.1080/01621459.1989.10478785",
+      "anchor": "DOI record"
+    },
+    {
+      "url": "https://healthit.gov/wp-content/uploads/2017/09/patient_identification_matching_final_report.pdf",
+      "anchor": "ONC report"
+    },
+    {
+      "url": "https://www.gao.gov/assets/gao-19-197.pdf",
+      "anchor": "GAO report"
+    }
+  ]
+}
