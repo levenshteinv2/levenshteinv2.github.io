@@ -1,0 +1,60 @@
+name: Final five exact release asset staging
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/final-five-stage.yml'
+permissions:
+  contents: write
+jobs:
+  stage:
+    if: github.head_ref == 'release/final-five-2026-11-26' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reproduce pinned font bytes and verify all 184 release files
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib,subprocess,os,shutil
+          keys=['in','it','id','nl','pl']
+          packages={}
+          mapping={}
+          for key in keys:
+              path=Path('assets/tools')/key/'v1/fonts'
+              for f in json.loads((path/'manifest.json').read_text()):
+                  pkg=f['package']; version=f['version']
+                  assert pkg.startswith('@fontsource/') and version=='5.3.0'
+                  assert packages.setdefault(pkg,version)==version
+                  for name in f['files']:
+                      p=path/pkg.split('/')[-1]/name
+                      mapping[p.as_posix()]=(pkg,name)
+          root=Path(os.environ['RUNNER_TEMP'])/'final-five-deps'
+          root.mkdir(exist_ok=True)
+          subprocess.run(['npm','install','--prefix',str(root),'--no-save','--ignore-scripts','--no-audit','--no-fund']+[p+'@'+v for p,v in sorted(packages.items())],check=True)
+          files=json.loads(Path('.github/final-five-release-manifest.json').read_text())['files']
+          pages={'font-style.html','caratteri-speciali.html','font-aesthetic.html','lettertypes.html','generator-czcionek.html'}
+          assert len(files)==184 and len({f['path'] for f in files})==184
+          for f in files:
+              path=f['path'];p=Path(path)
+              assert path in pages or any(path.startswith('assets/tools/'+k+'/v1/') for k in keys)
+              if path in mapping:
+                  pkg,name=mapping[path]
+                  p.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copyfile(root/'node_modules'/pkg/name,p)
+              b=p.read_bytes()
+              assert len(b)==f['size'] and hashlib.sha256(b).hexdigest()==f['sha256'],path
+              assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==f['git_blob'],path
+          print('FINAL_FIVE_EXACT_RELEASE_VERIFIED',len(files))
+          PY
+          git add -- assets/tools/in/v1/fonts assets/tools/it/v1/fonts assets/tools/id/v1/fonts assets/tools/nl/v1/fonts assets/tools/pl/v1/fonts
+          git diff --cached --quiet && exit 0
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Stage exact verified five-locale font assets'
+          git push origin HEAD:refs/heads/release/final-five-2026-11-26
