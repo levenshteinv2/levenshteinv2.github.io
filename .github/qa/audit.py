@@ -167,7 +167,8 @@ async def run():
       issue(name,engine+' '+str(w),str(e));results.append(dict(page=name,engine=engine,width=w,passed=False))
      finally:
       checkpoint()
-      await asyncio.wait_for(context.close(),timeout=5)
+      try: await asyncio.wait_for(context.close(),timeout=5)
+      except Exception: pass
    for n in pages:
     batch=await asyncio.gather(*(asyncio.wait_for(check(n,w,h),timeout=25) for w,h in sizes),return_exceptions=True)
     for (w,h),value in zip(sizes,batch):
