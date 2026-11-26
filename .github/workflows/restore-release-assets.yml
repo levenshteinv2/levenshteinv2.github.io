@@ -1,0 +1,65 @@
+name: Restore verified legacy release assets
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-release-assets.yml'
+permissions:
+  contents: write
+concurrency:
+  group: restore-release-assets
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Retrieve exact public production assets
+        shell: python
+        run: |
+          import pathlib, urllib.request, hashlib
+          base = 'https://www.levenshtein.net/'
+          assets = {
+              'uploads/2026/8/f0a898d36cb142948430ecc3fa8f0459.png': b'\x89PNG\r\n\x1a\n',
+              'uploads/2026/8/44110572b6ac4cd789435cf4807c5616.png': b'\x89PNG\r\n\x1a\n',
+              'images/levenshtein_meilenstein_matrix.gif': b'GIF8',
+              'images/levenshtein_meilenstein_path.gif': b'GIF8',
+          }
+          staged = {}
+          for name, signature in assets.items():
+              request = urllib.request.Request(base + name, headers={'User-Agent': 'Mozilla/5.0 (compatible; Levenshtein-release-verification/1.0)'})
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  assert response.status == 200 and response.url.startswith(base), name
+                  data = response.read(10 * 1024 * 1024 + 1)
+                  assert data.startswith(signature) and len(signature) < len(data) <= 10 * 1024 * 1024, name
+                  staged[name] = data
+                  print(name, len(data), hashlib.sha256(data).hexdigest())
+          for name, data in staged.items():
+              target = pathlib.Path(name)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              if target.exists():
+                  assert target.read_bytes() == data, 'Existing asset differs; manual review required: ' + name
+              else:
+                  target.write_bytes(data)
+      - name: Save only verified assets to preview repository
+        run: |
+          git add -- uploads/2026/8/f0a898d36cb142948430ecc3fa8f0459.png uploads/2026/8/44110572b6ac4cd789435cf4807c5616.png images/levenshtein_meilenstein_matrix.gif images/levenshtein_meilenstein_path.gif
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Restore exact legacy production image assets to preview'
+          git push origin HEAD:main
+      - name: Run static QA on recovered checkout
+        run: |
+          pip install playwright==1.51.0 beautifulsoup4==4.13.3
+          QA_MODE=static python -u .github/qa/audit.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-assets-static-audit
+          path: qa-report/
+          retention-days: 7
