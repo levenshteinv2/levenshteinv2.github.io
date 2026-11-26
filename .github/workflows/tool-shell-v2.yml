@@ -1,0 +1,44 @@
+name: Final V2 shell and tool directory acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/tool-shell-v2.yml']
+permissions:
+  contents: write
+jobs:
+  verify:
+    if: github.head_ref == 'staging/tool-shell-v2-20261126' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate scoped changes
+        run: |
+          python .github/qa/tool-shell-v2.py
+          cat .github/qa/tool-directory-v2.css >> assets/knowledge/v2.css
+      - name: Browser dependencies
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.51.1
+          npx playwright install --with-deps chromium
+      - name: Browser shell and navigation regression
+        run: |
+          python -m http.server 8765 > /tmp/shell-server.log 2>&1 &
+          node .github/qa/tool-shell-v2.cjs
+      - name: Persist only verified shell changes
+        run: |
+          git add -- '*.html' assets/knowledge/v2.css qa/shell-v2/manifest.json
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Apply QA-verified V2 tool shell, native menu and card directory'
+          git push origin HEAD:refs/heads/staging/tool-shell-v2-20261126
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tool-shell-v2-evidence
+          path: |
+            qa-shell-result/
+            qa/shell-v2/manifest.json
+          retention-days: 14
