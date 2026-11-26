@@ -1,0 +1,61 @@
+name: Final two tool hubs comprehensive acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/tool-hubs-final.yml','text-tools.html','unicode-text-tools.html','assets/knowledge/tool-hubs.css']
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.head_ref == 'staging/tool-hubs-final-20261126' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save --ignore-scripts playwright@1.51.1
+          npx playwright install --with-deps chromium
+      - name: Static SEO, internal route and schema audit
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from html.parser import HTMLParser
+          import re,json
+          class Audit(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.main=False; self.links=[]; self.ids=[]
+              def handle_starttag(self,t,a):
+                  d=dict(a)
+                  if t=='main':self.main=True
+                  if 'id' in d:self.ids.append(d['id'])
+                  if self.main and t=='a' and 'href' in d:self.links.append(d['href'])
+              def handle_endtag(self,t):
+                  if t=='main':self.main=False
+          for slug in ['text-tools','unicode-text-tools']:
+              p=Path(slug+'.html');s=p.read_text();a=Audit();a.feed(s)
+              assert len(a.ids)==len(set(a.ids)),('duplicate ID',slug)
+              for href in a.links:
+                  if href.startswith('#'):assert href[1:] in a.ids,href
+                  if href.startswith('/'):
+                      x=href.split('#')[0].split('?')[0].lstrip('/')
+                      assert not x or Path(x).is_file() or Path(x+'.html').is_file(),href
+              graph=json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>',s,re.S).group(1))['@graph']
+              assert len([x for x in graph if x['@type']=='CollectionPage'])==1
+              assert all(len(x['itemListElement'])==x['numberOfItems'] for x in graph if x['@type']=='ItemList')
+              print('STATIC_HUB_PASS',slug,len(a.links))
+          PY
+      - name: Browser UX and metadata across five widths
+        run: |
+          python -m http.server 8765 >/tmp/hubs-server.log 2>&1 &
+          node .github/qa/tool-hubs-final.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tool-hubs-final-evidence
+          path: qa-hubs/
+          retention-days: 14
