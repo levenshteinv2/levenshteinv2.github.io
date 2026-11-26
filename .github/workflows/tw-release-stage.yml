@@ -1,0 +1,48 @@
+name: Taiwan exact release font staging
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/tw-release-stage.yml'
+permissions:
+  contents: write
+jobs:
+  stage:
+    if: github.head_ref == 'release/tw-2026-11-26' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reproduce pinned font bytes and verify every release file
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tw-deps"
+          npm install --prefix "$RUNNER_TEMP/tw-deps" --no-save --ignore-scripts @fontsource/iansui@5.2.8 lxgw-wenkai-tc-webfont@1.0.0
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os, shutil
+          m=json.loads(Path(".github/tw-release-manifest.json").read_text())
+          root=Path(os.environ["RUNNER_TEMP"])/"tw-deps/node_modules"
+          for x in m["files"]:
+            p=Path(x["path"])
+            assert p.as_posix()=="te-shu-zi-ti.html" or p.as_posix().startswith("assets/tools/tw/v1/")
+            if "/fonts/" in x["path"]:
+              tail=x["path"].split("/fonts/",1)[1]
+              key,rel=tail.split("/",1)
+              pkg={"iansui":"@fontsource/iansui","wenkai":"lxgw-wenkai-tc-webfont"}[key]
+              p.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(root/pkg/rel,p)
+            b=p.read_bytes()
+            assert len(b)==x["size"] and hashlib.sha256(b).hexdigest()==x["sha256"],x["path"]
+            assert hashlib.sha1(b"blob "+str(len(b)).encode()+b"\0"+b).hexdigest()==x["git_blob"],x["path"]
+          assert len(m["files"])==829
+          print("TW_EXACT_RELEASE_VERIFIED",len(m["files"]))
+          PY
+          git add -- assets/tools/tw/v1/fonts
+          git diff --cached --quiet && exit 0
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Stage exact verified Taiwan native font assets'
+          git push origin HEAD:refs/heads/release/tw-2026-11-26
