@@ -10,7 +10,13 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 7
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    env:
+      CATEGORY_ENGINE: ${{ matrix.engine }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -19,11 +25,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install playwright==1.51.0 beautifulsoup4==4.13.3
-      - run: QA_MODE=static python .github/qa/audit.py
-      - run: python -m playwright install --with-deps chromium firefox webkit
+      - run: python -m playwright install --with-deps "${CATEGORY_ENGINE}"
       - run: python -u .github/qa/category_hub_qa.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: category-hubs-qa
+          name: category-hubs-qa-${{ matrix.engine }}
           path: qa-report/

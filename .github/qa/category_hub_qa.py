@@ -1,5 +1,5 @@
 """Validate curated category hubs against the locked baseline, then test rendered pages."""
-import asyncio,collections,json,pathlib,re,subprocess,threading
+import asyncio,collections,json,pathlib,re,subprocess,threading,os
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
@@ -83,7 +83,7 @@ origin="http://127.0.0.1:"+str(server.server_port)
 async def browser_checks():
  results=[]
  async with async_playwright() as pw:
-  for engine in ["chromium","firefox","webkit"]:
+  for engine in [os.environ["CATEGORY_ENGINE"]]:
    browser=await getattr(pw,engine).launch()
    sem=asyncio.Semaphore(3)
    async def test(file,w,h):
@@ -102,15 +102,15 @@ async def browser_checks():
       if d["h1"]!=1:errors.append("h1")
       if any(external(a["href"] or "") and "nofollow" not in a["rel"].lower().split() for a in d["links"]):errors.append("nofollow")
      except Exception as e:errors.append(repr(e))
-     finally:await ctx.close()
+     finally:await asyncio.wait_for(ctx.close(),timeout=10)
      result={"engine":engine,"page":file,"width":w,"errors":errors}
      results.append(result)
-     if errors:print("CATEGORY BROWSER ISSUE",json.dumps(result),flush=True)
+     print("CATEGORY BROWSER CASE",json.dumps(result),flush=True)
    await asyncio.gather(*(test(f,w,h) for f in PAGES for w,h in [(390,844),(1440,900)]))
    await browser.close()
- report={"expected":96,"completed":len(results),"passed":sum(not x["errors"] for x in results),"results":results,"static":rows}
+ report={"expected":32,"completed":len(results),"passed":sum(not x["errors"] for x in results),"results":results,"static":rows}
  out=P("qa-report");out.mkdir(exist_ok=True)
  (out/"category-hubs.json").write_text(json.dumps(report,ensure_ascii=False,indent=2))
  print("CATEGORY BROWSER",json.dumps({k:v for k,v in report.items() if k not in ("results","static")}),flush=True)
- assert report["passed"]==96
+ assert report["passed"]==32
 asyncio.run(browser_checks())
